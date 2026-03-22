@@ -408,6 +408,66 @@ const FILE_TAB_THEMES = [
 const EXAMPLES = {
   blank:`function _init()\nend\n\nfunction _update()\nend\n\nfunction _draw()\n  cls()\nend`
 };
+const LUA_RUNTIME_HELPERS = `local __tc_builtin_pairs = pairs
+
+function add(t, value)
+  if type(t) ~= "table" then return value end
+  table.insert(t, value)
+  return value
+end
+
+function del(t, value)
+  if type(t) ~= "table" then return nil end
+  for i = 1, #t do
+    if t[i] == value then
+      table.remove(t, i)
+      return value
+    end
+  end
+  for k, v in __tc_builtin_pairs(t) do
+    if v == value then
+      t[k] = nil
+      return value
+    end
+  end
+  return nil
+end
+
+function deli(t, index)
+  if type(t) ~= "table" then return nil end
+  if index == nil then index = #t end
+  index = math.floor(tonumber(index) or #t)
+  if index < 1 or index > #t then return nil end
+  return table.remove(t, index)
+end
+
+function all(t)
+  local i = 0
+  return function()
+    i = i + 1
+    if t == nil then return nil end
+    return t[i]
+  end
+end
+
+function foreach(t, fn)
+  if type(t) ~= "table" or type(fn) ~= "function" then return end
+  for i, value in ipairs(t) do
+    fn(value, i)
+  end
+end
+
+function sin(x)
+  return math.sin(tonumber(x) or 0)
+end
+
+function cosin(x)
+  return math.cos(tonumber(x) or 0)
+end
+
+function tan(x)
+  return math.tan(tonumber(x) or 0)
+end`;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteTool:"draw",spriteZoom:20,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"paint",mapAnimPlaying:true,mapAnimPausedAt:0,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",appProject:null};
 const PRESET_PALETTE_PAGES = [
@@ -535,6 +595,9 @@ const CODE_API_DOCS = [
   makeDoc("fget(tile, flag)", "Reads a tile flag, such as solid flag 0.", [["tile", "Tile id to inspect."],["flag", "Flag index. Solid uses flag 0."]], ["if fget(tile, 0) then print(\"solid\", 8, 8) end"], "Get a tile with mget() first if you need to inspect the map."),
   makeDoc("solid(x, y, layer, mapIndex)", "Checks flag 0 at world pixel coordinates.", [["x", "World pixel x coordinate."],["y", "World pixel y coordinate."],["layer", "Optional layer index. Leave empty to test every visible layer."],["mapIndex", "Optional map index. Defaults to 0."]], ["if solid(player_x, player_y + 8, 1, 0) then grounded = true end","if solid(x + 4, y + 4) then hit_wall = true end"], "Use pixel positions for collision corners, not tile positions."),
   makeDoc("wall(x, y, layer, mapIndex)", "Alias for solid(x, y, layer, mapIndex).", [["x", "World pixel x coordinate."],["y", "World pixel y coordinate."],["layer", "Optional layer index."],["mapIndex", "Optional map index."]], ["if wall(x + 7, y, 1, 0) then x -= 1 end"], "Use wall() if that name reads more naturally in your collision code."),
+  makeDoc("pset(x, y, color)", "Draws one pixel, using the current draw color or an optional palette index.", [["x", "World or screen x coordinate."],["y", "World or screen y coordinate."],["color", "Optional palette index. Leave empty to use color()."]], ["pset(10, 10, 8)","color(255, 255, 255)\npset(20, 12)"], "Useful for particles, custom drawing tools, and tiny pixel details."),
+  makeDoc("pget(x, y)", "Reads the palette color index at a pixel, or -1 when it is not a palette color.", [["x", "World or screen x coordinate."],["y", "World or screen y coordinate."]], ["local c = pget(mx, my)","if c == 8 then print(\"pink\", 8, 8) end"], "This samples the current frame after camera() and zoom() are applied."),
+  makeDoc("line(x0, y0, x1, y1, color)", "Draws a one-pixel line using the current draw color or an optional palette index.", [["x0", "Starting x coordinate."],["y0", "Starting y coordinate."],["x1", "Ending x coordinate."],["y1", "Ending y coordinate."],["color", "Optional palette index."]], ["line(8, 8, 40, 24, 10)","line(player_x, player_y, mx, my)"], "Great for laser beams, HUD graphs, wireframes, and custom icons."),
   makeDoc("spr(indexOrSource, x, y)", "Draws a sprite folder frame, sprite reference such as 0a, or image source.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."]], ["spr(0, 40, 20)","spr(\"0b\", 56, 20)"], "Sprite folder indices draw frame a by default."),
   makeDoc("animate(ref, x, y, speed)", "Draws a sprite folder and cycles through its frames automatically.", [["ref", "Folder index or ref such as \"0a\"."],["x", "Destination x."],["y", "Destination y."],["speed", "Frames per second style speed value."]], ["animate(0, 80, 40, 6)","animate(\"0a\", player_x, player_y, 8)"], "Use this when a sprite folder contains several frames."),
   makeDoc("print(text, x, y, size, outlineColor)", "Draws text using the current color, with optional font size and outline color.", [["text", "Any value converted to text."],["x", "Screen/world x position."],["y", "Screen/world y position."],["size", "Optional font size in pixels. Defaults to 12."],["outlineColor", "Optional outline color string like \"#ffffff\" or palette index. Leave empty for no outline."]], ["print(\"score\", 8, 8)","color(255,255,255)\nprint(score, 8, 20, 18, \"#000000\")","print(\"legacy white\", 8, 32, 255, 255, 255)"], "print() now defaults to black. Call color() first to change the fill color, or use the legacy six-number RGB form."),
@@ -546,6 +609,13 @@ const CODE_API_DOCS = [
   makeDoc("zoom(z, ox, oy)", "Changes the view zoom level, with optional screen offsets.", [["z", "Zoom amount, such as 1 or 2."],["ox", "Optional screen x offset after zoom."],["oy", "Optional screen y offset after zoom."]], ["zoom(2)","zoom(1)","zoom(2, 0, 0)"], "Use btnp() to toggle zoom once instead of changing it every frame."),
   makeDoc("abs(n)", "Returns the absolute value of a number.", [["n", "The number to convert."]], ["if abs(joyx(0)) > 0.2 then moving = true end"], "Helpful for joystick deadzones."),
   makeDoc("flr(n)", "Rounds a number down to the nearest integer.", [["n", "The number to round down."]], ["tile_x = flr(player_x / 8)"], "Useful when turning pixels into tile coordinates."),
+  makeDoc("sin(n) / cosin(n) / tan(n)", "Returns the standard math sine, cosine, or tangent of a number in radians.", [["n", "Angle in radians."]], ["wave = sin(t)\nside = cosin(t)\nslope = tan(0.25)"], "Use these for orbits, waves, aiming math, and procedural animation."),
+  makeDoc("add(list, value)", "Appends a value to the end of an array-style table and returns it.", [["list", "Table to grow."],["value", "Value to append."]], ["add(particles, {x=mx, y=my})"], "This is handy for projectiles, particles, enemies, and menu items."),
+  makeDoc("del(list, value)", "Removes the first matching value from a table and returns it.", [["list", "Table to search."],["value", "Value to remove."]], ["del(particles, particle)"], "Use this when you already have the object you want to remove."),
+  makeDoc("deli(list, index)", "Removes a table entry by index and returns it.", [["list", "Table to edit."],["index", "1-based array position. Defaults to the last item."]], ["deli(cards, 2)","last = deli(cards)"], "Use this when you know exactly which slot to remove."),
+  makeDoc("all(list)", "Returns an iterator for array-style tables so you can loop with for-in-do.", [["list", "Array-style table."]], ["for item in all(items) do\n  print(item.name, 8, 8)\nend"], "This is a friendly way to loop through gameplay lists without writing ipairs() yourself."),
+  makeDoc("foreach(list, fn)", "Calls a function once for each value in an array-style table.", [["list", "Array-style table."],["fn", "Function that receives value and index."]], ["foreach(stars, function(star, i)\n  star.y += 1\nend)"], "Use it for quick setup or cleanup passes when you do not need a full for loop."),
+  makeDoc("pairs(table)", "Lua's built-in key/value iterator for tables with named fields.", [["table", "Any Lua table."]], ["for key, value in pairs(player) do\n  print(key, 8, 8)\nend"], "Use pairs() when you want both keys and values, especially for settings or dictionaries."),
   makeDoc("sfx(index, loop)", "Plays a sound effect.", [["index", "Sound index to play."],["loop", "Optional true/false loop flag."]], ["sfx(0, false)"], "Trigger it with btnp() for one-shot sounds."),
   makeDoc("music(indexOrFile, action, loop)", "Plays generated music by index or an imported file by name.", [["indexOrFile", "Music index like 0, or a file name string."],["action", "Usually \"play\" or \"stop\"."],["loop", "true or false."]], ["music(0, \"play\", true)","music(\"song.ogg\", \"play\", true)"], "Start music in _init() or when the level changes."),
   makeDoc("message_box(message, title)", "Shows a lightweight OK dialog in the runtime.", [["message", "Text shown in the dialog body."],["title", "Optional heading text."]], ["if btnp(\"a\") then message_box(\"hello!\", \"notice\") end"], "This opens an on-screen modal that works with mouse and touch. Use default_box(\"message\", {...}) to restyle only message boxes."),
@@ -633,8 +703,8 @@ function splitLuaLineComment(line){ let quote=null; for(let i=0;i<line.length;i+
 function codeTokenHtml(cls,value){ return `<span class="${cls}">${escapeHtml(value)}</span>`; }
 function highlightLuaLine(line){
   const {code, comment}=splitLuaLineComment(line);
-  const keywords=new Set(["function","local","if","then","elseif","else","end","for","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
-  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","animate","rectfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","ui_box","abs","flr"]);
+  const keywords=new Set(["function","local","if","then","elseif","else","end","for","in","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
+  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","animate","rectfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","ui_box","abs","flr","sin","cosin","tan","add","del","deli","all","foreach","pairs"]);
   let html="";
   const regex=/(\b\d+(?:\.\d+)?\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*|==|~=|<=|>=|\.\.\.|\.\.|[+\-*\/%#=<>]+)/g;
   let last=0, match;
@@ -763,25 +833,26 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "function parseSpriteRef(ref){const s=String(ref||'').trim();let m=s.match(/^(\\d+)([a-z])$/i);if(m)return{folder:parseInt(m[1],10),frame:Math.max(0,m[2].toLowerCase().charCodeAt(0)-97)};if(/^\\d+$/.test(s))return{folder:parseInt(s,10),frame:0};return null;}",
     "function resolveAnimatedTileFolderIndex(def,spriteFolders){if(!def)return null;const explicit=String(def.animFolder??'').trim();if(explicit!==''&&Number.isFinite(Number(explicit))){const idx=Math.max(0,parseInt(explicit,10)),folder=spriteFolders&&spriteFolders[idx];if(folder&&folder.frames&&folder.frames.length)return idx}const fallback=parseSpriteRef(def.source||'');if(fallback){const folder=spriteFolders&&spriteFolders[fallback.folder];if(folder&&folder.frames&&folder.frames.length)return fallback.folder}return null}",
     "function isEmojiLike(){return false}",
-    "function isImageLike(s){return /\\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(String(s||''))}",
-    "function sx(x){return Math.round((((Number(x)||0)-camx-(c.width/2))*viewZoom)+(c.width/2)+zoomOffX)} function sy(y){return Math.round((((Number(y)||0)-camy-(c.height/2))*viewZoom)+(c.height/2)+zoomOffY)}",
-    "function cls(){ctx.fillStyle='rgb(0,0,0)';ctx.fillRect(0,0,c.width,c.height)}",
-    "function resetViewTransform(){viewZoom=1;zoomOffX=0;zoomOffY=0;camx=0;camy=0} function camera(x,y){if(x==null&&y==null){camx=0;camy=0;return 0} camx=Number(x)||0; camy=Number(y)||0; return 0} function zoom(z,ox,oy){if(z!=null)viewZoom=Math.max(0.125,Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom}",
-    "function color(r,g,b){col={r:r|0,g:g|0,b:b|0}} function sty(){return 'rgb('+col.r+','+col.g+','+col.b+')'} function paletteColor(index){const value=projectRef.palette[index|0];return value||sty()} function resolvePrintColor(value){if(value==null||value==='')return null;if(typeof value==='number'&&Number.isFinite(value))return paletteColor(value|0);const s=String(value).trim();if(/^\\d+$/.test(s))return paletteColor(parseInt(s,10));return s||null}",
-    "function rectfill(x0,y0,a,b,colorIndex){const hasPaletteColor=colorIndex!=null;const left=Number(x0)||0;const top=Number(y0)||0;const right=hasPaletteColor?(Number(a)||0):left+(Number(a)||0);const bottom=hasPaletteColor?(Number(b)||0):top+(Number(b)||0);const x=Math.min(left,right),y=Math.min(top,bottom),w=Math.abs(right-left)+(hasPaletteColor?1:0),h=Math.abs(bottom-top)+(hasPaletteColor?1:0);ctx.fillStyle=hasPaletteColor?paletteColor(colorIndex):sty();ctx.fillRect(sx(x),sy(y),Math.max(1,Math.round(w*viewZoom)),Math.max(1,Math.round(h*viewZoom)))}",
-    "function print(t,x,y,a,b,c){const _cp=clipPush();const oldFill=ctx.fillStyle,oldStroke=ctx.strokeStyle;let fontSize=Math.max(1,Math.round(12*viewZoom)),fill=sty(),outline=null;if(a!=null&&b!=null&&c!=null&&typeof a==='number'&&typeof b==='number'&&typeof c==='number'){fill='rgb('+((a|0))+','+((b|0))+','+((c|0))+')';}else{if(a!=null)fontSize=Math.max(1,Math.round((Number(a)||12)*viewZoom));outline=resolvePrintColor(b);if(c!=null)fill=resolvePrintColor(c)||fill;}ctx.fillStyle=fill;ctx.font=fontSize+'px monospace';ctx.textAlign='left';ctx.textBaseline='top';const dx=Math.round(sx(x)),dy=Math.round(sy(y));if(outline){ctx.strokeStyle=outline;ctx.lineWidth=Math.max(1,Math.round(fontSize/5));ctx.strokeText(String(t),dx,dy);}ctx.fillText(String(t),dx,dy);ctx.fillStyle=oldFill;ctx.strokeStyle=oldStroke;clipPop(_cp)}const print_=print;",
-    "function drawInternalSpriteRuntime(ref,x,y,scaleX,scaleY){scaleX=scaleX||1;scaleY=scaleY||1;const r=(typeof ref==='object')?ref:parseSpriteRef(ref);if(!r)return false;const folder=projectRef.spriteFolders[r.folder],s=folder&&folder.frames[r.frame];if(!s)return false;for(let yy=0;yy<s.h;yy++)for(let xx=0;xx<s.w;xx++){const p=s.pixels[yy][xx];if(p>=0&&projectRef.palette[p]){ctx.fillStyle=projectRef.palette[p];ctx.fillRect(Math.round(sx(x)+xx*(scaleX*viewZoom)),Math.round(sy(y)+yy*(scaleY*viewZoom)),Math.ceil(scaleX*viewZoom),Math.ceil(scaleY*viewZoom))}}return true}",
-    "function spr(v,x,y){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){drawInternalSpriteRuntime(r,x,y,1,1);clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function animate(ref,x,y,speed){const _cp=clipPush();const s=String(ref||'').trim();const m=s.match(/^(\\d+)/);const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN);if(!Number.isFinite(base)){spr(ref,x,y);clipPop(_cp);return;}const folder=projectRef.spriteFolders[base];if(!folder||!folder.frames||!folder.frames.length){spr(ref,x,y);clipPop(_cp);return;}const spd=Math.max(0.01,Number(speed)||6);const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length;drawInternalSpriteRuntime({folder:base,frame:idx},x,y,1,1);clipPop(_cp);}",
-    "function mget(x,y,l,m){x=Math.floor(Number(x)||0);y=Math.floor(Number(y)||0);l=l==null?0:l|0;m=m==null?0:m|0;const mapObj=projectRef.maps[m];if(!mapObj||x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h)return 0;const lay=mapObj.layers[l];return lay?lay.data[y][x]||0:0}",
+	    "function isImageLike(s){return /\\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(String(s||''))}",
+	    "function sx(x){return Math.round((((Number(x)||0)-camx-(c.width/2))*viewZoom)+(c.width/2)+zoomOffX)} function sy(y){return Math.round((((Number(y)||0)-camy-(c.height/2))*viewZoom)+(c.height/2)+zoomOffY)}",
+	    "function cls(){ctx.fillStyle='rgb(0,0,0)';ctx.fillRect(0,0,c.width,c.height)}",
+	    "function resetViewTransform(){viewZoom=1;zoomOffX=0;zoomOffY=0;camx=0;camy=0} function camera(x,y){if(x==null&&y==null){camx=0;camy=0;return 0} camx=Number(x)||0; camy=Number(y)||0; return 0} function zoom(z,ox,oy){if(z!=null)viewZoom=Math.max(0.125,Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom}",
+	    "function color(r,g,b){col={r:r|0,g:g|0,b:b|0}} function sty(){return 'rgb('+col.r+','+col.g+','+col.b+')'} function paletteColor(index){const value=projectRef.palette[index|0];return value||sty()} function resolvePrintColor(value){if(value==null||value==='')return null;if(typeof value==='number'&&Number.isFinite(value))return paletteColor(value|0);const s=String(value).trim();if(/^\\d+$/.test(s))return paletteColor(parseInt(s,10));return s||null} function hexToRgb(value){const s=String(value||'').trim();if(/^#([0-9a-f]{3})$/i.test(s)){const m=s.slice(1);return{r:parseInt(m[0]+m[0],16),g:parseInt(m[1]+m[1],16),b:parseInt(m[2]+m[2],16)}}if(/^#([0-9a-f]{6})$/i.test(s)){return{r:parseInt(s.slice(1,3),16),g:parseInt(s.slice(3,5),16),b:parseInt(s.slice(5,7),16)}}const rgb=s.match(/^rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)$/i);return rgb?{r:parseInt(rgb[1],10),g:parseInt(rgb[2],10),b:parseInt(rgb[3],10)}:null} function pixelFillStyle(colorIndex){return colorIndex==null?sty():paletteColor(colorIndex)} function pset(x,y,colorIndex){const _cp=clipPush();const size=Math.max(1,Math.round(viewZoom));ctx.fillStyle=pixelFillStyle(colorIndex);ctx.fillRect(sx(x),sy(y),size,size);clipPop(_cp);return 0} function pget(x,y){const px=clamp(sx(x),0,c.width-1),py=clamp(sy(y),0,c.height-1),data=ctx.getImageData(px,py,1,1).data;if(data[3]===0)return-1;for(let i=0;i<projectRef.palette.length;i++){const rgb=hexToRgb(projectRef.palette[i]);if(rgb&&rgb.r===data[0]&&rgb.g===data[1]&&rgb.b===data[2])return i}return-1} function line(x0,y0,x1,y1,colorIndex){const _cp=clipPush();let ax=Math.round(Number(x0)||0),ay=Math.round(Number(y0)||0),bx=Math.round(Number(x1)||0),by=Math.round(Number(y1)||0);const dx=Math.abs(bx-ax),sxStep=ax<bx?1:-1,dy=-Math.abs(by-ay),syStep=ay<by?1:-1;let err=dx+dy;const size=Math.max(1,Math.round(viewZoom));ctx.fillStyle=pixelFillStyle(colorIndex);while(true){ctx.fillRect(sx(ax),sy(ay),size,size);if(ax===bx&&ay===by)break;const e2=err*2;if(e2>=dy){err+=dy;ax+=sxStep}if(e2<=dx){err+=dx;ay+=syStep}}clipPop(_cp);return 0}",
+	    "function rectfill(x0,y0,a,b,colorIndex){const hasPaletteColor=colorIndex!=null;const left=Number(x0)||0;const top=Number(y0)||0;const right=hasPaletteColor?(Number(a)||0):left+(Number(a)||0);const bottom=hasPaletteColor?(Number(b)||0):top+(Number(b)||0);const x=Math.min(left,right),y=Math.min(top,bottom),w=Math.abs(right-left)+(hasPaletteColor?1:0),h=Math.abs(bottom-top)+(hasPaletteColor?1:0);ctx.fillStyle=hasPaletteColor?paletteColor(colorIndex):sty();ctx.fillRect(sx(x),sy(y),Math.max(1,Math.round(w*viewZoom)),Math.max(1,Math.round(h*viewZoom)))}",
+	    "function print(t,x,y,a,b,c){const _cp=clipPush();const oldFill=ctx.fillStyle,oldStroke=ctx.strokeStyle;let fontSize=Math.max(1,Math.round(12*viewZoom)),fill=sty(),outline=null;if(a!=null&&b!=null&&c!=null&&typeof a==='number'&&typeof b==='number'&&typeof c==='number'){fill='rgb('+((a|0))+','+((b|0))+','+((c|0))+')';}else{if(a!=null)fontSize=Math.max(1,Math.round((Number(a)||12)*viewZoom));outline=resolvePrintColor(b);if(c!=null)fill=resolvePrintColor(c)||fill;}ctx.fillStyle=fill;ctx.font=fontSize+'px monospace';ctx.textAlign='left';ctx.textBaseline='top';const dx=Math.round(sx(x)),dy=Math.round(sy(y));if(outline){ctx.strokeStyle=outline;ctx.lineWidth=Math.max(1,Math.round(fontSize/5));ctx.strokeText(String(t),dx,dy);}ctx.fillText(String(t),dx,dy);ctx.fillStyle=oldFill;ctx.strokeStyle=oldStroke;clipPop(_cp)}const print_=print;",
+	    "function drawInternalSpriteRuntime(ref,x,y,scaleX,scaleY){scaleX=scaleX||1;scaleY=scaleY||1;const r=(typeof ref==='object')?ref:parseSpriteRef(ref);if(!r)return false;const folder=projectRef.spriteFolders[r.folder],s=folder&&folder.frames[r.frame];if(!s)return false;for(let yy=0;yy<s.h;yy++)for(let xx=0;xx<s.w;xx++){const p=s.pixels[yy][xx];if(p>=0&&projectRef.palette[p]){ctx.fillStyle=projectRef.palette[p];ctx.fillRect(Math.round(sx(x)+xx*(scaleX*viewZoom)),Math.round(sy(y)+yy*(scaleY*viewZoom)),Math.ceil(scaleX*viewZoom),Math.ceil(scaleY*viewZoom))}}return true}",
+	    "function spr(v,x,y){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){drawInternalSpriteRuntime(r,x,y,1,1);clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function animate(ref,x,y,speed){const _cp=clipPush();const s=String(ref||'').trim();const m=s.match(/^(\\d+)/);const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN);if(!Number.isFinite(base)){spr(ref,x,y);clipPop(_cp);return;}const folder=projectRef.spriteFolders[base];if(!folder||!folder.frames||!folder.frames.length){spr(ref,x,y);clipPop(_cp);return;}const spd=Math.max(0.01,Number(speed)||6);const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length;drawInternalSpriteRuntime({folder:base,frame:idx},x,y,1,1);clipPop(_cp);}",
+	    "function mget(x,y,l,m){x=Math.floor(Number(x)||0);y=Math.floor(Number(y)||0);l=l==null?0:l|0;m=m==null?0:m|0;const mapObj=projectRef.maps[m];if(!mapObj||x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h)return 0;const lay=mapObj.layers[l];return lay?lay.data[y][x]||0:0} function mset(x,y,tile,l,m){x|=0;y|=0;tile|=0;l=l==null?0:l|0;m=m==null?0:m|0;const mapObj=projectRef.maps[m];if(!mapObj||x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h)return;const lay=mapObj.layers[l];if(lay)lay.data[y][x]=tile}",
     "function fget(tile,flag){const d=projectRef.tileDefs[tile|0];return !!(d&&d.flags&&d.flags[flag|0])}function tileAt(x,y,l,m){return mget(Math.floor((Number(x)||0)/projectRef.project.tile_w),Math.floor((Number(y)||0)/projectRef.project.tile_h),l,m)}function solid(x,y,l,m){m=m==null?0:m|0;const mapObj=projectRef.maps[m];if(!mapObj)return false;if(l!=null)return fget(tileAt(x,y,l,m),0);for(let i=0;i<mapObj.layers.length;i++){const layer=mapObj.layers[i];if(!layer||layer.visible===false)continue;if(fget(tileAt(x,y,i,m),0))return true}return false}const wall=solid;",
     "function pmap(mi,mx,my,sx0,sy0,mw,mh,sl,el){mi=mi==null?0:mi|0;const mapObj=projectRef.maps[mi];if(!mapObj)return;const totalLayers=mapObj.layers.length;mx=mx==null?0:mx|0;my=my==null?0:my|0;sx0=Number(sx0)||0;sy0=Number(sy0)||0;mw=mw==null?projectRef.project.map_w:mw|0;mh=mh==null?projectRef.project.map_h:mh|0;sl=sl==null?0:sl|0;el=el==null?Math.max(0,totalLayers-1):el|0;for(let li=sl;li<=el;li++){const layer=mapObj.layers[li];if(!layer||layer.visible===false)continue;for(let yy=0;yy<mh;yy++)for(let xx=0;xx<mw;xx++){const gx=mx+xx,gy=my+yy;if(gx<0||gy<0||gx>=projectRef.project.map_w||gy>=projectRef.project.map_h)continue;const tid=layer.data[gy][gx]||0,def=projectRef.tileDefs[tid];if(!tid||!def)continue;const wx=sx0+xx*projectRef.project.tile_w,wy=sy0+yy*projectRef.project.tile_h;const x0=sx(wx),y0=sy(wy),x1=sx(wx+projectRef.project.tile_w),y1=sy(wy+projectRef.project.tile_h);const tileW=Math.max(1,x1-x0),tileH=Math.max(1,y1-y0);if(def.bgEnabled!==false){ctx.fillStyle=def.bg||'#444';ctx.fillRect(x0,y0,tileW,tileH)}let sr=parseSpriteRef(def.source||'');if(def.animated){const folderIndex=resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders),folder=folderIndex==null?null:projectRef.spriteFolders[folderIndex],speed=Math.max(0.1,Number(def.animSpeed)||6);if(folder&&folder.frames&&folder.frames.length)sr={folder:folderIndex,frame:Math.floor((performance.now()/1000)*speed)%folder.frames.length};}if(sr){const folder=projectRef.spriteFolders[sr.folder],sp=folder&&folder.frames[sr.frame];if(sp){drawInternalSpriteRuntime(sr,wx,wy,projectRef.project.tile_w/sp.w,projectRef.project.tile_h/sp.h);continue;}}}}}function map(mi,sx0,sy0,layer){mi=mi==null?0:mi|0;const mapObj=projectRef.maps[mi];if(!mapObj)return;const totalLayers=mapObj.layers.length;const sl=layer==null?0:layer|0;const el=layer==null?Math.max(0,totalLayers-1):sl;pmap(mi,0,0,sx0,sy0,projectRef.project.map_w,projectRef.project.map_h,sl,el)}",
     "function attachJoy(root,knob,idx){const R=52,KR=21;function setKnob(nx,ny){knob.style.left='calc(50% + '+(nx*R)+'px)';knob.style.top='calc(50% + '+(ny*R)+'px)';knob.style.marginLeft='-'+KR+'px';knob.style.marginTop='-'+KR+'px';}function update(clientX,clientY){const rect=root.getBoundingClientRect();const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,dx=clientX-cx,dy=clientY-cy;const len=Math.hypot(dx,dy)||1,m=Math.min(R,len);input.joy[idx].x=clamp((dx/len)*(m/R),-1,1);input.joy[idx].y=clamp((dy/len)*(m/R),-1,1);setKnob(input.joy[idx].x,input.joy[idx].y);}function up(){input.joy[idx].down=false;input.joy[idx].x=0;input.joy[idx].y=0;setKnob(0,0)}root.addEventListener('pointerdown',e=>{root.setPointerCapture(e.pointerId);input.joy[idx].down=true;update(e.clientX,e.clientY);e.preventDefault()});root.addEventListener('pointermove',e=>{if(!input.joy[idx].down)return;update(e.clientX,e.clientY);e.preventDefault()});['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(type=>root.addEventListener(type,e=>{up();e.preventDefault()}));setKnob(0,0);return{reset:up}}",
     "function syncLeftMovementInput(){const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick';if(mode!=='dpad')return;input.joy[0].x=(input.btnDpad[3]?1:0)-(input.btnDpad[2]?1:0);input.joy[0].y=(input.btnDpad[1]?1:0)-(input.btnDpad[0]?1:0)}",
     "const leftJoy=attachJoy(document.getElementById('joyL'),document.getElementById('knobL'),0),rightJoy=attachJoy(document.getElementById('joyR'),document.getElementById('knobR'),1);document.querySelectorAll('.symbtn').forEach(btn=>{const id=(+btn.dataset.btn)-4;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnFace',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false);e.preventDefault()}))});document.querySelectorAll('.dpadBtn').forEach(btn=>{const id=+btn.dataset.dpadBtn;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnDpad',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false);e.preventDefault()}))});['pointerdown','pointermove'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,false);if(type==='pointerdown'){try{c.setPointerCapture(e.pointerId)}catch{}}if(type==='pointerdown'||e.pointerType==='touch')e.preventDefault()},{passive:false}));['pointerup','pointercancel','lostpointercapture'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,true);e.preventDefault()},{passive:false}));c.addEventListener('contextmenu',e=>e.preventDefault());const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3};window.addEventListener('keydown',e=>{const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,true);e.preventDefault()},{passive:false});window.addEventListener('keyup',e=>{const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,false);e.preventDefault()},{passive:false});window.addEventListener('blur',()=>{input.btnDpad.fill(0);input.btnFace.fill(0);input.btn.fill(0);input.btnPrev.fill(0);input.btnp.fill(0);input.mouse.buttons=0;input.mouse.pressed=0;input.mouse.pointers.clear();leftJoy.reset();rightJoy.reset();syncLeftMovementInput()});applyInputModeUI();",
     "const { lua,lauxlib,lualib,to_luastring,to_jsstring }=fengari;const L=lauxlib.luaL_newstate();lualib.luaL_openlibs(L);function push(n,fn){lua.lua_pushjsfunction(L,fn);lua.lua_setglobal(L,to_luastring(n))}",
-    "push('cls',()=>{cls();return 0});push('camera',L=>{const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0});push('zoom',L=>{const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0;} lua.lua_pushnumber(L, zoom()); return 1});push('clip',L=>{const argc=lua.lua_gettop(L); if(argc===0){ clip(); return 0;} clip(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4)); return 0;});push('color',L=>{color(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));return 0});push('rectfill',L=>{const argc=lua.lua_gettop(L);rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('print',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('print_',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('spr',L=>{if(lua.lua_isnumber(L,1))spr(String(lua.lua_tointeger(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));else spr(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));return 0});push('animate',L=>{const ref=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));animate(ref,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4));return 0});push('mget',L=>{lua.lua_pushinteger(L,mget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0));return 1});push('fget',L=>{lua.lua_pushboolean(L,fget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2))?1:0);return 1});push('solid',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('wall',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('map',L=>{const argc=lua.lua_gettop(L);map(argc>=1?lua.lua_tointeger(L,1):0,argc>=2?lua.lua_tonumber(L,2):0,argc>=3?lua.lua_tonumber(L,3):0,argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('pmap',L=>{pmap(lua.lua_gettop(L)>=1?lua.lua_tointeger(L,1):0,lua.lua_gettop(L)>=2?lua.lua_tointeger(L,2):0,lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tonumber(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tonumber(L,5):0,lua.lua_gettop(L)>=6?lua.lua_tointeger(L,6):undefined,lua.lua_gettop(L)>=7?lua.lua_tointeger(L,7):undefined,lua.lua_gettop(L)>=8?lua.lua_tointeger(L,8):undefined,lua.lua_gettop(L)>=9?lua.lua_tointeger(L,9):undefined);return 0});push('btn',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btn[i]?1:0);return 1});push('btnp',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btnp[i]?1:0);return 1});push('mouse',L=>{lua.lua_pushinteger(L,input.mouse.x|0);lua.lua_pushinteger(L,input.mouse.y|0);lua.lua_pushinteger(L,input.mouse.buttons|0);lua.lua_pushinteger(L,input.mouse.pressed|0);return 4});push('joyx',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].x:0);return 1});push('joyy',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].y:0);return 1});push('message_box',L=>{window.alert(to_jsstring(lua.lua_tolstring(L,1)));lua.lua_pushboolean(L,1);return 1});push('confirm_box',L=>{lua.lua_pushboolean(L,window.confirm(to_jsstring(lua.lua_tolstring(L,1)))?1:0);return 1});push('entry_box',L=>{const value=window.prompt(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'' );if(value==null){lua.lua_pushboolean(L,0);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('default_box',()=>0);push('ui_box',()=>0);push('abs',L=>{lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1)));return 1});push('flr',L=>{lua.lua_pushnumber(L,Math.floor(lua.lua_tonumber(L,1)));return 1});",
-    "lua.lua_newtable(L);lua.lua_pushinteger(L,projectRef.project.tile_w);lua.lua_setfield(L,-2,to_luastring('tile_w'));lua.lua_pushinteger(L,projectRef.project.tile_h);lua.lua_setfield(L,-2,to_luastring('tile_h'));lua.lua_pushinteger(L,projectRef.project.map_w);lua.lua_setfield(L,-2,to_luastring('map_w'));lua.lua_pushinteger(L,projectRef.project.map_h);lua.lua_setfield(L,-2,to_luastring('map_h'));lua.lua_setglobal(L,to_luastring('project'));",
-    "if(lauxlib.luaL_dostring(L,to_luastring(code))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
+	    "push('cls',()=>{cls();return 0});push('camera',L=>{const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0});push('zoom',L=>{const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0;} lua.lua_pushnumber(L, zoom()); return 1});push('clip',L=>{const argc=lua.lua_gettop(L); if(argc===0){ clip(); return 0;} clip(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4)); return 0;});push('color',L=>{color(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));return 0});push('pset',L=>{const argc=lua.lua_gettop(L);pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?lua.lua_tointeger(L,3):undefined);return 0});push('pget',L=>{lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)));return 1});push('line',L=>{const argc=lua.lua_gettop(L);line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('rectfill',L=>{const argc=lua.lua_gettop(L);rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('print',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('print_',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('spr',L=>{if(lua.lua_isnumber(L,1))spr(String(lua.lua_tointeger(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));else spr(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));return 0});push('animate',L=>{const ref=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));animate(ref,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4));return 0});push('mget',L=>{lua.lua_pushinteger(L,mget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0));return 1});push('mset',L=>{mset(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_tointeger(L,3),lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tointeger(L,5):0);return 0});push('fget',L=>{lua.lua_pushboolean(L,fget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2))?1:0);return 1});push('solid',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('wall',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('map',L=>{const argc=lua.lua_gettop(L);map(argc>=1?lua.lua_tointeger(L,1):0,argc>=2?lua.lua_tonumber(L,2):0,argc>=3?lua.lua_tonumber(L,3):0,argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('pmap',L=>{pmap(lua.lua_gettop(L)>=1?lua.lua_tointeger(L,1):0,lua.lua_gettop(L)>=2?lua.lua_tointeger(L,2):0,lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tonumber(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tonumber(L,5):0,lua.lua_gettop(L)>=6?lua.lua_tointeger(L,6):undefined,lua.lua_gettop(L)>=7?lua.lua_tointeger(L,7):undefined,lua.lua_gettop(L)>=8?lua.lua_tointeger(L,8):undefined,lua.lua_gettop(L)>=9?lua.lua_tointeger(L,9):undefined);return 0});push('btn',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btn[i]?1:0);return 1});push('btnp',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btnp[i]?1:0);return 1});push('mouse',L=>{lua.lua_pushinteger(L,input.mouse.x|0);lua.lua_pushinteger(L,input.mouse.y|0);lua.lua_pushinteger(L,input.mouse.buttons|0);lua.lua_pushinteger(L,input.mouse.pressed|0);return 4});push('joyx',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].x:0);return 1});push('joyy',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].y:0);return 1});push('message_box',L=>{window.alert(to_jsstring(lua.lua_tolstring(L,1)));lua.lua_pushboolean(L,1);return 1});push('confirm_box',L=>{lua.lua_pushboolean(L,window.confirm(to_jsstring(lua.lua_tolstring(L,1)))?1:0);return 1});push('entry_box',L=>{const value=window.prompt(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'' );if(value==null){lua.lua_pushboolean(L,0);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('ui_box',()=>0);push('abs',L=>{lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1)));return 1});push('flr',L=>{lua.lua_pushnumber(L,Math.floor(lua.lua_tonumber(L,1)));return 1});",
+	    "lua.lua_newtable(L);lua.lua_pushinteger(L,projectRef.project.tile_w);lua.lua_setfield(L,-2,to_luastring('tile_w'));lua.lua_pushinteger(L,projectRef.project.tile_h);lua.lua_setfield(L,-2,to_luastring('tile_h'));lua.lua_pushinteger(L,projectRef.project.map_w);lua.lua_setfield(L,-2,to_luastring('map_w'));lua.lua_pushinteger(L,projectRef.project.map_h);lua.lua_setfield(L,-2,to_luastring('map_h'));lua.lua_setglobal(L,to_luastring('project'));",
+	    "if(lauxlib.luaL_dostring(L,to_luastring("+JSON.stringify(LUA_RUNTIME_HELPERS)+"))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
+	    "if(lauxlib.luaL_dostring(L,to_luastring(code))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
     "lua.lua_getglobal(L,to_luastring('_init'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}}else lua.lua_pop(L,1);",
     "function tick(){for(let i=0;i<8;i++){input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0;input.btnPrev[i]=input.btn[i]}lua.lua_getglobal(L,to_luastring('_update'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);lua.lua_getglobal(L,to_luastring('_draw'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);input.mouse.pressed=0;requestAnimationFrame(tick)}tick();",
     "})();",
@@ -835,12 +906,26 @@ function buildDocs(){
   root.appendChild(sec);
   const ex=document.createElement('div');
   ex.className='docsSection';
-  ex.innerHTML=`<h3>EXAMPLE PROJECT</h3>
-    <div class="docItem"><div class="docName">Scrolling Wall Collision</div><div class="docDesc">Loads a sample project that shows separate joystick and button movement handling, scrolling with camera() before map(), and btnp zoom controls.</div><div class="docActions"><button class="loadExampleBtn" id="loadExampleProjectBtn">Load Example Project</button></div></div>`;
+  ex.innerHTML=`<h3>EXAMPLE PROJECTS</h3>`;
+  getExampleProjects().forEach(example=>{
+    const item=document.createElement('div');
+    item.className='docItem';
+    item.innerHTML=`<div class="docName">${escapeHtml(example.name)}</div><div class="docDesc">${escapeHtml(example.description)}</div><div class="docActions"><button class="loadExampleBtn" data-example-id="${escapeHtml(example.id)}">Load Example Project</button></div>`;
+    ex.appendChild(item);
+  });
   root.appendChild(ex);
   $("docsPrevBtn").onclick=()=>{ if(docsPage>0){ docsPage--; buildDocs(); }};
   $("docsNextBtn").onclick=()=>{ if(docsPage<pages-1){ docsPage++; buildDocs(); }};
-  $("loadExampleProjectBtn").onclick=()=>{ if(confirm("Load example project? Unsaved changes will be lost.")){ loadExampleProject(); toast("Loaded <b>Scrolling Wall Collision</b> project"); } };
+  ex.querySelectorAll('[data-example-id]').forEach(btn=>{
+    btn.onclick=()=>{
+      const example=getExampleProjects().find(entry=>entry.id===btn.dataset.exampleId);
+      if(!example) return;
+      if(confirm(`Load ${example.name}? Unsaved changes will be lost.`)){
+        example.loader();
+        toast(`Loaded <b>${escapeHtml(example.name)}</b> project`);
+      }
+    };
+  });
 }
 function loadExampleProject(){
   finishNewProject();
@@ -926,13 +1011,444 @@ end`}];
   }
   walls.data[14][10]=0;
   walls.data[18][20]=0;
+  finalizeExampleProjectLoad();
+}
+function finalizeExampleProjectLoad(){
+  invalidateEditorRenderCache();
+  state.currentMapIndex=0;
+  state.currentLayerIndex=0;
+  state.currentSpriteIndex=0;
+  state.currentSpriteFrame=0;
+  state.currentSoundIndex=0;
+  state.currentMusicIndex=0;
+  state.currentCodeFile=0;
+  state.selectedTileId=1;
+  state.selectedPaletteIndex=0;
+  state.palettePage=0;
+  state.spriteFramePage=0;
   renderCodeTabs();
   loadCurrentCodeFileToEditor();
+  syncSpriteUI();
+  drawSpriteEditor();
+  syncMapUIFromProject();
+  refreshSoundUI();
+  drawSoundWaveCanvas();
   refreshMusicUI();
   refreshMenuSettingsUI();
   runtime.syncProject(state.appProject);
   runtime.setLua(getProjectLua());
   setView('code');
+}
+function loadUiMouseExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.project.tile_w=8;
+  p.project.tile_h=8;
+  p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
+  p.tileDefs={0:makeBlankTileDef()};
+  p.music=[makeMusic()];
+  p.settings.movementInput='left_joystick';
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`name = "friend"
+screen = "title"
+dark_style = false
+particles = {}
+pending_name = false
+pending_switch = false
+showing_greeting = false
+showing_status = false
+timer = 0
+
+function apply_style()
+  if dark_style then
+    ui_box({
+      x=88,y=52,w=304,
+      bg="#18233b",
+      border="#b8c8ff",
+      text="#fff7ef",
+      title="#ff8fb1",
+      button="#35507d",
+      button_text="#fff7ef",
+      input_bg="#0c1425",
+      input_text="#fff7ef"
+    })
+  else
+    ui_box({
+      x=88,y=52,w=304,
+      bg="#fff5e6",
+      border="#734a32",
+      text="#2d1f13",
+      title="#c14468",
+      button="#ffd79f",
+      button_text="#2d1f13",
+      input_bg="#fffdf9",
+      input_text="#2d1f13"
+    })
+  end
+end
+
+function spawn_blast(x, y)
+  local rings = {1.2, 1.8, 2.5}
+  for ring in all(rings) do
+    for i=0,11 do
+      local a = (i / 12) * 6.28318 + timer * 0.03
+      add(particles, {
+        x=x, y=y,
+        vx=cosin(a) * ring,
+        vy=sin(a) * ring,
+        life=22 + i % 4,
+        color=8 + (i % 7)
+      })
+    end
+  end
+end
+
+function update_particles()
+  local i = 1
+  while i <= #particles do
+    local p = particles[i]
+    p.x += p.vx
+    p.y += p.vy
+    p.vy += 0.03
+    p.life -= 1
+    if p.life <= 0 then
+      deli(particles, i)
+    else
+      i += 1
+    end
+  end
+end
+
+function draw_particles()
+  for p in all(particles) do
+    if p then
+      pset(p.x, p.y, p.color)
+      line(p.x, p.y, p.x - p.vx * 2, p.y - p.vy * 2, p.color)
+    end
+  end
+end
+
+function draw_box_outline(x, y, w, h, c)
+  line(x, y, x + w, y, c)
+  line(x, y, x, y + h, c)
+  line(x + w, y, x + w, y + h, c)
+  line(x, y + h, x + w, y + h, c)
+end
+
+function draw_title_screen(mx, my)
+  rectfill(28, 24, 452, 92, 13)
+  draw_box_outline(28, 24, 424, 68, 7)
+  rectfill(50, 46, 190, 76, 12)
+  rectfill(260, 46, 430, 76, 14)
+  print("ui + mouse playground", 64, 38, 20, 1)
+  print("tap / click for particles", 64, 68, 12, 1)
+  print("press a / enter to edit name", 64, 86, 12, 1)
+  print("press y / tab to switch screens", 64, 102, 12, 1)
+
+  rectfill(40, 142, 212, 236, 7)
+  draw_box_outline(40, 142, 172, 94, 5)
+  print("title screen", 56, 156, 16, 5)
+  print("name: "..name, 56, 184, 14, 0)
+  print("b toggles dark / light", 56, 210, 12, 0)
+
+  rectfill(254, 142, 440, 236, 6)
+  draw_box_outline(254, 142, 186, 94, 13)
+  print("pointer", 270, 156, 16, 13)
+  line(304, 194, 388, 194, 8)
+  line(346, 152, 346, 236, 8)
+  pset(mx, my, 10)
+  print("mx "..mx.."  my "..my, 270, 214, 12, 5)
+end
+
+function draw_play_screen(mx, my)
+  rectfill(24, 24, 456, 236, 1)
+  draw_box_outline(24, 24, 432, 212, 7)
+  print("play screen", 44, 40, 22, 7)
+  print(name.." is here.", 44, 72, 14, 13)
+  print("click to explode particles", 44, 96, 14, 12)
+  print("press x for a message", 44, 116, 14, 10)
+  print("press y / tab to return", 44, 136, 14, 11)
+  rectfill(284, 56, 424, 196, 14)
+  draw_box_outline(284, 56, 140, 140, 7)
+  line(312, 166, mx, my, 10)
+  pset(mx, my, 8)
+  print("sample "..pget(mx, my), 294, 174, 12, 1)
+end
+
+function _update()
+  timer += 1
+  if keyp("b") or btnp("b") then
+    dark_style = not dark_style
+  end
+
+  apply_style()
+
+  local mx, my, mb, mbr = mouse()
+  if (mbr & 1) ~= 0 then
+    spawn_blast(mx, my)
+  end
+  update_particles()
+
+  if screen == "title" then
+    if not pending_name and not pending_switch and (btnp("a") or keyp("enter")) then
+      pending_name = true
+    end
+
+    if pending_name then
+      local entered = entry_box("what should we call you?", name, "entry box")
+      if entered == false then
+        pending_name = false
+      elseif entered ~= nil then
+        name = entered
+        pending_name = false
+        showing_greeting = true
+      end
+    elseif showing_greeting then
+      if message_box("hello "..name.."!", "message box") then
+        showing_greeting = false
+      end
+    elseif not pending_switch and (btnp("y") or keyp("tab")) then
+      pending_switch = true
+    end
+  else
+    if showing_status then
+      if message_box(name.." is exploring the second screen.", "message box") then
+        showing_status = false
+      end
+    elseif btnp("x") or keyp("space") then
+      showing_status = true
+    elseif not pending_switch and (btnp("y") or keyp("tab")) then
+      pending_switch = true
+    end
+  end
+
+  if pending_switch then
+    local question = screen == "title" and "go to the play screen?" or "return to the title screen?"
+    local answer = confirm_box(question, "confirm box")
+    if answer ~= nil then
+      if answer then
+        screen = screen == "title" and "play" or "title"
+      end
+      pending_switch = false
+    end
+  end
+end
+
+function _draw()
+  cls()
+  local mx, my = mouse()
+  if dark_style then
+    rectfill(0, 0, 479, 269, 1)
+  else
+    rectfill(0, 0, 479, 269, 6)
+  end
+
+  if screen == "title" then
+    draw_title_screen(mx, my)
+  else
+    draw_play_screen(mx, my)
+  end
+
+  draw_particles()
+  print("screen: "..screen, 16, 246, 12, 0)
+  print("name: "..name, 172, 246, 12, 0)
+end`}];
+  finalizeExampleProjectLoad();
+}
+function loadPosterShowcaseExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.project.tile_w=8;
+  p.project.tile_h=8;
+  p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
+  p.tileDefs={0:makeBlankTileDef()};
+  p.music=[makeMusic()];
+  p.settings.movementInput='left_joystick';
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`t = 0
+sparkles = {}
+flower_specs = {}
+palette_names = {navy=1, cream=7, pink=14, lavender=13, blue=12}
+
+function add_sparkle(x, y)
+  add(sparkles, {x=x, y=y, life=26, color=10 + (#sparkles % 5)})
+end
+
+function remove_oldest_sparkle()
+  if #sparkles > 18 then
+    del(sparkles, sparkles[1])
+  end
+end
+
+function draw_frame(x, y, w, h, fill, border)
+  rectfill(x, y, x + w, y + h, fill)
+  line(x, y, x + w, y, border)
+  line(x, y, x, y + h, border)
+  line(x + w, y, x + w, y + h, border)
+  line(x, y + h, x + w, y + h, border)
+end
+
+function draw_bunny(x, y)
+  rectfill(x + 8, y + 6, x + 20, y + 34, 12)
+  rectfill(x + 28, y + 6, x + 40, y + 34, 12)
+  rectfill(x + 8, y + 22, x + 40, y + 52, 12)
+  rectfill(x + 12, y + 10, x + 16, y + 30, 14)
+  rectfill(x + 32, y + 10, x + 36, y + 30, 14)
+  rectfill(x + 22, y + 40, x + 26, y + 42, 0)
+  pset(x + 16, y + 36, 0)
+  pset(x + 32, y + 36, 0)
+  line(x + 20, y + 46, x + 28, y + 46, 0)
+end
+
+function draw_clock(x, y)
+  local cx = x + 42
+  local cy = y + 44
+  for a=0,6.18,0.12 do
+    pset(cx + cosin(a) * 34, cy + sin(a) * 34, 7)
+  end
+  local hand_a = -1.57 + sin(t * 0.03) * 0.9
+  line(cx, cy, cx + cosin(hand_a) * 20, cy + sin(hand_a) * 20, 12)
+  line(cx, cy, cx, cy + 24, 1)
+end
+
+function draw_grid_game(x, y)
+  line(x + 20, y + 4, x + 20, y + 84, 7)
+  line(x + 42, y + 4, x + 42, y + 84, 7)
+  line(x + 4, y + 26, x + 58, y + 26, 7)
+  line(x + 4, y + 50, x + 58, y + 50, 7)
+  line(x + 8, y + 34, x + 18, y + 44, 13)
+  line(x + 18, y + 34, x + 8, y + 44, 13)
+  for a=0,6.18,0.52 do
+    pset(x + 31 + cosin(a) * 6, y + 17 + sin(a) * 6, 7)
+  end
+  line(x + 8, y + 58, x + 18, y + 68, 13)
+  line(x + 18, y + 58, x + 8, y + 68, 13)
+  for a=0,6.18,0.52 do
+    pset(x + 53 + cosin(a) * 6, y + 65 + sin(a) * 6, 7)
+  end
+end
+
+function draw_note_box(x, y)
+  draw_frame(x, y, 84, 84, 14, 13)
+  rectfill(x + 58, y + 42, x + 70, y + 56, 6)
+  rectfill(x + 64, y + 36, x + 70, y + 56, 13)
+end
+
+function draw_triangle(x, y)
+  local lift = tan(0.4) * 18
+  line(x + 6, y + 68, x + 60, y + 22, 10)
+  line(x + 60, y + 22, x + 78, y + 74 - lift, 10)
+  line(x + 78, y + 74 - lift, x + 6, y + 68, 10)
+end
+
+function draw_flower(flower, i)
+  local sway = sin(t * 0.04 + i * 0.6) * 2
+  line(flower.x, flower.y, flower.x + sway, flower.y - flower.h, 11)
+  line(flower.x + sway, flower.y - flower.h + 10, flower.x - 6, flower.y - flower.h + 18, 11)
+  line(flower.x + sway, flower.y - flower.h + 18, flower.x + 8, flower.y - flower.h + 24, 11)
+  for a=0,6.18,1.04 do
+    pset(flower.x + sway + cosin(a) * 6, flower.y - flower.h + sin(a) * 6, 7)
+  end
+  rectfill(flower.x + sway - 1, flower.y - flower.h - 1, flower.x + sway + 1, flower.y - flower.h + 1, 10)
+end
+
+function draw_tree(x, y)
+  line(x, y, x, y - 44, 7)
+  line(x, y - 24, x - 18, y - 44, 7)
+  line(x, y - 30, x + 16, y - 56, 7)
+  line(x, y - 40, x - 24, y - 64, 7)
+  line(x, y - 18, x + 26, y - 28, 7)
+end
+
+function update_sparkles()
+  local i = 1
+  while i <= #sparkles do
+    local s = sparkles[i]
+    s.life -= 1
+    s.y -= 0.4
+    if s.life <= 0 then
+      deli(sparkles, i)
+    else
+      i += 1
+    end
+  end
+end
+
+function draw_sparkles()
+  for s in all(sparkles) do
+    if s then
+      pset(s.x, s.y, s.color)
+      pset(s.x + 1, s.y, 7)
+      pset(s.x - 1, s.y, 7)
+      pset(s.x, s.y + 1, 7)
+      pset(s.x, s.y - 1, 7)
+    end
+  end
+end
+
+function draw_footer()
+  draw_frame(0, 228, 479, 41, 1, 1)
+  local arrows = {54, 76, 98}
+  foreach(arrows, function(x_pos, i)
+    line(x_pos, 248, x_pos + 12, 242, i == 2 and 14 or 13)
+    line(x_pos, 248, x_pos + 12, 254, i == 2 and 14 or 13)
+    line(x_pos, 248, x_pos - 12, 248, i == 2 and 14 or 13)
+  end)
+  print("pico-style poster demo", 206, 240, 18, 7)
+  print("click to sparkle", 326, 18, 12, 7)
+end
+
+function _init()
+  foreach({100, 180, 258}, function(x, i)
+    add(flower_specs, {x=x, y=196, h=26 + i * 4})
+  end)
+end
+
+function _update()
+  t += 1
+  local mx, my, mb, mbr = mouse()
+  if (mbr & 1) ~= 0 then
+    add_sparkle(mx, my)
+    remove_oldest_sparkle()
+  end
+  update_sparkles()
+end
+
+function _draw()
+  cls()
+  draw_frame(0, 0, 479, 68, 1, 1)
+  draw_bunny(46, 8)
+  print("PICO-8", 214, 18, 24, 7)
+  print("education", 214, 44, 24, 14)
+  print("edition", 214, 68, 24, 13)
+
+  draw_frame(0, 68, 479, 160, 6, 6)
+  draw_clock(34, 90)
+  draw_grid_game(168, 98)
+  draw_note_box(322, 88)
+  draw_triangle(36, 150)
+  foreach(flower_specs, draw_flower)
+  draw_tree(406, 206)
+
+  local mx, my = mouse()
+  draw_sparkles()
+  draw_footer()
+  print("sample "..pget(mx, my), 24, 18, 12, 1)
+
+  local legend_x = 374
+  local legend_y = 176
+  for name, color_id in pairs(palette_names) do
+    pset(legend_x, legend_y, color_id)
+    print(name, legend_x + 10, legend_y - 6, 10, 1)
+    legend_y += 12
+  end
+end`}];
+  finalizeExampleProjectLoad();
+}
+function getExampleProjects(){
+  return [
+    {id:'collision',name:'Scrolling Wall Collision',description:'Separate button + joystick movement, wall checks, map scrolling with camera(), and btnp() zoom controls.',loader:loadExampleProject},
+    {id:'ui-mouse',name:'UI + Mouse Playground',description:'entry_box(), confirm_box(), message_box(), ui_box() style swapping with B, and a click / touch particle blast from mouse().',loader:loadUiMouseExampleProject},
+    {id:'poster',name:'Feature Showcase Poster',description:'A poster-style scene inspired by retro education art that uses pset(), pget(), line(), table helpers, math helpers, and clickable sparkles.',loader:loadPosterShowcaseExampleProject}
+  ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
 function setView(name){
@@ -1316,6 +1832,52 @@ function makeRuntime(){
   function sty(){ return `rgb(${col.r},${col.g},${col.b})`; }
   function paletteColor(index){ const value=projectRef.palette[index|0]; return value||sty(); }
   function resolvePrintColor(value){ if(value==null||value==="") return null; if(typeof value==="number"&&Number.isFinite(value)) return paletteColor(value|0); const s=String(value).trim(); if(/^\d+$/.test(s)) return paletteColor(parseInt(s,10)); return s||null; }
+  function hexToRgb(value){
+    const s=String(value||'').trim();
+    if(/^#([0-9a-f]{3})$/i.test(s)){
+      const m=s.slice(1);
+      return {r:parseInt(m[0]+m[0],16),g:parseInt(m[1]+m[1],16),b:parseInt(m[2]+m[2],16)};
+    }
+    if(/^#([0-9a-f]{6})$/i.test(s)){
+      return {r:parseInt(s.slice(1,3),16),g:parseInt(s.slice(3,5),16),b:parseInt(s.slice(5,7),16)};
+    }
+    const rgb=s.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/i);
+    return rgb ? {r:parseInt(rgb[1],10),g:parseInt(rgb[2],10),b:parseInt(rgb[3],10)} : null;
+  }
+  function pixelFillStyle(colorIndex){ return colorIndex==null ? sty() : paletteColor(colorIndex); }
+  function pset(x,y,colorIndex){
+    const _cp=clipPush();
+    const size=Math.max(1,Math.round(viewZoom));
+    ctx.fillStyle=pixelFillStyle(colorIndex);
+    ctx.fillRect(sx(x),sy(y),size,size);
+    clipPop(_cp);
+  }
+  function pget(x,y){
+    const px=clamp(sx(x),0,GAME_W-1), py=clamp(sy(y),0,GAME_H-1);
+    const data=ctx.getImageData(px,py,1,1).data;
+    if(data[3]===0) return -1;
+    for(let i=0;i<projectRef.palette.length;i++){
+      const rgb=hexToRgb(projectRef.palette[i]);
+      if(rgb && rgb.r===data[0] && rgb.g===data[1] && rgb.b===data[2]) return i;
+    }
+    return -1;
+  }
+  function line(x0,y0,x1,y1,colorIndex){
+    const _cp=clipPush();
+    let ax=Math.round(Number(x0)||0), ay=Math.round(Number(y0)||0), bx=Math.round(Number(x1)||0), by=Math.round(Number(y1)||0);
+    const dx=Math.abs(bx-ax), sxStep=ax<bx?1:-1, dy=-Math.abs(by-ay), syStep=ay<by?1:-1;
+    let err=dx+dy;
+    const size=Math.max(1,Math.round(viewZoom));
+    ctx.fillStyle=pixelFillStyle(colorIndex);
+    while(true){
+      ctx.fillRect(sx(ax),sy(ay),size,size);
+      if(ax===bx && ay===by) break;
+      const e2=err*2;
+      if(e2>=dy){ err+=dy; ax+=sxStep; }
+      if(e2<=dx){ err+=dx; ay+=syStep; }
+    }
+    clipPop(_cp);
+  }
   function rectfill(x0,y0,a,b,colorIndex){
     const _cp=clipPush();
     const hasPaletteColor=colorIndex!=null;
@@ -1395,6 +1957,9 @@ function makeRuntime(){
     push('camera',L=>{ const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0; });
     push('zoom',L=>{ const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0; } lua.lua_pushnumber(L, zoom()); return 1;});
     push('color',L=>{color(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)); return 0;});
+    push('pset',L=>{ const argc=lua.lua_gettop(L); pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?lua.lua_tointeger(L,3):undefined); return 0;});
+    push('pget',L=>{ lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2))); return 1;});
+    push('line',L=>{ const argc=lua.lua_gettop(L); line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined); return 0;});
     push('rectfill',L=>{ const argc=lua.lua_gettop(L); rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined); return 0;});
     push('print',L=>{ const argc=lua.lua_gettop(L); const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)]; for(let i=4;i<=argc;i++){ args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); } print(...args); return 0;});
     push('print_',L=>{ const argc=lua.lua_gettop(L); const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)]; for(let i=4;i<=argc;i++){ args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); } print(...args); return 0;});
@@ -1424,6 +1989,8 @@ function makeRuntime(){
     push('flr',L=>{ lua.lua_pushnumber(L,Math.floor(lua.lua_tonumber(L,1))); return 1;});
     push('sfx',L=>{ const idx=lua.lua_tointeger(L,1); const loop=lua.lua_toboolean(L,2); sfxPlay(idx,!!loop); return 0;});
     push('music',L=>{ let src; if(lua.lua_isnumber(L,1)) src=lua.lua_tonumber(L,1); else src=to_jsstring(lua.lua_tolstring(L,1)); const action=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'play'; const loop=lua.lua_gettop(L)>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
+    const helperStatus=lauxlib.luaL_dostring(L,to_luastring(LUA_RUNTIME_HELPERS));
+    if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); toast(`<b>Lua helper error:</b> ${escapeHtml(err)}`); cls(); return; }
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); toast(`<b>Lua error:</b> ${escapeHtml(err)}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); toast(`<b>_init error:</b> ${escapeHtml(err)}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
   function setLua(code){ pendingCode=code||''; lastCode=pendingCode; clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode),80); }
