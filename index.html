@@ -864,7 +864,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "(function(){",
     "const projectRef="+projectJson+";",
     "const code="+codeJson+";",
-    "const c=document.getElementById('c'),ctx=c.getContext('2d',{alpha:false}),errEl=document.getElementById('err');ctx.imageSmoothingEnabled=false;function showErr(m){if(errEl){errEl.textContent=String(m);errEl.style.display='block';}}",
+    "const c=document.getElementById('c'),ctx=c.getContext('2d'),errEl=document.getElementById('err');ctx.imageSmoothingEnabled=false;function showErr(m){if(errEl){errEl.textContent=String(m);errEl.style.display='block';}}",
     "let camx=0,camy=0,col={r:0,g:0,b:0},viewZoom=1,zoomOffX=0,zoomOffY=0,clipRect=null;",
     "const input={btn:Array(8).fill(0),btnp:Array(8).fill(0),btnPrev:Array(8).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,pointers:new Map()}};",
     "const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7};",
@@ -2222,7 +2222,7 @@ function updateCurrentMusicFromUI(){ const m=currentMusic(); m.file=$("musicFile
 function drawMusicPreview(){}
 
 function makeRuntime(){
-  const GAME_W=480, GAME_H=270, canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d',{alpha:false}); ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
+  const GAME_W=480, GAME_H=270, canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
   const input={btn:Array(8).fill(0),btnp:Array(8).fill(0),btnPrev:Array(8).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],btnGamepad:Array(8).fill(0),touchJoy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],gamepadJoy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,released:0,down:false,pointers:new Map()}}; canvas.width=GAME_W; canvas.height=GAME_H;
   const keyDown=new Set(), keyPressed=new Set();
   const UI_BOX_KINDS=['message','confirm','entry'];
