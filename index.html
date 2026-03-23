@@ -92,9 +92,21 @@
     .listStack,.mapList,.layerList,.spriteList,.soundList,.musicList{display:flex;flex-direction:column;gap:6px}
     .frameGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
     .pageRow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:6px 0}
+    .pageRow.compact{margin:4px 0 8px}
     .pageRow .uiBtn{padding:4px 8px;font-size:12px}
     .itemRow{display:flex;gap:8px;align-items:center;justify-content:space-between;border:3px solid var(--line);border-radius:12px;padding:7px 9px;background:linear-gradient(180deg,#fff6df,#efd39f);box-shadow:0 3px 0 #c08b52;cursor:pointer}
     .itemRow.active{border-color:var(--accent);box-shadow:0 3px 0 #7f2b1f}
+    .spritePanelPreview{display:flex;flex-direction:column;align-items:center;gap:6px;margin:8px 0 10px;padding:8px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff6df,#efd39f);box-shadow:0 3px 0 #c08b52}
+    .spritePanelPreview canvas{width:44px;height:44px;border:3px solid var(--line);border-radius:10px;background:
+      linear-gradient(45deg, rgba(0,0,0,.07) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(0,0,0,.07) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(0,0,0,.07) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(0,0,0,.07) 75%),
+      transparent;
+      background-size:12px 12px;
+      background-position:0 0, 0 6px, 6px -6px, -6px 0;
+      image-rendering:pixelated}
+    .spritePanelPreviewLabel{font-size:12px;font-weight:700}
     .tilePalette,.paletteGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
     .tileBtn{border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff6df,#efd39f);padding:6px;text-align:center;box-shadow:0 3px 0 #c08b52;cursor:pointer}
     .tileBtn{position:relative}
@@ -165,10 +177,10 @@
     body.desktop-ui .hud{display:none}
     .joy{position:absolute;width:104px;height:104px;border-radius:50%;border:3px solid #f5e2b8;background:rgba(255,245,223,.12);box-shadow:0 4px 0 rgba(0,0,0,.25);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
     .joy .knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;border:3px solid #fff4db;background:rgba(255,255,255,.2)}
-    .joy.left{left:35%;bottom:18px;transform:translateX(-100%)}
-    .joy.right{left:36%;bottom:18px}
-    .dpadCluster{position:absolute;left:35%;bottom:18px;width:132px;height:132px;pointer-events:none;transform:translateX(-100%)}
-    .btnCluster{position:absolute;right:18px;bottom:18px;width:132px;height:132px;pointer-events:none}
+    .joy.left{left:35%;bottom:34px;transform:translateX(-100%)}
+    .joy.right{left:36%;bottom:34px}
+    .dpadCluster{position:absolute;left:35%;bottom:34px;width:132px;height:132px;pointer-events:none;transform:translateX(-100%)}
+    .btnCluster{position:absolute;right:18px;bottom:34px;width:132px;height:132px;pointer-events:none}
     .symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;border:3px solid #f7ebcf;background:rgba(255,245,223,.14);pointer-events:auto;touch-action:none;display:grid;place-items:center;font-weight:900;color:#fff7e9;text-shadow:1px 1px 0 #472f24;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
     .symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}
     .arrowIcon{width:22px;height:22px;display:block}
@@ -231,6 +243,12 @@
     body.dark-mode .smallbtn,
     body.dark-mode .loadExampleBtn{background:linear-gradient(180deg,var(--cream),#39486c);color:var(--ink)}
     body.dark-mode .tab.active{background:linear-gradient(180deg,#f3f0e7,#d9dfef);box-shadow:0 4px 0 #502131,0 0 0 2px rgba(244,241,227,.35) inset;color:#7d1730}
+    body.dark-mode .tab.cat-logic{background:linear-gradient(180deg,#ff86ba,#d85690);border-color:#7b234e;box-shadow:0 4px 0 #501531;color:#fff5fa}
+    body.dark-mode .tab.cat-logic.active{background:linear-gradient(180deg,#ffd4e7,#ff9fc5);border-color:#8e2a5c;box-shadow:0 4px 0 #571737,0 0 0 2px rgba(255,244,249,.38) inset;color:#6b123b}
+    body.dark-mode .tab.cat-graphics{background:linear-gradient(180deg,#ff7c87,#dc4f65);border-color:#7a2031;box-shadow:0 4px 0 #4d1220;color:#fff7f8}
+    body.dark-mode .tab.cat-graphics.active{background:linear-gradient(180deg,#ffd3d7,#ffa1a8);border-color:#8c2940;box-shadow:0 4px 0 #571828,0 0 0 2px rgba(255,244,245,.36) inset;color:#66162a}
+    body.dark-mode .tab.cat-sound{background:linear-gradient(180deg,#d7a5ff,#a875ea);border-color:#5a318c;box-shadow:0 4px 0 #341650;color:#fdf8ff}
+    body.dark-mode .tab.cat-sound.active{background:linear-gradient(180deg,#f0dcff,#ccabff);border-color:#6d3e9c;box-shadow:0 4px 0 #432060,0 0 0 2px rgba(251,246,255,.34) inset;color:#4a216f}
     body.dark-mode .uiBtn.active{background:linear-gradient(180deg,#f6c07d,#d07a40);color:#20111a;box-shadow:0 4px 0 #593116}
     body.dark-mode .panelSkin{background:linear-gradient(180deg,var(--paper),#171c31);box-shadow:inset 0 0 0 3px rgba(199,208,232,.14),0 6px 0 #0f1528}
     body.dark-mode .codeView{background:linear-gradient(180deg,#293252,#181d34);box-shadow:inset 0 0 0 3px rgba(244,241,227,.08),0 6px 0 #0f1528}
@@ -319,7 +337,7 @@
     <div class="view" id="view-sprites">
       <div class="splitView" id="spriteView">
         <div class="sidebar panelSkin">
-          <div class="pane"><h4>SPRITES</h4><div class="formRow"><button class="mbtn" id="addSpriteBtn">Add Sprite</button></div><div class="spriteList" id="spriteList"></div><div class="formRow" style="margin-top:8px"><div class="field"><label>Frames In Folder</label><div class="pageRow"><button class="uiBtn" id="spriteFolderMinusBtn">-</button><div class="docDesc" id="spriteFolderCountLabel">1</div><button class="uiBtn" id="spriteFolderPlusBtn">+</button></div></div></div><div class="frameGrid" id="spriteFrameList"></div><div class="pageRow" style="margin-top:8px"><button class="uiBtn" id="spriteFramePrevBtn">◀</button><div class="docDesc" id="spriteFramePageLabel">1 / 1</div><button class="uiBtn" id="spriteFrameNextBtn">▶</button></div></div>
+          <div class="pane"><h4>SPRITES</h4><div class="formRow"><button class="mbtn" id="addSpriteBtn">Add Sprite</button></div><div class="pageRow compact"><button class="uiBtn" id="spriteListPrevBtn">◀</button><div class="docDesc" id="spriteListPageLabel">1 / 1</div><button class="uiBtn" id="spriteListNextBtn">▶</button></div><div class="spriteList" id="spriteList"></div><div class="spritePanelPreview"><canvas id="spritePanelPreviewCanvas" width="44" height="44"></canvas><div class="spritePanelPreviewLabel" id="spritePanelPreviewLabel">Sprite 0</div></div><div class="formRow" style="margin-top:8px"><div class="field"><label>Frames In Folder</label><div class="pageRow"><button class="uiBtn" id="spriteFolderMinusBtn">-</button><div class="docDesc" id="spriteFolderCountLabel">1</div><button class="uiBtn" id="spriteFolderPlusBtn">+</button></div></div></div><div class="frameGrid" id="spriteFrameList"></div><div class="pageRow" style="margin-top:8px"><button class="uiBtn" id="spriteFramePrevBtn">◀</button><div class="docDesc" id="spriteFramePageLabel">1 / 1</div><button class="uiBtn" id="spriteFrameNextBtn">▶</button></div></div>
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">◀</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">▶</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
@@ -495,7 +513,8 @@ function tan(x)
   return math.tan(tonumber(x) or 0)
 end`;
 const SPRITE_FRAMES_PER_PAGE = 9;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteTool:"draw",spriteZoom:20,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"paint",mapAnimPlaying:true,mapAnimPausedAt:0,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",appProject:null};
+const SPRITE_LIST_PAGE_SIZE = 5;
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,spriteTool:"draw",spriteZoom:20,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"paint",mapAnimPlaying:true,mapAnimPausedAt:0,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -804,6 +823,7 @@ function finishNewProject(){
   state.selectedPaletteIndex = 0;
   state.palettePage = 0;
   state.spriteFramePage = 0;
+  state.spriteListPage = 0;
   state.lastEdited = "code";
   state.appProject = defaultProject();
   invalidateEditorRenderCache();
@@ -833,7 +853,7 @@ function newProject(){ if(!confirm("Are you sure you want to start a new project
 
 function loadAllProjects(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(_){ return {}; } }
 function saveAllProjects(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
-function refreshProjectList(){ const list=$("projectList"); if(!list) return; list.innerHTML=""; const all=loadAllProjects(); const names=Object.keys(all).sort((a,b)=>(all[b].t||0)-(all[a].t||0)); if(!names.length){ const d=document.createElement('div'); d.className='docDesc'; d.style.padding='8px'; d.textContent='No saved projects yet.'; list.appendChild(d); return; } names.forEach(name=>{ const row=document.createElement('div'); row.className='itemRow'; const label=document.createElement('div'); label.textContent=name; label.style.flex='1'; const btn=document.createElement('button'); btn.className='smallbtn'; btn.textContent='Load'; btn.onclick=(e)=>{ e.stopPropagation(); if(!confirm(`Load ${name}? Unsaved changes will be lost.`)) return; const p=all[name]; state.currentProjectName=name; state.hasSaved=true; state.appProject=JSON.parse(JSON.stringify(p.project)); invalidateEditorRenderCache(); ensureProjectData(); state.currentMapIndex=0; state.currentLayerIndex=0; state.currentSpriteIndex=0; state.currentSpriteFrame=0; state.currentSoundIndex=0; state.currentMusicIndex=0; state.currentCodeFile=0; state.selectedTileId=1; state.selectedPaletteIndex=0; state.palettePage=0; state.spriteFramePage=0; renderCodeTabs(); loadCurrentCodeFileToEditor(); syncSpriteUI(); drawSpriteEditor(); syncMapUIFromProject(); refreshSoundUI(); drawSoundWaveCanvas(); refreshMusicUI(); refreshMenuSettingsUI(); runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); setView('code'); $("menu").classList.remove('open'); }; row.appendChild(label); row.appendChild(btn); list.appendChild(row); }); }
+function refreshProjectList(){ const list=$("projectList"); if(!list) return; list.innerHTML=""; const all=loadAllProjects(); const names=Object.keys(all).sort((a,b)=>(all[b].t||0)-(all[a].t||0)); if(!names.length){ const d=document.createElement('div'); d.className='docDesc'; d.style.padding='8px'; d.textContent='No saved projects yet.'; list.appendChild(d); return; } names.forEach(name=>{ const row=document.createElement('div'); row.className='itemRow'; const label=document.createElement('div'); label.textContent=name; label.style.flex='1'; const btn=document.createElement('button'); btn.className='smallbtn'; btn.textContent='Load'; btn.onclick=(e)=>{ e.stopPropagation(); if(!confirm(`Load ${name}? Unsaved changes will be lost.`)) return; const p=all[name]; state.currentProjectName=name; state.hasSaved=true; state.appProject=JSON.parse(JSON.stringify(p.project)); invalidateEditorRenderCache(); ensureProjectData(); state.currentMapIndex=0; state.currentLayerIndex=0; state.currentSpriteIndex=0; state.currentSpriteFrame=0; state.currentSoundIndex=0; state.currentMusicIndex=0; state.currentCodeFile=0; state.selectedTileId=1; state.selectedPaletteIndex=0; state.palettePage=0; state.spriteFramePage=0; state.spriteListPage=0; renderCodeTabs(); loadCurrentCodeFileToEditor(); syncSpriteUI(); drawSpriteEditor(); syncMapUIFromProject(); refreshSoundUI(); drawSoundWaveCanvas(); refreshMusicUI(); refreshMenuSettingsUI(); runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); setView('code'); $("menu").classList.remove('open'); }; row.appendChild(label); row.appendChild(btn); list.appendChild(row); }); }
 function applyThemeUI(){ ensureProjectData(); document.body.classList.toggle('dark-mode', !!state.appProject.settings.darkMode); }
 function refreshMenuSettingsUI(){ ensureProjectData(); if($("inputModeSelect")) $("inputModeSelect").value=state.appProject.settings.movementInput||'left_joystick'; if($("darkModeToggle")) $("darkModeToggle").checked=!!state.appProject.settings.darkMode; applyThemeUI(); }
 function normalizeProjectNameInput(raw, fallback='project_1'){ const trimmed=String(raw??'').trim(); return trimmed||fallback; }
@@ -905,7 +925,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
   ].join('\n');
 }
 function buildExportHTMLDocument(fengariSource, runtimeJs){
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title><style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:18px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:18px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:18px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">▲</div><div class="dpadBtn left" data-dpad-btn="2">◀</div><div class="dpadBtn right" data-dpad-btn="3">▶</div><div class="dpadBtn down" data-dpad-btn="1">▼</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><script>${escapeInlineScript(fengariSource)}</script><script>${escapeInlineScript(runtimeJs)}</script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title><style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:34px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:34px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:34px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">▲</div><div class="dpadBtn left" data-dpad-btn="2">◀</div><div class="dpadBtn right" data-dpad-btn="3">▶</div><div class="dpadBtn down" data-dpad-btn="1">▼</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><script>${escapeInlineScript(fengariSource)}</script><script>${escapeInlineScript(runtimeJs)}</script></body></html>`;
 }
 async function exportHTML(){
   saveEditorToCurrentCodeFile();
@@ -1072,6 +1092,7 @@ function finalizeExampleProjectLoad(){
   state.selectedPaletteIndex=0;
   state.palettePage=0;
   state.spriteFramePage=0;
+  state.spriteListPage=0;
   renderCodeTabs();
   loadCurrentCodeFileToEditor();
   syncSpriteUI();
@@ -1966,17 +1987,47 @@ function refreshEdgePalette(){
   wrap.classList.toggle('hidden', !$("spriteView").classList.contains('sidebar-hidden'));
 }
 
+function drawSpritePanelPreview(){
+  const canvas=$("spritePanelPreviewCanvas");
+  const label=$("spritePanelPreviewLabel");
+  if(label) label.textContent=`Sprite ${state.currentSpriteIndex}`;
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  if(ctx) ctx.imageSmoothingEnabled=false;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const folder=currentSpriteFolder();
+  const sprite=folder&&folder.frames?folder.frames[state.currentSpriteFrame]||folder.frames[0]:null;
+  if(!sprite) return;
+  const scale=Math.max(1,Math.floor(Math.min(canvas.width/sprite.w,canvas.height/sprite.h)));
+  const drawW=sprite.w*scale, drawH=sprite.h*scale;
+  const ox=Math.floor((canvas.width-drawW)/2), oy=Math.floor((canvas.height-drawH)/2);
+  for(let y=0;y<sprite.h;y++) for(let x=0;x<sprite.w;x++){
+    const p=sprite.pixels[y][x];
+    if(p>=0&&state.appProject.palette[p]){
+      ctx.fillStyle=state.appProject.palette[p];
+      ctx.fillRect(ox+x*scale,oy+y*scale,scale,scale);
+    }
+  }
+}
 function refreshSpriteList(){
   const wrap=$("spriteList"); if(!wrap) return; wrap.innerHTML="";
-  state.appProject.spriteFolders.forEach((folder,i)=>{
+  const folders=state.appProject.spriteFolders||[];
+  const pages=Math.max(1,Math.ceil(folders.length/SPRITE_LIST_PAGE_SIZE));
+  state.spriteListPage=Math.max(0,Math.min(state.spriteListPage,pages-1));
+  const start=state.spriteListPage*SPRITE_LIST_PAGE_SIZE;
+  folders.slice(start,start+SPRITE_LIST_PAGE_SIZE).forEach((folder,off)=>{
+    const i=start+off;
     const row=document.createElement('div');
     row.className='itemRow'+(i===state.currentSpriteIndex?' active':'');
     row.textContent=String(i);
-    row.onclick=()=>{ state.currentSpriteIndex=i; state.currentSpriteFrame=0; state.spriteFramePage=0; spriteHistory.undo.length=0; spriteHistory.redo.length=0; syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); };
+    row.onclick=()=>{ state.currentSpriteIndex=i; state.currentSpriteFrame=0; state.spriteFramePage=0; state.spriteListPage=Math.floor(i/SPRITE_LIST_PAGE_SIZE); spriteHistory.undo.length=0; spriteHistory.redo.length=0; syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); };
     wrap.appendChild(row);
   });
+  const pageLabel=$("spriteListPageLabel");
+  if(pageLabel) pageLabel.textContent=`${state.spriteListPage+1} / ${pages}`;
   const folder=currentSpriteFolder();
   if($("spriteFolderCountLabel")) $("spriteFolderCountLabel").textContent=String(folder.frames.length);
+  drawSpritePanelPreview();
 }
 function isSpriteFrameEmpty(sprite){ return !sprite || !sprite.pixels || sprite.pixels.every(row=>Array.isArray(row) && row.every(pixel=>pixel<0)); }
 function clearCurrentSpriteFrame(){
@@ -2031,11 +2082,11 @@ function updateSpriteFrameStatus(){
   }
 }
 
-function syncSpriteUI(){ const s=currentSprite(); $("spriteWInput").value=s.w; $("spriteHInput").value=s.h; refreshSpriteList(); refreshSpriteFrames(); refreshPaletteUI(); refreshEdgePalette(); setSpriteTool(state.spriteTool); updateSpriteFrameStatus(); }
+function syncSpriteUI(){ const s=currentSprite(); state.spriteListPage=Math.floor((state.currentSpriteIndex||0)/SPRITE_LIST_PAGE_SIZE); $("spriteWInput").value=s.w; $("spriteHInput").value=s.h; refreshSpriteList(); refreshSpriteFrames(); refreshPaletteUI(); refreshEdgePalette(); setSpriteTool(state.spriteTool); updateSpriteFrameStatus(); }
 function getSpriteDisplayZoom(){ return Math.max(1,state.spriteZoom||1); }
 function getSpriteGridStep(){ const z=getSpriteDisplayZoom(); if(z>10) return 1; if(z>=6) return 2; if(z>=3) return 4; return 8; }
 function getSpriteCellRect(x,y,metrics=getSpriteCanvasMetrics()){ const {baseX,baseY,z}=metrics; return {rx:baseX+state.spriteOffsetX+x*z, ry:baseY+state.spriteOffsetY+y*z, size:z}; }
-function drawSpriteEditor(){ ensureProjectData(); const canvas=$("spriteCanvas"), ctx=canvas.getContext('2d'); const metrics=getSpriteCanvasMetrics(); const {sprite:s, width:cw, height:ch}=metrics; canvas.width=cw; canvas.height=ch; ctx.clearRect(0,0,cw,ch); ctx.fillStyle="#fdf3dd"; ctx.fillRect(0,0,cw,ch); const gridStep=getSpriteGridStep(); for(let y=0;y<s.h;y++) for(let x=0;x<s.w;x++){ const p=s.pixels[y][x]; const {rx,ry,size}=getSpriteCellRect(x,y,metrics); if(p>=0&&state.appProject.palette[p]){ ctx.fillStyle=state.appProject.palette[p]; const inset=size>4?1:0; ctx.fillRect(rx+inset,ry+inset,Math.max(1,size-inset*2),Math.max(1,size-inset*2)); } if(x%gridStep===0 && y%gridStep===0){ ctx.strokeStyle="rgba(80,50,20,.2)"; ctx.lineWidth=Math.max(1,Math.min(2,size*0.08)); ctx.strokeRect(rx,ry,size*gridStep,size*gridStep); } } drawSpriteAnimPreview(); }
+function drawSpriteEditor(){ ensureProjectData(); const canvas=$("spriteCanvas"), ctx=canvas.getContext('2d'); const metrics=getSpriteCanvasMetrics(); const {sprite:s, width:cw, height:ch}=metrics; canvas.width=cw; canvas.height=ch; ctx.clearRect(0,0,cw,ch); ctx.fillStyle="#fdf3dd"; ctx.fillRect(0,0,cw,ch); const gridStep=getSpriteGridStep(); for(let y=0;y<s.h;y++) for(let x=0;x<s.w;x++){ const p=s.pixels[y][x]; const {rx,ry,size}=getSpriteCellRect(x,y,metrics); if(p>=0&&state.appProject.palette[p]){ ctx.fillStyle=state.appProject.palette[p]; const inset=size>4?1:0; ctx.fillRect(rx+inset,ry+inset,Math.max(1,size-inset*2),Math.max(1,size-inset*2)); } if(x%gridStep===0 && y%gridStep===0){ ctx.strokeStyle="rgba(80,50,20,.2)"; ctx.lineWidth=Math.max(1,Math.min(2,size*0.08)); ctx.strokeRect(rx,ry,size*gridStep,size*gridStep); } } drawSpriteAnimPreview(); drawSpritePanelPreview(); }
 function drawSpriteAnimPreview(){
   const c=$("spriteAnimPreviewCanvas"); if(!c) return;
   const bar=$("animPreviewBar");
@@ -2136,7 +2187,7 @@ function syncTileEditorActionButtons(){
   const deleteBtn=$("deleteTileBtn");
   if(deleteBtn) deleteBtn.disabled=state.selectedTileId===0;
 }
-function createTileDefForId(id){ return id===0?makeBlankTileDef():{source:"",flags:{0:false},bg:"#444444",bgEnabled:true,animated:false,animFolder:"",animSpeed:6}; }
+function createTileDefForId(id){ return id===0?makeBlankTileDef():{source:"",flags:{0:false},bg:"#444444",bgEnabled:false,animated:false,animFolder:"",animSpeed:6}; }
 function createTile(){
   const ids=Object.keys(state.appProject.tileDefs).map(n=>parseInt(n,10)).filter(Number.isFinite);
   const nextId=(ids.length?Math.max(...ids):0)+1;
@@ -2515,7 +2566,7 @@ function wireUI(){
   bind("tileSourceInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileBgColorInput",'input',applyTileEditorLive); bind("tileBgEnabledInput",'change',applyTileEditorLive); bind("tileSolidInput",'change',applyTileEditorLive); bind("tileAnimatedInput",'change',applyTileEditorLive); bind("tileAnimFolderInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileAnimSpeedInput",'input',()=>applyTileEditorLive({refreshInputs:false}));
   bindClick("addLayerBtn",()=>{ const data=[]; for(let y=0;y<state.appProject.project.map_h;y++){ const row=[]; for(let x=0;x<state.appProject.project.map_w;x++) row.push(0); data.push(row); } currentLayers().push({name:`new layer`,visible:true,data}); invalidateEditorRenderCache(); state.currentLayerIndex=currentLayers().length-1; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); });
   let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint'; bind("mapCanvas",'contextmenu',e=>e.preventDefault()); bind("mapCanvas",'pointerdown',e=>{ e.preventDefault(); if(e.button===1 || state.mapTool==='pan'){ mapPanning=true; mapLast={x:e.clientX,y:e.clientY}; return; } painting=true; mapPaintMode=e.button===2?'erase':'paint'; mapPaintLast=paintMapAtEvent(e, undefined, mapPaintMode); }); window.addEventListener('pointerup',()=>{painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint';}); bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); }); bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.25:-0.25), e.clientX, e.clientY); },{passive:false});
-  bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); state.currentSpriteIndex=state.appProject.spriteFolders.length-1; state.currentSpriteFrame=0; state.spriteFramePage=0; spriteHistory.undo.length=0; spriteHistory.redo.length=0; syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
+  bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); state.currentSpriteIndex=state.appProject.spriteFolders.length-1; state.currentSpriteFrame=0; state.spriteFramePage=0; state.spriteListPage=Math.floor(state.currentSpriteIndex/SPRITE_LIST_PAGE_SIZE); spriteHistory.undo.length=0; spriteHistory.redo.length=0; syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("applySpriteSizeBtn",()=>{ const s=currentSprite(); const nw=Math.max(1,parseInt($("spriteWInput")?.value||s.w,10)); const nh=Math.max(1,parseInt($("spriteHInput")?.value||s.h,10)); pushSpriteHistory(); const newPixels=[]; for(let y=0;y<nh;y++){ const row=[]; for(let x=0;x<nw;x++) row.push((s.pixels[y]&&s.pixels[y][x]!=null)?s.pixels[y][x]:-1); newPixels.push(row); } s.w=nw; s.h=nh; s.pixels=newPixels; invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); });
   bindClick("spriteDrawBtn",()=>setSpriteTool('draw')); bindClick("spriteEraseBtn",()=>setSpriteTool('erase')); bindClick("spriteFillBtn",()=>setSpriteTool('fill')); bindClick("spritePanBtn",()=>setSpriteTool('pan'));
   bindClick("spriteUndoBtn",()=>{ if(!spriteHistory.undo.length) return; spriteHistory.redo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.undo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
@@ -2524,6 +2575,8 @@ function wireUI(){
   bindClick("addCodeTabBtn",()=>{ saveEditorToCurrentCodeFile(); const name=prompt("New file name:",`file${state.appProject.codeFiles.length+1}.lua`); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some(f=>f.name===trimmed)){ alert("A file with that name already exists."); return; } state.appProject.codeFiles.push({name:trimmed,content:"",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}); state.currentCodeFile=state.appProject.codeFiles.length-1; renderCodeTabs(); loadCurrentCodeFileToEditor(); });
   bindClick("renameCodeTabBtn",()=>{ const f=getCurrentCodeFile(); const name=prompt("Rename file:",f.name); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some((x,i)=>i!==state.currentCodeFile&&x.name===trimmed)){ alert("A file with that name already exists."); return; } f.name=trimmed; renderCodeTabs(); });
   bindClick("copyRuntimeErrorBtn",copyLastRunError);
+  bindClick("spriteListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.spriteFolders?.length||0)/SPRITE_LIST_PAGE_SIZE)); state.spriteListPage=(state.spriteListPage-1+pages)%pages; refreshSpriteList(); });
+  bindClick("spriteListNextBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.spriteFolders?.length||0)/SPRITE_LIST_PAGE_SIZE)); state.spriteListPage=(state.spriteListPage+1)%pages; refreshSpriteList(); });
   bindClick("spriteFramePrevBtn",()=>{ const folder=currentSpriteFolder(); const pages=Math.max(1,Math.ceil(folder.frames.length/SPRITE_FRAMES_PER_PAGE)); state.spriteFramePage=(state.spriteFramePage-1+pages)%pages; refreshSpriteFrames(); });
   bindClick("spriteFrameNextBtn",()=>{ const folder=currentSpriteFolder(); const pages=Math.max(1,Math.ceil(folder.frames.length/SPRITE_FRAMES_PER_PAGE)); state.spriteFramePage=(state.spriteFramePage+1)%pages; refreshSpriteFrames(); });
   bindClick("palettePrevBtn",()=>{ const pages=Math.max(1, Math.ceil(state.appProject.palette.length/16)); state.palettePage=(state.palettePage-1+pages)%pages; refreshPaletteUI(); refreshEdgePalette(); });
