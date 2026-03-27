@@ -181,6 +181,8 @@
     .joy.right{left:36%;bottom:34px}
     .dpadCluster{position:absolute;left:35%;bottom:34px;width:132px;height:132px;pointer-events:none;transform:translateX(-100%)}
     .btnCluster{position:absolute;right:18px;bottom:34px;width:132px;height:132px;pointer-events:none}
+    .sysCluster{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);display:flex;gap:10px;pointer-events:none}
+    .sysbtn{min-width:76px;height:34px;padding:0 12px;border-radius:999px;border:3px solid #f7ebcf;background:rgba(255,245,223,.14);pointer-events:auto;touch-action:none;display:grid;place-items:center;font-weight:900;font-size:12px;color:#fff7e9;text-shadow:1px 1px 0 #472f24;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
     .symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;border:3px solid #f7ebcf;background:rgba(255,245,223,.14);pointer-events:auto;touch-action:none;display:grid;place-items:center;font-weight:900;color:#fff7e9;text-shadow:1px 1px 0 #472f24;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
     .symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}
     .arrowIcon{width:22px;height:22px;display:block}
@@ -419,6 +421,10 @@
             <div class="symbtn right" data-btn="5">B</div>
             <div class="symbtn bottom" data-btn="4">A</div>
           </div>
+          <div class="sysCluster">
+            <div class="sysbtn" data-btn="10">SELECT</div>
+            <div class="sysbtn" data-btn="11">START</div>
+          </div>
         </div>
       </div>
     </div>
@@ -621,6 +627,7 @@ function ensureProjectData(){
   p.project.tile_w=Math.max(1,p.project.tile_w|0); p.project.tile_h=Math.max(1,p.project.tile_h|0); p.project.map_w=Math.max(1,p.project.map_w|0); p.project.map_h=Math.max(1,p.project.map_h|0);
   p.settings=p.settings||{};
   if(p.settings.movementInput!=='dpad' && p.settings.movementInput!=='left_joystick') p.settings.movementInput='left_joystick';
+  p.settings.touchOnly=!!p.settings.touchOnly;
   p.settings.darkMode=!!p.settings.darkMode;
   if(!p.palette?.length) p.palette=[...DEFAULT_PALETTE];
   ensurePalettePages(p);
@@ -891,11 +898,11 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "const code="+codeJson+";",
     "const c=document.getElementById('c'),ctx=c.getContext('2d'),errEl=document.getElementById('err');ctx.imageSmoothingEnabled=false;function showErr(m){if(errEl){errEl.textContent=String(m);errEl.style.display='block';}}",
     "let camx=0,camy=0,col={r:0,g:0,b:0},viewZoom=1,zoomOffX=0,zoomOffY=0,clipRect=null;",
-    "const input={btn:Array(8).fill(0),btnp:Array(8).fill(0),btnPrev:Array(8).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,pointers:new Map()}};",
+    "const input={btn:Array(12).fill(0),btnp:Array(12).fill(0),btnPrev:Array(12).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],btnSystem:[0,0,0,0],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,pointers:new Map()}};",
     "const persistPrefix=()=>'trycode_runtime_save_export:'+(projectRef.meta&&projectRef.meta.name||'project')+':';function saveData(key,value){const k=String(key??'').trim();if(!k)return false;try{localStorage.setItem(persistPrefix()+k,String(value??''));return true}catch{return false}}function loadData(key){const k=String(key??'').trim();if(!k)return null;try{const v=localStorage.getItem(persistPrefix()+k);return v==null?null:v}catch{return null}}",
-    "const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7};",
-    "const normalizeButtonIndex=value=>{if(typeof value==='number'&&Number.isFinite(value)){const i=value|0;return i>=0&&i<8?i:-1}const s=String(value??'').trim().toLowerCase();if(!s)return-1;if(/^[0-7]$/.test(s))return parseInt(s,10);return Object.prototype.hasOwnProperty.call(BUTTON_ALIASES,s)?BUTTON_ALIASES[s]:-1};",
-    "const setBtnSource=(source,i,pressed)=>{if(source==='btnFace'){input.btnFace[i]=pressed?1:0;input.btn[i+4]=input.btnFace[i]?1:0;return}input.btnDpad[i]=pressed?1:0;input.btn[i]=input.btnDpad[i]?1:0;syncLeftMovementInput()};",
+    "const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7,leftshoulder:8,lb:8,l1:8,rightshoulder:9,rb:9,r1:9,select:10,back:10,start:11};",
+    "const normalizeButtonIndex=value=>{if(typeof value==='number'&&Number.isFinite(value)){const i=value|0;return i>=0&&i<12?i:-1}const s=String(value??'').trim().toLowerCase();if(!s)return-1;if(/^(?:[0-9]|1[01])$/.test(s))return parseInt(s,10);return Object.prototype.hasOwnProperty.call(BUTTON_ALIASES,s)?BUTTON_ALIASES[s]:-1};",
+    "const setBtnSource=(source,i,pressed)=>{if(source==='btnFace'){input.btnFace[i]=pressed?1:0;input.btn[i+4]=input.btnFace[i]?1:0;return}if(source==='btnSystem'){input.btnSystem[i]=pressed?1:0;input.btn[i+8]=input.btnSystem[i]?1:0;return}input.btnDpad[i]=pressed?1:0;input.btn[i]=input.btnDpad[i]?1:0;syncLeftMovementInput()};",
     "function setKnobCenter(knob){knob.style.left='calc(50% + 0px)';knob.style.top='calc(50% + 0px)';knob.style.marginLeft='-21px';knob.style.marginTop='-21px'}",
     "function applyInputModeUI(){const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick';document.getElementById('joyL').style.display=mode==='dpad'?'none':'';document.getElementById('dpadL').style.display=mode==='dpad'?'block':'none';if(mode==='dpad'){input.joy[0].down=false;input.joy[0].x=0;input.joy[0].y=0;setKnobCenter(document.getElementById('knobL'));syncLeftMovementInput()}}",
     "function clamp(v,a,b){return Math.max(a,Math.min(b,v))}function mousePos(clientX,clientY){const rect=c.getBoundingClientRect(),sx=rect.width>0?c.width/rect.width:1,sy=rect.height>0?c.height/rect.height:1;return{x:clamp(Math.floor((clientX-rect.left)*sx),0,c.width-1),y:clamp(Math.floor((clientY-rect.top)*sy),0,c.height-1)}}function pointerMask(e,isUp){const buttons=Number(isUp?0:e.buttons)||0;let mask=0;if(buttons&1)mask|=1;if(buttons&4)mask|=2;if(buttons&2)mask|=4;if(!mask&&!isUp&&(e.pointerType==='touch'||e.pointerType==='pen'))mask|=1;return mask}function updateMouse(e,isUp){const pos=mousePos(e.clientX,e.clientY);input.mouse.x=pos.x;input.mouse.y=pos.y;const prev=input.mouse.pointers.get(e.pointerId)||0,next=pointerMask(e,isUp);if(isUp||next===0)input.mouse.pointers.delete(e.pointerId);else input.mouse.pointers.set(e.pointerId,next);const pressed=(~prev)&next;if(pressed>0)input.mouse.pressed|=pressed;let buttons=0;input.mouse.pointers.forEach(value=>{buttons|=value});input.mouse.buttons=buttons}",
@@ -919,14 +926,14 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "function pmap(mi,mx,my,sx0,sy0,mw,mh,sl,el){mi=mi==null?0:mi|0;const mapObj=projectRef.maps[mi];if(!mapObj)return;const totalLayers=mapObj.layers.length;mx=mx==null?0:mx|0;my=my==null?0:my|0;sx0=Number(sx0)||0;sy0=Number(sy0)||0;mw=mw==null?projectRef.project.map_w:mw|0;mh=mh==null?projectRef.project.map_h:mh|0;sl=sl==null?0:sl|0;el=el==null?Math.max(0,totalLayers-1):el|0;for(let li=sl;li<=el;li++){const layer=mapObj.layers[li];if(!layer||layer.visible===false)continue;for(let yy=0;yy<mh;yy++)for(let xx=0;xx<mw;xx++){const gx=mx+xx,gy=my+yy;if(gx<0||gy<0||gx>=projectRef.project.map_w||gy>=projectRef.project.map_h)continue;const tid=layer.data[gy][gx]||0,def=projectRef.tileDefs[tid];if(!tid||!def)continue;const wx=sx0+xx*projectRef.project.tile_w,wy=sy0+yy*projectRef.project.tile_h;const x0=sx(wx),y0=sy(wy),x1=sx(wx+projectRef.project.tile_w),y1=sy(wy+projectRef.project.tile_h);const tileW=Math.max(1,x1-x0),tileH=Math.max(1,y1-y0);if(def.bgEnabled!==false){ctx.fillStyle=def.bg||'#444';ctx.fillRect(x0,y0,tileW,tileH)}let sr=parseSpriteRef(def.source||'');if(def.animated){const folderIndex=resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders),folder=folderIndex==null?null:projectRef.spriteFolders[folderIndex],speed=Math.max(0.1,Number(def.animSpeed)||6);if(folder&&folder.frames&&folder.frames.length)sr={folder:folderIndex,frame:Math.floor((performance.now()/1000)*speed)%folder.frames.length};}if(sr){const folder=projectRef.spriteFolders[sr.folder],sp=folder&&folder.frames[sr.frame];if(sp){drawInternalSpriteRuntime(sr,wx,wy,projectRef.project.tile_w/sp.w,projectRef.project.tile_h/sp.h);continue;}}}}}function map(mi,sx0,sy0,layer){mi=mi==null?0:mi|0;const mapObj=projectRef.maps[mi];if(!mapObj)return;const totalLayers=mapObj.layers.length;const sl=layer==null?0:layer|0;const el=layer==null?Math.max(0,totalLayers-1):sl;pmap(mi,0,0,sx0,sy0,projectRef.project.map_w,projectRef.project.map_h,sl,el)}",
     "function attachJoy(root,knob,idx){const R=52,KR=21;function setKnob(nx,ny){knob.style.left='calc(50% + '+(nx*R)+'px)';knob.style.top='calc(50% + '+(ny*R)+'px)';knob.style.marginLeft='-'+KR+'px';knob.style.marginTop='-'+KR+'px';}function update(clientX,clientY){const rect=root.getBoundingClientRect();const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,dx=clientX-cx,dy=clientY-cy;const len=Math.hypot(dx,dy)||1,m=Math.min(R,len);input.joy[idx].x=clamp((dx/len)*(m/R),-1,1);input.joy[idx].y=clamp((dy/len)*(m/R),-1,1);setKnob(input.joy[idx].x,input.joy[idx].y);}function up(){input.joy[idx].down=false;input.joy[idx].x=0;input.joy[idx].y=0;setKnob(0,0)}root.addEventListener('pointerdown',e=>{root.setPointerCapture(e.pointerId);input.joy[idx].down=true;update(e.clientX,e.clientY);e.preventDefault()});root.addEventListener('pointermove',e=>{if(!input.joy[idx].down)return;update(e.clientX,e.clientY);e.preventDefault()});['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(type=>root.addEventListener(type,e=>{up();e.preventDefault()}));setKnob(0,0);return{reset:up}}",
     "function syncLeftMovementInput(){const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick';if(mode!=='dpad')return;input.joy[0].x=(input.btnDpad[3]?1:0)-(input.btnDpad[2]?1:0);input.joy[0].y=(input.btnDpad[1]?1:0)-(input.btnDpad[0]?1:0)}",
-    "const leftJoy=attachJoy(document.getElementById('joyL'),document.getElementById('knobL'),0),rightJoy=attachJoy(document.getElementById('joyR'),document.getElementById('knobR'),1);document.querySelectorAll('.symbtn').forEach(btn=>{const id=(+btn.dataset.btn)-4;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnFace',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false);e.preventDefault()}))});document.querySelectorAll('.dpadBtn').forEach(btn=>{const id=+btn.dataset.dpadBtn;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnDpad',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false);e.preventDefault()}))});['pointerdown','pointermove'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,false);if(type==='pointerdown'){try{c.setPointerCapture(e.pointerId)}catch{}}if(type==='pointerdown'||e.pointerType==='touch')e.preventDefault()},{passive:false}));['pointerup','pointercancel','lostpointercapture'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,true);e.preventDefault()},{passive:false}));c.addEventListener('contextmenu',e=>e.preventDefault());const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3};window.addEventListener('keydown',e=>{const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,true);e.preventDefault()},{passive:false});window.addEventListener('keyup',e=>{const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,false);e.preventDefault()},{passive:false});window.addEventListener('blur',()=>{input.btnDpad.fill(0);input.btnFace.fill(0);input.btn.fill(0);input.btnPrev.fill(0);input.btnp.fill(0);input.mouse.buttons=0;input.mouse.pressed=0;input.mouse.pointers.clear();leftJoy.reset();rightJoy.reset();syncLeftMovementInput()});applyInputModeUI();",
+    "const leftJoy=attachJoy(document.getElementById('joyL'),document.getElementById('knobL'),0),rightJoy=attachJoy(document.getElementById('joyR'),document.getElementById('knobR'),1);document.querySelectorAll('.symbtn').forEach(btn=>{const id=(+btn.dataset.btn)-4;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnFace',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false);e.preventDefault()}))});document.querySelectorAll('.sysbtn').forEach(btn=>{const id=Math.max(0,Math.min(3,(+btn.dataset.btn)-8));btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnSystem',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnSystem',id,false);e.preventDefault()}))});document.querySelectorAll('.dpadBtn').forEach(btn=>{const id=+btn.dataset.dpadBtn;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnDpad',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false);e.preventDefault()}))});['pointerdown','pointermove'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,false);if(type==='pointerdown'){try{c.setPointerCapture(e.pointerId)}catch{}}if(type==='pointerdown'||e.pointerType==='touch')e.preventDefault()},{passive:false}));['pointerup','pointercancel','lostpointercapture'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,true);e.preventDefault()},{passive:false}));c.addEventListener('contextmenu',e=>e.preventDefault());const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3};window.addEventListener('keydown',e=>{if(projectRef.settings&&projectRef.settings.touchOnly)return;const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,true);e.preventDefault()},{passive:false});window.addEventListener('keyup',e=>{if(projectRef.settings&&projectRef.settings.touchOnly)return;const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,false);e.preventDefault()},{passive:false});window.addEventListener('blur',()=>{input.btnDpad.fill(0);input.btnFace.fill(0);input.btnSystem.fill(0);input.btn.fill(0);input.btnPrev.fill(0);input.btnp.fill(0);input.mouse.buttons=0;input.mouse.pressed=0;input.mouse.pointers.clear();leftJoy.reset();rightJoy.reset();syncLeftMovementInput()});applyInputModeUI();",
     "const { lua,lauxlib,lualib,to_luastring,to_jsstring }=fengari;const L=lauxlib.luaL_newstate();lualib.luaL_openlibs(L);function push(n,fn){lua.lua_pushjsfunction(L,fn);lua.lua_setglobal(L,to_luastring(n))}",
 	    "push('cls',L=>{const argc=lua.lua_gettop(L);if(argc===0){cls();return 0}const clearColor=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));cls(clearColor);return 0});push('camera',L=>{const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0});push('zoom',L=>{const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0;} lua.lua_pushnumber(L, zoom()); return 1});push('clip',L=>{const argc=lua.lua_gettop(L); if(argc===0){ clip(); return 0;} clip(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4)); return 0;});push('color',L=>{lua.lua_pushstring(L,to_luastring(String(color(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)))));return 1});push('pset',L=>{const argc=lua.lua_gettop(L);pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?lua.lua_tointeger(L,3):undefined);return 0});push('pget',L=>{lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)));return 1});push('line',L=>{const argc=lua.lua_gettop(L);line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('rect',L=>{const argc=lua.lua_gettop(L);rect(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('rectfill',L=>{const argc=lua.lua_gettop(L);rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('circ',L=>{const argc=lua.lua_gettop(L);circ(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('circfill',L=>{const argc=lua.lua_gettop(L);circfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('print',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('print_',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('spr',L=>{if(lua.lua_isnumber(L,1))spr(String(lua.lua_tointeger(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));else spr(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));return 0});push('animate',L=>{const ref=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));animate(ref,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4));return 0});push('mget',L=>{lua.lua_pushinteger(L,mget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0));return 1});push('mset',L=>{mset(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_tointeger(L,3),lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tointeger(L,5):0);return 0});push('fget',L=>{lua.lua_pushboolean(L,fget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2))?1:0);return 1});push('solid',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('wall',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('map',L=>{const argc=lua.lua_gettop(L);map(argc>=1?lua.lua_tointeger(L,1):0,argc>=2?lua.lua_tonumber(L,2):0,argc>=3?lua.lua_tonumber(L,3):0,argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('pmap',L=>{pmap(lua.lua_gettop(L)>=1?lua.lua_tointeger(L,1):0,lua.lua_gettop(L)>=2?lua.lua_tointeger(L,2):0,lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tonumber(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tonumber(L,5):0,lua.lua_gettop(L)>=6?lua.lua_tointeger(L,6):undefined,lua.lua_gettop(L)>=7?lua.lua_tointeger(L,7):undefined,lua.lua_gettop(L)>=8?lua.lua_tointeger(L,8):undefined,lua.lua_gettop(L)>=9?lua.lua_tointeger(L,9):undefined);return 0});push('btn',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btn[i]?1:0);return 1});push('btnp',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btnp[i]?1:0);return 1});push('mouse',L=>{lua.lua_pushinteger(L,input.mouse.x|0);lua.lua_pushinteger(L,input.mouse.y|0);lua.lua_pushinteger(L,input.mouse.buttons|0);lua.lua_pushinteger(L,input.mouse.pressed|0);return 4});push('joyx',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].x:0);return 1});push('joyy',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].y:0);return 1});push('message_box',L=>{window.alert(to_jsstring(lua.lua_tolstring(L,1)));lua.lua_pushboolean(L,1);return 1});push('confirm_box',L=>{lua.lua_pushboolean(L,window.confirm(to_jsstring(lua.lua_tolstring(L,1)))?1:0);return 1});push('entry_box',L=>{const value=window.prompt(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'' );if(value==null){lua.lua_pushboolean(L,0);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('save_data',L=>{const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):'';let value='';if(lua.lua_gettop(L)>=2){value=lua.lua_isnumber(L,2)?String(lua.lua_tonumber(L,2)):to_jsstring(lua.lua_tolstring(L,2));}lua.lua_pushboolean(L,saveData(key,value)?1:0);return 1});push('load_data',L=>{const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):'';const value=loadData(key);if(value==null){lua.lua_pushnil(L);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('ui_box',()=>0);push('abs',L=>{lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1)));return 1});push('flr',L=>{lua.lua_pushnumber(L,Math.floor(lua.lua_tonumber(L,1)));return 1});",
 	    "lua.lua_newtable(L);lua.lua_pushinteger(L,projectRef.project.tile_w);lua.lua_setfield(L,-2,to_luastring('tile_w'));lua.lua_pushinteger(L,projectRef.project.tile_h);lua.lua_setfield(L,-2,to_luastring('tile_h'));lua.lua_pushinteger(L,projectRef.project.map_w);lua.lua_setfield(L,-2,to_luastring('map_w'));lua.lua_pushinteger(L,projectRef.project.map_h);lua.lua_setfield(L,-2,to_luastring('map_h'));lua.lua_setglobal(L,to_luastring('project'));",
 	    "if(lauxlib.luaL_dostring(L,to_luastring("+JSON.stringify(LUA_RUNTIME_HELPERS)+"))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
 	    "if(lauxlib.luaL_dostring(L,to_luastring(code))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
     "lua.lua_getglobal(L,to_luastring('_init'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}}else lua.lua_pop(L,1);",
-    "function tick(){for(let i=0;i<8;i++){input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0;input.btnPrev[i]=input.btn[i]}lua.lua_getglobal(L,to_luastring('_update'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);lua.lua_getglobal(L,to_luastring('_draw'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);input.mouse.pressed=0;requestAnimationFrame(tick)}tick();",
+    "function tick(){for(let i=0;i<input.btn.length;i++){input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0;input.btnPrev[i]=input.btn[i]}lua.lua_getglobal(L,to_luastring('_update'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);lua.lua_getglobal(L,to_luastring('_draw'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);input.mouse.pressed=0;requestAnimationFrame(tick)}tick();",
     "})();",
   ].join('\n');
 }
@@ -1910,6 +1917,7 @@ function loadOperationCorporationExampleProject(){
   p.project.map_w=80;
   p.project.map_h=64;
   p.settings.movementInput='left_joystick';
+  p.settings.touchOnly=true;
   p.palette=[...DEFAULT_PALETTE];
   p.palette[1]='#111726'; p.palette[2]='#1b2b3a'; p.palette[3]='#25414d'; p.palette[4]='#3b6a5b'; p.palette[5]='#7fa26f';
   p.palette[6]='#d7cfa8'; p.palette[7]='#f6efd2'; p.palette[8]='#c84d47'; p.palette[9]='#8b2e40'; p.palette[10]='#f4ac61';
@@ -2188,7 +2196,8 @@ function fresh_game_state()
     base_tab=1,
     msgs={},
     cursor=1,
-    phase="infiltrate"
+    phase="infiltrate",
+    pause_info_page=1
   }
 end
 
@@ -2211,6 +2220,7 @@ function start_new_operation()
   generate_outpost(g.current_mission)
   g.player.x, g.player.y = 54, 54
   g.phase = "infiltrate"
+  g.paused = false
   g.pending_rewards = {funds=0,fuel=0,intel=0,recruits=0}
   g.mission_score = 0
   g.alerts = 0
@@ -2365,12 +2375,31 @@ function emit_noise(power)
   g.player.noise = math.max(0, math.min(cfg.max_noise, power))
 end
 
+function lock_target_from_aim()
+  local ax,ay = joyx(1),joyy(1)
+  local mag = math.sqrt(ax*ax + ay*ay)
+  if mag < 0.28 then return end
+  local best=nil
+  local best_score=-99999
+  for e in all(g.enemies) do
+    if not e.captured and e.stunned<=0 then
+      local dx,dy = e.x-g.player.x, e.y-g.player.y
+      local dist = math.sqrt(dx*dx + dy*dy)
+      if dist > 6 and dist < 260 then
+        local dot = (dx*ax + dy*ay) / (dist * mag)
+        local score = dot*100 - dist*0.08
+        if dot > 0.32 and score > best_score then
+          best=e
+          best_score=score
+        end
+      end
+    end
+  end
+  g.player.aim = best
+end
+
 function move_player()
   local mx,my = joyx(0),joyy(0)
-  if btn("left") then mx=-1 end
-  if btn("right") then mx=1 end
-  if btn("up") then my=-1 end
-  if btn("down") then my=1 end
   g.player.crouch = btn("y")
   local suit = player_suit_profile()
   local sprinting = btn("x") and not g.player.crouch and g.player.stamina>10
@@ -2412,6 +2441,17 @@ function react_to_sound(e)
   end
 end
 
+function enemy_try_step(e, tx, ty)
+  if not actor_solid(tx, e.y) then
+    e.x = tx
+  else
+    e.dir = -e.dir
+  end
+  if not actor_solid(e.x, ty) then
+    e.y = ty
+  end
+end
+
 function update_enemy(e)
   if e.captured then return end
   if e.stunned > 0 then e.stunned = e.stunned - 1 return end
@@ -2426,21 +2466,18 @@ function update_enemy(e)
   elseif e.detect < 10 and e.state~="patrol" then e.state="patrol" end
 
   if e.state=="patrol" then
-    e.x = e.x + 0.5 * e.dir
-    if actor_solid(e.x,e.y) then e.dir=-e.dir end
+    enemy_try_step(e, e.x + 0.5 * e.dir, e.y)
   elseif e.state=="investigate" and e.last_heard then
-    e.x = e.x + (e.last_heard.x > e.x and 0.7 or -0.7)
-    e.y = e.y + (e.last_heard.y > e.y and 0.7 or -0.7)
+    enemy_try_step(e, e.x + (e.last_heard.x > e.x and 0.7 or -0.7), e.y + (e.last_heard.y > e.y and 0.7 or -0.7))
     if abs(e.x-e.last_heard.x)+abs(e.y-e.last_heard.y) < 12 then e.state="search" end
   elseif e.state=="alert" then
-    e.x = e.x + (g.player.x > e.x and 1.05 or -1.05)
-    e.y = e.y + (g.player.y > e.y and 1.05 or -1.05)
+    enemy_try_step(e, e.x + (g.player.x > e.x and 1.05 or -1.05), e.y + (g.player.y > e.y and 1.05 or -1.05))
     if dist < 18 then
       local wp = weapon_defs[e.weapon] or weapon_defs.ar
       damage_player((wp.dmg or 24)/140, wp.kind or "ballistic")
     end
   elseif e.state=="search" then
-    e.x = e.x + 0.42 * (e.dir)
+    enemy_try_step(e, e.x + 0.42 * (e.dir), e.y)
     if (g.tick + e.rank) % 45 == 0 then e.dir = -e.dir end
   end
 end
@@ -2449,6 +2486,12 @@ function nonlethal_actions()
   if btnp("b") then
     local primary = weapon_defs[g.player_loadout.primary] or weapon_defs.tranq
     emit_noise(primary.noise + 22)
+    local target = g.player.aim
+    if target and not target.captured and target.stunned<=0 then
+      apply_damage_to_enemy(target, primary.dmg + 12, primary.kind)
+      g.mission_score = g.mission_score + 6
+      return
+    end
     for e in all(g.enemies) do
       if not e.captured and e.stunned<=0 then
         local dx,dy = abs(e.x-g.player.x), abs(e.y-g.player.y)
@@ -2540,6 +2583,7 @@ end
 
 function update_field()
   move_player()
+  lock_target_from_aim()
   player_concealment()
   if g.support.recon_cd > 0 then g.support.recon_cd = g.support.recon_cd - 1 end
   if g.support.supply_cd > 0 then g.support.supply_cd = g.support.supply_cd - 1 end
@@ -2552,7 +2596,6 @@ function update_field()
     g.current_region = ids[((g.tick/600)%#ids)+1]
   end
   if btnp("select") then g.mode = "base" end
-  if btnp("start") then save_campaign() end
   g.cam.x = g.player.x - 240
   g.cam.y = g.player.y - 135
 end`},
@@ -2677,29 +2720,60 @@ function resolve_dispatch()
   end
 end
 
+function hire_candidate()
+  if #g.brig <= 0 then push_msg("No candidates in brig") return end
+  local p = deli(g.brig,1)
+  add(g.roster, make_staff("Agent "..(#g.roster+1), p.rank, g.tick+#g.roster*5))
+  push_msg("Hired candidate from brig")
+end
+
+function fire_last_staff()
+  if #g.roster <= 0 then push_msg("Roster already empty") return end
+  local gone = deli(g.roster, #g.roster)
+  push_msg("Fired "..gone.name)
+end
+
 function handle_base_inputs()
   if btnp("left") then g.base_tab = math.max(1, g.base_tab-1) end
   if btnp("right") then g.base_tab = math.min(3, g.base_tab+1) end
   if btnp("y") then queue_research() end
-  if btnp("x") then launch_dispatch() end
+  if btnp("x") then g.mode = "dispatch" end
   if btnp("up") then cycle_loadout("primary",1) end
   if btnp("down") then cycle_loadout("suit",1) end
   if btnp("leftshoulder") then cycle_loadout("secondary",1) end
   if btnp("rightshoulder") then cycle_loadout("throwable",1) end
-  if btnp("a") then g.mode = "field" end
+  if btnp("b") then fire_last_staff() end
+  if btnp("a") then if #g.brig > 0 then hire_candidate() else g.mode = "field" end end
+end
+
+function handle_dispatch_inputs()
+  if btnp("x") then launch_dispatch() end
+  if btnp("a") then g.mode = "base" end
 end
 
 function game_update()
   g.tick = g.tick + 1
+  if btnp("start") then g.paused = not g.paused end
   if g.scene == "menu" then
     if btnp("a") then g.scene = "game" end
+    return
+  end
+  if g.paused then
+    if btnp("left") then g.pause_info_page = 1 end
+    if btnp("right") then g.pause_info_page = 2 end
     return
   end
   tick_region_sim()
   update_roster_injuries()
   update_research()
   resolve_dispatch()
-  if g.mode == "field" then update_field() else handle_base_inputs() end
+  if g.mode == "field" then
+    update_field()
+  elseif g.mode == "dispatch" then
+    handle_dispatch_inputs()
+  else
+    handle_base_inputs()
+  end
 end`},
     {name:'draw.lua',tabTheme:6,content:`function draw_enemy(e)
   if e.captured then return end
@@ -2736,12 +2810,13 @@ function draw_field()
   for p in all(g.prisoners) do if not p.rescued then spr("2a",p.x,p.y) end end
   animate(0,g.player.x,g.player.y,8)
   if g.research.done.drone_ping then circ(g.player.x+8,g.player.y+8,24+(g.tick%24),11) end
+  if g.player.aim and not g.player.aim.captured and g.player.aim.stunned<=0 then
+    rect(g.player.aim.x-3,g.player.aim.y-3,g.player.aim.x+19,g.player.aim.y+19,8)
+  end
   if g.phase=="extract_ready" then rect(1168,916,1214,956,10) end
   draw_hud()
   local y=98
   for msg in all(g.msgs) do print(msg,14,y,12,color(246,240,220)); y = y + 13 end
-  print("TAB/Select: base",340,72,10,color(246,240,220))
-  print("Support: L=recon pulse, R=supply refill",270,86,10,color(246,240,220))
 end
 
 function draw_base()
@@ -2749,7 +2824,7 @@ function draw_base()
   rectfill(22,20,458,250,1)
   rect(22,20,458,250,7)
   print("BASE COMMAND",36,34,11,color(246,240,220))
-  print("A return | Y R&D | X dispatch | <- -> page",36,50,12,color(246,240,220))
+  print("A field/hire | B fire | Y R&D | X dispatch menu",36,50,12,color(246,240,220))
   print("Pages: 1 Ops  2 Loadout  3 Region/Trauma",36,62,10,color(246,240,220))
   if g.base_tab==1 then
     print("Departments",36,78,10,color(246,240,220))
@@ -2802,13 +2877,63 @@ function draw_menu()
   print("A: start campaign",142,112,14,color(246,240,220))
   print("B: nonlethal tranq, A near stunned target to capture",74,138,14,color(246,240,220))
   print("Y crouch / X sprint / Select base view",104,160,14,color(246,240,220))
-  print("Rewards only count after extraction",122,184,12,color(246,240,220))
-  print("Save anytime with START",156,204,12,color(246,240,220))
+  print("START pauses + shows controls guide",106,184,12,color(246,240,220))
+  print("Rewards only count after extraction",122,204,12,color(246,240,220))
+end
+
+function draw_dispatch()
+  cls(15)
+  rectfill(26,24,454,246,1)
+  rect(26,24,454,246,7)
+  print("DISPATCH BOARD",36,36,11,color(246,240,220))
+  print("X launch mission | A back to base",36,52,12,color(246,240,220))
+  local y=76
+  print("Active teams:",36,y,10,color(246,240,220)); y=y+14
+  if #g.dispatch.active<=0 then print("none",40,y,12,color(246,240,220)); y=y+12 end
+  for d in all(g.dispatch.active) do
+    print(d.name.." t:"..flr(d.t/60).."s risk:"..flr(d.risk*100).."%",40,y,12,color(246,240,220))
+    y = y + 12
+  end
+  y = y + 8
+  print("Recent outcomes:",36,y,10,color(246,240,220)); y = y + 14
+  for i=#g.dispatch.log,1,-1 do
+    print(g.dispatch.log[i],40,y,12,color(246,240,220))
+    y = y + 12
+  end
+end
+
+function draw_pause_overlay()
+  rectfill(46,24,434,246,1)
+  rect(46,24,434,246,7)
+  print("PAUSED",214,38,8,color(246,240,220))
+  print("START resumes",186,54,12,color(246,240,220))
+  print("< / > switch info pages",148,68,12,color(246,240,220))
+  if g.pause_info_page == 2 then
+    print("SCREENS",66,92,10,color(246,240,220))
+    print("Field Ops: stealth action gameplay",66,108,12,color(246,240,220))
+    print("Main Base: research / hire / fire",66,122,12,color(246,240,220))
+    print("Dispatch: send recruits on missions",66,136,12,color(246,240,220))
+    print("Use SELECT to jump field -> base",66,156,12,color(246,240,220))
+  else
+    print("ONSCREEN CONTROLS",66,92,10,color(246,240,220))
+    print("Left stick: move",66,108,12,color(246,240,220))
+    print("Right stick: aim + auto-lock nearest enemy",66,122,12,color(246,240,220))
+    print("A capture/interact  B tranq",66,136,12,color(246,240,220))
+    print("Y crouch  X sprint/dispatch",66,150,12,color(246,240,220))
+    print("SELECT base/menu  START pause",66,164,12,color(246,240,220))
+  end
 end
 
 function game_draw()
   if g.scene == "menu" then draw_menu() return end
-  if g.mode == "field" then draw_field() else draw_base() end
+  if g.mode == "field" then
+    draw_field()
+  elseif g.mode == "dispatch" then
+    draw_dispatch()
+  else
+    draw_base()
+  end
+  if g.paused then draw_pause_overlay() end
 end`},
   ];
   finalizeExampleProjectLoad();
@@ -3195,7 +3320,7 @@ function drawMusicPreview(){}
 
 function makeRuntime(){
   const GAME_W=480, GAME_H=270, canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
-  const input={btn:Array(8).fill(0),btnp:Array(8).fill(0),btnPrev:Array(8).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],btnGamepad:Array(8).fill(0),touchJoy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],gamepadJoy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,released:0,down:false,pointers:new Map()}}; canvas.width=GAME_W; canvas.height=GAME_H;
+  const input={btn:Array(12).fill(0),btnp:Array(12).fill(0),btnPrev:Array(12).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],btnSystem:[0,0,0,0],btnGamepad:Array(12).fill(0),touchJoy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],gamepadJoy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,released:0,down:false,pointers:new Map()}}; canvas.width=GAME_W; canvas.height=GAME_H;
   const keyDown=new Set(), keyPressed=new Set();
   const UI_BOX_KINDS=['message','confirm','entry'];
   const uiBoxDefaultStyle={x:null,y:null,w:260,h:null,bg:'#fff7e8',border:'#6f3d20',text:'#352012',title:'#8a1c1c',button:'#f0d7a2',buttonText:'#352012',inputBg:'#fffaf1',inputText:'#352012'};
@@ -3203,18 +3328,18 @@ function makeRuntime(){
   let uiBoxStyles=makeUiBoxStyles();
   const dialogEls={layer:$("runtimeDialogLayer"),scrim:$("runtimeDialogScrim"),card:$("runtimeDialogCard"),title:$("runtimeDialogTitle"),message:$("runtimeDialogMessage"),input:$("runtimeDialogInput"),actions:$("runtimeDialogActions")};
   const dialogState={active:null,results:new Map()};
-  const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7};
+  const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7,leftshoulder:8,lb:8,l1:8,rightshoulder:9,rb:9,r1:9,select:10,back:10,start:11};
   const persistPrefix=()=>`trycode_runtime_save:${state.currentProjectName||'project'}:`;
   const saveData=(key,value)=>{ const k=String(key??'').trim(); if(!k) return false; try{ localStorage.setItem(persistPrefix()+k, String(value??'')); return true; }catch(_){ return false; } };
   const loadData=key=>{ const k=String(key??'').trim(); if(!k) return null; try{ const value=localStorage.getItem(persistPrefix()+k); return value==null?null:value; }catch(_){ return null; } };
-  const normalizeButtonIndex=value=>{ if(typeof value==='number'&&Number.isFinite(value)){ const i=value|0; return i>=0&&i<8?i:-1; } const s=String(value??'').trim().toLowerCase(); if(!s) return -1; if(/^[0-7]$/.test(s)) return parseInt(s,10); return Object.prototype.hasOwnProperty.call(BUTTON_ALIASES,s)?BUTTON_ALIASES[s]:-1; };
+  const normalizeButtonIndex=value=>{ if(typeof value==='number'&&Number.isFinite(value)){ const i=value|0; return i>=0&&i<12?i:-1; } const s=String(value??'').trim().toLowerCase(); if(!s) return -1; if(/^(?:[0-9]|1[01])$/.test(s)) return parseInt(s,10); return Object.prototype.hasOwnProperty.call(BUTTON_ALIASES,s)?BUTTON_ALIASES[s]:-1; };
   const normalizeKeyName=value=>{ const s=String(value??'').trim().toLowerCase(); if(!s) return ''; const aliases={spacebar:'space',' ':'space',esc:'escape',return:'enter',ctrl:'ctrl',control:'ctrl',left:'left',right:'right',up:'up',down:'down'}; return aliases[s]||s; };
   const eventKeyNames=e=>{ const names=new Set(); const key=normalizeKeyName(e.key); if(key) names.add(key); const code=String(e.code||''); if(/^Key[A-Z]$/.test(code)) names.add(code.slice(3).toLowerCase()); else if(/^Digit\d$/.test(code)) names.add(code.slice(5)); else if(/^Numpad\d$/.test(code)) names.add(code.slice(6)); const codeMap={Space:['space'],Tab:['tab'],Enter:['enter'],Escape:['escape'],Backspace:['backspace'],Delete:['delete'],Insert:['insert'],Home:['home'],End:['end'],PageUp:['pageup'],PageDown:['pagedown'],ArrowUp:['up'],ArrowDown:['down'],ArrowLeft:['left'],ArrowRight:['right'],Minus:['-'],Equal:['='],BracketLeft:['['],BracketRight:[']'],Backslash:['\\'],Semicolon:[';'],Quote:["'"],Comma:[','],Period:['.'],Slash:['/'],Backquote:['`'],ControlLeft:['lctrl','ctrl'],ControlRight:['rctrl','ctrl'],ShiftLeft:['lshift','shift'],ShiftRight:['rshift','shift'],AltLeft:['lalt','alt'],AltRight:['ralt','alt'],MetaLeft:['lmeta','meta'],MetaRight:['rmeta','meta']}; (codeMap[code]||[]).forEach(name=>names.add(name)); if(/^F\d{1,2}$/.test(code)) names.add(code.toLowerCase()); return names; };
   const shouldCaptureRuntimeKeyboard=e=>{ if(dialogState.active) return false; const target=e.target; if(!(target instanceof HTMLElement)) return state.activeView==='runtime'; if(target.isContentEditable) return false; const tag=target.tagName; return tag!=='INPUT'&&tag!=='TEXTAREA'&&tag!=='SELECT'&&state.activeView==='runtime'; };
-  const recomputeVirtualInput=()=>{ for(let i=0;i<4;i++){ input.btn[i]=(input.btnDpad[i]||input.btnGamepad[i])?1:0; input.btn[i+4]=(input.btnFace[i]||input.btnGamepad[i+4])?1:0; } const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick'; for(let i=0;i<2;i++){ const touch=input.touchJoy[i], gp=input.gamepadJoy[i], digitalX=i===0&&mode==='dpad'?((input.btn[3]?1:0)-(input.btn[2]?1:0)):0, digitalY=i===0&&mode==='dpad'?((input.btn[1]?1:0)-(input.btn[0]?1:0)):0; const useGp=Math.abs(gp.x)>0.14||Math.abs(gp.y)>0.14; const baseX=useGp?gp.x:touch.x, baseY=useGp?gp.y:touch.y; input.joy[i].x=clamp(Math.abs(baseX)>0.001?baseX:digitalX,-1,1); input.joy[i].y=clamp(Math.abs(baseY)>0.001?baseY:digitalY,-1,1); input.joy[i].down=!!(touch.down||useGp||digitalX||digitalY); } };
-  const setBtnSource=(source,i,pressed)=>{ if(source==="btnFace") input.btnFace[i]=pressed?1:0; else input.btnDpad[i]=pressed?1:0; recomputeVirtualInput(); };
+  const recomputeVirtualInput=()=>{ for(let i=0;i<4;i++){ input.btn[i]=(input.btnDpad[i]||input.btnGamepad[i])?1:0; input.btn[i+4]=(input.btnFace[i]||input.btnGamepad[i+4])?1:0; input.btn[i+8]=(input.btnSystem[i]||input.btnGamepad[i+8])?1:0; } const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick'; for(let i=0;i<2;i++){ const touch=input.touchJoy[i], gp=input.gamepadJoy[i], digitalX=i===0&&mode==='dpad'?((input.btn[3]?1:0)-(input.btn[2]?1:0)):0, digitalY=i===0&&mode==='dpad'?((input.btn[1]?1:0)-(input.btn[0]?1:0)):0; const useGp=Math.abs(gp.x)>0.14||Math.abs(gp.y)>0.14; const baseX=useGp?gp.x:touch.x, baseY=useGp?gp.y:touch.y; input.joy[i].x=clamp(Math.abs(baseX)>0.001?baseX:digitalX,-1,1); input.joy[i].y=clamp(Math.abs(baseY)>0.001?baseY:digitalY,-1,1); input.joy[i].down=!!(touch.down||useGp||digitalX||digitalY); } };
+  const setBtnSource=(source,i,pressed)=>{ if(source==="btnFace") input.btnFace[i]=pressed?1:0; else if(source==="btnSystem") input.btnSystem[i]=pressed?1:0; else input.btnDpad[i]=pressed?1:0; recomputeVirtualInput(); };
   const setKnobCenter=knob=>{ knob.style.left='calc(50% + 0px)'; knob.style.top='calc(50% + 0px)'; knob.style.marginLeft='-21px'; knob.style.marginTop='-21px'; };
-  const applyInputModeUI=()=>{ const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick'; $('joyL').classList.toggle('hidden', mode==='dpad' || isDesktopUI()); $('dpadL').classList.toggle('hidden', mode!=='dpad' || isDesktopUI()); $('joyR').classList.toggle('hidden', isDesktopUI()); document.querySelector('.btnCluster')?.classList.toggle('hidden', isDesktopUI()); recomputeVirtualInput(); if(mode==='dpad') setKnobCenter($('knobL')); };
+  const applyInputModeUI=()=>{ const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick'; $('joyL').classList.toggle('hidden', mode==='dpad' || isDesktopUI()); $('dpadL').classList.toggle('hidden', mode!=='dpad' || isDesktopUI()); $('joyR').classList.toggle('hidden', isDesktopUI()); document.querySelector('.btnCluster')?.classList.toggle('hidden', isDesktopUI()); document.querySelector('.sysCluster')?.classList.toggle('hidden', isDesktopUI()); recomputeVirtualInput(); if(mode==='dpad') setKnobCenter($('knobL')); };
   const coerceUiNumber=value=>{ if(value==null) return null; const n=Number(value); return Number.isFinite(n)?n:null; };
   const coerceUiColor=value=>{ if(value==null) return null; const s=String(value).trim(); return s||null; };
   const normalizeUiBoxKind=value=>{ const s=String(value??'').trim().toLowerCase(); return UI_BOX_KINDS.includes(s)?s:null; };
@@ -3240,16 +3365,16 @@ function makeRuntime(){
   window.addEventListener('resize',resizeDisplay);
   function getImg(file){ if(!file||isEmojiLike(file)||isSpriteIndexLike(file)) return null; if(!assets[file]){ const img=new Image(); img.src=file; assets[file]={img,loaded:false}; img.onload=()=>assets[file].loaded=true; img.onerror=()=>assets[file].loaded=false; } return assets[file]; }
   function attachJoy(rootId,knobId,idx){ const root=$(rootId), knob=$(knobId), R=52, KR=21; function setKnob(nx,ny){ knob.style.left=`calc(50% + ${nx*R}px)`; knob.style.top=`calc(50% + ${ny*R}px)`; knob.style.marginLeft=`-${KR}px`; knob.style.marginTop=`-${KR}px`; } function updateFromClient(clientX,clientY){ const rect=root.getBoundingClientRect(); const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2, dx=clientX-cx, dy=clientY-cy; const len=Math.hypot(dx,dy)||1, m=Math.min(R,len), nx=(dx/len)*(m/R), ny=(dy/len)*(m/R); input.touchJoy[idx].x=clamp(nx,-1,1); input.touchJoy[idx].y=clamp(ny,-1,1); setKnob(nx,ny); recomputeVirtualInput(); } function up(){input.touchJoy[idx].down=false; input.touchJoy[idx].x=0; input.touchJoy[idx].y=0; setKnob(0,0); recomputeVirtualInput(); } root.addEventListener('pointerdown',e=>{root.setPointerCapture(e.pointerId); input.touchJoy[idx].down=true; updateFromClient(e.clientX,e.clientY); e.preventDefault();}); root.addEventListener('pointermove',e=>{ if(!input.touchJoy[idx].down) return; updateFromClient(e.clientX,e.clientY); e.preventDefault(); }); ['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(type=>root.addEventListener(type,e=>{up(); e.preventDefault();})); setKnob(0,0); return { reset:up }; }
-  const leftJoy=attachJoy('joyL','knobL',0), rightJoy=attachJoy('joyR','knobR',1); document.querySelectorAll('.symbtn').forEach(btn=>{ const id=(parseInt(btn.dataset.btn,10)||4)-4; btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnFace',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false); e.preventDefault();})); }); document.querySelectorAll('.dpadBtn').forEach(btn=>{ const id=parseInt(btn.dataset.dpadBtn,10)||0; btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnDpad',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false); e.preventDefault();})); }); const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3}; window.addEventListener('keydown',e=>{ if(!shouldCaptureRuntimeKeyboard(e)) return; eventKeyNames(e).forEach(name=>keyDown.add(name)); if(!e.repeat) eventKeyNames(e).forEach(name=>keyPressed.add(name)); const key=movementKeyMap[e.code]; if(key!=null){ setBtnSource('btnDpad',key,true); e.preventDefault(); } },{passive:false}); window.addEventListener('keyup',e=>{ if(!shouldCaptureRuntimeKeyboard(e)) return; eventKeyNames(e).forEach(name=>keyDown.delete(name)); const key=movementKeyMap[e.code]; if(key!=null){ setBtnSource('btnDpad',key,false); e.preventDefault(); } },{passive:false});
+  const leftJoy=attachJoy('joyL','knobL',0), rightJoy=attachJoy('joyR','knobR',1); document.querySelectorAll('.symbtn').forEach(btn=>{ const id=(parseInt(btn.dataset.btn,10)||4)-4; btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnFace',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false); e.preventDefault();})); }); document.querySelectorAll('.sysbtn').forEach(btn=>{ const raw=parseInt(btn.dataset.btn,10)||10; const id=Math.max(0,Math.min(3,raw-8)); btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnSystem',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnSystem',id,false); e.preventDefault();})); }); document.querySelectorAll('.dpadBtn').forEach(btn=>{ const id=parseInt(btn.dataset.dpadBtn,10)||0; btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnDpad',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false); e.preventDefault();})); }); const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3}; window.addEventListener('keydown',e=>{ if(!shouldCaptureRuntimeKeyboard(e)) return; eventKeyNames(e).forEach(name=>keyDown.add(name)); if(!e.repeat) eventKeyNames(e).forEach(name=>keyPressed.add(name)); if(projectRef.settings&&projectRef.settings.touchOnly) return; const key=movementKeyMap[e.code]; if(key!=null){ setBtnSource('btnDpad',key,true); e.preventDefault(); } },{passive:false}); window.addEventListener('keyup',e=>{ if(!shouldCaptureRuntimeKeyboard(e)) return; eventKeyNames(e).forEach(name=>keyDown.delete(name)); if(projectRef.settings&&projectRef.settings.touchOnly) return; const key=movementKeyMap[e.code]; if(key!=null){ setBtnSource('btnDpad',key,false); e.preventDefault(); } },{passive:false});
   ['pointerdown','pointermove'].forEach(type=>canvas.addEventListener(type,e=>{ updateMouseFromPointer(e,false); if(type==='pointerdown'){ try{ canvas.setPointerCapture(e.pointerId); }catch{} } if(type==='pointerdown' || e.pointerType==='touch') e.preventDefault(); },{passive:false}));
   ['pointerup','pointercancel','lostpointercapture'].forEach(type=>canvas.addEventListener(type,e=>{ updateMouseFromPointer(e,true); e.preventDefault(); },{passive:false}));
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
   dialogEls.scrim?.addEventListener('click',()=>{ if(dialogState.active?.kind==='message') closeDialog(true); });
   dialogEls.input?.addEventListener('keydown',e=>{ if(e.key==='Enter'&&dialogState.active?.kind==='entry'){ e.preventDefault(); closeDialog(String(dialogEls.input.value||'')); } if(e.key==='Escape'&&dialogState.active?.kind==='entry'){ e.preventDefault(); closeDialog(false); } });
   window.addEventListener('keydown',e=>{ if(!dialogState.active) return; if(e.key==='Escape'){ if(dialogState.active.kind==='message') closeDialog(true); else closeDialog(false); e.preventDefault(); } if(e.key==='Enter'&&dialogState.active.kind==='confirm'){ closeDialog(true); e.preventDefault(); } },{passive:false});
-  const pollGamepads=()=>{ input.btnGamepad.fill(0); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); const pads=navigator.getGamepads?navigator.getGamepads():[]; for(const pad of pads){ if(!pad) continue; const buttons=pad.buttons||[]; const axes=pad.axes||[]; input.btnGamepad[0]=input.btnGamepad[0]||(buttons[12]?.pressed?1:0); input.btnGamepad[1]=input.btnGamepad[1]||(buttons[13]?.pressed?1:0); input.btnGamepad[2]=input.btnGamepad[2]||(buttons[14]?.pressed?1:0); input.btnGamepad[3]=input.btnGamepad[3]||(buttons[15]?.pressed?1:0); input.btnGamepad[4]=input.btnGamepad[4]||(buttons[0]?.pressed?1:0); input.btnGamepad[5]=input.btnGamepad[5]||(buttons[1]?.pressed?1:0); input.btnGamepad[6]=input.btnGamepad[6]||(buttons[2]?.pressed?1:0); input.btnGamepad[7]=input.btnGamepad[7]||(buttons[3]?.pressed?1:0); const lx=clamp(Number(axes[0])||0,-1,1), ly=clamp(Number(axes[1])||0,-1,1), rx=clamp(Number(axes[2])||0,-1,1), ry=clamp(Number(axes[3])||0,-1,1); if(Math.abs(lx)>Math.abs(input.gamepadJoy[0].x)) input.gamepadJoy[0].x=lx; if(Math.abs(ly)>Math.abs(input.gamepadJoy[0].y)) input.gamepadJoy[0].y=ly; if(Math.abs(rx)>Math.abs(input.gamepadJoy[1].x)) input.gamepadJoy[1].x=rx; if(Math.abs(ry)>Math.abs(input.gamepadJoy[1].y)) input.gamepadJoy[1].y=ry; }
+  const pollGamepads=()=>{ input.btnGamepad.fill(0); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); const pads=navigator.getGamepads?navigator.getGamepads():[]; for(const pad of pads){ if(!pad) continue; const buttons=pad.buttons||[]; const axes=pad.axes||[]; input.btnGamepad[0]=input.btnGamepad[0]||(buttons[12]?.pressed?1:0); input.btnGamepad[1]=input.btnGamepad[1]||(buttons[13]?.pressed?1:0); input.btnGamepad[2]=input.btnGamepad[2]||(buttons[14]?.pressed?1:0); input.btnGamepad[3]=input.btnGamepad[3]||(buttons[15]?.pressed?1:0); input.btnGamepad[4]=input.btnGamepad[4]||(buttons[0]?.pressed?1:0); input.btnGamepad[5]=input.btnGamepad[5]||(buttons[1]?.pressed?1:0); input.btnGamepad[6]=input.btnGamepad[6]||(buttons[2]?.pressed?1:0); input.btnGamepad[7]=input.btnGamepad[7]||(buttons[3]?.pressed?1:0); input.btnGamepad[8]=input.btnGamepad[8]||(buttons[4]?.pressed?1:0); input.btnGamepad[9]=input.btnGamepad[9]||(buttons[5]?.pressed?1:0); input.btnGamepad[10]=input.btnGamepad[10]||((buttons[8]?.pressed||buttons[16]?.pressed)?1:0); input.btnGamepad[11]=input.btnGamepad[11]||((buttons[9]?.pressed||buttons[17]?.pressed)?1:0); const lx=clamp(Number(axes[0])||0,-1,1), ly=clamp(Number(axes[1])||0,-1,1), rx=clamp(Number(axes[2])||0,-1,1), ry=clamp(Number(axes[3])||0,-1,1); if(Math.abs(lx)>Math.abs(input.gamepadJoy[0].x)) input.gamepadJoy[0].x=lx; if(Math.abs(ly)>Math.abs(input.gamepadJoy[0].y)) input.gamepadJoy[0].y=ly; if(Math.abs(rx)>Math.abs(input.gamepadJoy[1].x)) input.gamepadJoy[1].x=rx; if(Math.abs(ry)>Math.abs(input.gamepadJoy[1].y)) input.gamepadJoy[1].y=ry; }
     input.gamepadJoy.forEach(joy=>{ if(Math.abs(joy.x)<0.14) joy.x=0; if(Math.abs(joy.y)<0.14) joy.y=0; joy.down=!!(joy.x||joy.y); }); recomputeVirtualInput(); };
-  window.addEventListener('blur',()=>{ input.btnDpad.fill(0); input.btnFace.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); keyDown.clear(); keyPressed.clear(); leftJoy.reset(); rightJoy.reset(); recomputeVirtualInput(); }); applyInputModeUI(); applyDialogStyles('message'); renderDialog();
+  window.addEventListener('blur',()=>{ input.btnDpad.fill(0); input.btnFace.fill(0); input.btnSystem.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); keyDown.clear(); keyPressed.clear(); leftJoy.reset(); rightJoy.reset(); recomputeVirtualInput(); }); applyInputModeUI(); applyDialogStyles('message'); renderDialog();
   let col={r:0,g:0,b:0}, camx=0, camy=0, viewZoom=1, zoomOffX=0, zoomOffY=0, clipRect=null; const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
   function clip(x,y,w,h){ if(arguments.length===0||x==null){ clipRect=null; return 0; } clipRect={x:Number(x)||0,y:Number(y)||0,w:Math.max(0,Number(w)||0),h:Math.max(0,Number(h)||0)}; return 0; }
   function clipPush(){ if(!clipRect) return false; ctx.save(); ctx.beginPath(); ctx.rect(Math.round(clipRect.x),Math.round(clipRect.y),Math.round(clipRect.w),Math.round(clipRect.h)); ctx.clip(); return true; }
@@ -3463,7 +3588,7 @@ function makeRuntime(){
   function rerun(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function reset(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); toast(`<b>${escapeHtml(name)} error:</b> ${escapeHtml(err)}`); builtOk=false; L=null; } } else lua.lua_pop(L,1); }
-  function tick(){ pollGamepads(); for(let i=0;i<8;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } callMaybe('_update'); callMaybe('_draw'); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } callMaybe('_update'); callMaybe('_draw'); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
   requestAnimationFrame(tick); resizeDisplay(); return {setLua,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); ensureProjectData(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); renderDialog(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
