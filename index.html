@@ -1950,12 +1950,19 @@ function loadOperationCorporationExampleProject(){
   p.maps=[makeEmptyMap('0',p.project.map_w,p.project.map_h)];
   p.music=[makeMusic(),makeMusic()];
   p.codeFiles=[
-    {name:'main.lua',tabTheme:0,content:`include "config.lua"
+    {name:'main.lua',tabTheme:0,content:`-- Operation Corporation V3.5 architecture pass
+-- style cues inspired by open-source patterns from LOVE2D projects:
+--   * tiny ECS scheduling loops
+--   * explicit simulation phase pipelines
+--   * data-oriented helper modules
+include "config.lua"
 include "data.lua"
+include "core.lua"
 include "state.lua"
 include "field.lua"
 include "base.lua"
 include "draw.lua"
+include "systems.lua"
 
 function _init() boot_game() end
 function _update() game_update() end
@@ -2156,6 +2163,47 @@ deep_traits = {
   "Sabotage Artist",
   "Extraction Addict"
 }`},
+    {name:'core.lua',tabTheme:4,content:`core = {}
+
+function core.clamp(v,a,b)
+  return math.max(a, math.min(b, v))
+end
+
+function core.sign(v)
+  if v > 0 then return 1 end
+  if v < 0 then return -1 end
+  return 0
+end
+
+function core.dist(ax,ay,bx,by)
+  local dx,dy = bx-ax, by-ay
+  return math.sqrt(dx*dx + dy*dy)
+end
+
+function core.manhattan(ax,ay,bx,by)
+  return abs(ax-bx) + abs(ay-by)
+end
+
+function core.pick(list, seed)
+  if not list or #list == 0 then return nil end
+  return list[(seed % #list) + 1]
+end
+
+function core.run_systems(systems)
+  for sys in all(systems) do
+    if sys and sys.enabled ~= false and sys.step then
+      sys.step()
+    end
+  end
+end
+
+function core.count_where(list, pred)
+  local count = 0
+  for v in all(list) do
+    if pred(v) then count += 1 end
+  end
+  return count
+end`},
     {name:'state.lua',tabTheme:3,content:`function rand_trait(seed)
   return traits[(seed % #traits)+1]
 end
@@ -2234,6 +2282,7 @@ function boot_game()
   end
   load_campaign()
   start_new_operation()
+  init_systems()
   g.mode = "base"
 end
 
@@ -2304,7 +2353,7 @@ function load_campaign()
     for i=1,roster do add(g.roster, make_staff("R"..i, (i%4)+1, i*7)) end
   end
 end`},
-    {name:'field.lua',tabTheme:4,content:`function roll_mission()
+    {name:'field.lua',tabTheme:5,content:`function roll_mission()
   local region = g.regions[g.current_region] or {owner="sentinel_union",heat=20}
   local reg_cfg = region_defs[g.current_region] or region_defs.ash_fork
   local biome_id = reg_cfg.biome
@@ -3065,7 +3114,7 @@ function update_field()
   g.cam.x = g.player.x - 240
   g.cam.y = g.player.y - 135
 end`},
-    {name:'base.lua',tabTheme:5,content:`function queue_research()
+    {name:'base.lua',tabTheme:6,content:`function queue_research()
   for item in all(research_tree) do
     if not g.research.done[item.id] and g.resources.funds >= item.cost then
       g.resources.funds = g.resources.funds - item.cost
@@ -3298,19 +3347,9 @@ function game_update()
     if btnp("right") or menu_axis_pressed("horizontal",1) then g.pause_info_page = 2; g.pause_cursor = 2 end
     return
   end
-  tick_region_sim()
-  update_roster_injuries()
-  update_research()
-  resolve_dispatch()
-  if g.mode == "field" then
-    update_field()
-  elseif g.mode == "dispatch" then
-    handle_dispatch_inputs()
-  else
-    handle_base_inputs()
-  end
+  run_frame_pipeline()
 end`},
-    {name:'draw.lua',tabTheme:6,content:`function draw_enemy(e)
+    {name:'draw.lua',tabTheme:2,content:`function draw_enemy(e)
   if e.captured then return end
   local ref = (e.state=="alert" and "3a") or (e.kind=="officer" and "2a") or "1a"
   if e.dead then ref = "9a"
@@ -3585,6 +3624,36 @@ function game_draw()
     draw_base()
   end
   if g.paused then draw_pause_overlay() end
+end`},
+    {name:'systems.lua',tabTheme:7,content:`systems = {global={}, mode={}}
+
+function init_systems()
+  systems.global = {
+    {name="region_sim", step=tick_region_sim},
+    {name="roster_injuries", step=update_roster_injuries},
+    {name="research", step=update_research},
+    {name="dispatch", step=resolve_dispatch}
+  }
+  systems.mode = {
+    field = {
+      {name="field_step", step=update_field}
+    },
+    dispatch = {
+      {name="dispatch_input", step=handle_dispatch_inputs}
+    },
+    base = {
+      {name="base_input", step=handle_base_inputs}
+    }
+  }
+end
+
+function run_frame_pipeline()
+  if not systems or not systems.global or #systems.global == 0 then
+    init_systems()
+  end
+  core.run_systems(systems.global)
+  local active = systems.mode[g.mode] or systems.mode.base
+  core.run_systems(active)
 end`},
 
   ];
