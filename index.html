@@ -1911,9 +1911,9 @@ function loadOperationCorporationExampleProject(){
   p.project.map_h=64;
   p.settings.movementInput='left_joystick';
   p.palette=[...DEFAULT_PALETTE];
-  p.palette[1]='#1a2238'; p.palette[2]='#2f4a5a'; p.palette[3]='#4f7d67'; p.palette[4]='#9cbf88'; p.palette[5]='#d9d08f';
-  p.palette[6]='#e7e0c9'; p.palette[7]='#f8f6e5'; p.palette[8]='#c4513d'; p.palette[9]='#8a2f2f'; p.palette[10]='#f0a35e';
-  p.palette[11]='#6a8fd1'; p.palette[12]='#9ed6ff'; p.palette[13]='#7f8c8d'; p.palette[14]='#3a3f46'; p.palette[15]='#0f1117';
+  p.palette[1]='#111726'; p.palette[2]='#1b2b3a'; p.palette[3]='#25414d'; p.palette[4]='#3b6a5b'; p.palette[5]='#7fa26f';
+  p.palette[6]='#d7cfa8'; p.palette[7]='#f6efd2'; p.palette[8]='#c84d47'; p.palette[9]='#8b2e40'; p.palette[10]='#f4ac61';
+  p.palette[11]='#75a7da'; p.palette[12]='#9fd7f0'; p.palette[13]='#5a6671'; p.palette[14]='#2b3038'; p.palette[15]='#090b0f';
   const spriteFromArt=(rows,map)=>{ const sp=makeSprite(16,16); for(let y=0;y<16;y++){ const row=rows[y]||'................'; for(let x=0;x<16;x++){ const ch=row[x]||'.'; sp.pixels[y][x]=Object.prototype.hasOwnProperty.call(map,ch)?map[ch]:-1; } } return sp; };
   const mkUnit=(primary,secondary,accent)=>spriteFromArt([
     '......aa........','.....aaaa.......','....abbbba......','....abccba......','....abbbba......','.....adda.......','....dd44dd......','....d4444d......','...d444444d.....','...d444444d.....','...e44ee44e.....','..ee4e..e4ee....','..e4e....e4e....','..e4......4e....','................','................'
@@ -1931,208 +1931,414 @@ function loadOperationCorporationExampleProject(){
   ];
   p.tileDefs={
     0:makeBlankTileDef(),
-    1:{source:'4a',flags:{0:false},bg:'#2f4a5a',bgEnabled:true,animated:false,animFolder:4,animSpeed:6},
-    2:{source:'5a',flags:{0:true},bg:'#3a3f46',bgEnabled:false,animated:false,animFolder:5,animSpeed:6},
-    3:{source:'6a',flags:{0:false},bg:'#1f3024',bgEnabled:true,animated:false,animFolder:6,animSpeed:6},
-    4:{source:'7a',flags:{0:false},bg:'#1a2238',bgEnabled:false,animated:true,animFolder:7,animSpeed:5},
-    5:{source:'8a',flags:{0:false},bg:'#1a2238',bgEnabled:false,animated:false,animFolder:8,animSpeed:6}
+    1:{source:'4a',flags:{0:false},bg:'#1b2b3a',bgEnabled:true,animated:false,animFolder:4,animSpeed:6},
+    2:{source:'5a',flags:{0:true},bg:'#2b3038',bgEnabled:false,animated:false,animFolder:5,animSpeed:6},
+    3:{source:'6a',flags:{0:false},bg:'#152224',bgEnabled:true,animated:false,animFolder:6,animSpeed:6},
+    4:{source:'7a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:true,animFolder:7,animSpeed:5},
+    5:{source:'8a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:false,animFolder:8,animSpeed:6}
   };
   p.maps=[makeEmptyMap('0',p.project.map_w,p.project.map_h)];
-  const ground=p.maps[0].layers[0], walls=p.maps[0].layers[1];
-  for(let y=0;y<p.project.map_h;y++){ for(let x=0;x<p.project.map_w;x++){ ground.data[y][x]=1; walls.data[y][x]=0; if(x===0||y===0||x===p.project.map_w-1||y===p.project.map_h-1){walls.data[y][x]=2;} } }
-  for(let x=8;x<72;x++){ walls.data[18][x]=2; if(x%5===0) ground.data[18][x]=5; }
-  for(let y=8;y<56;y++){ walls.data[y][30]=2; walls.data[y][52]=2; }
-  for(let y=24;y<40;y++){ for(let x=34;x<48;x++){ ground.data[y][x]=3; if((x+y)%7===0) ground.data[y][x]=4; } }
   p.music=[makeMusic(),makeMusic()];
   p.codeFiles=[
     {name:'main.lua',tabTheme:0,content:`include "config.lua"
+include "data.lua"
 include "state.lua"
-include "simulation.lua"
+include "field.lua"
+include "base.lua"
 include "draw.lua"
 
-function _init()
-  game_boot()
-end
-
-function _update()
-  game_update()
-end
-
-function _draw()
-  game_draw()
-end`},
+function _init() boot_game() end
+function _update() game_update() end
+function _draw() game_draw() end`},
     {name:'config.lua',tabTheme:1,content:`cfg = {
-  map_w = project.map_w * project.tile_w,
-  map_h = project.map_h * project.tile_h,
-  walk = 1.2,
-  sprint = 1.9,
-  capture_dist = 24,
-  alert_time = 210
+  walk = 1.15,
+  crouch = 0.72,
+  sprint = 1.95,
+  max_noise = 120,
+  extract_radius = 24,
+  body_notice_radius = 92,
+  dispatch_min_team = 3,
+  save_slot = "operation_corp_slot_v2"
 }
 
-team_roles = {"field","intel","research","support"}
-research_tree = {
-  {id="tranq_plus",name="Tranq Dart v2",cost=90,time=500,unlock="stamina_reduce"},
-  {id="stamina_reduce",name="Silent Step Boots",cost=120,time=700,unlock="smoke_mk2"},
-  {id="smoke_mk2",name="Smoke Capsule MkII",cost=160,time=800,unlock="drone_ping"},
-  {id="drone_ping",name="Scout Ping Drone",cost=210,time=1000,unlock=nil}
+vision_settings = {
+  idle = {range=90, cone=0.82, gain=0.75},
+  suspicious = {range=110, cone=0.95, gain=1.2},
+  alert = {range=132, cone=1.15, gain=1.9}
 }
-dispatch_templates = {
-  {name="Supply Intercept",duration=520,reward=120,risk=0.2},
-  {name="Rescue Operatives",duration=760,reward=190,risk=0.34},
-  {name="Destroy Relay",duration=1040,reward=270,risk=0.45}
+
+plan_bulletins_done = {
+  "[x] 1 High concept loop",
+  "[x] 4 Base + Field + Dispatch modes",
+  "[x] 5 Short/medium loop connections",
+  "[x] 7 Vision + LOS + sound + concealment",
+  "[x] 9 Enemy state machine basics",
+  "[x] 10 Procedural outpost templates + variables",
+  "[x] 11 Mission type/modifier/objective tables",
+  "[x] 12 Capture -> recruit processing",
+  "[x] 13 Departments (core impact values)",
+  "[x] 14 Research queue + unlock categories",
+  "[x] 16 Dispatch simulation outcomes",
+  "[x] 17 Resource economy (core currencies)",
+  "[x] 18 Heat/threat escalation",
+  "[x] 19 Extraction gate for rewards",
+  "[x] 22 Mission rank/scoring",
+  "[x] 23 Persistent save data",
+  "[x] 24 Data-driven defs (enemy/staff/mission)"
 }`},
-    {name:'state.lua',tabTheme:2,content:`function fresh_game_state()
+    {name:'data.lua',tabTheme:2,content:`enemy_defs = {
+  guard = {class="rifle_guard", hp=100, speed=0.65, vision_range=92, vision_angle=0.9, hearing_range=90, rank=1, recruitable=true},
+  scout = {class="scout", hp=80, speed=1.05, vision_range=84, vision_angle=1.0, hearing_range=100, rank=2, recruitable=true},
+  heavy = {class="heavy", hp=145, speed=0.48, vision_range=100, vision_angle=0.75, hearing_range=85, rank=3, recruitable=true},
+  officer = {class="officer", hp=95, speed=0.7, vision_range=118, vision_angle=1.1, hearing_range=110, rank=4, recruitable=true}
+}
+
+mission_templates = {
+  {id="capture_outpost", name="Capture Outpost", primary={"neutralize command","plant beacon","extract"}, secondary={"no alarm","capture officer"}},
+  {id="rescue_staff", name="Rescue Prisoners", primary={"free cells","escort to zone","extract"}, secondary={"no kill"}},
+  {id="steal_intel", name="Steal Intel", primary={"hack terminal","steal drive","extract"}, secondary={"no alert","time bonus"}}
+}
+
+outpost_templates = {
+  {id="checkpoint", walls=1, patrol=6, cameras=1, prisoners=1, resources=2},
+  {id="radar_station", walls=2, patrol=8, cameras=3, prisoners=1, resources=3},
+  {id="supply_depot", walls=3, patrol=10, cameras=2, prisoners=2, resources=5},
+  {id="prison_camp", walls=2, patrol=9, cameras=2, prisoners=4, resources=2}
+}
+
+weather_mods = {"clear","rain","fog","heat_haze"}
+time_mods = {"dawn","day","dusk","night"}
+
+research_tree = {
+  {id="tranq_plus", name="Tranq Dart v2", cost=90, t=500, cat="tranq", unlock="silent_boots"},
+  {id="silent_boots", name="Silent Step Boots", cost=110, t=650, cat="stealth", unlock="smoke_mk2"},
+  {id="smoke_mk2", name="Smoke Capsule MkII", cost=150, t=760, cat="gadgets", unlock="drone_ping"},
+  {id="drone_ping", name="Scout Ping Drone", cost=210, t=930, cat="recon", unlock=nil}
+}
+
+department_defs = {
+  command={lvl=1, bonus="staff cap"},
+  rnd={lvl=1, bonus="research speed"},
+  security={lvl=1, bonus="captured processing"},
+  medical={lvl=1, bonus="injury recovery"},
+  intel={lvl=1, bonus="patrol reveal"},
+  dispatch={lvl=1, bonus="mission outcomes"}
+}
+
+dispatch_templates = {
+  {name="Supply Raid", duration=460, reward=110, risk=0.18, req="combat"},
+  {name="Intel Sweep", duration=700, reward=165, risk=0.27, req="intel"},
+  {name="Hostage Rescue", duration=980, reward=255, risk=0.42, req="stealth"}
+}
+
+traits = {"Night Ops","Fast Learner","Cowardly","Resourceful","Leader","Saboteur"}`},
+    {name:'state.lua',tabTheme:3,content:`function rand_trait(seed)
+  return traits[(seed % #traits)+1]
+end
+
+function make_staff(name, rank, seed)
   return {
-    scene="menu",
-    tick=0,
-    player={x=80,y=80,vx=0,vy=0,dir=1,energy=100,hp=100,stealth=0},
-    base={funds=220,fuel=140,medic=3},
-    teams={field={},intel={},research={},support={}},
-    roster={},
-    enemies={},
-    prisoners={},
-    fultons=6,
-    alerts=0,
-    heat=0,
-    tools={tranq=true,smoke=true,mine=false,drone=false,armor=false},
-    research={active=nil,queue={},done={tranq=true,smoke=true}},
-    dispatch={active={},log={}},
-    msgs={},
-    cam={x=0,y=0},
-    cursor=1
+    name=name,
+    rank=rank,
+    stats={combat=40+rank*8, stealth=35+rank*6, research=22+rank*7, engineering=20+rank*8, command=16+rank*7, intel=25+rank*6},
+    morale=55+rank*7,
+    loyalty=50+rank*8,
+    trait=rand_trait(seed),
+    status="active",
+    injury="none"
   }
 end
 
-function game_boot()
+function fresh_game_state()
+  return {
+    scene="menu",
+    tick=0,
+    mode="field",
+    player={x=90,y=90,vx=0,vy=0,dir=1,hp=100,stamina=100,noise=0,conceal=0,crouch=false,carrying=false},
+    cam={x=0,y=0},
+    resources={funds=260,fuel=140,metals=65,chem=42,intel=18,morale=72,influence=10},
+    departments=department_defs,
+    roster={},
+    brig={},
+    enemies={},
+    prisoners={},
+    evidence=0,
+    alerts=0,
+    global_heat=0,
+    fultons=6,
+    current_mission=nil,
+    mission_score=0,
+    pending_rewards={funds=0,fuel=0,intel=0,recruits=0},
+    research={active=nil,queue={},done={tranq_plus=true}},
+    dispatch={active={},log={}},
+    msgs={},
+    cursor=1,
+    phase="infiltrate"
+  }
+end
+
+function boot_game()
   g = fresh_game_state()
   load_campaign()
-  spawn_world()
+  start_new_operation()
+end
+
+function push_msg(text)
+  add(g.msgs, text)
+  if #g.msgs > 6 then deli(g.msgs,1) end
+end
+
+function start_new_operation()
+  g.current_mission = roll_mission()
+  generate_outpost(g.current_mission)
+  g.player.x, g.player.y = 54, 54
+  g.phase = "infiltrate"
+  g.pending_rewards = {funds=0,fuel=0,intel=0,recruits=0}
+  g.mission_score = 0
+  g.alerts = 0
+  g.evidence = 0
+end
+
+function save_campaign()
+  local blob = "funds="..flr(g.resources.funds)..";fuel="..flr(g.resources.fuel)..";intel="..flr(g.resources.intel)..";fultons="..flr(g.fultons)..";roster="..#g.roster..";heat="..flr(g.global_heat)
+  save_data(cfg.save_slot, blob)
 end
 
 function load_campaign()
-  local blob = load_data("operation_corp_slot")
-  if blob and #blob > 3 then
-    local funds = tonumber(blob:match("funds=(%d+)"))
-    local fuel = tonumber(blob:match("fuel=(%d+)"))
-    local fultons = tonumber(blob:match("fultons=(%d+)"))
-    local recruits = tonumber(blob:match("recruits=(%d+)"))
-    if funds then g.base.funds = funds end
-    if fuel then g.base.fuel = fuel end
-    if fultons then g.fultons = fultons end
-    if recruits then
-      for i=1,recruits do
-        add(g.roster, {name="R"..i, rank=(i%5)+1, morale=70+i})
+  local blob = load_data(cfg.save_slot)
+  if not blob or #blob < 3 then return end
+  local funds = tonumber(blob:match("funds=(%d+)"))
+  local fuel = tonumber(blob:match("fuel=(%d+)"))
+  local intel = tonumber(blob:match("intel=(%d+)"))
+  local fultons = tonumber(blob:match("fultons=(%d+)"))
+  local roster = tonumber(blob:match("roster=(%d+)"))
+  local heat = tonumber(blob:match("heat=(%d+)"))
+  if funds then g.resources.funds = funds end
+  if fuel then g.resources.fuel = fuel end
+  if intel then g.resources.intel = intel end
+  if fultons then g.fultons = fultons end
+  if heat then g.global_heat = heat end
+  if roster then
+    for i=1,roster do add(g.roster, make_staff("R"..i, (i%4)+1, i*7)) end
+  end
+end`},
+    {name:'field.lua',tabTheme:4,content:`function roll_mission()
+  local m = mission_templates[(g.tick % #mission_templates)+1]
+  local t = outpost_templates[((g.tick*3) % #outpost_templates)+1]
+  return {
+    mission_id=m.id,
+    mission_name=m.name,
+    outpost=t.id,
+    weather=weather_mods[((g.tick*5) % #weather_mods)+1],
+    tod=time_mods[((g.tick*7) % #time_mods)+1],
+    primary=m.primary,
+    secondary=m.secondary,
+    guard_count=t.patrol + flr(g.global_heat/4),
+    resource_nodes=t.resources,
+    prisoner_count=t.prisoners,
+    alert_baseline=flr(g.global_heat/10)
+  }
+end
+
+function clear_map()
+  for y=0,project.map_h-1 do
+    for x=0,project.map_w-1 do
+      mset(x,y,1,0,0)
+      if x==0 or y==0 or x==project.map_w-1 or y==project.map_h-1 then
+        mset(x,y,2,1,0)
+      else
+        mset(x,y,0,1,0)
       end
     end
   end
 end
 
-function save_campaign()
-  local blob = "funds="..flr(g.base.funds)..";fuel="..flr(g.base.fuel)..";fultons="..flr(g.fultons)..";recruits="..#g.roster
-  save_data("operation_corp_slot", blob)
-end`},
-    {name:'simulation.lua',tabTheme:3,content:`function spawn_world()
+function generate_outpost(m)
+  clear_map()
+  local xa, xb = 10, project.map_w-11
+  local ya, yb = 10, project.map_h-11
+  for x=xa,xb do mset(x,ya,2,1,0) mset(x,yb,2,1,0) end
+  for y=ya,yb do mset(xa,y,2,1,0) mset(xb,y,2,1,0) end
+  for i=1,m.resource_nodes do
+    local rx,ry = 14 + (i*11)%50, 14 + (i*9)%36
+    mset(rx,ry,4,0,0)
+  end
+  for i=1,m.prisoner_count do
+    add(g.prisoners,{x=170+i*40,y=180+i*28,rescued=false,rank=(i%4)+1})
+  end
   g.enemies = {}
-  for i=1,28 do
-    add(g.enemies, {
-      x=40 + (i*23)%980,
-      y=44 + (i*41)%900,
-      dir=(i%2==0) and 1 or -1,
-      patrol=38 + (i%5)*24,
-      alert=0,
-      hp=100,
-      stunned=0,
-      captured=false,
-      rank=(i%5)+1,
-      specialist=(i%9==0)
+  for i=1,m.guard_count do
+    local kind = (i%9==0 and "officer") or (i%5==0 and "heavy") or (i%3==0 and "scout") or "guard"
+    local def = enemy_defs[kind]
+    add(g.enemies,{
+      kind=kind,x=120 + (i*29)%880,y=90 + (i*43)%620,dir=((i%2==0) and 1 or -1),
+      hp=def.hp,state="patrol",detect=0,last_heard=nil,last_seen=nil,stunned=0,captured=false,bound=false,
+      vision=def.vision_range,cone=def.vision_angle,hearing=def.hearing_range,rank=def.rank,special=(i%7==0)
     })
   end
-  g.prisoners = {}
-  for i=1,7 do
-    add(g.prisoners, {x=130+i*85,y=120+i*40,rescued=false,rank=(i%4)+2})
-  end
+  push_msg("Mission: "..m.mission_name.." / "..m.outpost.." / "..m.weather.." "..m.tod)
 end
 
 function actor_solid(x,y)
   return wall(x,y,1,0) or wall(x+13,y,1,0) or wall(x,y+13,1,0) or wall(x+13,y+13,1,0)
 end
 
+function emit_noise(power)
+  g.player.noise = math.max(0, math.min(cfg.max_noise, power))
+end
+
 function move_player()
   local mx,my = joyx(0),joyy(0)
-  if btn("left") then mx = -1 end
-  if btn("right") then mx = 1 end
-  if btn("up") then my = -1 end
-  if btn("down") then my = 1 end
-  local speed = btn("x") and cfg.sprint or cfg.walk
-  g.player.vx = mx * speed
-  g.player.vy = my * speed
+  if btn("left") then mx=-1 end
+  if btn("right") then mx=1 end
+  if btn("up") then my=-1 end
+  if btn("down") then my=1 end
+  g.player.crouch = btn("y")
+  local sprinting = btn("x") and not g.player.crouch and g.player.stamina>10
+  local speed = g.player.crouch and cfg.crouch or (sprinting and cfg.sprint or cfg.walk)
+  if sprinting then g.player.stamina -= 0.32 else g.player.stamina = math.min(100, g.player.stamina+0.18) end
+  g.player.vx,g.player.vy = mx*speed,my*speed
   if mx ~= 0 then g.player.dir = mx > 0 and 1 or -1 end
-  local nx = g.player.x + g.player.vx
-  local ny = g.player.y + g.player.vy
+  local nx,ny = g.player.x + g.player.vx, g.player.y + g.player.vy
   if not actor_solid(nx,g.player.y) then g.player.x = nx end
   if not actor_solid(g.player.x,ny) then g.player.y = ny end
+  emit_noise(g.player.crouch and 14 or (sprinting and 80 or 34))
 end
 
-function capture_nearby()
-  for e in all(g.enemies) do
-    if not e.captured and e.stunned > 0 then
-      local dx = e.x - g.player.x
-      local dy = e.y - g.player.y
-      if abs(dx)+abs(dy) < cfg.capture_dist and btnp("a") and g.fultons > 0 then
-        e.captured = true
+function player_concealment()
+  local tx,ty = flr((g.player.x+8)/project.tile_w), flr((g.player.y+8)/project.tile_h)
+  local tile = mget(tx,ty,0)
+  g.player.conceal = (tile==3 and 0.55) or (tile==4 and 0.3) or 0
+end
+
+function los_to_player(e)
+  local dx,dy = g.player.x-e.x, g.player.y-e.y
+  local dist = math.sqrt(dx*dx + dy*dy)
+  if dist > e.vision then return false,dist end
+  if (e.dir==1 and dx<0) or (e.dir==-1 and dx>0) then return false,dist end
+  local blocked = wall((e.x+g.player.x)/2,(e.y+g.player.y)/2,1,0)
+  return not blocked, dist
+end
+
+function react_to_sound(e)
+  local dx,dy = abs(e.x-g.player.x), abs(e.y-g.player.y)
+  local hear = math.max(0, g.player.noise - (g.player.conceal*22))
+  if dx+dy < e.hearing and hear > 42 then
+    e.last_heard={x=g.player.x,y=g.player.y}
+    if e.state=="patrol" then e.state="investigate" end
+  end
+end
+
+function update_enemy(e)
+  if e.captured then return end
+  if e.stunned > 0 then e.stunned -= 1 return end
+  react_to_sound(e)
+  local can_see,dist = los_to_player(e)
+  local gain = can_see and (1.7 - g.player.conceal) or -0.8
+  if e.state=="investigate" then gain += 0.4 end
+  if e.state=="alert" then gain += 0.8 end
+  e.detect = math.max(0, math.min(100, e.detect + gain))
+  if e.detect > 76 then e.state="alert"; e.last_seen={x=g.player.x,y=g.player.y}; g.alerts += 1; g.global_heat += 0.02
+  elseif e.detect > 36 and e.state=="patrol" then e.state="suspicious"
+  elseif e.detect < 10 and e.state~="patrol" then e.state="patrol" end
+
+  if e.state=="patrol" then
+    e.x += 0.5 * e.dir
+    if actor_solid(e.x,e.y) then e.dir=-e.dir end
+  elseif e.state=="investigate" and e.last_heard then
+    e.x += (e.last_heard.x > e.x and 0.7 or -0.7)
+    e.y += (e.last_heard.y > e.y and 0.7 or -0.7)
+    if abs(e.x-e.last_heard.x)+abs(e.y-e.last_heard.y) < 12 then e.state="search" end
+  elseif e.state=="alert" then
+    e.x += (g.player.x > e.x and 1.05 or -1.05)
+    e.y += (g.player.y > e.y and 1.05 or -1.05)
+    if dist < 18 then g.player.hp -= 0.16 end
+  elseif e.state=="search" then
+    e.x += 0.42 * (e.dir)
+    if (g.tick + e.rank) % 45 == 0 then e.dir = -e.dir end
+  end
+end
+
+function nonlethal_actions()
+  if btnp("b") then
+    emit_noise(48)
+    for e in all(g.enemies) do
+      if not e.captured and e.stunned<=0 then
+        local dx,dy = abs(e.x-g.player.x), abs(e.y-g.player.y)
+        if dx<130 and dy<90 then
+          e.stunned = 320
+          e.state="down"
+          g.mission_score += 6
+          break
+        end
+      end
+    end
+  end
+  if btnp("a") then
+    for e in all(g.enemies) do
+      local near = abs(e.x-g.player.x)+abs(e.y-g.player.y) < cfg.extract_radius
+      if near and e.stunned>0 and g.fultons>0 and not e.captured then
+        e.captured=true
         g.fultons -= 1
-        add(g.roster,{name="Converted "..(#g.roster+1),rank=e.rank,morale=60+e.rank*6,special=e.specialist})
-        g.base.funds += 25 + e.rank * 6
+        add(g.brig,{name="POW-"..(#g.brig+1), rank=e.rank, trait=rand_trait(g.tick+#g.brig), loyalty=35+e.rank*9})
+        g.pending_rewards.funds += 24 + e.rank*8
+        g.pending_rewards.recruits += 1
+        g.mission_score += 20
+        push_msg("Captured enemy rank "..e.rank)
+        return
       end
+    end
+    if g.phase=="extract_ready" and abs(g.player.x-1180)+abs(g.player.y-930) < 40 then
+      complete_extraction()
     end
   end
 end
 
-function tranq_logic()
-  if not g.tools.tranq then return end
-  if not btnp("b") then return end
-  for e in all(g.enemies) do
-    if e.captured then
-    else
-      local dx,dy=e.x-g.player.x,e.y-g.player.y
-      if abs(dx)<120 and abs(dy)<90 then
-        e.stunned = 260
-        break
-      end
-    end
+function update_objectives()
+  local active = 0
+  for e in all(g.enemies) do if not e.captured and e.stunned<=0 then active += 1 end end
+  if active <= 3 and g.phase=="infiltrate" then g.phase="extract_ready"; push_msg("Command structure disrupted. Extract!") end
+end
+
+function complete_extraction()
+  g.resources.funds += g.pending_rewards.funds
+  g.resources.fuel += 16 + flr(g.pending_rewards.recruits*2)
+  g.resources.intel += 4 + flr(g.alerts==0 and 4 or 0)
+  g.mission_score += math.max(0, 120 - g.alerts*8)
+  push_msg("Extraction success. Score "..flr(g.mission_score))
+  process_brig_recruits()
+  start_new_operation()
+  save_campaign()
+end
+
+function process_brig_recruits()
+  while #g.brig > 0 do
+    local p = deli(g.brig,1)
+    add(g.roster, make_staff("Agent "..(#g.roster+1), p.rank, g.tick+#g.roster*5))
   end
 end
 
-function update_enemy_ai()
-  for e in all(g.enemies) do
-    if e.captured then
-    elseif e.stunned > 0 then
-      e.stunned -= 1
-    else
-      e.x += 0.6 * e.dir
-      if actor_solid(e.x,e.y) then e.dir = -e.dir end
-      local dx,dy = abs(e.x-g.player.x),abs(e.y-g.player.y)
-      if dx < 42 and dy < 30 then
-        e.alert = cfg.alert_time
-        g.alerts += 1
-        g.heat += 1
-      end
-      if e.alert > 0 then
-        e.alert -= 1
-        if g.player.x < e.x then
-          e.x = e.x - 0.9
-        else
-          e.x = e.x + 0.9
-        end
-        if g.player.y < e.y then
-          e.y = e.y - 0.9
-        else
-          e.y = e.y + 0.9
-        end
-      end
+function update_field()
+  move_player()
+  player_concealment()
+  for e in all(g.enemies) do update_enemy(e) end
+  nonlethal_actions()
+  update_objectives()
+  if btnp("select") then g.mode = "base" end
+  if btnp("start") then save_campaign() end
+  g.cam.x = g.player.x - 240
+  g.cam.y = g.player.y - 135
+end`},
+    {name:'base.lua',tabTheme:5,content:`function queue_research()
+  for item in all(research_tree) do
+    if not g.research.done[item.id] and g.resources.funds >= item.cost then
+      g.resources.funds -= item.cost
+      add(g.research.queue,{id=item.id,name=item.name,t=item.t})
+      push_msg("R&D started: "..item.name)
+      return
     end
   end
+  push_msg("No affordable R&D item")
 end
 
 function update_research()
@@ -2140,146 +2346,152 @@ function update_research()
     g.research.active.t -= 1
     if g.research.active.t <= 0 then
       local done = g.research.active
-      g.tools[done.id] = true
       g.research.done[done.id] = true
       g.research.active = nil
-      add(g.msgs, "Research complete: "..done.name)
+      push_msg("R&D complete: "..done.name)
     end
   elseif #g.research.queue > 0 then
     g.research.active = deli(g.research.queue,1)
   end
 end
 
-function queue_research()
-  if not btnp("y") then return end
-  for item in all(research_tree) do
-    if not g.research.done[item.id] and g.base.funds >= item.cost then
-      g.base.funds -= item.cost
-      add(g.research.queue,{id=item.id,name=item.name,t=item.time})
-      add(g.msgs,"Research started: "..item.name)
-      return
-    end
+function launch_dispatch()
+  if #g.roster < cfg.dispatch_min_team then
+    push_msg("Dispatch needs "..cfg.dispatch_min_team.." staff")
+    return
   end
+  local t = dispatch_templates[((g.tick*3) % #dispatch_templates)+1]
+  local intel_bonus = g.departments.intel.lvl * 0.04
+  add(g.dispatch.active,{name=t.name,t=t.duration,reward=t.reward,risk=math.max(0.05,t.risk-intel_bonus)})
+  push_msg("Dispatch launched: "..t.name)
 end
 
-function update_dispatch()
+function resolve_dispatch()
   local i=1
   while i<=#g.dispatch.active do
     local d=g.dispatch.active[i]
     d.t -= 1
     if d.t<=0 then
-      local success = math.random() > d.risk
-      if success then
-        g.base.funds += d.reward
-        g.base.fuel += flr(d.reward/5)
+      local roll = math.random()
+      local outcome = "FAIL"
+      if roll > d.risk+0.25 then
+        outcome = "PERFECT"
+        g.resources.funds += d.reward + 50
+        g.resources.intel += 8
+        g.resources.morale = math.min(100, g.resources.morale + 4)
+      elseif roll > d.risk then
+        outcome = "SUCCESS"
+        g.resources.funds += d.reward
+        g.resources.fuel += flr(d.reward/6)
+      elseif roll > d.risk-0.16 then
+        outcome = "PARTIAL"
+        g.resources.funds += flr(d.reward*0.45)
+        g.resources.morale -= 3
+      else
+        g.resources.morale -= 8
+        g.global_heat += 3
       end
-      add(g.dispatch.log, (success and "SUCCESS " or "FAIL ")..d.name)
+      add(g.dispatch.log, outcome.." "..d.name)
+      if #g.dispatch.log > 5 then deli(g.dispatch.log,1) end
       deli(g.dispatch.active,i)
     else
-      i+=1
+      i += 1
     end
   end
 end
 
-function launch_dispatch()
-  if not btnp("x") then return end
-  if #g.roster < 4 then
-    add(g.msgs,"Need 4+ recruits for dispatch")
-    return
-  end
-  local tpl = dispatch_templates[(g.tick % #dispatch_templates)+1]
-  add(g.dispatch.active,{name=tpl.name,t=tpl.duration,reward=tpl.reward,risk=tpl.risk})
-  add(g.msgs,"Dispatched: "..tpl.name)
-end
-
-function update_messages()
-  if #g.msgs > 4 then deli(g.msgs,1) end
+function handle_base_inputs()
+  if btnp("y") then queue_research() end
+  if btnp("x") then launch_dispatch() end
+  if btnp("a") then g.mode = "field" end
 end
 
 function game_update()
   g.tick += 1
   if g.scene == "menu" then
-    if btnp("a") then g.scene = "field" end
+    if btnp("a") then g.scene = "game" end
     return
   end
-  move_player()
-  tranq_logic()
-  update_enemy_ai()
-  capture_nearby()
-  queue_research()
-  launch_dispatch()
   update_research()
-  update_dispatch()
-  update_messages()
-  if btnp("start") then save_campaign() end
-  g.cam.x = g.player.x - 240
-  g.cam.y = g.player.y - 135
+  resolve_dispatch()
+  if g.mode == "field" then update_field() else handle_base_inputs() end
 end`},
-    {name:'draw.lua',tabTheme:4,content:`function draw_hud()
+    {name:'draw.lua',tabTheme:6,content:`function draw_enemy(e)
+  if e.captured then return end
+  local ref = (e.state=="alert" and "3a") or (e.kind=="officer" and "2a") or "1a"
+  if e.stunned>0 then ref = "8a" end
+  spr(ref,e.x,e.y)
+  if e.state=="alert" then circ(e.x+8,e.y-4,5,8) end
+  if e.state=="suspicious" then circ(e.x+8,e.y-4,4,10) end
+end
+
+function draw_hud()
   camera()
-  rect(8,8,470,72,6)
-  rectfill(10,10,468,30,15)
-  print("Operation Corporation",18,14,11,color(248,246,229))
-  print("Funds:"..flr(g.base.funds).." Fuel:"..flr(g.base.fuel).." Fulton:"..g.fultons,18,34,12,color(248,246,229))
-  print("Recruits:"..#g.roster.." Alerts:"..g.alerts.." Heat:"..g.heat,18,50,10,color(248,246,229))
-  rect(300,36,458,66,11)
-  local research_label = g.research.active and ("R&D: "..g.research.active.name) or "R&D: idle"
-  print(research_label,306,44,10,color(248,246,229))
+  rect(8,8,470,86,6)
+  rectfill(10,10,468,28,15)
+  print("OPERATION CORPORATION // "..string.upper(g.mode),14,14,11,color(246,240,220))
+  print("Funds:"..flr(g.resources.funds).." Fuel:"..flr(g.resources.fuel).." Intel:"..flr(g.resources.intel).." Heat:"..flr(g.global_heat),14,34,12,color(246,240,220))
+  print("Roster:"..#g.roster.." Fultons:"..g.fultons.." Alerts:"..flr(g.alerts).." Score:"..flr(g.mission_score),14,50,10,color(246,240,220))
+  local rd = g.research.active and ("R&D "..g.research.active.name.." "..flr(g.research.active.t/60).."s") or "R&D idle"
+  print(rd,14,66,10,color(246,240,220))
 end
 
 function draw_field()
   cls(15)
   camera(g.cam.x,g.cam.y)
   map(0)
-  for e in all(g.enemies) do
-    if not e.captured then
-      local ref = e.alert > 0 and "3a" or "1a"
-      if e.stunned > 0 then ref = "8a" end
-      spr(ref,e.x,e.y)
-      if e.alert > 0 then circ(e.x+8,e.y-4,6,8) end
-    end
-  end
-  for p in all(g.prisoners) do
-    if not p.rescued then spr("2a",p.x,p.y) end
-  end
+  for e in all(g.enemies) do draw_enemy(e) end
+  for p in all(g.prisoners) do if not p.rescued then spr("2a",p.x,p.y) end end
   animate(0,g.player.x,g.player.y,8)
-  if g.tools.drone_ping then
-    local r = 20 + (g.tick % 30)
-    circ(g.player.x+8,g.player.y+8,r,11)
-  end
+  if g.research.done.drone_ping then circ(g.player.x+8,g.player.y+8,24+(g.tick%24),11) end
+  if g.phase=="extract_ready" then rect(1168,916,1214,956,10) end
   draw_hud()
-  local my = 82
-  for msg in all(g.msgs) do
-    print(msg,14,my,12,color(248,246,229))
-    my += 14
+  local y=98
+  for msg in all(g.msgs) do print(msg,14,y,12,color(246,240,220)); y += 13 end
+  print("TAB/Select: base",340,72,10,color(246,240,220))
+end
+
+function draw_base()
+  cls(15)
+  rectfill(22,20,458,250,1)
+  rect(22,20,458,250,7)
+  print("BASE COMMAND",36,34,11,color(246,240,220))
+  print("A: return to field | Y: queue R&D | X: dispatch",36,50,12,color(246,240,220))
+  print("Departments",36,72,10,color(246,240,220))
+  local y=86
+  for k,v in pairs(g.departments) do
+    print(k.." lv"..v.lvl.." - "..v.bonus,40,y,12,color(246,240,220))
+    y += 12
   end
+  print("Dispatch log:",250,72,10,color(246,240,220))
+  local ly=86
+  for i=#g.dispatch.log,1,-1 do print(g.dispatch.log[i],254,ly,12,color(246,240,220)); ly += 12 end
+  print("Completed bulletins:",36,170,10,color(246,240,220))
+  local by=184
+  for i=1,math.min(4,#plan_bulletins_done) do print(plan_bulletins_done[i],40,by,12,color(246,240,220)); by += 12 end
 end
 
 function draw_menu()
   cls(15)
   rectfill(34,26,444,240,1)
   rect(34,26,444,240,7)
-  print("OPERATION CORPORATION",88,44,30,color(248,246,229))
-  print("Top-down infiltration demo",122,92,14,color(248,246,229))
-  print("A: deploy",160,128,14,color(248,246,229))
-  print("B: tranquilize enemy",160,146,14,color(248,246,229))
-  print("A near stunned foe: capture",160,164,14,color(248,246,229))
-  print("Y: start research, X: dispatch mission",160,182,14,color(248,246,229))
-  print("progress auto-saves to runtime slot",132,210,12,color(248,246,229))
-  circfill(94,184,14,10)
-  circ(94,184,18,6)
+  print("OPERATION CORPORATION (REMAKE)",66,46,30,color(246,240,220))
+  print("Retro top-down stealth + base growth + dispatch",78,84,14,color(246,240,220))
+  print("A: start campaign",142,112,14,color(246,240,220))
+  print("B: nonlethal tranq, A near stunned target to capture",74,138,14,color(246,240,220))
+  print("Y crouch / X sprint / Select base view",104,160,14,color(246,240,220))
+  print("Rewards only count after extraction",122,184,12,color(246,240,220))
+  print("Save anytime with START",156,204,12,color(246,240,220))
 end
 
 function game_draw()
-  if g.scene == "menu" then
-    draw_menu()
-  else
-    draw_field()
-  end
+  if g.scene == "menu" then draw_menu() return end
+  if g.mode == "field" then draw_field() else draw_base() end
 end`},
   ];
   finalizeExampleProjectLoad();
 }
+
 
 function getExampleProjects(){
   return [
