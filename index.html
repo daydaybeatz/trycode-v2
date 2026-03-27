@@ -1989,12 +1989,12 @@ plan_bulletins_done = {
 }
 
 plan_bulletins_todo = {
-  "[ ] 8 Expanded weapon categories + damage model",
-  "[ ] 10 Multi-theme biome outpost modules",
-  "[ ] 15 Full loadout slot + suit selection UI",
-  "[ ] 18 Region map + faction control simulation",
-  "[ ] 20 Advanced injury/trauma model for roster",
-  "[ ] 25-5 Expansion pass (elites, rare blueprints, deep traits)"
+  "[x] 8 Expanded weapon categories + damage model",
+  "[x] 10 Multi-theme biome outpost modules",
+  "[x] 15 Full loadout slot + suit selection UI",
+  "[x] 18 Region map + faction control simulation",
+  "[x] 20 Advanced injury/trauma model for roster",
+  "[x] 25-5 Expansion pass (elites, rare blueprints, deep traits)"
 }`},
     {name:'data.lua',tabTheme:2,content:`enemy_defs = {
   guard = {class="rifle_guard", hp=100, speed=0.65, vision_range=92, vision_angle=0.9, hearing_range=90, rank=1, recruitable=true},
@@ -2041,9 +2041,105 @@ dispatch_templates = {
   {name="Hostage Rescue", duration=980, reward=255, risk=0.42, req="stealth"}
 }
 
-traits = {"Night Ops","Fast Learner","Cowardly","Resourceful","Leader","Saboteur"}`},
+traits = {"Night Ops","Fast Learner","Cowardly","Resourceful","Leader","Saboteur"}
+
+weapon_defs = {
+  pistol={cat="sidearm", dmg=24, noise=28, kind="ballistic"},
+  smg={cat="primary", dmg=18, noise=34, kind="ballistic"},
+  ar={cat="primary", dmg=29, noise=40, kind="ballistic"},
+  shotgun={cat="primary", dmg=48, noise=56, kind="ballistic"},
+  sniper={cat="primary", dmg=64, noise=62, kind="ballistic"},
+  tranq={cat="special", dmg=0, noise=16, kind="tranq"},
+  stun={cat="special", dmg=6, noise=22, kind="stun"},
+  gas={cat="throw", dmg=2, noise=18, kind="gas"},
+  frag={cat="throw", dmg=74, noise=80, kind="explosive"},
+  baton={cat="melee", dmg=18, noise=10, kind="melee"},
+  knife={cat="melee", dmg=30, noise=8, kind="melee"}
+}
+
+damage_profile = {
+  light={ballistic=1.0, explosive=1.1, tranq=1.0, stun=1.1, gas=1.2, melee=1.0},
+  medium={ballistic=0.82, explosive=1.0, tranq=0.84, stun=0.92, gas=1.0, melee=0.94},
+  heavy={ballistic=0.66, explosive=0.9, tranq=0.68, stun=0.74, gas=0.84, melee=0.8},
+  shield={ballistic=0.54, explosive=0.86, tranq=0.5, stun=0.8, gas=0.72, melee=0.75}
+}
+
+biome_themes = {
+  scrublands={conceal=0.34, weather={"clear","heat_haze","dust"}, tint=4},
+  alpine={conceal=0.22, weather={"clear","fog","snow"}, tint=11},
+  coastal={conceal=0.28, weather={"rain","storm","fog"}, tint=12},
+  industrial={conceal=0.18, weather={"clear","rain","smog"}, tint=2},
+  wetland={conceal=0.4, weather={"fog","rain","mist"}, tint=3}
+}
+
+biome_outpost_modules = {
+  scrublands={"checkpoint","supply_depot","fuel_farm"},
+  alpine={"radar_station","relay_tower","ski_garrison"},
+  coastal={"shipyard","warehouse_port","prison_camp"},
+  industrial={"refinery","rail_hub","prison_camp"},
+  wetland={"flood_gate","bio_lab","checkpoint"}
+}
+
+loadout_slot_defs = {
+  "primary","secondary","support","gadget","throwable","suit","passive","recovery"
+}
+
+suit_defs = {
+  sneaksuit={conceal=0.25, armor="light", stamina=12, noise=-10},
+  battleframe={conceal=-0.08, armor="heavy", stamina=30, noise=8},
+  amphib_ops={conceal=0.18, armor="medium", stamina=18, noise=-4},
+  arctic_veil={conceal=0.2, armor="medium", stamina=14, noise=-8}
+}
+
+region_defs = {
+  ash_fork={name="Ash Fork", biome="scrublands", owner="sentinel_union", heat=18, influence=6},
+  frostline={name="Frostline", biome="alpine", owner="north_veil", heat=24, influence=4},
+  hardport={name="Hardport", biome="coastal", owner="carthage_pmc", heat=28, influence=3},
+  iron_corridor={name="Iron Corridor", biome="industrial", owner="sentinel_union", heat=31, influence=2},
+  hollow_marsh={name="Hollow Marsh", biome="wetland", owner="north_veil", heat=22, influence=5}
+}
+
+faction_defs = {
+  sentinel_union={pressure=1.05, doctrine="sensors + armor"},
+  north_veil={pressure=0.96, doctrine="recon + snipers"},
+  carthage_pmc={pressure=1.12, doctrine="rapid response + elites"}
+}
+
+injury_defs = {
+  bruised={days=2, mod=0.96, mood=-1},
+  fractured={days=5, mod=0.82, mood=-4},
+  trauma={days=8, mod=0.7, mood=-8},
+  critical={days=12, mod=0.54, mood=-12}
+}
+
+elite_defs = {
+  hunter={bonus_hp=34, bonus_detect=12, weapon="sniper"},
+  warder={bonus_hp=52, bonus_detect=6, weapon="shotgun"},
+  jammer={bonus_hp=24, bonus_detect=18, weapon="smg"}
+}
+
+rare_blueprints = {
+  "Ghost Weave Suit",
+  "Adaptive Tranq Injector",
+  "EM Snare Mine",
+  "Drone Relay Harness",
+  "Reactive Trauma Gel"
+}
+
+deep_traits = {
+  "Signal Savant",
+  "Unflinching",
+  "Field Surgeon",
+  "Counterintel Mind",
+  "Sabotage Artist",
+  "Extraction Addict"
+}`},
     {name:'state.lua',tabTheme:3,content:`function rand_trait(seed)
   return traits[(seed % #traits)+1]
+end
+
+function rand_deep_trait(seed)
+  return deep_traits[(seed % #deep_traits)+1]
 end
 
 function make_staff(name, rank, seed)
@@ -2054,8 +2150,10 @@ function make_staff(name, rank, seed)
     morale=55+rank*7,
     loyalty=50+rank*8,
     trait=rand_trait(seed),
+    deep_trait=rand_deep_trait(seed*3+rank),
     status="active",
-    injury="none"
+    injury="none",
+    trauma_days=0
   }
 end
 
@@ -2065,6 +2163,7 @@ function fresh_game_state()
     tick=0,
     mode="field",
     player={x=90,y=90,vx=0,vy=0,dir=1,hp=100,stamina=100,noise=0,conceal=0,crouch=false,carrying=false},
+    player_loadout={primary="tranq",secondary="pistol",support="drone_ping",gadget="stun",throwable="gas",suit="sneaksuit",passive="signal_tap",recovery="med_kit"},
     cam={x=0,y=0},
     resources={funds=260,fuel=140,metals=65,chem=42,intel=18,morale=72,influence=10},
     departments=department_defs,
@@ -2082,6 +2181,11 @@ function fresh_game_state()
     research={active=nil,queue={},done={tranq_plus=true}},
     dispatch={active={},log={}},
     support={recon_cd=0,supply_cd=0},
+    blueprints={},
+    regions={},
+    current_region="ash_fork",
+    region_tick=0,
+    base_tab=1,
     msgs={},
     cursor=1,
     phase="infiltrate"
@@ -2090,6 +2194,9 @@ end
 
 function boot_game()
   g = fresh_game_state()
+  for id,reg in pairs(region_defs) do
+    g.regions[id]={owner=reg.owner,heat=reg.heat,influence=reg.influence}
+  end
   load_campaign()
   start_new_operation()
 end
@@ -2134,17 +2241,28 @@ function load_campaign()
   end
 end`},
     {name:'field.lua',tabTheme:4,content:`function roll_mission()
+  local region = g.regions[g.current_region] or {owner="sentinel_union",heat=20}
+  local reg_cfg = region_defs[g.current_region] or region_defs.ash_fork
+  local biome_id = reg_cfg.biome
+  local biome = biome_themes[biome_id] or biome_themes.scrublands
+  local faction = faction_defs[region.owner] or faction_defs.sentinel_union
   local m = mission_templates[(g.tick % #mission_templates)+1]
   local t = outpost_templates[((g.tick*3) % #outpost_templates)+1]
+  local biome_modules = biome_outpost_modules[biome_id] or biome_outpost_modules.scrublands
+  local module_name = biome_modules[((g.tick*2)%#biome_modules)+1]
+  local guard_pressure = (region.heat*0.09) * (faction.pressure or 1)
   return {
     mission_id=m.id,
     mission_name=m.name,
     outpost=t.id,
-    weather=weather_mods[((g.tick*5) % #weather_mods)+1],
+    weather=biome.weather[((g.tick*5) % #biome.weather)+1],
     tod=time_mods[((g.tick*7) % #time_mods)+1],
+    biome=biome_id,
+    faction_owner=region.owner,
+    module=module_name,
     primary=m.primary,
     secondary=m.secondary,
-    guard_count=t.patrol + flr(g.global_heat/4),
+    guard_count=t.patrol + flr(g.global_heat/4) + flr(guard_pressure),
     resource_nodes=t.resources,
     prisoner_count=t.prisoners,
     alert_baseline=flr(g.global_heat/10)
@@ -2181,17 +2299,66 @@ function generate_outpost(m)
   for i=1,m.guard_count do
     local kind = (i%9==0 and "officer") or (i%5==0 and "heavy") or (i%3==0 and "scout") or "guard"
     local def = enemy_defs[kind]
+    local elite = (i%13==0) and elite_defs[((i*3)%3==0 and "hunter") or ((i*2)%3==0 and "warder") or "jammer"] or nil
+    local weapon = (kind=="officer" and "pistol") or (kind=="heavy" and "shotgun") or (kind=="scout" and "smg") or "ar"
+    if elite and elite.weapon then weapon = elite.weapon end
+    local hp_bonus = elite and elite.bonus_hp or 0
     add(g.enemies,{
       kind=kind,x=120 + (i*29)%880,y=90 + (i*43)%620,dir=((i%2==0) and 1 or -1),
-      hp=def.hp,state="patrol",detect=0,last_heard=nil,last_seen=nil,stunned=0,captured=false,bound=false,
-      vision=def.vision_range,cone=def.vision_angle,hearing=def.hearing_range,rank=def.rank,special=(i%7==0)
+      hp=def.hp+hp_bonus,max_hp=def.hp+hp_bonus,state="patrol",detect=0,last_heard=nil,last_seen=nil,stunned=0,captured=false,bound=false,
+      vision=def.vision_range,cone=def.vision_angle,hearing=def.hearing_range,rank=def.rank,special=(i%7==0),
+      armor=(kind=="heavy" and "heavy") or (kind=="officer" and "medium") or "light",
+      weapon=weapon,
+      elite=elite ~= nil
     })
   end
-  push_msg("Mission: "..m.mission_name.." / "..m.outpost.." / "..m.weather.." "..m.tod)
+  push_msg("Mission: "..m.mission_name.." / "..m.outpost.." ("..m.module..") / "..m.weather.." "..m.tod)
 end
 
 function actor_solid(x,y)
   return wall(x,y,1,0) or wall(x+13,y,1,0) or wall(x,y+13,1,0) or wall(x+13,y+13,1,0)
+end
+
+function apply_damage_to_enemy(e, amount, dtype)
+  local profile = damage_profile[e.armor] or damage_profile.light
+  local mult = profile[dtype] or 1
+  local final = amount * mult
+  if dtype=="tranq" then
+    e.stunned = math.max(e.stunned, 220 + flr(final*4))
+    e.state = "down"
+    return
+  end
+  if dtype=="stun" or dtype=="gas" then
+    e.stunned = math.max(e.stunned, 160 + flr(final*3))
+    return
+  end
+  e.hp = e.hp - final
+  if e.hp <= 0 then
+    e.stunned = 520
+    e.state = "down"
+    g.mission_score = g.mission_score + 8
+  end
+end
+
+function player_suit_profile()
+  local suit = g.player_loadout and suit_defs[g.player_loadout.suit] or suit_defs.sneaksuit
+  return suit or suit_defs.sneaksuit
+end
+
+function damage_player(amount, dtype)
+  local suit = player_suit_profile()
+  local armor = damage_profile[suit.armor or "light"] or damage_profile.light
+  local mult = armor[dtype] or 1
+  local final = amount * mult
+  g.player.hp = math.max(0, g.player.hp - final)
+  if final > 0.24 and #g.roster > 0 and (g.tick % 40 == 0) then
+    local idx = ((g.tick/40) % #g.roster)+1
+    local member = g.roster[flr(idx)]
+    if member and member.trauma_days <= 0 then
+      member.injury = "bruised"
+      member.trauma_days = injury_defs.bruised.days
+    end
+  end
 end
 
 function emit_noise(power)
@@ -2205,21 +2372,26 @@ function move_player()
   if btn("up") then my=-1 end
   if btn("down") then my=1 end
   g.player.crouch = btn("y")
+  local suit = player_suit_profile()
   local sprinting = btn("x") and not g.player.crouch and g.player.stamina>10
   local speed = g.player.crouch and cfg.crouch or (sprinting and cfg.sprint or cfg.walk)
+  speed = speed + ((suit.stamina or 0) * 0.004)
   if sprinting then g.player.stamina = g.player.stamina - 0.32 else g.player.stamina = math.min(100, g.player.stamina+0.18) end
   g.player.vx,g.player.vy = mx*speed,my*speed
   if mx ~= 0 then g.player.dir = mx > 0 and 1 or -1 end
   local nx,ny = g.player.x + g.player.vx, g.player.y + g.player.vy
   if not actor_solid(nx,g.player.y) then g.player.x = nx end
   if not actor_solid(g.player.x,ny) then g.player.y = ny end
-  emit_noise(g.player.crouch and 14 or (sprinting and 80 or 34))
+  emit_noise((g.player.crouch and 14 or (sprinting and 80 or 34)) + (suit.noise or 0))
 end
 
 function player_concealment()
+  local suit = player_suit_profile()
   local tx,ty = flr((g.player.x+8)/project.tile_w), flr((g.player.y+8)/project.tile_h)
   local tile = mget(tx,ty,0)
-  g.player.conceal = (tile==3 and 0.55) or (tile==4 and 0.3) or 0
+  local base = (tile==3 and 0.55) or (tile==4 and 0.3) or 0
+  local biome = biome_themes[g.current_mission.biome] or biome_themes.scrublands
+  g.player.conceal = math.max(0, base + (suit.conceal or 0) + (biome.conceal or 0)*0.3)
 end
 
 function los_to_player(e)
@@ -2263,7 +2435,10 @@ function update_enemy(e)
   elseif e.state=="alert" then
     e.x = e.x + (g.player.x > e.x and 1.05 or -1.05)
     e.y = e.y + (g.player.y > e.y and 1.05 or -1.05)
-    if dist < 18 then g.player.hp = g.player.hp - 0.16 end
+    if dist < 18 then
+      local wp = weapon_defs[e.weapon] or weapon_defs.ar
+      damage_player((wp.dmg or 24)/140, wp.kind or "ballistic")
+    end
   elseif e.state=="search" then
     e.x = e.x + 0.42 * (e.dir)
     if (g.tick + e.rank) % 45 == 0 then e.dir = -e.dir end
@@ -2272,13 +2447,13 @@ end
 
 function nonlethal_actions()
   if btnp("b") then
-    emit_noise(48)
+    local primary = weapon_defs[g.player_loadout.primary] or weapon_defs.tranq
+    emit_noise(primary.noise + 22)
     for e in all(g.enemies) do
       if not e.captured and e.stunned<=0 then
         local dx,dy = abs(e.x-g.player.x), abs(e.y-g.player.y)
         if dx<130 and dy<90 then
-          e.stunned = 320
-          e.state="down"
+          apply_damage_to_enemy(e, primary.dmg + 12, primary.kind)
           g.mission_score = g.mission_score + 6
           break
         end
@@ -2294,6 +2469,11 @@ function nonlethal_actions()
         add(g.brig,{name="POW-"..(#g.brig+1), rank=e.rank, trait=rand_trait(g.tick+#g.brig), loyalty=35+e.rank*9})
         g.pending_rewards.funds = g.pending_rewards.funds + 24 + e.rank*8
         g.pending_rewards.recruits = g.pending_rewards.recruits + 1
+        if e.elite and ((g.tick + e.rank) % 3 == 0) then
+          local bp = rare_blueprints[((g.tick+#g.blueprints*2)%#rare_blueprints)+1]
+          add(g.blueprints, bp)
+          push_msg("Recovered rare blueprint: "..bp)
+        end
         g.mission_score = g.mission_score + 20
         push_msg("Captured enemy rank "..e.rank)
         return
@@ -2338,6 +2518,11 @@ function complete_extraction()
   g.resources.fuel = g.resources.fuel + 16 + flr(g.pending_rewards.recruits*2)
   g.resources.intel = g.resources.intel + 4 + flr(g.alerts==0 and 4 or 0)
   g.mission_score = g.mission_score + math.max(0, 120 - g.alerts*8)
+  local region = g.regions[g.current_region]
+  if region then
+    region.influence = math.min(100, region.influence + 1 + flr(g.pending_rewards.recruits/2))
+    region.heat = math.max(0, region.heat - 1)
+  end
   push_msg("Extraction success. Score "..flr(g.mission_score))
   process_brig_recruits()
   start_new_operation()
@@ -2347,7 +2532,9 @@ end
 function process_brig_recruits()
   while #g.brig > 0 do
     local p = deli(g.brig,1)
-    add(g.roster, make_staff("Agent "..(#g.roster+1), p.rank, g.tick+#g.roster*5))
+    local recruit = make_staff("Agent "..(#g.roster+1), p.rank, g.tick+#g.roster*5)
+    if ((g.tick + #g.roster) % 4 == 0) then recruit.deep_trait = rand_deep_trait(g.tick + #g.roster*8) end
+    add(g.roster, recruit)
   end
 end
 
@@ -2360,6 +2547,10 @@ function update_field()
   nonlethal_actions()
   support_actions()
   update_objectives()
+  if g.tick % 600 == 0 then
+    local ids={"ash_fork","frostline","hardport","iron_corridor","hollow_marsh"}
+    g.current_region = ids[((g.tick/600)%#ids)+1]
+  end
   if btnp("select") then g.mode = "base" end
   if btnp("start") then save_campaign() end
   g.cam.x = g.player.x - 240
@@ -2402,6 +2593,49 @@ function launch_dispatch()
   push_msg("Dispatch launched: "..t.name)
 end
 
+function cycle_loadout(slot, dir)
+  local pool = {}
+  if slot=="primary" then pool={"tranq","smg","ar","shotgun","sniper"}
+  elseif slot=="secondary" then pool={"pistol","stun","knife"}
+  elseif slot=="gadget" then pool={"stun","gas","frag"}
+  elseif slot=="throwable" then pool={"gas","frag"}
+  elseif slot=="suit" then pool={"sneaksuit","battleframe","amphib_ops","arctic_veil"}
+  else pool={"drone_ping","signal_tap","med_kit"} end
+  local current = g.player_loadout[slot]
+  local idx=1
+  for i=1,#pool do if pool[i]==current then idx=i break end end
+  idx = idx + dir
+  if idx < 1 then idx = #pool end
+  if idx > #pool then idx = 1 end
+  g.player_loadout[slot] = pool[idx]
+  push_msg("Loadout "..slot..": "..pool[idx])
+end
+
+function tick_region_sim()
+  g.region_tick = g.region_tick + 1
+  if g.region_tick % 180 ~= 0 then return end
+  for id,reg in pairs(g.regions) do
+    local faction = faction_defs[reg.owner] or faction_defs.sentinel_union
+    reg.heat = math.max(0, math.min(100, reg.heat + faction.pressure - 0.52))
+    if id == g.current_region then
+      reg.influence = math.min(100, reg.influence + 0.18)
+    else
+      reg.influence = math.max(0, reg.influence - 0.06)
+    end
+    if reg.influence > 80 and reg.owner ~= "carthage_pmc" then reg.owner = "carthage_pmc"; reg.heat = reg.heat + 7 end
+    if reg.influence < 16 and reg.owner ~= "north_veil" then reg.owner = "north_veil" end
+  end
+end
+
+function update_roster_injuries()
+  for s in all(g.roster) do
+    if s.trauma_days and s.trauma_days > 0 and (g.tick % 120 == 0) then
+      s.trauma_days = s.trauma_days - 1
+      if s.trauma_days <= 0 then s.injury = "none" end
+    end
+  end
+end
+
 function resolve_dispatch()
   local i=1
   while i<=#g.dispatch.active do
@@ -2426,6 +2660,13 @@ function resolve_dispatch()
       else
         g.resources.morale = g.resources.morale - 8
         g.global_heat = g.global_heat + 3
+        if #g.roster > 0 then
+          local victim = g.roster[((g.tick+i) % #g.roster)+1]
+          if victim then
+            victim.injury = "fractured"
+            victim.trauma_days = injury_defs.fractured.days
+          end
+        end
       end
       add(g.dispatch.log, outcome.." "..d.name)
       if #g.dispatch.log > 5 then deli(g.dispatch.log,1) end
@@ -2437,8 +2678,14 @@ function resolve_dispatch()
 end
 
 function handle_base_inputs()
+  if btnp("left") then g.base_tab = math.max(1, g.base_tab-1) end
+  if btnp("right") then g.base_tab = math.min(3, g.base_tab+1) end
   if btnp("y") then queue_research() end
   if btnp("x") then launch_dispatch() end
+  if btnp("up") then cycle_loadout("primary",1) end
+  if btnp("down") then cycle_loadout("suit",1) end
+  if btnp("leftshoulder") then cycle_loadout("secondary",1) end
+  if btnp("rightshoulder") then cycle_loadout("throwable",1) end
   if btnp("a") then g.mode = "field" end
 end
 
@@ -2448,6 +2695,8 @@ function game_update()
     if btnp("a") then g.scene = "game" end
     return
   end
+  tick_region_sim()
+  update_roster_injuries()
   update_research()
   resolve_dispatch()
   if g.mode == "field" then update_field() else handle_base_inputs() end
@@ -2457,6 +2706,7 @@ end`},
   local ref = (e.state=="alert" and "3a") or (e.kind=="officer" and "2a") or "1a"
   if e.stunned>0 then ref = "8a" end
   spr(ref,e.x,e.y)
+  if e.elite then rect(e.x+2,e.y-3,e.x+13,e.y-1,8) end
   if e.state=="alert" then circ(e.x+8,e.y-4,5,8) end
   if e.state=="suspicious" then circ(e.x+8,e.y-4,4,10) end
 end
@@ -2470,9 +2720,12 @@ function draw_hud()
   print("Roster:"..#g.roster.." Fultons:"..g.fultons.." Alerts:"..flr(g.alerts).." Score:"..flr(g.mission_score),14,50,10,color(246,240,220))
   local rd = g.research.active and ("R&D "..g.research.active.name.." "..flr(g.research.active.t/60).."s") or "R&D idle"
   print(rd,14,66,10,color(246,240,220))
+  local region = g.regions[g.current_region] or {owner="n/a",heat=0,influence=0}
+  print("Region:"..g.current_region.." Owner:"..region.owner.." Heat:"..flr(region.heat).." Inf:"..flr(region.influence),14,80,10,color(246,240,220))
   local recon = g.support and ("ReconCD:"..flr((g.support.recon_cd or 0)/60).."s") or "ReconCD:0s"
   local supply = g.support and ("SupplyCD:"..flr((g.support.supply_cd or 0)/60).."s") or "SupplyCD:0s"
   print(recon.." "..supply,270,66,10,color(246,240,220))
+  print("Blueprints:"..#g.blueprints,340,80,10,color(246,240,220))
 end
 
 function draw_field()
@@ -2496,22 +2749,48 @@ function draw_base()
   rectfill(22,20,458,250,1)
   rect(22,20,458,250,7)
   print("BASE COMMAND",36,34,11,color(246,240,220))
-  print("A: return to field | Y: queue R&D | X: dispatch",36,50,12,color(246,240,220))
-  print("Departments",36,72,10,color(246,240,220))
-  local y=86
-  for k,v in pairs(g.departments) do
-    print(k.." lv"..v.lvl.." - "..v.bonus,40,y,12,color(246,240,220))
-    y = y + 12
+  print("A return | Y R&D | X dispatch | <- -> page",36,50,12,color(246,240,220))
+  print("Pages: 1 Ops  2 Loadout  3 Region/Trauma",36,62,10,color(246,240,220))
+  if g.base_tab==1 then
+    print("Departments",36,78,10,color(246,240,220))
+    local y=92
+    for k,v in pairs(g.departments) do
+      print(k.." lv"..v.lvl.." - "..v.bonus,40,y,12,color(246,240,220))
+      y = y + 12
+    end
+    print("Dispatch log:",250,78,10,color(246,240,220))
+    local ly=92
+    for i=#g.dispatch.log,1,-1 do print(g.dispatch.log[i],254,ly,12,color(246,240,220)); ly = ly + 12 end
+    print("Completed bulletins:",36,188,10,color(246,240,220))
+    local by=202
+    for i=1,math.min(3,#plan_bulletins_done) do print(plan_bulletins_done[i],40,by,12,color(246,240,220)); by = by + 12 end
+  elseif g.base_tab==2 then
+    print("Loadout slots (UP primary / DOWN suit / LB secondary / RB throwable)",36,78,10,color(246,240,220))
+    print("Primary: "..g.player_loadout.primary,40,96,12,color(246,240,220))
+    print("Secondary: "..g.player_loadout.secondary,40,110,12,color(246,240,220))
+    print("Gadget: "..g.player_loadout.gadget,40,124,12,color(246,240,220))
+    print("Throwable: "..g.player_loadout.throwable,40,138,12,color(246,240,220))
+    print("Suit: "..g.player_loadout.suit,40,152,12,color(246,240,220))
+    print("Rare blueprints:",250,96,10,color(246,240,220))
+    local by=110
+    for i=1,math.min(7,#g.blueprints) do print("- "..g.blueprints[i],254,by,12,color(246,240,220)); by = by + 12 end
+  else
+    print("Region map control",36,78,10,color(246,240,220))
+    local ry=92
+    for id,reg in pairs(g.regions) do
+      local marker=(id==g.current_region and "> " or "  ")
+      print(marker..id.." owner:"..reg.owner,40,ry,12,color(246,240,220))
+      print("heat "..flr(reg.heat).." inf "..flr(reg.influence),228,ry,10,color(246,240,220))
+      ry = ry + 14
+    end
+    print("Roster trauma",36,178,10,color(246,240,220))
+    local ty=192
+    for i=1,math.min(4,#g.roster) do
+      local r=g.roster[i]
+      print(r.name.." "..r.injury.." ("..(r.trauma_days or 0).."d) "..r.deep_trait,40,ty,12,color(246,240,220))
+      ty = ty + 12
+    end
   end
-  print("Dispatch log:",250,72,10,color(246,240,220))
-  local ly=86
-  for i=#g.dispatch.log,1,-1 do print(g.dispatch.log[i],254,ly,12,color(246,240,220)); ly = ly + 12 end
-  print("Completed bulletins:",36,170,10,color(246,240,220))
-  local by=184
-  for i=1,math.min(4,#plan_bulletins_done) do print(plan_bulletins_done[i],40,by,12,color(246,240,220)); by = by + 12 end
-  print("Pending bulletins:",250,170,10,color(246,240,220))
-  local ty=184
-  for i=1,math.min(4,#plan_bulletins_todo) do print(plan_bulletins_todo[i],254,ty,12,color(246,240,220)); ty = ty + 12 end
 end
 
 function draw_menu()
