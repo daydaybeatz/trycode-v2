@@ -1924,18 +1924,19 @@ function loadOperationCorporationExampleProject(){
   p.palette[11]='#75a7da'; p.palette[12]='#9fd7f0'; p.palette[13]='#5a6671'; p.palette[14]='#2b3038'; p.palette[15]='#090b0f';
   const spriteFromArt=(rows,map)=>{ const sp=makeSprite(16,16); for(let y=0;y<16;y++){ const row=rows[y]||'................'; for(let x=0;x<16;x++){ const ch=row[x]||'.'; sp.pixels[y][x]=Object.prototype.hasOwnProperty.call(map,ch)?map[ch]:-1; } } return sp; };
   const mkUnit=(primary,secondary,accent)=>spriteFromArt([
-    '......aa........','.....aaaa.......','....abbbba......','....abccba......','....abbbba......','.....adda.......','....dd44dd......','....d4444d......','...d444444d.....','...d444444d.....','...e44ee44e.....','..ee4e..e4ee....','..e4e....e4e....','..e4......4e....','................','................'
-  ],{'.':-1,'a':primary,'b':secondary,'c':accent,'d':6,'4':14,'e':13});
+    '......aa........','.....aaaa.......','....abbbba......','....abccba......','....abbbba......','...aaaddaad.....','...d644446d.....','..d64444446d....','..d444ff444d....','..d44f77f44d....','..e44f77f44e....','..ee4f77f4ee....','...e4ffff4e.....','...e4....4e.....','..66......66....','................'
+  ],{'.':-1,'a':primary,'b':secondary,'c':accent,'d':6,'4':14,'e':13,'f':15,'7':7,'6':5});
   p.spriteFolders=[
     {frames:[mkUnit(13,6,8),mkUnit(13,7,10)]},
     {frames:[mkUnit(9,8,10),mkUnit(9,6,8)]},
     {frames:[mkUnit(11,6,5)]},
     {frames:[mkUnit(8,10,7)]},
-    {frames:[spriteFromArt(Array.from({length:16},()=> '3333333333333333'),{'3':3})]},
-    {frames:[spriteFromArt(Array.from({length:16},(_,i)=> i%2?'4444444444444444':'4444455444444444'),{'4':4,'5':5})]},
-    {frames:[spriteFromArt(Array.from({length:16},(_,i)=> i%2?'1414141414141414':'4141414141414141'),{'1':13,'4':14})]},
-    {frames:[spriteFromArt(['................','.......77.......','......7777......','.....777777.....','....77777777....','....77777777....','....77777777....','.....777777.....','......7777......','.......77.......','................','................','................','................','................','................'],{'.':-1,'7':10})]},
-    {frames:[spriteFromArt(['................','.....9999.......','....999999......','....99aa99......','....99aa99......','....999999......','.....9999.......','......99........','.....9999.......','....99..99......','....99..99......','....99..99......','................','................','................','................'],{'.':-1,'9':8,'a':15})]},
+    {frames:[spriteFromArt(['2222222222222222','2333333333333332','2335555555555332','2335666666665332','2335667777665332','2335667777665332','2335666666665332','2335555555555332','2334444444444332','2334aaaaaaa44332','2334a444444a4332','2334a444444a4332','2334aaaaaaa44332','2334444444444332','2333333333333332','2222222222222222'],{'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'a':14})]},
+    {frames:[spriteFromArt(['1111111111111111','1bbbbbbbbbbbbbb1','1b444444444444b1','1b455555555554b1','1b456666666654b1','1b456777776654b1','1b456777776654b1','1b456666666654b1','1b455555555554b1','1b444444444444b1','1b455555555554b1','1b456666666654b1','1b456777776654b1','1b444444444444b1','1bbbbbbbbbbbbbb1','1111111111111111'],{'1':14,'b':13,'4':4,'5':5,'6':6,'7':11})]},
+    {frames:[spriteFromArt(['..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.'],{'.':14,'3':13})]},
+    {frames:[spriteFromArt(['................','.....7777.......','....777777......','...77777777.....','..7777aa7777....','..777aaaa777....','..77aaaaaa77....','...77aaaa77.....','....777777......','.....7777.......','......77........','................','................','................','................','................'],{'.':-1,'7':10,'a':7})]},
+    {frames:[spriteFromArt(['................','....888888......','...88aaaa88.....','..88a9999a88....','..88a9aa9a88....','..88a9999a88....','...88aaaa88.....','....888888......','....88..88......','...88....88.....','...88....88.....','...88....88.....','................','................','................','................'],{'.':-1,'8':8,'9':15,'a':13})]},
+    {frames:[spriteFromArt(['................','................','.....9999.......','....9aaaa9......','...9a9999a9.....','...9a9999a9.....','...9a9999a9.....','...9a9999a9.....','....9aaaa9......','.....9999.......','................','................','................','................','................','................'],{'.':-1,'9':9,'a':8})]},
   ];
   p.tileDefs={
     0:makeBlankTileDef(),
@@ -1943,7 +1944,8 @@ function loadOperationCorporationExampleProject(){
     2:{source:'5a',flags:{0:true},bg:'#2b3038',bgEnabled:false,animated:false,animFolder:5,animSpeed:6},
     3:{source:'6a',flags:{0:false},bg:'#152224',bgEnabled:true,animated:false,animFolder:6,animSpeed:6},
     4:{source:'7a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:true,animFolder:7,animSpeed:5},
-    5:{source:'8a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:false,animFolder:8,animSpeed:6}
+    5:{source:'8a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:false,animFolder:8,animSpeed:6},
+    6:{source:'9a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:false,animFolder:9,animSpeed:6}
   };
   p.maps=[makeEmptyMap('0',p.project.map_w,p.project.map_h)];
   p.music=[makeMusic(),makeMusic()];
@@ -1966,6 +1968,8 @@ function _draw() game_draw() end`},
   extract_radius = 24,
   body_notice_radius = 92,
   dispatch_min_team = 3,
+  lock_memory = 900,
+  field_zoom = 2,
   save_slot = "operation_corp_slot_v2"
 }
 
@@ -1993,7 +1997,10 @@ plan_bulletins_done = {
   "[x] 22 Mission rank/scoring",
   "[x] 23 Persistent save data",
   "[x] 24 Data-driven defs (enemy/staff/mission)",
-  "[x] 21 Companion/support basics (recon ping + supply refill)"
+  "[x] 21 Companion/support basics (recon ping + supply refill)",
+  "[x] 3 Camera/presentation pass (2x field zoom + themed UI art)",
+  "[x] 10 Outpost generation upgraded to BSP room partitioning",
+  "[x] Enemy lock-memory LOS visualization + lethal body bloodstains"
 }
 
 plan_bulletins_todo = {
@@ -2002,7 +2009,10 @@ plan_bulletins_todo = {
   "[x] 15 Full loadout slot + suit selection UI",
   "[x] 18 Region map + faction control simulation",
   "[x] 20 Advanced injury/trauma model for roster",
-  "[x] 25-5 Expansion pass (elites, rare blueprints, deep traits)"
+  "[x] 25-5 Expansion pass (elites, rare blueprints, deep traits)",
+  "[ ] 2 Core pillars polish pass",
+  "[ ] 6 Player progression depth",
+  "[ ] 25 Support call variants + companion depth"
 }`},
     {name:'data.lua',tabTheme:2,content:`enemy_defs = {
   guard = {class="rifle_guard", hp=100, speed=0.65, vision_range=92, vision_angle=0.9, hearing_range=90, rank=1, recruitable=true},
@@ -2345,6 +2355,30 @@ function carve_corridor(x0,y0,x1,y1)
   mset(x1,y1,0,1,0)
 end
 
+function bsp_split_area(area, depth, min_w, min_h, out)
+  if depth <= 0 or area.w < (min_w*2) or area.h < (min_h*2) then
+    add(out, area)
+    return
+  end
+  local split_vertical = area.w > area.h
+  if area.w > min_w*2 and area.h > min_h*2 then
+    split_vertical = ((area.x + area.y + g.operation_index + depth + g.tick) % 2) == 0
+  end
+  if split_vertical then
+    local cut = area.x + min_w + ((g.operation_index*7 + depth*13 + g.tick) % math.max(1, area.w - min_w*2))
+    local left = {x=area.x,y=area.y,w=cut-area.x,h=area.h}
+    local right = {x=cut,y=area.y,w=area.x+area.w-cut,h=area.h}
+    bsp_split_area(left, depth-1, min_w, min_h, out)
+    bsp_split_area(right, depth-1, min_w, min_h, out)
+  else
+    local cut = area.y + min_h + ((g.operation_index*5 + depth*11 + g.tick) % math.max(1, area.h - min_h*2))
+    local top = {x=area.x,y=area.y,w=area.w,h=cut-area.y}
+    local bottom = {x=area.x,y=cut,w=area.w,h=area.y+area.h-cut}
+    bsp_split_area(top, depth-1, min_w, min_h, out)
+    bsp_split_area(bottom, depth-1, min_w, min_h, out)
+  end
+end
+
 function clamp_to_walkable(x,y)
   local tx = math.max(1, math.min(project.map_w-2, flr(x/project.tile_w)))
   local ty = math.max(1, math.min(project.map_h-2, flr(y/project.tile_h)))
@@ -2371,6 +2405,7 @@ function generate_outpost(m)
   clear_map()
   g.prisoners = {}
   g.resource_nodes = {}
+  g.blood = {}
   local room_centers = {}
   local xa, xb = 8, project.map_w-9
   local ya, yb = 8, project.map_h-9
@@ -2378,14 +2413,21 @@ function generate_outpost(m)
   for y=ya,yb do mset(xa,y,2,1,0) mset(xb,y,2,1,0) end
   local gate = 18 + ((g.operation_index*9 + g.tick) % (project.map_w-36))
   mset(gate,ya,0,1,0) mset(gate+1,ya,0,1,0)
-  local structures = 3 + ((g.operation_index + m.guard_count) % 3)
-  for i=1,structures do
-    local rw = 8 + ((g.operation_index*3 + i*5) % 8)
-    local rh = 7 + ((g.operation_index*5 + i*7) % 7)
-    local rx = 12 + ((g.operation_index*11 + i*17 + g.tick) % (project.map_w-rw-24))
-    local ry = 12 + ((g.operation_index*13 + i*19 + g.tick*2) % (project.map_h-rh-24))
-    build_outpost_room(rx,ry,rw,rh,((i+g.operation_index)%4)+1)
-    add(room_centers,{x=flr(rx+rw/2),y=flr(ry+rh/2)})
+  local leaves = {}
+  bsp_split_area({x=12,y=12,w=project.map_w-24,h=project.map_h-24}, 3, 10, 9, leaves)
+  local structures = 0
+  local max_rooms = math.min(#leaves, 4 + ((g.operation_index + m.guard_count) % 5))
+  for i=1,max_rooms do
+    local leaf = leaves[i]
+    local rw = math.max(7, leaf.w - 2 - ((i + g.tick) % 3))
+    local rh = math.max(6, leaf.h - 2 - ((i + g.operation_index) % 3))
+    local rx = leaf.x + 1
+    local ry = leaf.y + 1
+    if rw > 6 and rh > 5 then
+      build_outpost_room(rx,ry,rw,rh,((i+g.operation_index)%4)+1)
+      add(room_centers,{x=flr(rx+rw/2),y=flr(ry+rh/2)})
+      structures = structures + 1
+    end
   end
 
   for i=2,#room_centers do
@@ -2428,6 +2470,11 @@ function generate_outpost(m)
       armor=(kind=="heavy" and "heavy") or (kind=="officer" and "medium") or "light",
       weapon=weapon,
       elite=elite ~= nil,
+      dead=false,
+      extractable=true,
+      locked_once=false,
+      marked_timer=0,
+      blood=nil,
       route_i=1,
       route={
         {x=math.max(24,ex-28),y=ey},
@@ -2448,6 +2495,7 @@ function actor_solid(x,y)
 end
 
 function apply_damage_to_enemy(e, amount, dtype)
+  if e.dead then return end
   local profile = damage_profile[e.armor] or damage_profile.light
   local mult = profile[dtype] or 1
   local final = amount * mult
@@ -2462,9 +2510,15 @@ function apply_damage_to_enemy(e, amount, dtype)
   end
   e.hp = e.hp - final
   if e.hp <= 0 then
-    e.stunned = 520
-    e.state = "down"
-    g.mission_score = g.mission_score + 8
+    e.hp = 0
+    e.dead = true
+    e.extractable = false
+    e.stunned = 0
+    e.state = "dead"
+    e.detect = 0
+    e.blood = {x=e.x+8,y=e.y+10,size=8 + ((g.tick + e.rank) % 6)}
+    add(g.blood,{x=e.x+8,y=e.y+10,size=8 + ((g.tick + e.rank) % 6),ttl=9999})
+    g.mission_score = g.mission_score + 4
   end
 end
 
@@ -2514,6 +2568,10 @@ function lock_target_from_aim()
     end
   end
   g.player.aim = best
+  if best then
+    best.locked_once = true
+    best.marked_timer = math.max(best.marked_timer or 0, cfg.lock_memory or 600)
+  end
 end
 
 function move_player()
@@ -2590,6 +2648,8 @@ end
 
 function update_enemy(e)
   if e.captured then return end
+  if e.marked_timer and e.marked_timer > 0 then e.marked_timer = e.marked_timer - 1 end
+  if e.dead then return end
   if e.stunned > 0 then e.stunned = e.stunned - 1 return end
   react_to_sound(e)
   local can_see,dist = los_to_player(e)
@@ -2654,7 +2714,7 @@ function nonlethal_actions()
   if btnp("a") then
     for e in all(g.enemies) do
       local near = abs(e.x-g.player.x)+abs(e.y-g.player.y) < cfg.extract_radius
-      if near and e.stunned>0 and g.fultons>0 and not e.captured then
+      if near and e.stunned>0 and g.fultons>0 and not e.captured and not e.dead and e.extractable~=false then
         e.captured=true
         g.fultons = g.fultons - 1
         add(g.brig,{name="POW-"..(#g.brig+1), rank=e.rank, trait=rand_trait(g.tick+#g.brig), loyalty=35+e.rank*9})
@@ -2692,6 +2752,8 @@ function support_actions()
         if d < 320 then
           e.detect = math.max(0, e.detect - 14)
           e.last_seen = {x=e.x,y=e.y}
+          e.marked_timer = math.max(e.marked_timer or 0, 540)
+          e.locked_once = true
         end
       end
     end
@@ -2770,6 +2832,8 @@ function trigger_support_action(idx)
           if d < 320 then
             e.detect = math.max(0, e.detect - 14)
             e.last_seen = {x=e.x,y=e.y}
+            e.marked_timer = math.max(e.marked_timer or 0, 540)
+            e.locked_once = true
           end
         end
       end
@@ -3038,7 +3102,12 @@ end`},
     {name:'draw.lua',tabTheme:6,content:`function draw_enemy(e)
   if e.captured then return end
   local ref = (e.state=="alert" and "3a") or (e.kind=="officer" and "2a") or "1a"
-  if e.stunned>0 then ref = "8a" end
+  if e.dead then ref = "9a"
+  elseif e.stunned>0 then ref = "8a" end
+  if e.blood then
+    circfill(e.blood.x,e.blood.y,e.blood.size or 8,9)
+    circfill(e.blood.x+3,e.blood.y+1,math.max(2,(e.blood.size or 8)-4),8)
+  end
   spr(ref,e.x,e.y)
   if e.elite then rect(e.x+2,e.y-3,e.x+13,e.y-1,8) end
   if e.state=="alert" then circ(e.x+8,e.y-4,5,8) end
@@ -3047,23 +3116,42 @@ end`},
   local fy = e.facing and e.facing.y or 0
   local mag = math.max(0.001, math.sqrt(fx*fx + fy*fy))
   line(e.x+8,e.y+8,e.x+8+(fx/mag)*12,e.y+8+(fy/mag)*12,10)
+  if not e.dead and (e.locked_once or (e.marked_timer or 0) > 0) then
+    local range = e.vision or 90
+    local tipx = e.x+8+(fx/mag)*range
+    local tipy = e.y+8+(fy/mag)*range
+    line(e.x+8,e.y+8,tipx,tipy,11)
+    circ(tipx,tipy,4,11)
+  end
 end
 
 function draw_hud()
   camera()
+  zoom(1)
   rect(10,10,184,28,7)
   print(g.phase=="extract_ready" and "EXTRACTION READY" or "INFILTRATING",18,16,11)
 end
 
 function draw_field()
-  cls(15)
+  cls(14)
+  zoom(cfg.field_zoom or 2)
   camera(g.cam.x,g.cam.y)
   map(0)
+  rectfill(g.cam.x-120,g.cam.y-120,g.cam.x+620,g.cam.y+420,1)
+  for i=1,22 do
+    local sx = g.cam.x + ((i*97 + g.tick*0.4) % 780) - 120
+    local sy = g.cam.y + ((i*61 + g.tick*0.25) % 520) - 120
+    pset(sx,sy,12)
+  end
+  for b in all(g.blood or {}) do
+    circfill(b.x,b.y,b.size or 6,9)
+    circfill(b.x+2,b.y+1,math.max(2,(b.size or 6)-3),8)
+  end
   for e in all(g.enemies) do draw_enemy(e) end
   for p in all(g.prisoners) do if not p.rescued then spr("2a",p.x,p.y) end end
   animate(0,g.player.x,g.player.y,8)
   if g.research.done.drone_ping then circ(g.player.x+8,g.player.y+8,24+(g.tick%24),11) end
-  if g.player.aim and not g.player.aim.captured and g.player.aim.stunned<=0 then
+  if g.player.aim and not g.player.aim.captured and g.player.aim.stunned<=0 and not g.player.aim.dead then
     rect(g.player.aim.x-3,g.player.aim.y-3,g.player.aim.x+19,g.player.aim.y+19,8)
   end
   if g.extract_point then
@@ -3080,6 +3168,7 @@ function draw_field()
   end
   if g.field_menu_open then
     camera()
+    zoom(1)
     rectfill(138,78,340,196,1)
     rect(138,78,340,196,7)
     print("FIELD SUPPORT",182,90,11)
@@ -3095,8 +3184,9 @@ function draw_field()
 end
 
 function draw_base()
-  cls(15)
-  rectfill(22,20,458,250,1)
+  cls(14)
+  rectfill(22,20,458,250,2)
+  rectfill(24,22,456,98,1)
   rect(22,20,458,250,7)
   print("BASE COMMAND",36,34,11,color(246,240,220))
   print("A field/hire | B fire | Y R&D | X dispatch menu",36,50,12,color(246,240,220))
@@ -3143,12 +3233,13 @@ function draw_base()
 end
 
 function draw_menu()
-  cls(15)
-  rectfill(34,26,444,240,1)
+  cls(14)
+  rectfill(34,26,444,240,2)
+  rectfill(36,28,442,96,9)
   rect(34,26,444,240,7)
   rect(128,108,302,126,10)
-  print("OPERATION CORPORATION (REMAKE)",66,46,30)
-  print("Retro top-down stealth + base growth + dispatch",78,84,14)
+  print("OPERATION CORPORATION (REMAKE)",66,46,7)
+  print("Stylized stealth ops + base growth + dispatch",72,84,6)
   print("A: start campaign",142,112,14)
   print("B: nonlethal tranq, A near stunned target to capture",74,138,14)
   print("Y crouch / X sprint / Select field menu",100,160,14)
@@ -3157,8 +3248,9 @@ function draw_menu()
 end
 
 function draw_dispatch()
-  cls(15)
-  rectfill(26,24,454,246,1)
+  cls(14)
+  rectfill(26,24,454,246,2)
+  rectfill(28,26,452,64,1)
   rect(26,24,454,246,7)
   print("DISPATCH BOARD",36,36,11,color(246,240,220))
   print("X launch mission | A back to base",36,52,12,color(246,240,220))
@@ -3207,6 +3299,7 @@ function draw_pause_overlay()
 end
 
 function game_draw()
+  zoom(1)
   if g.scene == "menu" then draw_menu() return end
   if g.mode == "field" then
     draw_field()
@@ -3217,6 +3310,7 @@ function game_draw()
   end
   if g.paused then draw_pause_overlay() end
 end`},
+
   ];
   finalizeExampleProjectLoad();
 }
