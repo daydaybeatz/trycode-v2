@@ -1984,7 +1984,17 @@ plan_bulletins_done = {
   "[x] 19 Extraction gate for rewards",
   "[x] 22 Mission rank/scoring",
   "[x] 23 Persistent save data",
-  "[x] 24 Data-driven defs (enemy/staff/mission)"
+  "[x] 24 Data-driven defs (enemy/staff/mission)",
+  "[x] 21 Companion/support basics (recon ping + supply refill)"
+}
+
+plan_bulletins_todo = {
+  "[ ] 8 Expanded weapon categories + damage model",
+  "[ ] 10 Multi-theme biome outpost modules",
+  "[ ] 15 Full loadout slot + suit selection UI",
+  "[ ] 18 Region map + faction control simulation",
+  "[ ] 20 Advanced injury/trauma model for roster",
+  "[ ] 25-5 Expansion pass (elites, rare blueprints, deep traits)"
 }`},
     {name:'data.lua',tabTheme:2,content:`enemy_defs = {
   guard = {class="rifle_guard", hp=100, speed=0.65, vision_range=92, vision_angle=0.9, hearing_range=90, rank=1, recruitable=true},
@@ -2071,6 +2081,7 @@ function fresh_game_state()
     pending_rewards={funds=0,fuel=0,intel=0,recruits=0},
     research={active=nil,queue={},done={tranq_plus=true}},
     dispatch={active={},log={}},
+    support={recon_cd=0,supply_cd=0},
     msgs={},
     cursor=1,
     phase="infiltrate"
@@ -2196,7 +2207,7 @@ function move_player()
   g.player.crouch = btn("y")
   local sprinting = btn("x") and not g.player.crouch and g.player.stamina>10
   local speed = g.player.crouch and cfg.crouch or (sprinting and cfg.sprint or cfg.walk)
-  if sprinting then g.player.stamina -= 0.32 else g.player.stamina = math.min(100, g.player.stamina+0.18) end
+  if sprinting then g.player.stamina = g.player.stamina - 0.32 else g.player.stamina = math.min(100, g.player.stamina+0.18) end
   g.player.vx,g.player.vy = mx*speed,my*speed
   if mx ~= 0 then g.player.dir = mx > 0 and 1 or -1 end
   local nx,ny = g.player.x + g.player.vx, g.player.y + g.player.vy
@@ -2231,30 +2242,30 @@ end
 
 function update_enemy(e)
   if e.captured then return end
-  if e.stunned > 0 then e.stunned -= 1 return end
+  if e.stunned > 0 then e.stunned = e.stunned - 1 return end
   react_to_sound(e)
   local can_see,dist = los_to_player(e)
   local gain = can_see and (1.7 - g.player.conceal) or -0.8
-  if e.state=="investigate" then gain += 0.4 end
-  if e.state=="alert" then gain += 0.8 end
+  if e.state=="investigate" then gain = gain + 0.4 end
+  if e.state=="alert" then gain = gain + 0.8 end
   e.detect = math.max(0, math.min(100, e.detect + gain))
-  if e.detect > 76 then e.state="alert"; e.last_seen={x=g.player.x,y=g.player.y}; g.alerts += 1; g.global_heat += 0.02
+  if e.detect > 76 then e.state="alert"; e.last_seen={x=g.player.x,y=g.player.y}; g.alerts = g.alerts + 1; g.global_heat = g.global_heat + 0.02
   elseif e.detect > 36 and e.state=="patrol" then e.state="suspicious"
   elseif e.detect < 10 and e.state~="patrol" then e.state="patrol" end
 
   if e.state=="patrol" then
-    e.x += 0.5 * e.dir
+    e.x = e.x + 0.5 * e.dir
     if actor_solid(e.x,e.y) then e.dir=-e.dir end
   elseif e.state=="investigate" and e.last_heard then
-    e.x += (e.last_heard.x > e.x and 0.7 or -0.7)
-    e.y += (e.last_heard.y > e.y and 0.7 or -0.7)
+    e.x = e.x + (e.last_heard.x > e.x and 0.7 or -0.7)
+    e.y = e.y + (e.last_heard.y > e.y and 0.7 or -0.7)
     if abs(e.x-e.last_heard.x)+abs(e.y-e.last_heard.y) < 12 then e.state="search" end
   elseif e.state=="alert" then
-    e.x += (g.player.x > e.x and 1.05 or -1.05)
-    e.y += (g.player.y > e.y and 1.05 or -1.05)
-    if dist < 18 then g.player.hp -= 0.16 end
+    e.x = e.x + (g.player.x > e.x and 1.05 or -1.05)
+    e.y = e.y + (g.player.y > e.y and 1.05 or -1.05)
+    if dist < 18 then g.player.hp = g.player.hp - 0.16 end
   elseif e.state=="search" then
-    e.x += 0.42 * (e.dir)
+    e.x = e.x + 0.42 * (e.dir)
     if (g.tick + e.rank) % 45 == 0 then e.dir = -e.dir end
   end
 end
@@ -2268,7 +2279,7 @@ function nonlethal_actions()
         if dx<130 and dy<90 then
           e.stunned = 320
           e.state="down"
-          g.mission_score += 6
+          g.mission_score = g.mission_score + 6
           break
         end
       end
@@ -2279,11 +2290,11 @@ function nonlethal_actions()
       local near = abs(e.x-g.player.x)+abs(e.y-g.player.y) < cfg.extract_radius
       if near and e.stunned>0 and g.fultons>0 and not e.captured then
         e.captured=true
-        g.fultons -= 1
+        g.fultons = g.fultons - 1
         add(g.brig,{name="POW-"..(#g.brig+1), rank=e.rank, trait=rand_trait(g.tick+#g.brig), loyalty=35+e.rank*9})
-        g.pending_rewards.funds += 24 + e.rank*8
-        g.pending_rewards.recruits += 1
-        g.mission_score += 20
+        g.pending_rewards.funds = g.pending_rewards.funds + 24 + e.rank*8
+        g.pending_rewards.recruits = g.pending_rewards.recruits + 1
+        g.mission_score = g.mission_score + 20
         push_msg("Captured enemy rank "..e.rank)
         return
       end
@@ -2294,17 +2305,39 @@ function nonlethal_actions()
   end
 end
 
+function support_actions()
+  if btnp("leftshoulder") and g.support.recon_cd <= 0 then
+    g.support.recon_cd = 420
+    for e in all(g.enemies) do
+      if not e.captured and e.stunned <= 0 then
+        local d = abs(e.x-g.player.x)+abs(e.y-g.player.y)
+        if d < 320 then
+          e.detect = math.max(0, e.detect - 14)
+          e.last_seen = {x=e.x,y=e.y}
+        end
+      end
+    end
+    push_msg("Support: recon pulse")
+  end
+  if btnp("rightshoulder") and g.support.supply_cd <= 0 then
+    g.support.supply_cd = 720
+    g.player.stamina = math.min(100, g.player.stamina + 35)
+    g.fultons = math.min(9, g.fultons + 1)
+    push_msg("Support: supply drop (+stamina, +1 fulton)")
+  end
+end
+
 function update_objectives()
   local active = 0
-  for e in all(g.enemies) do if not e.captured and e.stunned<=0 then active += 1 end end
+  for e in all(g.enemies) do if not e.captured and e.stunned<=0 then active = active + 1 end end
   if active <= 3 and g.phase=="infiltrate" then g.phase="extract_ready"; push_msg("Command structure disrupted. Extract!") end
 end
 
 function complete_extraction()
-  g.resources.funds += g.pending_rewards.funds
-  g.resources.fuel += 16 + flr(g.pending_rewards.recruits*2)
-  g.resources.intel += 4 + flr(g.alerts==0 and 4 or 0)
-  g.mission_score += math.max(0, 120 - g.alerts*8)
+  g.resources.funds = g.resources.funds + g.pending_rewards.funds
+  g.resources.fuel = g.resources.fuel + 16 + flr(g.pending_rewards.recruits*2)
+  g.resources.intel = g.resources.intel + 4 + flr(g.alerts==0 and 4 or 0)
+  g.mission_score = g.mission_score + math.max(0, 120 - g.alerts*8)
   push_msg("Extraction success. Score "..flr(g.mission_score))
   process_brig_recruits()
   start_new_operation()
@@ -2321,8 +2354,11 @@ end
 function update_field()
   move_player()
   player_concealment()
+  if g.support.recon_cd > 0 then g.support.recon_cd = g.support.recon_cd - 1 end
+  if g.support.supply_cd > 0 then g.support.supply_cd = g.support.supply_cd - 1 end
   for e in all(g.enemies) do update_enemy(e) end
   nonlethal_actions()
+  support_actions()
   update_objectives()
   if btnp("select") then g.mode = "base" end
   if btnp("start") then save_campaign() end
@@ -2332,7 +2368,7 @@ end`},
     {name:'base.lua',tabTheme:5,content:`function queue_research()
   for item in all(research_tree) do
     if not g.research.done[item.id] and g.resources.funds >= item.cost then
-      g.resources.funds -= item.cost
+      g.resources.funds = g.resources.funds - item.cost
       add(g.research.queue,{id=item.id,name=item.name,t=item.t})
       push_msg("R&D started: "..item.name)
       return
@@ -2343,7 +2379,7 @@ end
 
 function update_research()
   if g.research.active then
-    g.research.active.t -= 1
+    g.research.active.t = g.research.active.t - 1
     if g.research.active.t <= 0 then
       local done = g.research.active
       g.research.done[done.id] = true
@@ -2370,32 +2406,32 @@ function resolve_dispatch()
   local i=1
   while i<=#g.dispatch.active do
     local d=g.dispatch.active[i]
-    d.t -= 1
+    d.t = d.t - 1
     if d.t<=0 then
       local roll = math.random()
       local outcome = "FAIL"
       if roll > d.risk+0.25 then
         outcome = "PERFECT"
-        g.resources.funds += d.reward + 50
-        g.resources.intel += 8
+        g.resources.funds = g.resources.funds + d.reward + 50
+        g.resources.intel = g.resources.intel + 8
         g.resources.morale = math.min(100, g.resources.morale + 4)
       elseif roll > d.risk then
         outcome = "SUCCESS"
-        g.resources.funds += d.reward
-        g.resources.fuel += flr(d.reward/6)
+        g.resources.funds = g.resources.funds + d.reward
+        g.resources.fuel = g.resources.fuel + flr(d.reward/6)
       elseif roll > d.risk-0.16 then
         outcome = "PARTIAL"
-        g.resources.funds += flr(d.reward*0.45)
-        g.resources.morale -= 3
+        g.resources.funds = g.resources.funds + flr(d.reward*0.45)
+        g.resources.morale = g.resources.morale - 3
       else
-        g.resources.morale -= 8
-        g.global_heat += 3
+        g.resources.morale = g.resources.morale - 8
+        g.global_heat = g.global_heat + 3
       end
       add(g.dispatch.log, outcome.." "..d.name)
       if #g.dispatch.log > 5 then deli(g.dispatch.log,1) end
       deli(g.dispatch.active,i)
     else
-      i += 1
+      i = i + 1
     end
   end
 end
@@ -2407,7 +2443,7 @@ function handle_base_inputs()
 end
 
 function game_update()
-  g.tick += 1
+  g.tick = g.tick + 1
   if g.scene == "menu" then
     if btnp("a") then g.scene = "game" end
     return
@@ -2434,6 +2470,9 @@ function draw_hud()
   print("Roster:"..#g.roster.." Fultons:"..g.fultons.." Alerts:"..flr(g.alerts).." Score:"..flr(g.mission_score),14,50,10,color(246,240,220))
   local rd = g.research.active and ("R&D "..g.research.active.name.." "..flr(g.research.active.t/60).."s") or "R&D idle"
   print(rd,14,66,10,color(246,240,220))
+  local recon = g.support and ("ReconCD:"..flr((g.support.recon_cd or 0)/60).."s") or "ReconCD:0s"
+  local supply = g.support and ("SupplyCD:"..flr((g.support.supply_cd or 0)/60).."s") or "SupplyCD:0s"
+  print(recon.." "..supply,270,66,10,color(246,240,220))
 end
 
 function draw_field()
@@ -2447,8 +2486,9 @@ function draw_field()
   if g.phase=="extract_ready" then rect(1168,916,1214,956,10) end
   draw_hud()
   local y=98
-  for msg in all(g.msgs) do print(msg,14,y,12,color(246,240,220)); y += 13 end
+  for msg in all(g.msgs) do print(msg,14,y,12,color(246,240,220)); y = y + 13 end
   print("TAB/Select: base",340,72,10,color(246,240,220))
+  print("Support: L=recon pulse, R=supply refill",270,86,10,color(246,240,220))
 end
 
 function draw_base()
@@ -2461,14 +2501,17 @@ function draw_base()
   local y=86
   for k,v in pairs(g.departments) do
     print(k.." lv"..v.lvl.." - "..v.bonus,40,y,12,color(246,240,220))
-    y += 12
+    y = y + 12
   end
   print("Dispatch log:",250,72,10,color(246,240,220))
   local ly=86
-  for i=#g.dispatch.log,1,-1 do print(g.dispatch.log[i],254,ly,12,color(246,240,220)); ly += 12 end
+  for i=#g.dispatch.log,1,-1 do print(g.dispatch.log[i],254,ly,12,color(246,240,220)); ly = ly + 12 end
   print("Completed bulletins:",36,170,10,color(246,240,220))
   local by=184
-  for i=1,math.min(4,#plan_bulletins_done) do print(plan_bulletins_done[i],40,by,12,color(246,240,220)); by += 12 end
+  for i=1,math.min(4,#plan_bulletins_done) do print(plan_bulletins_done[i],40,by,12,color(246,240,220)); by = by + 12 end
+  print("Pending bulletins:",250,170,10,color(246,240,220))
+  local ty=184
+  for i=1,math.min(4,#plan_bulletins_todo) do print(plan_bulletins_todo[i],254,ty,12,color(246,240,220)); ty = ty + 12 end
 end
 
 function draw_menu()
