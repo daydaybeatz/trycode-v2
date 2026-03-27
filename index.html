@@ -2189,13 +2189,15 @@ function fresh_game_state()
     pending_rewards={funds=0,fuel=0,intel=0,recruits=0,salvage=0},
     research={active=nil,queue={},done={tranq_plus=true}},
     dispatch={active={},log={}},
-    support={recon_cd=0,supply_cd=0},
+    support={recon_cd=0,supply_cd=0,bomb_cd=0},
     blueprints={},
     regions={},
     current_region="ash_fork",
     region_tick=0,
     base_tab=1,
     msgs={},
+    msg_seq=0,
+    menu_hold={vert=0,horiz=0},
     cursor=1,
     phase="infiltrate",
     pause_info_page=1,
@@ -2213,11 +2215,30 @@ function boot_game()
   end
   load_campaign()
   start_new_operation()
+  g.mode = "base"
 end
 
 function push_msg(text)
-  add(g.msgs, text)
-  if #g.msgs > 6 then deli(g.msgs,1) end
+  g.msg_seq = (g.msg_seq or 0) + 1
+  add(g.msgs, {text=text, ttl=480, id=g.msg_seq})
+  if #g.msgs > 8 then deli(g.msgs,1) end
+end
+
+function tick_messages()
+  local i=1
+  while i<=#g.msgs do
+    local msg = g.msgs[i]
+    if type(msg)=="string" then
+      g.msgs[i]={text=msg,ttl=240,id=i}
+      msg = g.msgs[i]
+    end
+    msg.ttl = (msg.ttl or 240) - 1
+    if msg.ttl <= 0 then
+      deli(g.msgs,i)
+    else
+      i = i + 1
+    end
+  end
 end
 
 function start_new_operation()
@@ -2310,10 +2331,47 @@ function build_outpost_room(x0,y0,w,h,door_side)
   else mset(x1,dy,0,1,0) mset(x1,dy+1,0,1,0) end
 end
 
+function carve_corridor(x0,y0,x1,y1)
+  local x = x0
+  local y = y0
+  while x ~= x1 do
+    mset(x,y,0,1,0)
+    x = x + (x1>x and 1 or -1)
+  end
+  while y ~= y1 do
+    mset(x,y,0,1,0)
+    y = y + (y1>y and 1 or -1)
+  end
+  mset(x1,y1,0,1,0)
+end
+
+function clamp_to_walkable(x,y)
+  local tx = math.max(1, math.min(project.map_w-2, flr(x/project.tile_w)))
+  local ty = math.max(1, math.min(project.map_h-2, flr(y/project.tile_h)))
+  if not wall(tx*project.tile_w+2, ty*project.tile_h+2, 1, 0) then
+    return tx*project.tile_w+2, ty*project.tile_h+2
+  end
+  for r=1,12 do
+    for ox=-r,r do
+      for oy=-r,r do
+        local nx = tx + ox
+        local ny = ty + oy
+        if nx>0 and ny>0 and nx<project.map_w-1 and ny<project.map_h-1 then
+          if not wall(nx*project.tile_w+2, ny*project.tile_h+2, 1, 0) then
+            return nx*project.tile_w+2, ny*project.tile_h+2
+          end
+        end
+      end
+    end
+  end
+  return 54,54
+end
+
 function generate_outpost(m)
   clear_map()
   g.prisoners = {}
   g.resource_nodes = {}
+  local room_centers = {}
   local xa, xb = 8, project.map_w-9
   local ya, yb = 8, project.map_h-9
   for x=xa,xb do mset(x,ya,2,1,0) mset(x,yb,2,1,0) end
@@ -2327,7 +2385,16 @@ function generate_outpost(m)
     local rx = 12 + ((g.operation_index*11 + i*17 + g.tick) % (project.map_w-rw-24))
     local ry = 12 + ((g.operation_index*13 + i*19 + g.tick*2) % (project.map_h-rh-24))
     build_outpost_room(rx,ry,rw,rh,((i+g.operation_index)%4)+1)
+    add(room_centers,{x=flr(rx+rw/2),y=flr(ry+rh/2)})
   end
+
+  for i=2,#room_centers do
+    local prev = room_centers[i-1]
+    local cur = room_centers[i]
+    carve_corridor(prev.x, prev.y, cur.x, cur.y)
+  end
+  local entry_x = gate+1
+  carve_corridor(entry_x, ya+1, room_centers[1] and room_centers[1].x or entry_x, room_centers[1] and room_centers[1].y or (ya+8))
 
   for i=1,m.resource_nodes do
     local rx = 12 + ((g.operation_index*17 + i*13 + g.tick) % (project.map_w-24))
@@ -2350,17 +2417,28 @@ function generate_outpost(m)
     local weapon = (kind=="officer" and "pistol") or (kind=="heavy" and "shotgun") or (kind=="scout" and "smg") or "ar"
     if elite and elite.weapon then weapon = elite.weapon end
     local hp_bonus = elite and elite.bonus_hp or 0
-    local ex = 110 + ((g.operation_index*29 + i*37 + g.tick) % 930)
-    local ey = 90 + ((g.operation_index*31 + i*41 + g.tick*2) % 700)
+    local base_room = room_centers[((i-1) % math.max(1,#room_centers))+1] or {x=entry_x+2,y=ya+4}
+    local ex = base_room.x*16 + 8 + (((i*19 + g.tick) % 24)-12)
+    local ey = base_room.y*16 + 8 + (((i*23 + g.tick) % 24)-12)
+    ex,ey = clamp_to_walkable(ex,ey)
     add(g.enemies,{
       kind=kind,x=ex,y=ey,dir=((i%2==0) and 1 or -1),
       hp=def.hp+hp_bonus,max_hp=def.hp+hp_bonus,state="patrol",detect=0,last_heard=nil,last_seen=nil,stunned=0,captured=false,bound=false,
       vision=def.vision_range,cone=def.vision_angle,hearing=def.hearing_range,rank=def.rank,special=(i%7==0),
       armor=(kind=="heavy" and "heavy") or (kind=="officer" and "medium") or "light",
       weapon=weapon,
-      elite=elite ~= nil
+      elite=elite ~= nil,
+      route_i=1,
+      route={
+        {x=math.max(24,ex-28),y=ey},
+        {x=ex,y=math.max(24,ey-20)},
+        {x=math.min(project.map_w*16-24,ex+28),y=ey},
+        {x=ex,y=math.min(project.map_h*16-24,ey+20)}
+      }
     })
   end
+  g.player.x, g.player.y = clamp_to_walkable(54,54)
+  g.extract_point = {x=(gate+1)*16+8,y=(ya+1)*16+8}
   push_msg("Mission: "..m.mission_name.." / "..m.outpost.." ("..m.module..") / "..m.weather.." "..m.tod)
   push_msg("Outpost regenerated: "..structures.." structures, "..#g.resource_nodes.." depots")
 end
@@ -2467,9 +2545,20 @@ function los_to_player(e)
   local dx,dy = g.player.x-e.x, g.player.y-e.y
   local dist = math.sqrt(dx*dx + dy*dy)
   if dist > e.vision then return false,dist end
-  if (e.dir==1 and dx<0) or (e.dir==-1 and dx>0) then return false,dist end
-  local blocked = wall((e.x+g.player.x)/2,(e.y+g.player.y)/2,1,0)
-  return not blocked, dist
+  local facing = e.facing or {x=e.dir,y=0}
+  local mag = math.max(0.001, math.sqrt(facing.x*facing.x + facing.y*facing.y))
+  local view_x = facing.x / mag
+  local view_y = facing.y / mag
+  local toward = (dx*view_x + dy*view_y) / math.max(0.001, dist)
+  if toward < (e.cone or 0.75) then return false,dist end
+  local steps = math.max(3, flr(dist/12))
+  for i=1,steps-1 do
+    local t = i/steps
+    local sx = e.x + dx*t
+    local sy = e.y + dy*t
+    if wall(sx,sy,1,0) then return false,dist end
+  end
+  return true, dist
 end
 
 function react_to_sound(e)
@@ -2482,6 +2571,7 @@ function react_to_sound(e)
 end
 
 function enemy_try_step(e, tx, ty)
+  local oldx, oldy = e.x, e.y
   if not actor_solid(tx, e.y) then
     e.x = tx
   else
@@ -2489,6 +2579,12 @@ function enemy_try_step(e, tx, ty)
   end
   if not actor_solid(e.x, ty) then
     e.y = ty
+  end
+  local dx = e.x - oldx
+  local dy = e.y - oldy
+  if abs(dx)+abs(dy) > 0.01 then
+    e.facing = {x=dx,y=dy}
+    if abs(dx) > 0.04 then e.dir = dx > 0 and 1 or -1 end
   end
 end
 
@@ -2506,7 +2602,19 @@ function update_enemy(e)
   elseif e.detect < 10 and e.state~="patrol" then e.state="patrol" end
 
   if e.state=="patrol" then
-    enemy_try_step(e, e.x + 0.5 * e.dir, e.y)
+    local route = e.route or {}
+    if #route > 0 then
+      e.route_i = e.route_i or 1
+      local node = route[e.route_i]
+      local sx = node.x > e.x and 0.62 or -0.62
+      local sy = node.y > e.y and 0.62 or -0.62
+      enemy_try_step(e, e.x + sx, e.y + sy)
+      if abs(e.x-node.x)+abs(e.y-node.y) < 10 then
+        e.route_i = (e.route_i % #route) + 1
+      end
+    else
+      enemy_try_step(e, e.x + 0.5 * e.dir, e.y)
+    end
   elseif e.state=="investigate" and e.last_heard then
     enemy_try_step(e, e.x + (e.last_heard.x > e.x and 0.7 or -0.7), e.y + (e.last_heard.y > e.y and 0.7 or -0.7))
     if abs(e.x-e.last_heard.x)+abs(e.y-e.last_heard.y) < 12 then e.state="search" end
@@ -2603,19 +2711,25 @@ function update_objectives()
   if active <= 3 and g.phase=="infiltrate" then g.phase="extract_ready"; push_msg("Command structure disrupted. Extract!") end
 end
 
-function complete_extraction()
+function complete_extraction(early)
   local salvage = g.pending_rewards.salvage or 0
-  g.resources.funds = g.resources.funds + g.pending_rewards.funds + salvage
-  g.resources.fuel = g.resources.fuel + 16 + flr(g.pending_rewards.recruits*2) + flr(salvage/24)
-  g.resources.intel = g.resources.intel + 4 + flr(g.alerts==0 and 4 or 0) + (g.pending_rewards.intel or 0)
-  g.mission_score = g.mission_score + math.max(0, 120 - g.alerts*8)
+  local reward_scale = early and 0.62 or 1
+  g.resources.funds = g.resources.funds + flr((g.pending_rewards.funds + salvage) * reward_scale)
+  g.resources.fuel = g.resources.fuel + flr((16 + flr(g.pending_rewards.recruits*2) + flr(salvage/24)) * reward_scale)
+  g.resources.intel = g.resources.intel + flr((4 + flr(g.alerts==0 and 4 or 0) + (g.pending_rewards.intel or 0)) * reward_scale)
+  g.mission_score = g.mission_score + flr(math.max(0, 120 - g.alerts*8) * reward_scale)
   local region = g.regions[g.current_region]
   if region then
     region.influence = math.min(100, region.influence + 1 + flr(g.pending_rewards.recruits/2))
     region.heat = math.max(0, region.heat - 1)
   end
-  push_msg("Extraction success. Sold depot cargo for "..flr(salvage)..". Score "..flr(g.mission_score))
+  if early then
+    push_msg("Emergency extraction complete. Reduced payout applied.")
+  else
+    push_msg("Extraction success. Sold depot cargo for "..flr(salvage)..". Score "..flr(g.mission_score))
+  end
   process_brig_recruits()
+  g.mode = "base"
   start_new_operation()
   save_campaign()
 end
@@ -2629,28 +2743,95 @@ function process_brig_recruits()
   end
 end
 
+function menu_axis_pressed(axis, dir)
+  local threshold = 0.55
+  local hold_key = axis=="vertical" and "vert" or "horiz"
+  local value = axis=="vertical" and joyy(0) or joyx(0)
+  local pressed = false
+  if dir < 0 and value <= -threshold then
+    if (g.menu_hold[hold_key] or 0) >= 0 then pressed = true end
+    g.menu_hold[hold_key] = -1
+  elseif dir > 0 and value >= threshold then
+    if (g.menu_hold[hold_key] or 0) <= 0 then pressed = true end
+    g.menu_hold[hold_key] = 1
+  else
+    g.menu_hold[hold_key] = 0
+  end
+  return pressed
+end
+
+function trigger_support_action(idx)
+  if idx==1 then
+    if g.support.recon_cd <= 0 then
+      g.support.recon_cd = 420
+      for e in all(g.enemies) do
+        if not e.captured and e.stunned <= 0 then
+          local d = abs(e.x-g.player.x)+abs(e.y-g.player.y)
+          if d < 320 then
+            e.detect = math.max(0, e.detect - 14)
+            e.last_seen = {x=e.x,y=e.y}
+          end
+        end
+      end
+      push_msg("Support: recon pulse")
+    else
+      push_msg("Recon pulse cooling down")
+    end
+    return
+  elseif idx==2 then
+    if g.phase=="extract_ready" and abs(g.player.x-g.extract_point.x)+abs(g.player.y-g.extract_point.y) < 54 then
+      complete_extraction(false)
+      return
+    end
+    complete_extraction(true)
+    return
+  elseif idx==3 then
+    if g.support.supply_cd <= 0 then
+      g.support.supply_cd = 700
+      g.player.stamina = math.min(100, g.player.stamina + 45)
+      g.fultons = math.min(9, g.fultons + 2)
+      push_msg("Support: emergency supply drop")
+    else
+      push_msg("Supply drop cooling down")
+    end
+    return
+  elseif idx==4 then
+    if g.support.bomb_cd == nil then g.support.bomb_cd = 0 end
+    if g.support.bomb_cd <= 0 then
+      g.support.bomb_cd = 820
+      for e in all(g.enemies) do
+        if not e.captured and e.stunned<=0 then
+          local d = abs(e.x-g.player.x)+abs(e.y-g.player.y)
+          if d < 180 then apply_damage_to_enemy(e, 28, "explosive") end
+        end
+      end
+      g.alerts = g.alerts + 2
+      push_msg("Support: bomb run inbound")
+    else
+      push_msg("Bomb run cooling down")
+    end
+    return
+  end
+end
+
 function update_field()
   if btnp("select") then
     g.field_menu_open = not g.field_menu_open
     g.field_menu_cursor = 1
+    g.menu_hold.vert = 0
+    g.menu_hold.horiz = 0
   end
   if g.field_menu_open then
-    if btnp("up") then g.field_menu_cursor = math.max(1, g.field_menu_cursor-1) end
-    if btnp("down") then g.field_menu_cursor = math.min(3, g.field_menu_cursor+1) end
+    if btnp("up") or menu_axis_pressed("vertical",-1) then g.field_menu_cursor = math.max(1, g.field_menu_cursor-1) end
+    if btnp("down") or menu_axis_pressed("vertical",1) then g.field_menu_cursor = math.min(5, g.field_menu_cursor+1) end
     if btnp("a") then
-      if g.field_menu_cursor==1 then
-        if g.phase=="extract_ready" and abs(g.player.x-1180)+abs(g.player.y-930) < 48 then
-          complete_extraction()
-          return
-        end
-        push_msg("Need extraction phase + LZ proximity")
-      elseif g.field_menu_cursor==2 then
-        g.mode = "base"
+      if g.field_menu_cursor>=1 and g.field_menu_cursor<=4 then
+        trigger_support_action(g.field_menu_cursor)
       else
         g.field_menu_open = false
       end
     end
-    if btnp("b") then g.field_menu_open = false end
+    if btnp("b") then g.field_menu_open = false; g.menu_hold.vert = 0; g.menu_hold.horiz = 0 end
     return
   end
 
@@ -2659,6 +2840,7 @@ function update_field()
   player_concealment()
   if g.support.recon_cd > 0 then g.support.recon_cd = g.support.recon_cd - 1 end
   if g.support.supply_cd > 0 then g.support.supply_cd = g.support.supply_cd - 1 end
+  if g.support.bomb_cd and g.support.bomb_cd > 0 then g.support.bomb_cd = g.support.bomb_cd - 1 end
   for e in all(g.enemies) do update_enemy(e) end
   nonlethal_actions()
   support_actions()
@@ -2805,12 +2987,12 @@ function fire_last_staff()
 end
 
 function handle_base_inputs()
-  if btnp("left") then g.base_tab = math.max(1, g.base_tab-1) end
-  if btnp("right") then g.base_tab = math.min(3, g.base_tab+1) end
+  if btnp("left") or menu_axis_pressed("horizontal",-1) then g.base_tab = math.max(1, g.base_tab-1) end
+  if btnp("right") or menu_axis_pressed("horizontal",1) then g.base_tab = math.min(3, g.base_tab+1) end
   if btnp("y") then queue_research() end
   if btnp("x") then g.mode = "dispatch" end
-  if btnp("up") then cycle_loadout("primary",1) end
-  if btnp("down") then cycle_loadout("suit",1) end
+  if btnp("up") or menu_axis_pressed("vertical",-1) then cycle_loadout("primary",1) end
+  if btnp("down") or menu_axis_pressed("vertical",1) then cycle_loadout("suit",1) end
   if btnp("leftshoulder") then cycle_loadout("secondary",1) end
   if btnp("rightshoulder") then cycle_loadout("throwable",1) end
   if btnp("b") then fire_last_staff() end
@@ -2824,16 +3006,21 @@ end
 
 function game_update()
   g.tick = g.tick + 1
-  if btnp("start") then g.paused = not g.paused end
+  tick_messages()
+  if btnp("start") then
+    g.paused = not g.paused
+    g.menu_hold.vert = 0
+    g.menu_hold.horiz = 0
+  end
   if g.scene == "menu" then
     if btnp("a") then g.scene = "game" end
     return
   end
   if g.paused then
-    if btnp("up") or btnp("down") then g.pause_cursor = 3 - (g.pause_cursor or 1) end
+    if btnp("up") or menu_axis_pressed("vertical",-1) or btnp("down") or menu_axis_pressed("vertical",1) then g.pause_cursor = 3 - (g.pause_cursor or 1) end
     if btnp("a") then g.pause_info_page = g.pause_cursor or 1 end
-    if btnp("left") then g.pause_info_page = 1; g.pause_cursor = 1 end
-    if btnp("right") then g.pause_info_page = 2; g.pause_cursor = 2 end
+    if btnp("left") or menu_axis_pressed("horizontal",-1) then g.pause_info_page = 1; g.pause_cursor = 1 end
+    if btnp("right") or menu_axis_pressed("horizontal",1) then g.pause_info_page = 2; g.pause_cursor = 2 end
     return
   end
   tick_region_sim()
@@ -2856,6 +3043,10 @@ end`},
   if e.elite then rect(e.x+2,e.y-3,e.x+13,e.y-1,8) end
   if e.state=="alert" then circ(e.x+8,e.y-4,5,8) end
   if e.state=="suspicious" then circ(e.x+8,e.y-4,4,10) end
+  local fx = e.facing and e.facing.x or e.dir
+  local fy = e.facing and e.facing.y or 0
+  local mag = math.max(0.001, math.sqrt(fx*fx + fy*fy))
+  line(e.x+8,e.y+8,e.x+8+(fx/mag)*12,e.y+8+(fy/mag)*12,10)
 end
 
 function draw_hud()
@@ -2875,26 +3066,31 @@ function draw_field()
   if g.player.aim and not g.player.aim.captured and g.player.aim.stunned<=0 then
     rect(g.player.aim.x-3,g.player.aim.y-3,g.player.aim.x+19,g.player.aim.y+19,8)
   end
-  if g.phase=="extract_ready" then rect(1168,916,1214,956,10) end
+  if g.extract_point then
+    circ(g.extract_point.x,g.extract_point.y,20,10)
+    if g.phase=="extract_ready" then rect(g.extract_point.x-22,g.extract_point.y-22,g.extract_point.x+22,g.extract_point.y+22,10) end
+  end
   for n in all(g.resource_nodes) do
     if not n.taken then rect(n.x-5,n.y-5,n.x+5,n.y+5,10) end
   end
   draw_hud()
   local y=32
-  for msg in all(g.msgs) do print(msg,14,y,12); y = y + 12 end
+  for msg in all(g.msgs) do
+    if msg.ttl and msg.ttl > 0 then print(msg.text,14,y,12); y = y + 12 end
+  end
   if g.field_menu_open then
     camera()
     rectfill(138,78,340,196,1)
     rect(138,78,340,196,7)
-    print("FIELD SELECT",186,90,11)
-    local opts={"Call Extraction","Go To Base","Cancel"}
-    local oy=114
-    for i=1,3 do
+    print("FIELD SUPPORT",182,90,11)
+    local opts={"Recon Pulse","Extraction Flare","Supply Drop","Bomb Run","Close"}
+    local oy=108
+    for i=1,5 do
       if g.field_menu_cursor==i then rect(150,oy-2,332,oy+12,10) end
       print(opts[i],160,oy,12)
-      oy=oy+24
+      oy=oy+17
     end
-    print("Extraction only works from this menu",148,178,10)
+    print("Use left joystick or d-pad to select",148,186,10)
   end
 end
 
@@ -2915,9 +3111,8 @@ function draw_base()
     print("Dispatch log:",250,78,10,color(246,240,220))
     local ly=92
     for i=#g.dispatch.log,1,-1 do print(g.dispatch.log[i],254,ly,12,color(246,240,220)); ly = ly + 12 end
-    print("Completed bulletins:",36,188,10,color(246,240,220))
-    local by=202
-    for i=1,math.min(3,#plan_bulletins_done) do print(plan_bulletins_done[i],40,by,12,color(246,240,220)); by = by + 12 end
+    print("Ops board: route analysis + mission stats",36,188,10,color(246,240,220))
+    print("Dev bulletins hidden in live gameplay build",40,202,12,color(246,240,220))
   elseif g.base_tab==2 then
     print("Loadout slots (UP primary / DOWN suit / LB secondary / RB throwable)",36,78,10,color(246,240,220))
     print("Primary: "..g.player_loadout.primary,40,96,12,color(246,240,220))
@@ -2957,7 +3152,7 @@ function draw_menu()
   print("A: start campaign",142,112,14)
   print("B: nonlethal tranq, A near stunned target to capture",74,138,14)
   print("Y crouch / X sprint / Select field menu",100,160,14)
-  print("Pause menu now holds intel + controls",98,184,12)
+  print("Pause menu includes controls + support tools",90,184,12)
   print("Secure base resources and sell at extraction",88,204,12)
 end
 
@@ -2997,7 +3192,8 @@ function draw_pause_overlay()
     print("A capture / secure depots",66,142,12)
     print("B fire active weapon",66,156,12)
     print("Y crouch  X sprint",66,170,12)
-    print("SELECT opens extraction/base menu",66,184,12)
+    print("SELECT opens support tools menu",66,184,12)
+    print("Flare / supply / bomb run in field menu",66,198,10)
   else
     local region = g.regions[g.current_region] or {owner="n/a",heat=0,influence=0}
     print("MISSION OVERVIEW",66,98,10)
