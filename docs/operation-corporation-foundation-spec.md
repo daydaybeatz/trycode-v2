@@ -335,3 +335,16 @@ Top-down stealth action with LOS/FOV detection, patrol/search/combat AI, lethal/
 ## 29) One-Sentence Directive
 
 Build Operation Corporation as a modular retro top-down stealth sandbox where every infiltrated outpost feeds a larger corporation-building loop through extraction, recruitment, research, dispatch, and territorial control.
+
+
+## Engineering Style Notes (Architecture Pass)
+
+The in-engine Operation Corporation sample should favor a clean, composable update pipeline inspired by common open-source game code patterns:
+
+- system scheduling (global systems + mode-specific systems)
+- data-first tables for missions/enemies/loadouts
+- narrow utility helpers for math/list logic
+- file-level module boundaries (state, field, base, render, systems)
+
+This keeps updates safer as feature count grows (top-down shooter, strategy war loops, idle/resource progression, and dispatch simulation).
+
