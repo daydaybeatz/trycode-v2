@@ -2120,8 +2120,16 @@ function update_enemy_ai()
       end
       if e.alert > 0 then
         e.alert -= 1
-        if g.player.x < e.x then e.x -= 0.9 else e.x += 0.9 end
-        if g.player.y < e.y then e.y -= 0.9 else e.y += 0.9 end
+        if g.player.x < e.x then
+          e.x = e.x - 0.9
+        else
+          e.x = e.x + 0.9
+        end
+        if g.player.y < e.y then
+          e.y = e.y - 0.9
+        else
+          e.y = e.y + 0.9
+        end
       end
     end
   end
