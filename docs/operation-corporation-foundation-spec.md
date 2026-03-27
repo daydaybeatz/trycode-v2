@@ -19,6 +19,12 @@
 - 22 Mission rank/scoring
 - 23 Persistent save data
 - 24 Data-driven defs (enemy/staff/mission)
+- 8 Expanded weapon categories + damage model
+- 10 Multi-theme biome outpost modules
+- 15 Full loadout slot + suit selection UI
+- 18 Region map + faction control simulation
+- 20 Advanced injury/trauma model for roster
+- 25-5 Expansion pass (elites, rare blueprints, deep traits)
 
 ---
 
@@ -160,6 +166,8 @@ Evidence discovery should create emergent escalation.
 - Weapon categories: pistols, SMGs, ARs, shotguns, snipers, tranq, stun, explosives, support.
 - Damage types include ballistic, explosive, tranq buildup, stun, gas/sleep, and melee variants.
 - Nonlethal states support capture/recruit loop.
+- Armor classes (light/medium/heavy/shield) use multipliers per damage type, ensuring category identity and situational counters.
+- Suit loadout modifies concealment, mobility, and noise profile, creating a tactical tradeoff between survivability and stealth.
 
 ## 9) Enemy AI
 
@@ -184,6 +192,8 @@ Use themed template families and hybrid generation:
 - Random patrol/objective variation
 
 Mission variables include weather/time/faction/alert baseline/guard count/commander/vehicles/special units/prisoners/resources/blueprints/reinforcement speed.
+
+Biome module layer now binds outposts to region terrain themes (scrubland/alpine/coastal/industrial/wetland), each with unique module pools and weather bundles.
 
 Capture condition: neutralize or route active enemies, disable command/alarm response, optionally plant control node, then extract.
 
@@ -219,6 +229,8 @@ Research requires money/materials/data/staff/time and spans category trees (weap
 
 Slots include primary/secondary/support, gadgets, throwable, suit, passive module, and recovery item. Equipment has data-driven stats (damage, weight, noise, suppression, accuracy, tranq, reload, ammo, durability, concealability).
 
+Base UI supports loadout slot cycling so players can swap primary, secondary, suit, and throwable in-command before redeploy.
+
 ## 16) Dispatch Missions
 
 Simulation-based operations with team/risk/loadout/travel/stat inputs. Outputs include success tier, rewards, injuries, KIA/MIA, morale shifts, and faction heat impact.
@@ -243,6 +255,8 @@ Used for research, manufacturing, base upgrades, dispatch, loadouts, processing,
 
 Regions and factions define threat, biome, behavior, elite units, resource profiles, and staff archetypes. Heat/threat escalates enemy countermeasures and can be reduced through strategic actions.
 
+Region simulation updates control pressure over time. Influence shifts ownership and owner doctrine modifies heat growth and mission pressure in that region.
+
 ## 19) Extraction System
 
 Rewards count only on successful extraction. Extraction type and local conditions influence delay, risk, and reinforcement pressure.
@@ -250,6 +264,14 @@ Rewards count only on successful extraction. Extraction type and local condition
 ## 20) Health / Injury / Recovery
 
 Player field state and staff injury model integrate with medical recovery, dispatch attrition, and long-term roster planning.
+
+Roster members can receive bruised/fractured/trauma/critical states with recovery days and morale penalties, making dispatch risk and extraction discipline matter.
+
+## 25-5) Expansion Pass — Elites / Rare Blueprint / Deep Traits
+
+- Elite enemy subtypes (hunter/warder/jammer) augment HP/detection/weapon profile and increase field pressure.
+- Elite capture can drop rare blueprint entries for high-tier progression.
+- Recruits can roll deep traits (e.g., Signal Savant, Field Surgeon, Unflinching) for late-game specialization and roster identity.
 
 ## 21) Companion / Support System
 
