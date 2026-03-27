@@ -663,6 +663,9 @@ const CODE_API_DOCS = [
   makeDoc("pset(x, y, color)", "Draws one pixel, using the current draw color or an optional palette index.", [["x", "World or screen x coordinate."],["y", "World or screen y coordinate."],["color", "Optional palette index. Leave empty to use color()."]], ["pset(10, 10, 8)","color(255, 255, 255)\npset(20, 12)"], "Useful for particles, custom drawing tools, and tiny pixel details."),
   makeDoc("pget(x, y)", "Reads the palette color index at a pixel, or -1 when it is not a palette color.", [["x", "World or screen x coordinate."],["y", "World or screen y coordinate."]], ["local c = pget(mx, my)","if c == 8 then print(\"pink\", 8, 8) end"], "This samples the current frame after camera() and zoom() are applied."),
   makeDoc("line(x0, y0, x1, y1, color)", "Draws a one-pixel line using the current draw color or an optional palette index.", [["x0", "Starting x coordinate."],["y0", "Starting y coordinate."],["x1", "Ending x coordinate."],["y1", "Ending y coordinate."],["color", "Optional palette index."]], ["line(8, 8, 40, 24, 10)","line(player_x, player_y, mx, my)"], "Great for laser beams, HUD graphs, wireframes, and custom icons."),
+  makeDoc("rect(x0, y0, x1, y1, color)", "Draws a rectangle outline using the current draw color or an optional palette index.", [["x0", "Left position."],["y0", "Top position."],["x1", "Right position."],["y1", "Bottom position."],["color", "Optional palette index."]], ["rect(8, 8, 40, 24, 10)"], "Use this for frames, selection boxes, and tactical overlays."),
+  makeDoc("circ(x, y, r, color)", "Draws a circle outline.", [["x", "Center x."],["y", "Center y."],["r", "Radius in pixels."],["color", "Optional palette index."]], ["circ(64, 48, 12, 8)"], "Useful for vision cones, radar rings, and range indicators."),
+  makeDoc("circfill(x, y, r, color)", "Draws a filled circle.", [["x", "Center x."],["y", "Center y."],["r", "Radius in pixels."],["color", "Optional palette index."]], ["circfill(96, 64, 7, 11)"], "Great for pings, particles, or rounded UI badges."),
   makeDoc("spr(indexOrSource, x, y)", "Draws a sprite folder frame, sprite reference such as 0a, or image source.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."]], ["spr(0, 40, 20)","spr(\"0b\", 56, 20)"], "Sprite folder indices draw frame a by default."),
   makeDoc("animate(ref, x, y, speed)", "Draws a sprite folder and cycles through its frames automatically.", [["ref", "Folder index or ref such as \"0a\"."],["x", "Destination x."],["y", "Destination y."],["speed", "Frames per second style speed value."]], ["animate(0, 80, 40, 6)","animate(\"0a\", player_x, player_y, 8)"], "Use this when a sprite folder contains several frames."),
   makeDoc("print(text, x, y, color, outlineColor)", "Draws text with an optional fill color and optional outline color.", [["text", "Any value converted to text."],["x", "Screen/world x position."],["y", "Screen/world y position."],["color", "Optional fill color string, palette index, or color() result. Leave empty to use current color()."],["outlineColor", "Optional outline color string, palette index, or color() result. Leave empty for no outline."]], ["print(\"score\", 8, 8)","print(score, 8, 20, color(255,255,255))","print(\"alert\", 8, 32, color(255,247,232), color(111,61,32))","print(\"legacy white\", 8, 44, 255, 255, 255)"], "Pass one color to set the font color, and a second color only when you want an outline. Legacy size/outline usage and legacy six-number RGB are still supported."),
@@ -687,6 +690,8 @@ const CODE_API_DOCS = [
   makeDoc("confirm_box(message, title)", "Shows a yes/no style dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["title", "Optional heading text."]], ["default_box(\"confirm\", {bg=color(27,35,64), text=color(255,247,232)})","local answer = confirm_box(\"quit game?\", \"confirm\")","if answer == true then quit = true end"], "Call it every frame while waiting. It returns true for OK, false for Cancel, and nil until the player chooses. Call default_box(\"confirm\") with no style table to reset confirm boxes back to the built-in defaults."),
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, 8, 8) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
+  makeDoc("save_data(key, value)", "Stores a persistent string value in browser local storage for this project name.", [["key", "Save slot key."],["value", "String or number to store."]], ["save_data(\"save_slot\", \"hq=2;funds=140\")"], "Call this after meaningful progress. Values remain after reload."),
+  makeDoc("load_data(key)", "Loads a previously stored string value, or nil when missing.", [["key", "Save slot key."]], ["local blob = load_data(\"save_slot\")"], "Use this in _init() to restore campaign progress and settings."),
   makeDoc("include \"file.lua\"", "Inserts another code tab into main.lua before the program runs.", [["\"file.lua\"", "Exact code file name to include."]], ["include \"player.lua\"\ninclude \"enemy.lua\""], "Keep main.lua small by splitting reusable systems into separate files."),
   makeDoc("x += value / x -= value", "Shorthand for updating an existing variable.", [["value", "The amount to add or subtract."]], ["x += 1","y -= speed"], "The app expands this into standard Lua before running your code.")
 ].sort((a,b)=>a.signature.localeCompare(b.signature));
@@ -769,7 +774,7 @@ function codeTokenHtml(cls,value){ return `<span class="${cls}">${escapeHtml(val
 function highlightLuaLine(line){
   const {code, comment}=splitLuaLineComment(line);
   const keywords=new Set(["function","local","if","then","elseif","else","end","for","in","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
-  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","animate","rectfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","abs","flr","sin","cosin","tan","add","del","deli","all","foreach","pairs"]);
+  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","save_data","load_data","abs","flr","sin","cosin","tan","add","del","deli","all","foreach","pairs"]);
   let html="";
   const regex=/(\b\d+(?:\.\d+)?\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*|==|~=|<=|>=|\.\.\.|\.\.|[+\-*\/%#=<>]+)/g;
   let last=0, match;
@@ -887,6 +892,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "const c=document.getElementById('c'),ctx=c.getContext('2d'),errEl=document.getElementById('err');ctx.imageSmoothingEnabled=false;function showErr(m){if(errEl){errEl.textContent=String(m);errEl.style.display='block';}}",
     "let camx=0,camy=0,col={r:0,g:0,b:0},viewZoom=1,zoomOffX=0,zoomOffY=0,clipRect=null;",
     "const input={btn:Array(8).fill(0),btnp:Array(8).fill(0),btnPrev:Array(8).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,pointers:new Map()}};",
+    "const persistPrefix=()=>'trycode_runtime_save_export:'+(projectRef.meta&&projectRef.meta.name||'project')+':';function saveData(key,value){const k=String(key??'').trim();if(!k)return false;try{localStorage.setItem(persistPrefix()+k,String(value??''));return true}catch{return false}}function loadData(key){const k=String(key??'').trim();if(!k)return null;try{const v=localStorage.getItem(persistPrefix()+k);return v==null?null:v}catch{return null}}",
     "const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7};",
     "const normalizeButtonIndex=value=>{if(typeof value==='number'&&Number.isFinite(value)){const i=value|0;return i>=0&&i<8?i:-1}const s=String(value??'').trim().toLowerCase();if(!s)return-1;if(/^[0-7]$/.test(s))return parseInt(s,10);return Object.prototype.hasOwnProperty.call(BUTTON_ALIASES,s)?BUTTON_ALIASES[s]:-1};",
     "const setBtnSource=(source,i,pressed)=>{if(source==='btnFace'){input.btnFace[i]=pressed?1:0;input.btn[i+4]=input.btnFace[i]?1:0;return}input.btnDpad[i]=pressed?1:0;input.btn[i]=input.btnDpad[i]?1:0;syncLeftMovementInput()};",
@@ -904,7 +910,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
 	    "function cls(clearColor){const fill=resolvePrintColor(clearColor)||'rgb(0,0,0)';ctx.fillStyle=fill;ctx.fillRect(0,0,c.width,c.height)}",
 	    "function resetViewTransform(){viewZoom=1;zoomOffX=0;zoomOffY=0;camx=0;camy=0} function camera(x,y){if(x==null&&y==null){camx=0;camy=0;return 0} camx=Number(x)||0; camy=Number(y)||0; return 0} function zoom(z,ox,oy){if(z!=null)viewZoom=Math.max(0.125,Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom}",
 	    "function color(r,g,b){col={r:r|0,g:g|0,b:b|0};return 'rgb('+col.r+','+col.g+','+col.b+')'} function sty(){return 'rgb('+col.r+','+col.g+','+col.b+')'} function paletteColor(index){const value=projectRef.palette[index|0];return value||sty()} function resolvePrintColor(value){if(value==null||value==='')return null;if(typeof value==='number'&&Number.isFinite(value))return paletteColor(value|0);const s=String(value).trim();if(/^\\d+$/.test(s))return paletteColor(parseInt(s,10));return s||null} function hexToRgb(value){const s=String(value||'').trim();if(/^#([0-9a-f]{3})$/i.test(s)){const m=s.slice(1);return{r:parseInt(m[0]+m[0],16),g:parseInt(m[1]+m[1],16),b:parseInt(m[2]+m[2],16)}}if(/^#([0-9a-f]{6})$/i.test(s)){return{r:parseInt(s.slice(1,3),16),g:parseInt(s.slice(3,5),16),b:parseInt(s.slice(5,7),16)}}const rgb=s.match(/^rgb\\((\\d+),\\s*(\\d+),\\s*(\\d+)\\)$/i);return rgb?{r:parseInt(rgb[1],10),g:parseInt(rgb[2],10),b:parseInt(rgb[3],10)}:null} function pixelFillStyle(colorIndex){return colorIndex==null?sty():paletteColor(colorIndex)} function pset(x,y,colorIndex){const _cp=clipPush();const size=Math.max(1,Math.round(viewZoom));ctx.fillStyle=pixelFillStyle(colorIndex);ctx.fillRect(sx(x),sy(y),size,size);clipPop(_cp);return 0} function pget(x,y){const px=clamp(sx(x),0,c.width-1),py=clamp(sy(y),0,c.height-1),data=ctx.getImageData(px,py,1,1).data;if(data[3]===0)return-1;for(let i=0;i<projectRef.palette.length;i++){const rgb=hexToRgb(projectRef.palette[i]);if(rgb&&rgb.r===data[0]&&rgb.g===data[1]&&rgb.b===data[2])return i}return-1} function line(x0,y0,x1,y1,colorIndex){const _cp=clipPush();let ax=Math.round(Number(x0)||0),ay=Math.round(Number(y0)||0),bx=Math.round(Number(x1)||0),by=Math.round(Number(y1)||0);const dx=Math.abs(bx-ax),sxStep=ax<bx?1:-1,dy=-Math.abs(by-ay),syStep=ay<by?1:-1;let err=dx+dy;const size=Math.max(1,Math.round(viewZoom));ctx.fillStyle=pixelFillStyle(colorIndex);while(true){ctx.fillRect(sx(ax),sy(ay),size,size);if(ax===bx&&ay===by)break;const e2=err*2;if(e2>=dy){err+=dy;ax+=sxStep}if(e2<=dx){err+=dx;ay+=syStep}}clipPop(_cp);return 0}",
-	    "function rectfill(x0,y0,a,b,colorIndex){const hasPaletteColor=colorIndex!=null;const left=Number(x0)||0;const top=Number(y0)||0;const right=hasPaletteColor?(Number(a)||0):left+(Number(a)||0);const bottom=hasPaletteColor?(Number(b)||0):top+(Number(b)||0);const x=Math.min(left,right),y=Math.min(top,bottom),w=Math.abs(right-left)+(hasPaletteColor?1:0),h=Math.abs(bottom-top)+(hasPaletteColor?1:0);ctx.fillStyle=hasPaletteColor?paletteColor(colorIndex):sty();ctx.fillRect(sx(x),sy(y),Math.max(1,Math.round(w*viewZoom)),Math.max(1,Math.round(h*viewZoom)))}",
+	    "function rect(x0,y0,x1,y1,colorIndex){const left=Math.round(Math.min(Number(x0)||0,Number(x1)||0)),right=Math.round(Math.max(Number(x0)||0,Number(x1)||0)),top=Math.round(Math.min(Number(y0)||0,Number(y1)||0)),bottom=Math.round(Math.max(Number(y0)||0,Number(y1)||0));for(let x=left;x<=right;x++){pset(x,top,colorIndex);pset(x,bottom,colorIndex)}for(let y=top;y<=bottom;y++){pset(left,y,colorIndex);pset(right,y,colorIndex)}}function rectfill(x0,y0,a,b,colorIndex){const hasPaletteColor=colorIndex!=null;const left=Number(x0)||0;const top=Number(y0)||0;const right=hasPaletteColor?(Number(a)||0):left+(Number(a)||0);const bottom=hasPaletteColor?(Number(b)||0):top+(Number(b)||0);const x=Math.min(left,right),y=Math.min(top,bottom),w=Math.abs(right-left)+(hasPaletteColor?1:0),h=Math.abs(bottom-top)+(hasPaletteColor?1:0);ctx.fillStyle=hasPaletteColor?paletteColor(colorIndex):sty();ctx.fillRect(sx(x),sy(y),Math.max(1,Math.round(w*viewZoom)),Math.max(1,Math.round(h*viewZoom)))}function circ(x,y,r,colorIndex){let cx=Math.round(Number(x)||0),cy=Math.round(Number(y)||0),rr=Math.max(0,Math.round(Number(r)||0));let px=rr,py=0,err=1-rr;while(px>=py){pset(cx+px,cy+py,colorIndex);pset(cx+py,cy+px,colorIndex);pset(cx-py,cy+px,colorIndex);pset(cx-px,cy+py,colorIndex);pset(cx-px,cy-py,colorIndex);pset(cx-py,cy-px,colorIndex);pset(cx+py,cy-px,colorIndex);pset(cx+px,cy-py,colorIndex);py++;if(err<0){err+=2*py+1}else{px--;err+=2*(py-px+1)}}}function circfill(x,y,r,colorIndex){const cx=Math.round(Number(x)||0),cy=Math.round(Number(y)||0),rr=Math.max(0,Math.round(Number(r)||0));for(let dy=-rr;dy<=rr;dy++){const span=Math.floor(Math.sqrt(Math.max(0,rr*rr-dy*dy)));line(cx-span,cy+dy,cx+span,cy+dy,colorIndex)}}",
 	    "function print(t,x,y,a,b,c){const _cp=clipPush();const oldFill=ctx.fillStyle,oldStroke=ctx.strokeStyle;let fontSize=Math.max(1,Math.round(12*viewZoom)),fill=sty(),outline=null;if(a!=null&&b!=null&&c!=null&&typeof a==='number'&&typeof b==='number'&&typeof c==='number'){fill='rgb('+((a|0))+','+((b|0))+','+((c|0))+')';}else if(typeof a==='string' || (typeof a==='number' && (b==null||typeof b!=='number'||c!=null))){fill=resolvePrintColor(a)||fill;outline=resolvePrintColor(b);}else{if(a!=null)fontSize=Math.max(1,Math.round((Number(a)||12)*viewZoom));outline=resolvePrintColor(b);if(c!=null)fill=resolvePrintColor(c)||fill;}ctx.fillStyle=fill;ctx.font=fontSize+'px monospace';ctx.textAlign='left';ctx.textBaseline='top';const dx=Math.round(sx(x)),dy=Math.round(sy(y));if(outline){ctx.strokeStyle=outline;ctx.lineWidth=Math.max(1,Math.round(fontSize/5));ctx.strokeText(String(t),dx,dy);}ctx.fillText(String(t),dx,dy);ctx.fillStyle=oldFill;ctx.strokeStyle=oldStroke;clipPop(_cp)}const print_=print;",
 	    "function drawInternalSpriteRuntime(ref,x,y,scaleX,scaleY){scaleX=scaleX||1;scaleY=scaleY||1;const r=(typeof ref==='object')?ref:parseSpriteRef(ref);if(!r)return false;const folder=projectRef.spriteFolders[r.folder],s=folder&&folder.frames[r.frame];if(!s)return false;for(let yy=0;yy<s.h;yy++)for(let xx=0;xx<s.w;xx++){const p=s.pixels[yy][xx];if(p>=0&&projectRef.palette[p]){ctx.fillStyle=projectRef.palette[p];ctx.fillRect(Math.round(sx(x)+xx*(scaleX*viewZoom)),Math.round(sy(y)+yy*(scaleY*viewZoom)),Math.ceil(scaleX*viewZoom),Math.ceil(scaleY*viewZoom))}}return true}",
 	    "function spr(v,x,y){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){drawInternalSpriteRuntime(r,x,y,1,1);clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function animate(ref,x,y,speed){const _cp=clipPush();const s=String(ref||'').trim();const m=s.match(/^(\\d+)/);const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN);if(!Number.isFinite(base)){spr(ref,x,y);clipPop(_cp);return;}const folder=projectRef.spriteFolders[base];if(!folder||!folder.frames||!folder.frames.length){spr(ref,x,y);clipPop(_cp);return;}const spd=Math.max(0.01,Number(speed)||6);const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length;drawInternalSpriteRuntime({folder:base,frame:idx},x,y,1,1);clipPop(_cp);}",
@@ -915,7 +921,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "function syncLeftMovementInput(){const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick';if(mode!=='dpad')return;input.joy[0].x=(input.btnDpad[3]?1:0)-(input.btnDpad[2]?1:0);input.joy[0].y=(input.btnDpad[1]?1:0)-(input.btnDpad[0]?1:0)}",
     "const leftJoy=attachJoy(document.getElementById('joyL'),document.getElementById('knobL'),0),rightJoy=attachJoy(document.getElementById('joyR'),document.getElementById('knobR'),1);document.querySelectorAll('.symbtn').forEach(btn=>{const id=(+btn.dataset.btn)-4;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnFace',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false);e.preventDefault()}))});document.querySelectorAll('.dpadBtn').forEach(btn=>{const id=+btn.dataset.dpadBtn;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnDpad',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false);e.preventDefault()}))});['pointerdown','pointermove'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,false);if(type==='pointerdown'){try{c.setPointerCapture(e.pointerId)}catch{}}if(type==='pointerdown'||e.pointerType==='touch')e.preventDefault()},{passive:false}));['pointerup','pointercancel','lostpointercapture'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,true);e.preventDefault()},{passive:false}));c.addEventListener('contextmenu',e=>e.preventDefault());const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3};window.addEventListener('keydown',e=>{const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,true);e.preventDefault()},{passive:false});window.addEventListener('keyup',e=>{const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,false);e.preventDefault()},{passive:false});window.addEventListener('blur',()=>{input.btnDpad.fill(0);input.btnFace.fill(0);input.btn.fill(0);input.btnPrev.fill(0);input.btnp.fill(0);input.mouse.buttons=0;input.mouse.pressed=0;input.mouse.pointers.clear();leftJoy.reset();rightJoy.reset();syncLeftMovementInput()});applyInputModeUI();",
     "const { lua,lauxlib,lualib,to_luastring,to_jsstring }=fengari;const L=lauxlib.luaL_newstate();lualib.luaL_openlibs(L);function push(n,fn){lua.lua_pushjsfunction(L,fn);lua.lua_setglobal(L,to_luastring(n))}",
-	    "push('cls',L=>{const argc=lua.lua_gettop(L);if(argc===0){cls();return 0}const clearColor=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));cls(clearColor);return 0});push('camera',L=>{const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0});push('zoom',L=>{const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0;} lua.lua_pushnumber(L, zoom()); return 1});push('clip',L=>{const argc=lua.lua_gettop(L); if(argc===0){ clip(); return 0;} clip(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4)); return 0;});push('color',L=>{lua.lua_pushstring(L,to_luastring(String(color(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)))));return 1});push('pset',L=>{const argc=lua.lua_gettop(L);pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?lua.lua_tointeger(L,3):undefined);return 0});push('pget',L=>{lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)));return 1});push('line',L=>{const argc=lua.lua_gettop(L);line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('rectfill',L=>{const argc=lua.lua_gettop(L);rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('print',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('print_',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('spr',L=>{if(lua.lua_isnumber(L,1))spr(String(lua.lua_tointeger(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));else spr(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));return 0});push('animate',L=>{const ref=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));animate(ref,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4));return 0});push('mget',L=>{lua.lua_pushinteger(L,mget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0));return 1});push('mset',L=>{mset(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_tointeger(L,3),lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tointeger(L,5):0);return 0});push('fget',L=>{lua.lua_pushboolean(L,fget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2))?1:0);return 1});push('solid',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('wall',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('map',L=>{const argc=lua.lua_gettop(L);map(argc>=1?lua.lua_tointeger(L,1):0,argc>=2?lua.lua_tonumber(L,2):0,argc>=3?lua.lua_tonumber(L,3):0,argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('pmap',L=>{pmap(lua.lua_gettop(L)>=1?lua.lua_tointeger(L,1):0,lua.lua_gettop(L)>=2?lua.lua_tointeger(L,2):0,lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tonumber(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tonumber(L,5):0,lua.lua_gettop(L)>=6?lua.lua_tointeger(L,6):undefined,lua.lua_gettop(L)>=7?lua.lua_tointeger(L,7):undefined,lua.lua_gettop(L)>=8?lua.lua_tointeger(L,8):undefined,lua.lua_gettop(L)>=9?lua.lua_tointeger(L,9):undefined);return 0});push('btn',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btn[i]?1:0);return 1});push('btnp',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btnp[i]?1:0);return 1});push('mouse',L=>{lua.lua_pushinteger(L,input.mouse.x|0);lua.lua_pushinteger(L,input.mouse.y|0);lua.lua_pushinteger(L,input.mouse.buttons|0);lua.lua_pushinteger(L,input.mouse.pressed|0);return 4});push('joyx',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].x:0);return 1});push('joyy',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].y:0);return 1});push('message_box',L=>{window.alert(to_jsstring(lua.lua_tolstring(L,1)));lua.lua_pushboolean(L,1);return 1});push('confirm_box',L=>{lua.lua_pushboolean(L,window.confirm(to_jsstring(lua.lua_tolstring(L,1)))?1:0);return 1});push('entry_box',L=>{const value=window.prompt(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'' );if(value==null){lua.lua_pushboolean(L,0);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('ui_box',()=>0);push('abs',L=>{lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1)));return 1});push('flr',L=>{lua.lua_pushnumber(L,Math.floor(lua.lua_tonumber(L,1)));return 1});",
+	    "push('cls',L=>{const argc=lua.lua_gettop(L);if(argc===0){cls();return 0}const clearColor=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));cls(clearColor);return 0});push('camera',L=>{const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0});push('zoom',L=>{const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0;} lua.lua_pushnumber(L, zoom()); return 1});push('clip',L=>{const argc=lua.lua_gettop(L); if(argc===0){ clip(); return 0;} clip(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4)); return 0;});push('color',L=>{lua.lua_pushstring(L,to_luastring(String(color(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)))));return 1});push('pset',L=>{const argc=lua.lua_gettop(L);pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?lua.lua_tointeger(L,3):undefined);return 0});push('pget',L=>{lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)));return 1});push('line',L=>{const argc=lua.lua_gettop(L);line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('rect',L=>{const argc=lua.lua_gettop(L);rect(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('rectfill',L=>{const argc=lua.lua_gettop(L);rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined);return 0});push('circ',L=>{const argc=lua.lua_gettop(L);circ(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('circfill',L=>{const argc=lua.lua_gettop(L);circfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('print',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('print_',L=>{const argc=lua.lua_gettop(L);const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)];for(let i=4;i<=argc;i++){args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));}print(...args);return 0});push('spr',L=>{if(lua.lua_isnumber(L,1))spr(String(lua.lua_tointeger(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));else spr(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3));return 0});push('animate',L=>{const ref=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));animate(ref,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4));return 0});push('mget',L=>{lua.lua_pushinteger(L,mget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0));return 1});push('mset',L=>{mset(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_tointeger(L,3),lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tointeger(L,5):0);return 0});push('fget',L=>{lua.lua_pushboolean(L,fget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2))?1:0);return 1});push('solid',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('wall',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('map',L=>{const argc=lua.lua_gettop(L);map(argc>=1?lua.lua_tointeger(L,1):0,argc>=2?lua.lua_tonumber(L,2):0,argc>=3?lua.lua_tonumber(L,3):0,argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('pmap',L=>{pmap(lua.lua_gettop(L)>=1?lua.lua_tointeger(L,1):0,lua.lua_gettop(L)>=2?lua.lua_tointeger(L,2):0,lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tonumber(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tonumber(L,5):0,lua.lua_gettop(L)>=6?lua.lua_tointeger(L,6):undefined,lua.lua_gettop(L)>=7?lua.lua_tointeger(L,7):undefined,lua.lua_gettop(L)>=8?lua.lua_tointeger(L,8):undefined,lua.lua_gettop(L)>=9?lua.lua_tointeger(L,9):undefined);return 0});push('btn',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btn[i]?1:0);return 1});push('btnp',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btnp[i]?1:0);return 1});push('mouse',L=>{lua.lua_pushinteger(L,input.mouse.x|0);lua.lua_pushinteger(L,input.mouse.y|0);lua.lua_pushinteger(L,input.mouse.buttons|0);lua.lua_pushinteger(L,input.mouse.pressed|0);return 4});push('joyx',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].x:0);return 1});push('joyy',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].y:0);return 1});push('message_box',L=>{window.alert(to_jsstring(lua.lua_tolstring(L,1)));lua.lua_pushboolean(L,1);return 1});push('confirm_box',L=>{lua.lua_pushboolean(L,window.confirm(to_jsstring(lua.lua_tolstring(L,1)))?1:0);return 1});push('entry_box',L=>{const value=window.prompt(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'' );if(value==null){lua.lua_pushboolean(L,0);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('save_data',L=>{const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):'';let value='';if(lua.lua_gettop(L)>=2){value=lua.lua_isnumber(L,2)?String(lua.lua_tonumber(L,2)):to_jsstring(lua.lua_tolstring(L,2));}lua.lua_pushboolean(L,saveData(key,value)?1:0);return 1});push('load_data',L=>{const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):'';const value=loadData(key);if(value==null){lua.lua_pushnil(L);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('ui_box',()=>0);push('abs',L=>{lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1)));return 1});push('flr',L=>{lua.lua_pushnumber(L,Math.floor(lua.lua_tonumber(L,1)));return 1});",
 	    "lua.lua_newtable(L);lua.lua_pushinteger(L,projectRef.project.tile_w);lua.lua_setfield(L,-2,to_luastring('tile_w'));lua.lua_pushinteger(L,projectRef.project.tile_h);lua.lua_setfield(L,-2,to_luastring('tile_h'));lua.lua_pushinteger(L,projectRef.project.map_w);lua.lua_setfield(L,-2,to_luastring('map_w'));lua.lua_pushinteger(L,projectRef.project.map_h);lua.lua_setfield(L,-2,to_luastring('map_h'));lua.lua_setglobal(L,to_luastring('project'));",
 	    "if(lauxlib.luaL_dostring(L,to_luastring("+JSON.stringify(LUA_RUNTIME_HELPERS)+"))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
 	    "if(lauxlib.luaL_dostring(L,to_luastring(code))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
@@ -1895,11 +1901,384 @@ end`}];
   scenery.data[13][43]=5;
   finalizeExampleProjectLoad();
 }
+
+function loadOperationCorporationExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.project.tile_w=16;
+  p.project.tile_h=16;
+  p.project.map_w=80;
+  p.project.map_h=64;
+  p.settings.movementInput='left_joystick';
+  p.palette=[...DEFAULT_PALETTE];
+  p.palette[1]='#1a2238'; p.palette[2]='#2f4a5a'; p.palette[3]='#4f7d67'; p.palette[4]='#9cbf88'; p.palette[5]='#d9d08f';
+  p.palette[6]='#e7e0c9'; p.palette[7]='#f8f6e5'; p.palette[8]='#c4513d'; p.palette[9]='#8a2f2f'; p.palette[10]='#f0a35e';
+  p.palette[11]='#6a8fd1'; p.palette[12]='#9ed6ff'; p.palette[13]='#7f8c8d'; p.palette[14]='#3a3f46'; p.palette[15]='#0f1117';
+  const spriteFromArt=(rows,map)=>{ const sp=makeSprite(16,16); for(let y=0;y<16;y++){ const row=rows[y]||'................'; for(let x=0;x<16;x++){ const ch=row[x]||'.'; sp.pixels[y][x]=Object.prototype.hasOwnProperty.call(map,ch)?map[ch]:-1; } } return sp; };
+  const mkUnit=(primary,secondary,accent)=>spriteFromArt([
+    '......aa........','.....aaaa.......','....abbbba......','....abccba......','....abbbba......','.....adda.......','....dd44dd......','....d4444d......','...d444444d.....','...d444444d.....','...e44ee44e.....','..ee4e..e4ee....','..e4e....e4e....','..e4......4e....','................','................'
+  ],{'.':-1,'a':primary,'b':secondary,'c':accent,'d':6,'4':14,'e':13});
+  p.spriteFolders=[
+    {frames:[mkUnit(13,6,8),mkUnit(13,7,10)]},
+    {frames:[mkUnit(9,8,10),mkUnit(9,6,8)]},
+    {frames:[mkUnit(11,6,5)]},
+    {frames:[mkUnit(8,10,7)]},
+    {frames:[spriteFromArt(Array.from({length:16},()=> '3333333333333333'),{'3':3})]},
+    {frames:[spriteFromArt(Array.from({length:16},(_,i)=> i%2?'4444444444444444':'4444455444444444'),{'4':4,'5':5})]},
+    {frames:[spriteFromArt(Array.from({length:16},(_,i)=> i%2?'1414141414141414':'4141414141414141'),{'1':13,'4':14})]},
+    {frames:[spriteFromArt(['................','.......77.......','......7777......','.....777777.....','....77777777....','....77777777....','....77777777....','.....777777.....','......7777......','.......77.......','................','................','................','................','................','................'],{'.':-1,'7':10})]},
+    {frames:[spriteFromArt(['................','.....9999.......','....999999......','....99aa99......','....99aa99......','....999999......','.....9999.......','......99........','.....9999.......','....99..99......','....99..99......','....99..99......','................','................','................','................'],{'.':-1,'9':8,'a':15})]},
+  ];
+  p.tileDefs={
+    0:makeBlankTileDef(),
+    1:{source:'4a',flags:{0:false},bg:'#2f4a5a',bgEnabled:true,animated:false,animFolder:4,animSpeed:6},
+    2:{source:'5a',flags:{0:true},bg:'#3a3f46',bgEnabled:false,animated:false,animFolder:5,animSpeed:6},
+    3:{source:'6a',flags:{0:false},bg:'#1f3024',bgEnabled:true,animated:false,animFolder:6,animSpeed:6},
+    4:{source:'7a',flags:{0:false},bg:'#1a2238',bgEnabled:false,animated:true,animFolder:7,animSpeed:5},
+    5:{source:'8a',flags:{0:false},bg:'#1a2238',bgEnabled:false,animated:false,animFolder:8,animSpeed:6}
+  };
+  p.maps=[makeEmptyMap('0',p.project.map_w,p.project.map_h)];
+  const ground=p.maps[0].layers[0], walls=p.maps[0].layers[1];
+  for(let y=0;y<p.project.map_h;y++){ for(let x=0;x<p.project.map_w;x++){ ground.data[y][x]=1; walls.data[y][x]=0; if(x===0||y===0||x===p.project.map_w-1||y===p.project.map_h-1){walls.data[y][x]=2;} } }
+  for(let x=8;x<72;x++){ walls.data[18][x]=2; if(x%5===0) ground.data[18][x]=5; }
+  for(let y=8;y<56;y++){ walls.data[y][30]=2; walls.data[y][52]=2; }
+  for(let y=24;y<40;y++){ for(let x=34;x<48;x++){ ground.data[y][x]=3; if((x+y)%7===0) ground.data[y][x]=4; } }
+  p.music=[makeMusic(),makeMusic()];
+  p.codeFiles=[
+    {name:'main.lua',tabTheme:0,content:`include "config.lua"
+include "state.lua"
+include "simulation.lua"
+include "draw.lua"
+
+function _init()
+  game_boot()
+end
+
+function _update()
+  game_update()
+end
+
+function _draw()
+  game_draw()
+end`},
+    {name:'config.lua',tabTheme:1,content:`cfg = {
+  map_w = project.map_w * project.tile_w,
+  map_h = project.map_h * project.tile_h,
+  walk = 1.2,
+  sprint = 1.9,
+  capture_dist = 24,
+  alert_time = 210
+}
+
+team_roles = {"field","intel","research","support"}
+research_tree = {
+  {id="tranq_plus",name="Tranq Dart v2",cost=90,time=500,unlock="stamina_reduce"},
+  {id="stamina_reduce",name="Silent Step Boots",cost=120,time=700,unlock="smoke_mk2"},
+  {id="smoke_mk2",name="Smoke Capsule MkII",cost=160,time=800,unlock="drone_ping"},
+  {id="drone_ping",name="Scout Ping Drone",cost=210,time=1000,unlock=nil}
+}
+dispatch_templates = {
+  {name="Supply Intercept",duration=520,reward=120,risk=0.2},
+  {name="Rescue Operatives",duration=760,reward=190,risk=0.34},
+  {name="Destroy Relay",duration=1040,reward=270,risk=0.45}
+}`},
+    {name:'state.lua',tabTheme:2,content:`function fresh_game_state()
+  return {
+    scene="menu",
+    tick=0,
+    player={x=80,y=80,vx=0,vy=0,dir=1,energy=100,hp=100,stealth=0},
+    base={funds=220,fuel=140,medic=3},
+    teams={field={},intel={},research={},support={}},
+    roster={},
+    enemies={},
+    prisoners={},
+    fultons=6,
+    alerts=0,
+    heat=0,
+    tools={tranq=true,smoke=true,mine=false,drone=false,armor=false},
+    research={active=nil,queue={},done={tranq=true,smoke=true}},
+    dispatch={active={},log={}},
+    msgs={},
+    cam={x=0,y=0},
+    cursor=1
+  }
+end
+
+function game_boot()
+  g = fresh_game_state()
+  load_campaign()
+  spawn_world()
+end
+
+function load_campaign()
+  local blob = load_data("operation_corp_slot")
+  if blob and #blob > 3 then
+    local funds = tonumber(blob:match("funds=(%d+)"))
+    local fuel = tonumber(blob:match("fuel=(%d+)"))
+    local fultons = tonumber(blob:match("fultons=(%d+)"))
+    local recruits = tonumber(blob:match("recruits=(%d+)"))
+    if funds then g.base.funds = funds end
+    if fuel then g.base.fuel = fuel end
+    if fultons then g.fultons = fultons end
+    if recruits then
+      for i=1,recruits do
+        add(g.roster, {name="R"..i, rank=(i%5)+1, morale=70+i})
+      end
+    end
+  end
+end
+
+function save_campaign()
+  local blob = "funds="..flr(g.base.funds)..";fuel="..flr(g.base.fuel)..";fultons="..flr(g.fultons)..";recruits="..#g.roster
+  save_data("operation_corp_slot", blob)
+end`},
+    {name:'simulation.lua',tabTheme:3,content:`function spawn_world()
+  g.enemies = {}
+  for i=1,28 do
+    add(g.enemies, {
+      x=40 + (i*23)%980,
+      y=44 + (i*41)%900,
+      dir=(i%2==0) and 1 or -1,
+      patrol=38 + (i%5)*24,
+      alert=0,
+      hp=100,
+      stunned=0,
+      captured=false,
+      rank=(i%5)+1,
+      specialist=(i%9==0)
+    })
+  end
+  g.prisoners = {}
+  for i=1,7 do
+    add(g.prisoners, {x=130+i*85,y=120+i*40,rescued=false,rank=(i%4)+2})
+  end
+end
+
+function actor_solid(x,y)
+  return wall(x,y,1,0) or wall(x+13,y,1,0) or wall(x,y+13,1,0) or wall(x+13,y+13,1,0)
+end
+
+function move_player()
+  local mx,my = joyx(0),joyy(0)
+  if btn("left") then mx = -1 end
+  if btn("right") then mx = 1 end
+  if btn("up") then my = -1 end
+  if btn("down") then my = 1 end
+  local speed = btn("x") and cfg.sprint or cfg.walk
+  g.player.vx = mx * speed
+  g.player.vy = my * speed
+  if mx ~= 0 then g.player.dir = mx > 0 and 1 or -1 end
+  local nx = g.player.x + g.player.vx
+  local ny = g.player.y + g.player.vy
+  if not actor_solid(nx,g.player.y) then g.player.x = nx end
+  if not actor_solid(g.player.x,ny) then g.player.y = ny end
+end
+
+function capture_nearby()
+  for e in all(g.enemies) do
+    if not e.captured and e.stunned > 0 then
+      local dx = e.x - g.player.x
+      local dy = e.y - g.player.y
+      if abs(dx)+abs(dy) < cfg.capture_dist and btnp("a") and g.fultons > 0 then
+        e.captured = true
+        g.fultons -= 1
+        add(g.roster,{name="Converted "..(#g.roster+1),rank=e.rank,morale=60+e.rank*6,special=e.specialist})
+        g.base.funds += 25 + e.rank * 6
+      end
+    end
+  end
+end
+
+function tranq_logic()
+  if not g.tools.tranq then return end
+  if not btnp("b") then return end
+  for e in all(g.enemies) do
+    if e.captured then
+    else
+      local dx,dy=e.x-g.player.x,e.y-g.player.y
+      if abs(dx)<120 and abs(dy)<90 then
+        e.stunned = 260
+        break
+      end
+    end
+  end
+end
+
+function update_enemy_ai()
+  for e in all(g.enemies) do
+    if e.captured then
+    elseif e.stunned > 0 then
+      e.stunned -= 1
+    else
+      e.x += 0.6 * e.dir
+      if actor_solid(e.x,e.y) then e.dir = -e.dir end
+      local dx,dy = abs(e.x-g.player.x),abs(e.y-g.player.y)
+      if dx < 42 and dy < 30 then
+        e.alert = cfg.alert_time
+        g.alerts += 1
+        g.heat += 1
+      end
+      if e.alert > 0 then
+        e.alert -= 1
+        if g.player.x < e.x then e.x -= 0.9 else e.x += 0.9 end
+        if g.player.y < e.y then e.y -= 0.9 else e.y += 0.9 end
+      end
+    end
+  end
+end
+
+function update_research()
+  if g.research.active then
+    g.research.active.t -= 1
+    if g.research.active.t <= 0 then
+      local done = g.research.active
+      g.tools[done.id] = true
+      g.research.done[done.id] = true
+      g.research.active = nil
+      add(g.msgs, "Research complete: "..done.name)
+    end
+  elseif #g.research.queue > 0 then
+    g.research.active = deli(g.research.queue,1)
+  end
+end
+
+function queue_research()
+  if not btnp("y") then return end
+  for item in all(research_tree) do
+    if not g.research.done[item.id] and g.base.funds >= item.cost then
+      g.base.funds -= item.cost
+      add(g.research.queue,{id=item.id,name=item.name,t=item.time})
+      add(g.msgs,"Research started: "..item.name)
+      return
+    end
+  end
+end
+
+function update_dispatch()
+  local i=1
+  while i<=#g.dispatch.active do
+    local d=g.dispatch.active[i]
+    d.t -= 1
+    if d.t<=0 then
+      local success = math.random() > d.risk
+      if success then
+        g.base.funds += d.reward
+        g.base.fuel += flr(d.reward/5)
+      end
+      add(g.dispatch.log, (success and "SUCCESS " or "FAIL ")..d.name)
+      deli(g.dispatch.active,i)
+    else
+      i+=1
+    end
+  end
+end
+
+function launch_dispatch()
+  if not btnp("x") then return end
+  if #g.roster < 4 then
+    add(g.msgs,"Need 4+ recruits for dispatch")
+    return
+  end
+  local tpl = dispatch_templates[(g.tick % #dispatch_templates)+1]
+  add(g.dispatch.active,{name=tpl.name,t=tpl.duration,reward=tpl.reward,risk=tpl.risk})
+  add(g.msgs,"Dispatched: "..tpl.name)
+end
+
+function update_messages()
+  if #g.msgs > 4 then deli(g.msgs,1) end
+end
+
+function game_update()
+  g.tick += 1
+  if g.scene == "menu" then
+    if btnp("a") then g.scene = "field" end
+    return
+  end
+  move_player()
+  tranq_logic()
+  update_enemy_ai()
+  capture_nearby()
+  queue_research()
+  launch_dispatch()
+  update_research()
+  update_dispatch()
+  update_messages()
+  if btnp("start") then save_campaign() end
+  g.cam.x = g.player.x - 240
+  g.cam.y = g.player.y - 135
+end`},
+    {name:'draw.lua',tabTheme:4,content:`function draw_hud()
+  camera()
+  rect(8,8,470,72,6)
+  rectfill(10,10,468,30,15)
+  print("Operation Corporation",18,14,11,color(248,246,229))
+  print("Funds:"..flr(g.base.funds).." Fuel:"..flr(g.base.fuel).." Fulton:"..g.fultons,18,34,12,color(248,246,229))
+  print("Recruits:"..#g.roster.." Alerts:"..g.alerts.." Heat:"..g.heat,18,50,10,color(248,246,229))
+  rect(300,36,458,66,11)
+  local research_label = g.research.active and ("R&D: "..g.research.active.name) or "R&D: idle"
+  print(research_label,306,44,10,color(248,246,229))
+end
+
+function draw_field()
+  cls(15)
+  camera(g.cam.x,g.cam.y)
+  map(0)
+  for e in all(g.enemies) do
+    if not e.captured then
+      local ref = e.alert > 0 and "3a" or "1a"
+      if e.stunned > 0 then ref = "8a" end
+      spr(ref,e.x,e.y)
+      if e.alert > 0 then circ(e.x+8,e.y-4,6,8) end
+    end
+  end
+  for p in all(g.prisoners) do
+    if not p.rescued then spr("2a",p.x,p.y) end
+  end
+  animate(0,g.player.x,g.player.y,8)
+  if g.tools.drone_ping then
+    local r = 20 + (g.tick % 30)
+    circ(g.player.x+8,g.player.y+8,r,11)
+  end
+  draw_hud()
+  local my = 82
+  for msg in all(g.msgs) do
+    print(msg,14,my,12,color(248,246,229))
+    my += 14
+  end
+end
+
+function draw_menu()
+  cls(15)
+  rectfill(34,26,444,240,1)
+  rect(34,26,444,240,7)
+  print("OPERATION CORPORATION",88,44,30,color(248,246,229))
+  print("Top-down infiltration demo",122,92,14,color(248,246,229))
+  print("A: deploy",160,128,14,color(248,246,229))
+  print("B: tranquilize enemy",160,146,14,color(248,246,229))
+  print("A near stunned foe: capture",160,164,14,color(248,246,229))
+  print("Y: start research, X: dispatch mission",160,182,14,color(248,246,229))
+  print("progress auto-saves to runtime slot",132,210,12,color(248,246,229))
+  circfill(94,184,14,10)
+  circ(94,184,18,6)
+end
+
+function game_draw()
+  if g.scene == "menu" then
+    draw_menu()
+  else
+    draw_field()
+  end
+end`},
+  ];
+  finalizeExampleProjectLoad();
+}
+
 function getExampleProjects(){
   return [
     {id:'collision',name:'Scrolling Wall Collision',description:'Separate button + joystick movement, wall checks, map scrolling with camera(), and btnp() zoom controls.',loader:loadExampleProject},
     {id:'ui-mouse',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing in the TryCode theme.',loader:loadUiMouseExampleProject},
-    {id:'poster',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject}
+    {id:'poster',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
+    {id:'operation-corporation',name:'Operation Corporation',description:'Large top-down infiltration campaign demo with enemy capture/recruitment, R&D queue, dispatch missions, and persistent save_data()/load_data().',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
@@ -2283,6 +2662,9 @@ function makeRuntime(){
   const dialogEls={layer:$("runtimeDialogLayer"),scrim:$("runtimeDialogScrim"),card:$("runtimeDialogCard"),title:$("runtimeDialogTitle"),message:$("runtimeDialogMessage"),input:$("runtimeDialogInput"),actions:$("runtimeDialogActions")};
   const dialogState={active:null,results:new Map()};
   const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7};
+  const persistPrefix=()=>`trycode_runtime_save:${state.currentProjectName||'project'}:`;
+  const saveData=(key,value)=>{ const k=String(key??'').trim(); if(!k) return false; try{ localStorage.setItem(persistPrefix()+k, String(value??'')); return true; }catch(_){ return false; } };
+  const loadData=key=>{ const k=String(key??'').trim(); if(!k) return null; try{ const value=localStorage.getItem(persistPrefix()+k); return value==null?null:value; }catch(_){ return null; } };
   const normalizeButtonIndex=value=>{ if(typeof value==='number'&&Number.isFinite(value)){ const i=value|0; return i>=0&&i<8?i:-1; } const s=String(value??'').trim().toLowerCase(); if(!s) return -1; if(/^[0-7]$/.test(s)) return parseInt(s,10); return Object.prototype.hasOwnProperty.call(BUTTON_ALIASES,s)?BUTTON_ALIASES[s]:-1; };
   const normalizeKeyName=value=>{ const s=String(value??'').trim().toLowerCase(); if(!s) return ''; const aliases={spacebar:'space',' ':'space',esc:'escape',return:'enter',ctrl:'ctrl',control:'ctrl',left:'left',right:'right',up:'up',down:'down'}; return aliases[s]||s; };
   const eventKeyNames=e=>{ const names=new Set(); const key=normalizeKeyName(e.key); if(key) names.add(key); const code=String(e.code||''); if(/^Key[A-Z]$/.test(code)) names.add(code.slice(3).toLowerCase()); else if(/^Digit\d$/.test(code)) names.add(code.slice(5)); else if(/^Numpad\d$/.test(code)) names.add(code.slice(6)); const codeMap={Space:['space'],Tab:['tab'],Enter:['enter'],Escape:['escape'],Backspace:['backspace'],Delete:['delete'],Insert:['insert'],Home:['home'],End:['end'],PageUp:['pageup'],PageDown:['pagedown'],ArrowUp:['up'],ArrowDown:['down'],ArrowLeft:['left'],ArrowRight:['right'],Minus:['-'],Equal:['='],BracketLeft:['['],BracketRight:[']'],Backslash:['\\'],Semicolon:[';'],Quote:["'"],Comma:[','],Period:['.'],Slash:['/'],Backquote:['`'],ControlLeft:['lctrl','ctrl'],ControlRight:['rctrl','ctrl'],ShiftLeft:['lshift','shift'],ShiftRight:['rshift','shift'],AltLeft:['lalt','alt'],AltRight:['ralt','alt'],MetaLeft:['lmeta','meta'],MetaRight:['rmeta','meta']}; (codeMap[code]||[]).forEach(name=>names.add(name)); if(/^F\d{1,2}$/.test(code)) names.add(code.toLowerCase()); return names; };
@@ -2382,6 +2764,18 @@ function makeRuntime(){
     }
     clipPop(_cp);
   }
+  function rect(x0,y0,x1,y1,colorIndex){
+    const _cp=clipPush();
+    const left=Math.round(Math.min(Number(x0)||0,Number(x1)||0));
+    const right=Math.round(Math.max(Number(x0)||0,Number(x1)||0));
+    const top=Math.round(Math.min(Number(y0)||0,Number(y1)||0));
+    const bottom=Math.round(Math.max(Number(y0)||0,Number(y1)||0));
+    const style=colorIndex==null?sty():paletteColor(colorIndex);
+    ctx.fillStyle=style;
+    for(let x=left;x<=right;x++){ pset(x,top,colorIndex); pset(x,bottom,colorIndex); }
+    for(let y=top;y<=bottom;y++){ pset(left,y,colorIndex); pset(right,y,colorIndex); }
+    clipPop(_cp);
+  }
   function rectfill(x0,y0,a,b,colorIndex){
     const _cp=clipPush();
     const hasPaletteColor=colorIndex!=null;
@@ -2393,6 +2787,27 @@ function makeRuntime(){
     const h=Math.abs(bottom-top)+(hasPaletteColor?1:0);
     ctx.fillStyle=hasPaletteColor?paletteColor(colorIndex):sty();
     ctx.fillRect(sx(x),sy(y),Math.max(1,Math.round(w*viewZoom)),Math.max(1,Math.round(h*viewZoom)));
+    clipPop(_cp);
+  }
+  function circ(x,y,r,colorIndex){
+    const _cp=clipPush();
+    let cx=Math.round(Number(x)||0), cy=Math.round(Number(y)||0), rr=Math.max(0,Math.round(Number(r)||0));
+    let px=rr, py=0, err=1-rr;
+    while(px>=py){
+      pset(cx+px,cy+py,colorIndex); pset(cx+py,cy+px,colorIndex); pset(cx-py,cy+px,colorIndex); pset(cx-px,cy+py,colorIndex);
+      pset(cx-px,cy-py,colorIndex); pset(cx-py,cy-px,colorIndex); pset(cx+py,cy-px,colorIndex); pset(cx+px,cy-py,colorIndex);
+      py++;
+      if(err<0){ err += 2*py+1; } else { px--; err += 2*(py-px+1); }
+    }
+    clipPop(_cp);
+  }
+  function circfill(x,y,r,colorIndex){
+    const _cp=clipPush();
+    const cx=Math.round(Number(x)||0), cy=Math.round(Number(y)||0), rr=Math.max(0,Math.round(Number(r)||0));
+    for(let dy=-rr;dy<=rr;dy++){
+      const span=Math.floor(Math.sqrt(Math.max(0,rr*rr-dy*dy)));
+      line(cx-span,cy+dy,cx+span,cy+dy,colorIndex);
+    }
     clipPop(_cp);
   }
   function print(t,x,y,a,b,c){ const _cp=clipPush(); const oldFill=ctx.fillStyle, oldStroke=ctx.strokeStyle; let fontSize=Math.max(1,Math.round(12*viewZoom)), fill=sty(), outline=null; if(a!=null&&b!=null&&c!=null&&typeof a==="number"&&typeof b==="number"&&typeof c==="number"){ fill=`rgb(${a|0},${b|0},${c|0})`; } else if(typeof a==="string" || (typeof a==="number" && (b==null||typeof b!=="number"||c!=null))){ fill=resolvePrintColor(a)||fill; outline=resolvePrintColor(b); } else { if(a!=null) fontSize=Math.max(1,Math.round((Number(a)||12)*viewZoom)); outline=resolvePrintColor(b); if(c!=null) fill=resolvePrintColor(c)||fill; } ctx.fillStyle=fill; ctx.font=fontSize+'px monospace'; ctx.textAlign='left'; ctx.textBaseline='top'; const dx=Math.round(sx(x)), dy=Math.round(sy(y)); if(outline){ ctx.strokeStyle=outline; ctx.lineWidth=Math.max(1,Math.round(fontSize/5)); ctx.strokeText(String(t),dx,dy); } ctx.fillText(String(t),dx,dy); ctx.fillStyle=oldFill; ctx.strokeStyle=oldStroke; clipPop(_cp); }
@@ -2464,7 +2879,10 @@ function makeRuntime(){
     push('pset',L=>{ const argc=lua.lua_gettop(L); pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?lua.lua_tointeger(L,3):undefined); return 0;});
     push('pget',L=>{ lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2))); return 1;});
     push('line',L=>{ const argc=lua.lua_gettop(L); line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined); return 0;});
+    push('rect',L=>{ const argc=lua.lua_gettop(L); rect(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined); return 0;});
     push('rectfill',L=>{ const argc=lua.lua_gettop(L); rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?lua.lua_tointeger(L,5):undefined); return 0;});
+    push('circ',L=>{ const argc=lua.lua_gettop(L); circ(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?lua.lua_tointeger(L,4):undefined); return 0;});
+    push('circfill',L=>{ const argc=lua.lua_gettop(L); circfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?lua.lua_tointeger(L,4):undefined); return 0;});
     push('print',L=>{ const argc=lua.lua_gettop(L); const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)]; for(let i=4;i<=argc;i++){ args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); } print(...args); return 0;});
     push('print_',L=>{ const argc=lua.lua_gettop(L); const args=[to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)]; for(let i=4;i<=argc;i++){ args.push(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); } print(...args); return 0;});
     push('spr',L=>{ if(lua.lua_isnumber(L,1)) spr(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)); else spr(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3)); return 0; });
@@ -2486,6 +2904,8 @@ function makeRuntime(){
     push('message_box',L=>{ const message=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):""; const title=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):"message"; const status=runDialog('message',message,title); lua.lua_pushboolean(L,status.done?1:0); return 1; });
     push('confirm_box',L=>{ const message=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):""; const title=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):"confirm"; const status=runDialog('confirm',message,title); if(!status.done){ lua.lua_pushnil(L); return 1; } lua.lua_pushboolean(L,status.result?1:0); return 1; });
     push('entry_box',L=>{ const message=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):""; const initial=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):""; const title=lua.lua_gettop(L)>=3?to_jsstring(lua.lua_tolstring(L,3)):"entry"; const status=runDialog('entry',message,title,initial); if(!status.done){ lua.lua_pushnil(L); return 1; } if(status.result===false){ lua.lua_pushboolean(L,0); return 1; } lua.lua_pushstring(L,to_luastring(String(status.result??''))); return 1; });
+    push('save_data',L=>{ const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):''; let value=''; if(lua.lua_gettop(L)>=2){ value=lua.lua_isnumber(L,2)?String(lua.lua_tonumber(L,2)):to_jsstring(lua.lua_tolstring(L,2)); } lua.lua_pushboolean(L,saveData(key,value)?1:0); return 1; });
+    push('load_data',L=>{ const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):''; const value=loadData(key); if(value==null){ lua.lua_pushnil(L); return 1; } lua.lua_pushstring(L,to_luastring(String(value))); return 1; });
     const defaultBoxFromLua=L=>{ const argc=lua.lua_gettop(L); if(argc===0 || lua.lua_isnoneornil(L,1)){ resetUiBoxStyle(); return 0; } if(lua.lua_istable(L,1)){ const patch=stylePatchFromLuaTable(1); UI_BOX_KINDS.forEach(kind=>applyUiBoxStyle(kind, patch)); return 0; } const kind=normalizeUiBoxKind(to_jsstring(lua.lua_tolstring(L,1))); if(!kind) return 0; if(argc===1 || lua.lua_isnoneornil(L,2)){ resetUiBoxStyle(kind); return 0; } if(lua.lua_istable(L,2)){ applyUiBoxStyle(kind, stylePatchFromLuaTable(2)); return 0; } applyUiBoxStyle(kind,{x:lua.lua_isnumber(L,2)?lua.lua_tonumber(L,2):null,y:lua.lua_isnumber(L,3)?lua.lua_tonumber(L,3):null,w:lua.lua_isnumber(L,4)?lua.lua_tonumber(L,4):null,h:lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):null}); return 0; };
     push('default_box',defaultBoxFromLua);
     push('ui_box',defaultBoxFromLua);
