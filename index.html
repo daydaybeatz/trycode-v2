@@ -1970,6 +1970,10 @@ function _draw() game_draw() end`},
   dispatch_min_team = 3,
   lock_memory = 900,
   field_zoom = 2,
+  menu_repeat_delay = 14,
+  menu_deadzone = 0.72,
+  flare_wait = 240,
+  heli_travel = 210,
   save_slot = "operation_corp_slot_v2"
 }
 
@@ -2180,7 +2184,7 @@ function fresh_game_state()
     scene="menu",
     tick=0,
     mode="field",
-    player={x=90,y=90,vx=0,vy=0,dir=1,hp=100,stamina=100,noise=0,conceal=0,crouch=false,carrying=false},
+    player={x=90,y=90,vx=0,vy=0,dir=1,hp=100,stamina=100,noise=0,conceal=0,crouch=false,carrying=false,anim_t=0,wake_t=0,last_hit=0},
     player_loadout={primary="tranq",secondary="pistol",support="drone_ping",gadget="stun",throwable="gas",suit="sneaksuit",passive="signal_tap",recovery="med_kit"},
     cam={x=0,y=0},
     resources={funds=260,fuel=140,metals=65,chem=42,intel=18,morale=72,influence=10},
@@ -2190,6 +2194,9 @@ function fresh_game_state()
     enemies={},
     prisoners={},
     resource_nodes={},
+    projectiles={},
+    particles={},
+    extraction={state="none",timer=0,show_timer=0,reward_tally=nil},
     evidence=0,
     alerts=0,
     global_heat=0,
@@ -2198,7 +2205,7 @@ function fresh_game_state()
     mission_score=0,
     pending_rewards={funds=0,fuel=0,intel=0,recruits=0,salvage=0},
     research={active=nil,queue={},done={tranq_plus=true}},
-    dispatch={active={},log={}},
+    dispatch={active={},log={},selected=1,mission_cursor=1},
     support={recon_cd=0,supply_cd=0,bomb_cd=0},
     blueprints={},
     regions={},
@@ -2207,8 +2214,10 @@ function fresh_game_state()
     base_tab=1,
     msgs={},
     msg_seq=0,
-    menu_hold={vert=0,horiz=0},
+    menu_hold={vert=0,horiz=0,vert_tick=0,horiz_tick=0},
     cursor=1,
+    base_cursor=1,
+    dispatch_cursor=1,
     phase="infiltrate",
     pause_info_page=1,
     pause_cursor=1,
@@ -2256,6 +2265,13 @@ function start_new_operation()
   g.current_mission = roll_mission()
   generate_outpost(g.current_mission)
   g.player.x, g.player.y = 54, 54
+  g.player.hp = 100
+  g.player.carrying = false
+  g.player.wake_t = 45
+  g.player.last_hit = 0
+  g.projectiles = {}
+  g.particles = {}
+  g.extraction = {state="none",timer=0,show_timer=0,reward_tally=nil}
   g.phase = "infiltrate"
   g.paused = false
   g.field_menu_open = false
@@ -2416,7 +2432,7 @@ function generate_outpost(m)
   local leaves = {}
   bsp_split_area({x=12,y=12,w=project.map_w-24,h=project.map_h-24}, 3, 10, 9, leaves)
   local structures = 0
-  local max_rooms = math.min(#leaves, 4 + ((g.operation_index + m.guard_count) % 5))
+  local max_rooms = math.min(#leaves, 1 + ((g.operation_index*3 + m.guard_count + g.tick) % 10))
   for i=1,max_rooms do
     local leaf = leaves[i]
     local rw = math.max(7, leaf.w - 2 - ((i + g.tick) % 3))
@@ -2442,7 +2458,8 @@ function generate_outpost(m)
     local rx = 12 + ((g.operation_index*17 + i*13 + g.tick) % (project.map_w-24))
     local ry = 12 + ((g.operation_index*7 + i*15 + g.tick*3) % (project.map_h-24))
     mset(rx,ry,4,0,0)
-    add(g.resource_nodes,{x=rx*16+8,y=ry*16+8,amount=28+((i+g.operation_index)%4)*10,taken=false})
+    local is_large = ((i + g.operation_index + g.tick) % 3)==0
+    add(g.resource_nodes,{x=rx*16+8,y=ry*16+8,amount=28+((i+g.operation_index)%4)*10 + (is_large and 42 or 0),taken=false,large=is_large})
   end
 
   for i=1,m.prisoner_count do
@@ -2533,6 +2550,7 @@ function damage_player(amount, dtype)
   local mult = armor[dtype] or 1
   local final = amount * mult
   g.player.hp = math.max(0, g.player.hp - final)
+  if final > 0 then g.player.last_hit = 18 end
   if final > 0.24 and #g.roster > 0 and (g.tick % 40 == 0) then
     local idx = ((g.tick/40) % #g.roster)+1
     local member = g.roster[flr(idx)]
@@ -2541,10 +2559,87 @@ function damage_player(amount, dtype)
       member.trauma_days = injury_defs.bruised.days
     end
   end
+  if g.player.hp <= 0 then
+    g.pending_rewards = {funds=0,fuel=0,intel=0,recruits=0,salvage=0}
+    g.player_loadout.primary = "tranq"
+    g.player_loadout.secondary = "pistol"
+    g.player_loadout.throwable = "gas"
+    g.player_loadout.suit = "sneaksuit"
+    g.mode = "base"
+    push_msg("Operator KIA. Gear lost. Returned to base.")
+    start_new_operation()
+  end
 end
 
 function emit_noise(power)
   g.player.noise = math.max(0, math.min(cfg.max_noise, power))
+end
+
+function emit_particles(x,y,col,count)
+  for i=1,count do
+    add(g.particles,{
+      x=x,y=y,
+      vx=(((g.tick+i*5)%9)-4)*0.36,
+      vy=(((g.tick+i*7)%9)-4)*0.36,
+      t=16+((g.tick+i)%12),
+      c=col or 10
+    })
+  end
+end
+
+function spawn_projectile(target)
+  if not target then return end
+  local dx,dy = (target.x-g.player.x),(target.y-g.player.y)
+  local dist = math.max(1, math.sqrt(dx*dx+dy*dy))
+  add(g.projectiles,{
+    x=g.player.x+8,y=g.player.y+8,
+    vx=(dx/dist)*4.2,vy=(dy/dist)*4.2,
+    t=70,kind=g.player_loadout.primary or "tranq"
+  })
+end
+
+function update_projectiles()
+  local i=1
+  while i<=#g.projectiles do
+    local p=g.projectiles[i]
+    p.x = p.x + p.vx
+    p.y = p.y + p.vy
+    p.t = p.t - 1
+    local hit=false
+    if wall(p.x,p.y,1,0) then
+      emit_particles(p.x,p.y,13,5)
+      hit=true
+    else
+      for e in all(g.enemies) do
+        if not e.captured and not e.dead and e.stunned<=0 and abs(e.x+8-p.x)+abs(e.y+8-p.y)<14 then
+          local wp = weapon_defs[p.kind] or weapon_defs.tranq
+          apply_damage_to_enemy(e, wp.dmg + 12, wp.kind or "tranq")
+          g.mission_score = g.mission_score + 6
+          emit_particles(p.x,p.y,11,6)
+          hit=true
+          break
+        end
+      end
+    end
+    if hit or p.t<=0 then
+      deli(g.projectiles,i)
+    else
+      i=i+1
+    end
+  end
+end
+
+function update_particles()
+  local i=1
+  while i<=#g.particles do
+    local p=g.particles[i]
+    p.x = p.x + p.vx
+    p.y = p.y + p.vy
+    p.vx = p.vx * 0.94
+    p.vy = p.vy * 0.94
+    p.t = p.t - 1
+    if p.t<=0 then deli(g.particles,i) else i=i+1 end
+  end
 end
 
 function lock_target_from_aim()
@@ -2650,7 +2745,12 @@ function update_enemy(e)
   if e.captured then return end
   if e.marked_timer and e.marked_timer > 0 then e.marked_timer = e.marked_timer - 1 end
   if e.dead then return end
-  if e.stunned > 0 then e.stunned = e.stunned - 1 return end
+  if e.stunned > 0 then
+    e.stunned = e.stunned - 1
+    if e.stunned <= 0 then e.wake_t = 36; e.state="suspicious"; emit_particles(e.x+8,e.y+8,10,7) end
+    return
+  end
+  if e.wake_t and e.wake_t > 0 then e.wake_t = e.wake_t - 1 end
   react_to_sound(e)
   local can_see,dist = los_to_player(e)
   local gain = can_see and (1.7 - g.player.conceal) or -0.8
@@ -2694,18 +2794,17 @@ function nonlethal_actions()
   if btnp("b") then
     local primary = weapon_defs[g.player_loadout.primary] or weapon_defs.tranq
     emit_noise(primary.noise + 22)
+    emit_particles(g.player.x+8,g.player.y+8,10,4)
     local target = g.player.aim
     if target and not target.captured and target.stunned<=0 then
-      apply_damage_to_enemy(target, primary.dmg + 12, primary.kind)
-      g.mission_score = g.mission_score + 6
+      spawn_projectile(target)
       return
     end
     for e in all(g.enemies) do
       if not e.captured and e.stunned<=0 then
         local dx,dy = abs(e.x-g.player.x), abs(e.y-g.player.y)
         if dx<130 and dy<90 then
-          apply_damage_to_enemy(e, primary.dmg + 12, primary.kind)
-          g.mission_score = g.mission_score + 6
+          spawn_projectile(e)
           break
         end
       end
@@ -2733,7 +2832,12 @@ function nonlethal_actions()
     for n in all(g.resource_nodes) do
       if not n.taken and abs(n.x-g.player.x)+abs(n.y-g.player.y) < 28 then
         n.taken = true
-        g.pending_rewards.salvage = g.pending_rewards.salvage + n.amount
+        if n.large then
+          g.player.carrying = {amount=n.amount}
+          push_msg("Picked up large container. Extract to keep it.")
+        else
+          g.pending_rewards.salvage = g.pending_rewards.salvage + n.amount
+        end
         g.pending_rewards.intel = g.pending_rewards.intel + 1
         g.mission_score = g.mission_score + 12
         push_msg("Secured depot cargo +"..n.amount.." credits")
@@ -2774,6 +2878,10 @@ function update_objectives()
 end
 
 function complete_extraction(early)
+  if g.player.carrying then
+    g.pending_rewards.salvage = (g.pending_rewards.salvage or 0) + (g.player.carrying.amount or 0)
+    g.player.carrying = false
+  end
   local salvage = g.pending_rewards.salvage or 0
   local reward_scale = early and 0.62 or 1
   g.resources.funds = g.resources.funds + flr((g.pending_rewards.funds + salvage) * reward_scale)
@@ -2806,18 +2914,29 @@ function process_brig_recruits()
 end
 
 function menu_axis_pressed(axis, dir)
-  local threshold = 0.55
+  local threshold = cfg.menu_deadzone or 0.72
+  local repeat_delay = cfg.menu_repeat_delay or 14
   local hold_key = axis=="vertical" and "vert" or "horiz"
+  local tick_key = axis=="vertical" and "vert_tick" or "horiz_tick"
   local value = axis=="vertical" and joyy(0) or joyx(0)
   local pressed = false
+  local hold = g.menu_hold[hold_key] or 0
+  local hold_tick = g.menu_hold[tick_key] or 0
   if dir < 0 and value <= -threshold then
-    if (g.menu_hold[hold_key] or 0) >= 0 then pressed = true end
+    if hold >= 0 then pressed = true; hold_tick = repeat_delay
+    elseif hold_tick <= 0 then pressed = true; hold_tick = repeat_delay
+    else hold_tick = hold_tick - 1 end
     g.menu_hold[hold_key] = -1
+    g.menu_hold[tick_key] = hold_tick
   elseif dir > 0 and value >= threshold then
-    if (g.menu_hold[hold_key] or 0) <= 0 then pressed = true end
+    if hold <= 0 then pressed = true; hold_tick = repeat_delay
+    elseif hold_tick <= 0 then pressed = true; hold_tick = repeat_delay
+    else hold_tick = hold_tick - 1 end
     g.menu_hold[hold_key] = 1
+    g.menu_hold[tick_key] = hold_tick
   else
     g.menu_hold[hold_key] = 0
+    g.menu_hold[tick_key] = 0
   end
   return pressed
 end
@@ -2843,11 +2962,20 @@ function trigger_support_action(idx)
     end
     return
   elseif idx==2 then
-    if g.phase=="extract_ready" and abs(g.player.x-g.extract_point.x)+abs(g.player.y-g.extract_point.y) < 54 then
-      complete_extraction(false)
+    if g.extraction.state~="none" then
+      push_msg("Extraction already in progress")
       return
     end
-    complete_extraction(true)
+    if g.phase=="extract_ready" and abs(g.player.x-g.extract_point.x)+abs(g.player.y-g.extract_point.y) < 72 then
+      g.extraction.state = "flare"
+      g.extraction.timer = cfg.flare_wait or 240
+      g.extraction.reward_tally = {funds=g.pending_rewards.funds or 0,salvage=g.pending_rewards.salvage or 0,intel=g.pending_rewards.intel or 0,recruits=g.pending_rewards.recruits or 0}
+      push_msg("Extraction flare thrown. Hold position.")
+      return
+    end
+    g.extraction.state = "flare"
+    g.extraction.timer = cfg.flare_wait or 240
+    push_msg("Emergency flare thrown outside LZ.")
     return
   elseif idx==3 then
     if g.support.supply_cd <= 0 then
@@ -2900,15 +3028,36 @@ function update_field()
   end
 
   move_player()
+  if abs(g.player.vx)+abs(g.player.vy) < 0.08 then g.player.anim_t = g.player.anim_t + 1 else g.player.anim_t = 0 end
+  if g.player.wake_t and g.player.wake_t > 0 then g.player.wake_t = g.player.wake_t - 1 end
+  if g.player.last_hit and g.player.last_hit > 0 then g.player.last_hit = g.player.last_hit - 1 end
   lock_target_from_aim()
   player_concealment()
   if g.support.recon_cd > 0 then g.support.recon_cd = g.support.recon_cd - 1 end
   if g.support.supply_cd > 0 then g.support.supply_cd = g.support.supply_cd - 1 end
   if g.support.bomb_cd and g.support.bomb_cd > 0 then g.support.bomb_cd = g.support.bomb_cd - 1 end
   for e in all(g.enemies) do update_enemy(e) end
+  update_projectiles()
+  update_particles()
   nonlethal_actions()
   support_actions()
   update_objectives()
+  if g.extraction.state=="flare" then
+    g.extraction.timer = g.extraction.timer - 1
+    if g.extraction.timer <= 0 then
+      g.extraction.state = "travel"
+      g.extraction.timer = cfg.heli_travel or 210
+      g.extraction.show_timer = cfg.heli_travel or 210
+      push_msg("Helicopter inbound. Returning to base.")
+    end
+  elseif g.extraction.state=="travel" then
+    g.extraction.timer = g.extraction.timer - 1
+    g.extraction.show_timer = g.extraction.timer
+    if g.extraction.timer <= 0 then
+      complete_extraction(g.phase~="extract_ready")
+      g.extraction.state = "none"
+    end
+  end
   if g.tick % 600 == 0 then
     local ids={"ash_fork","frostline","hardport","iron_corridor","hollow_marsh"}
     g.current_region = ids[((g.tick/600)%#ids)+1]
@@ -2947,10 +3096,12 @@ function launch_dispatch()
     push_msg("Dispatch needs "..cfg.dispatch_min_team.." staff")
     return
   end
-  local t = dispatch_templates[((g.tick*3) % #dispatch_templates)+1]
+  local idx = g.dispatch.mission_cursor or 1
+  local t = dispatch_templates[idx] or dispatch_templates[1]
   local intel_bonus = g.departments.intel.lvl * 0.04
-  add(g.dispatch.active,{name=t.name,t=t.duration,reward=t.reward,risk=math.max(0.05,t.risk-intel_bonus)})
-  push_msg("Dispatch launched: "..t.name)
+  local team_name = g.roster[(g.dispatch.selected or 1)] and g.roster[(g.dispatch.selected or 1)].name or "Team "..(#g.dispatch.active+1)
+  add(g.dispatch.active,{name=t.name,team=team_name,t=t.duration,reward=t.reward,risk=math.max(0.05,t.risk-intel_bonus),req=t.req})
+  push_msg("Dispatch launched: "..t.name.." / "..team_name)
 end
 
 function cycle_loadout(slot, dir)
@@ -3050,22 +3201,82 @@ function fire_last_staff()
   push_msg("Fired "..gone.name)
 end
 
+function manufacture_loadout_item(slot)
+  local item = g.player_loadout[slot]
+  local cost_funds = 26
+  local cost_metals = 4
+  if slot=="primary" then cost_funds=48 cost_metals=9
+  elseif slot=="suit" then cost_funds=64 cost_metals=12
+  elseif slot=="throwable" then cost_funds=34 cost_metals=6 end
+  if g.resources.funds < cost_funds or g.resources.metals < cost_metals then
+    push_msg("Manufacturing shortfall for "..slot)
+    return
+  end
+  g.resources.funds = g.resources.funds - cost_funds
+  g.resources.metals = g.resources.metals - cost_metals
+  g.resources.morale = math.min(100, g.resources.morale + 1)
+  push_msg("Manufactured "..slot..": "..item)
+end
+
+function cycle_region(dir)
+  local ids={"ash_fork","frostline","hardport","iron_corridor","hollow_marsh"}
+  local idx=1
+  for i=1,#ids do if ids[i]==g.current_region then idx=i break end end
+  idx = idx + dir
+  if idx<1 then idx=#ids end
+  if idx>#ids then idx=1 end
+  g.current_region = ids[idx]
+  push_msg("Field operation relocated: "..g.current_region)
+end
+
 function handle_base_inputs()
-  if btnp("left") or menu_axis_pressed("horizontal",-1) then g.base_tab = math.max(1, g.base_tab-1) end
-  if btnp("right") or menu_axis_pressed("horizontal",1) then g.base_tab = math.min(3, g.base_tab+1) end
-  if btnp("y") then queue_research() end
-  if btnp("x") then g.mode = "dispatch" end
-  if btnp("up") or menu_axis_pressed("vertical",-1) then cycle_loadout("primary",1) end
-  if btnp("down") or menu_axis_pressed("vertical",1) then cycle_loadout("suit",1) end
-  if btnp("leftshoulder") then cycle_loadout("secondary",1) end
-  if btnp("rightshoulder") then cycle_loadout("throwable",1) end
-  if btnp("b") then fire_last_staff() end
-  if btnp("a") then if #g.brig > 0 then hire_candidate() else g.mode = "field" end end
+  if btnp("left") or menu_axis_pressed("horizontal",-1) then g.base_tab = math.max(1, g.base_tab-1); g.base_cursor=1 end
+  if btnp("right") or menu_axis_pressed("horizontal",1) then g.base_tab = math.min(3, g.base_tab+1); g.base_cursor=1 end
+  if btnp("up") or menu_axis_pressed("vertical",-1) then g.base_cursor = math.max(1,(g.base_cursor or 1)-1) end
+  if btnp("down") or menu_axis_pressed("vertical",1) then g.base_cursor = math.min(5,(g.base_cursor or 1)+1) end
+  if btnp("x") then g.mode = "dispatch"; return end
+  if g.base_tab==1 then
+    if btnp("a") then
+      if g.base_cursor==1 then hire_candidate()
+      elseif g.base_cursor==2 then fire_last_staff()
+      elseif g.base_cursor==3 then queue_research()
+      elseif g.base_cursor==4 then cycle_region(1)
+      elseif g.base_cursor==5 then g.mode = "field" end
+    end
+  elseif g.base_tab==2 then
+    if btnp("leftshoulder") then cycle_loadout("primary",-1) end
+    if btnp("rightshoulder") then cycle_loadout("primary",1) end
+    if btnp("a") then
+      if g.base_cursor==1 then cycle_loadout("primary",1)
+      elseif g.base_cursor==2 then cycle_loadout("secondary",1)
+      elseif g.base_cursor==3 then cycle_loadout("throwable",1)
+      elseif g.base_cursor==4 then cycle_loadout("suit",1)
+      elseif g.base_cursor==5 then manufacture_loadout_item("primary") end
+    end
+  else
+    if btnp("a") then
+      if g.base_cursor==1 then cycle_region(1)
+      elseif g.base_cursor==2 then queue_research()
+      elseif g.base_cursor==3 then g.mode="field"
+      elseif g.base_cursor==4 then manufacture_loadout_item("suit")
+      else manufacture_loadout_item("throwable") end
+    end
+  end
 end
 
 function handle_dispatch_inputs()
-  if btnp("x") then launch_dispatch() end
-  if btnp("a") then g.mode = "base" end
+  if btnp("up") or menu_axis_pressed("vertical",-1) then g.dispatch_cursor = math.max(1,(g.dispatch_cursor or 1)-1) end
+  if btnp("down") or menu_axis_pressed("vertical",1) then g.dispatch_cursor = math.min(4,(g.dispatch_cursor or 1)+1) end
+  if btnp("left") or menu_axis_pressed("horizontal",-1) then
+    if g.dispatch_cursor==1 then g.dispatch.mission_cursor = math.max(1,(g.dispatch.mission_cursor or 1)-1)
+    elseif g.dispatch_cursor==2 then g.dispatch.selected = math.max(1,(g.dispatch.selected or 1)-1) end
+  end
+  if btnp("right") or menu_axis_pressed("horizontal",1) then
+    if g.dispatch_cursor==1 then g.dispatch.mission_cursor = math.min(#dispatch_templates,(g.dispatch.mission_cursor or 1)+1)
+    elseif g.dispatch_cursor==2 then g.dispatch.selected = math.min(math.max(1,#g.roster),(g.dispatch.selected or 1)+1) end
+  end
+  if btnp("x") or (btnp("a") and g.dispatch_cursor==3) then launch_dispatch() return end
+  if btnp("a") and g.dispatch_cursor==4 then g.mode = "base" end
 end
 
 function game_update()
@@ -3108,7 +3319,16 @@ end`},
     circfill(e.blood.x,e.blood.y,e.blood.size or 8,9)
     circfill(e.blood.x+3,e.blood.y+1,math.max(2,(e.blood.size or 8)-4),8)
   end
-  spr(ref,e.x,e.y)
+  if e.dead or e.stunned>0 then
+    spr(ref,e.x,e.y)
+  elseif e.wake_t and e.wake_t > 0 then
+    animate("2a",e.x,e.y,5)
+    circ(e.x+8,e.y+8,8+(e.wake_t%4),10)
+  elseif e.state=="patrol" then
+    animate(ref,e.x,e.y,6)
+  else
+    spr(ref,e.x,e.y)
+  end
   if e.elite then rect(e.x+2,e.y-3,e.x+13,e.y-1,8) end
   if e.state=="alert" then circ(e.x+8,e.y-4,5,8) end
   if e.state=="suspicious" then circ(e.x+8,e.y-4,4,10) end
@@ -3130,14 +3350,15 @@ function draw_hud()
   zoom(1)
   rect(10,10,184,28,7)
   print(g.phase=="extract_ready" and "EXTRACTION READY" or "INFILTRATING",18,16,11)
+  print("HP "..flr(g.player.hp).." STM "..flr(g.player.stamina),214,16,12)
 end
 
 function draw_field()
-  cls(14)
+  cls(1)
   zoom(cfg.field_zoom or 2)
   camera(g.cam.x,g.cam.y)
-  map(0)
   rectfill(g.cam.x-120,g.cam.y-120,g.cam.x+620,g.cam.y+420,1)
+  map(0)
   for i=1,22 do
     local sx = g.cam.x + ((i*97 + g.tick*0.4) % 780) - 120
     local sy = g.cam.y + ((i*61 + g.tick*0.25) % 520) - 120
@@ -3149,7 +3370,15 @@ function draw_field()
   end
   for e in all(g.enemies) do draw_enemy(e) end
   for p in all(g.prisoners) do if not p.rescued then spr("2a",p.x,p.y) end end
-  animate(0,g.player.x,g.player.y,8)
+  if g.player.wake_t and g.player.wake_t > 0 then
+    animate(0,g.player.x,g.player.y,4)
+    circ(g.player.x+8,g.player.y+8,10+(g.player.wake_t%6),11)
+  elseif g.player.anim_t and g.player.anim_t > 18 then
+    spr("0a",g.player.x,g.player.y)
+  else
+    animate(0,g.player.x,g.player.y,8)
+  end
+  if g.player.last_hit and g.player.last_hit > 0 then rect(g.player.x-2,g.player.y-2,g.player.x+18,g.player.y+18,8) end
   if g.research.done.drone_ping then circ(g.player.x+8,g.player.y+8,24+(g.tick%24),11) end
   if g.player.aim and not g.player.aim.captured and g.player.aim.stunned<=0 and not g.player.aim.dead then
     rect(g.player.aim.x-3,g.player.aim.y-3,g.player.aim.x+19,g.player.aim.y+19,8)
@@ -3159,8 +3388,14 @@ function draw_field()
     if g.phase=="extract_ready" then rect(g.extract_point.x-22,g.extract_point.y-22,g.extract_point.x+22,g.extract_point.y+22,10) end
   end
   for n in all(g.resource_nodes) do
-    if not n.taken then rect(n.x-5,n.y-5,n.x+5,n.y+5,10) end
+    if not n.taken then
+      if n.large then rectfill(n.x-8,n.y-8,n.x+8,n.y+8,10); rect(n.x-9,n.y-9,n.x+9,n.y+9,7)
+      else rect(n.x-5,n.y-5,n.x+5,n.y+5,10) end
+    end
   end
+  if g.player.carrying then rectfill(g.player.x-2,g.player.y+18,g.player.x+18,g.player.y+24,10) end
+  for b in all(g.projectiles or {}) do circfill(b.x,b.y,2,11) end
+  for p in all(g.particles or {}) do pset(p.x,p.y,p.c or 10) end
   draw_hud()
   local y=32
   for msg in all(g.msgs) do
@@ -3181,6 +3416,18 @@ function draw_field()
     end
     print("Use left joystick or d-pad to select",148,186,10)
   end
+  if g.extraction and g.extraction.state=="flare" then
+    camera(); zoom(1)
+    rectfill(126,16,360,48,1); rect(126,16,360,48,10)
+    print("FLARE ACTIVE - Heli ETA "..flr((g.extraction.timer or 0)/60).."s",136,30,11)
+  elseif g.extraction and g.extraction.state=="travel" then
+    camera(); zoom(1)
+    rectfill(98,18,382,84,1); rect(98,18,382,84,10)
+    print("RETURNING TO BASE",172,30,11)
+    print("ETA "..flr((g.extraction.show_timer or 0)/60).."s",198,44,12)
+    local rr = g.pending_rewards or {}
+    print("Rewards: $"..flr((rr.funds or 0)+(rr.salvage or 0)).." Intel "..flr(rr.intel or 0).." Recruits "..flr(rr.recruits or 0),110,60,12)
+  end
 end
 
 function draw_base()
@@ -3189,44 +3436,62 @@ function draw_base()
   rectfill(24,22,456,98,1)
   rect(22,20,458,250,7)
   print("BASE COMMAND",36,34,11,color(246,240,220))
-  print("A field/hire | B fire | Y R&D | X dispatch menu",36,50,12,color(246,240,220))
-  print("Pages: 1 Ops  2 Loadout  3 Region/Trauma",36,62,10,color(246,240,220))
+  print("UP/DOWN navigate  A select  X dispatch",36,50,12,color(246,240,220))
+  print("Pages: 1 Personnel  2 Loadout  3 Region/R&D",36,62,10,color(246,240,220))
   if g.base_tab==1 then
-    print("Departments",36,78,10,color(246,240,220))
+    local opts={"Hire brig candidate","Fire last staff","Queue research","Change field region","Deploy to field"}
+    print("Personnel + command",36,78,10,color(246,240,220))
+    local oy=92
+    for i=1,#opts do
+      if (g.base_cursor or 1)==i then rect(34,oy-2,242,oy+10,10) end
+      print(opts[i],40,oy,12,color(246,240,220))
+      oy = oy + 14
+    end
+    print("Departments",252,78,10,color(246,240,220))
     local y=92
     for k,v in pairs(g.departments) do
-      print(k.." lv"..v.lvl.." - "..v.bonus,40,y,12,color(246,240,220))
+      print(k.." lv"..v.lvl.." - "..v.bonus,256,y,12,color(246,240,220))
       y = y + 12
     end
-    print("Dispatch log:",250,78,10,color(246,240,220))
-    local ly=92
-    for i=#g.dispatch.log,1,-1 do print(g.dispatch.log[i],254,ly,12,color(246,240,220)); ly = ly + 12 end
-    print("Ops board: route analysis + mission stats",36,188,10,color(246,240,220))
-    print("Dev bulletins hidden in live gameplay build",40,202,12,color(246,240,220))
   elseif g.base_tab==2 then
-    print("Loadout slots (UP primary / DOWN suit / LB secondary / RB throwable)",36,78,10,color(246,240,220))
-    print("Primary: "..g.player_loadout.primary,40,96,12,color(246,240,220))
-    print("Secondary: "..g.player_loadout.secondary,40,110,12,color(246,240,220))
-    print("Gadget: "..g.player_loadout.gadget,40,124,12,color(246,240,220))
-    print("Throwable: "..g.player_loadout.throwable,40,138,12,color(246,240,220))
-    print("Suit: "..g.player_loadout.suit,40,152,12,color(246,240,220))
+    print("Loadout slots (A rotates / LB RB quick primary)",36,78,10,color(246,240,220))
+    local rows={
+      "Primary: "..g.player_loadout.primary,
+      "Secondary: "..g.player_loadout.secondary,
+      "Throwable: "..g.player_loadout.throwable,
+      "Suit: "..g.player_loadout.suit,
+      "Manufacture selected primary"
+    }
+    local ly=96
+    for i=1,#rows do
+      if (g.base_cursor or 1)==i then rect(34,ly-2,242,ly+10,10) end
+      print(rows[i],40,ly,12,color(246,240,220))
+      ly=ly+14
+    end
     print("Rare blueprints:",250,96,10,color(246,240,220))
     local by=110
     for i=1,math.min(7,#g.blueprints) do print("- "..g.blueprints[i],254,by,12,color(246,240,220)); by = by + 12 end
   else
-    print("Region map control",36,78,10,color(246,240,220))
+    local rows={"Cycle mission region","Queue research","Deploy to field","Manufacture suit","Manufacture throwable"}
+    print("Region map + R&D + manufacture",36,78,10,color(246,240,220))
+    local sy=92
+    for i=1,#rows do
+      if (g.base_cursor or 1)==i then rect(34,sy-2,242,sy+10,10) end
+      print(rows[i],40,sy,12,color(246,240,220))
+      sy = sy + 14
+    end
     local ry=92
     for id,reg in pairs(g.regions) do
       local marker=(id==g.current_region and "> " or "  ")
-      print(marker..id.." owner:"..reg.owner,40,ry,12,color(246,240,220))
-      print("heat "..flr(reg.heat).." inf "..flr(reg.influence),228,ry,10,color(246,240,220))
+      print(marker..id.." owner:"..reg.owner,252,ry,12,color(246,240,220))
+      print("heat "..flr(reg.heat).." inf "..flr(reg.influence),410,ry,10,color(246,240,220))
       ry = ry + 14
     end
-    print("Roster trauma",36,178,10,color(246,240,220))
+    print("Roster trauma",252,178,10,color(246,240,220))
     local ty=192
     for i=1,math.min(4,#g.roster) do
       local r=g.roster[i]
-      print(r.name.." "..r.injury.." ("..(r.trauma_days or 0).."d) "..r.deep_trait,40,ty,12,color(246,240,220))
+      print(r.name.." "..r.injury.." ("..(r.trauma_days or 0).."d) "..r.deep_trait,254,ty,12,color(246,240,220))
       ty = ty + 12
     end
   end
@@ -3253,12 +3518,23 @@ function draw_dispatch()
   rectfill(28,26,452,64,1)
   rect(26,24,454,246,7)
   print("DISPATCH BOARD",36,36,11,color(246,240,220))
-  print("X launch mission | A back to base",36,52,12,color(246,240,220))
+  print("UP/DOWN select row, LEFT/RIGHT change, X launch",36,52,12,color(246,240,220))
   local y=76
+  local mission = dispatch_templates[g.dispatch.mission_cursor or 1] or dispatch_templates[1]
+  local staff = g.roster[g.dispatch.selected or 1]
+  if (g.dispatch_cursor or 1)==1 then rect(34,y-2,310,y+10,10) end
+  print("Mission: "..mission.name.." ("..mission.req..")",40,y,12,color(246,240,220)); y=y+14
+  if (g.dispatch_cursor or 1)==2 then rect(34,y-2,310,y+10,10) end
+  print("Assigned lead: "..(staff and staff.name or "none"),40,y,12,color(246,240,220)); y=y+16
+  if (g.dispatch_cursor or 1)==3 then rect(34,y-2,220,y+10,10) end
+  print("Launch mission",40,y,12,color(246,240,220)); y=y+14
+  if (g.dispatch_cursor or 1)==4 then rect(34,y-2,220,y+10,10) end
+  print("Back to base",40,y,12,color(246,240,220)); y=y+14
+  y = y + 4
   print("Active teams:",36,y,10,color(246,240,220)); y=y+14
   if #g.dispatch.active<=0 then print("none",40,y,12,color(246,240,220)); y=y+12 end
   for d in all(g.dispatch.active) do
-    print(d.name.." t:"..flr(d.t/60).."s risk:"..flr(d.risk*100).."%",40,y,12,color(246,240,220))
+    print(d.name.." / "..(d.team or "team").." t:"..flr(d.t/60).."s risk:"..flr(d.risk*100).."%",40,y,12,color(246,240,220))
     y = y + 12
   end
   y = y + 8
