@@ -2200,7 +2200,7 @@ end
 function core.count_where(list, pred)
   local count = 0
   for v in all(list) do
-    if pred(v) then count += 1 end
+    if pred(v) then count = count + 1 end
   end
   return count
 end`},
