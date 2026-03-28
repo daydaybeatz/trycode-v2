@@ -712,7 +712,7 @@ const CODE_API_DOCS = [
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, 8, 8) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("save_data(key, value)", "Stores a persistent string value in browser local storage for this project name.", [["key", "Save slot key."],["value", "String or number to store."]], ["save_data(\"save_slot\", \"hq=2;funds=140\")"], "Call this after meaningful progress. Values remain after reload."),
   makeDoc("load_data(key)", "Loads a previously stored string value, or nil when missing.", [["key", "Save slot key."]], ["local blob = load_data(\"save_slot\")"], "Use this in _init() to restore campaign progress and settings."),
-  makeDoc("include \"file.lua\"", "Inserts another code tab into main.lua before the program runs.", [["\"file.lua\"", "Exact code file name to include."]], ["include \"player.lua\"\ninclude \"enemy.lua\""], "Keep main.lua small by splitting reusable systems into separate files."),
+  makeDoc("include \"file.lua\"", "Inserts another code tab into main.lua before the program runs.", [["\"file.lua\"", "Exact code file name to include."]], ["include \"player.lua\"","include player.lua","#include \"enemy.lua\""], "Use quoted or unquoted file names; #include also works. Keep main.lua small by splitting reusable systems into separate files."),
   makeDoc("x += value / x -= value", "Shorthand for updating an existing variable.", [["value", "The amount to add or subtract."]], ["x += 1","y -= speed"], "The app expands this into standard Lua before running your code.")
 ].sort((a,b)=>a.signature.localeCompare(b.signature));
 let docsPage = 0;
@@ -832,7 +832,36 @@ function expandLuaShorthand(source){
     return `${indent}${name} = ${name} ${op} (${rhs})${comment}`;
   }).join("\n");
 }
-function resolveIncludes(source, seen=new Set()){ const lines=String(source||"").split(/\r?\n/); let out=[]; for(const line of lines){ const m=line.match(/^\s*include\s*\(?\s*["']([^"']+)["']\s*\)?\s*$/); if(m){ const name=m[1]; if(seen.has(name)) continue; const found=(state.appProject.codeFiles||[]).find(f=>f.name===name); if(found){ seen.add(name); out.push(`-- begin include: ${name}`); out.push(resolveIncludes(found.content,seen)); out.push(`-- end include: ${name}`); } } else out.push(line); } return expandLuaShorthand(out.join("\n").replace(/spr\((\d+[a-z])(\s*,)/gi, 'spr("$1"$2')); }
+function parseIncludeTarget(line){
+  const raw=String(line||"");
+  const stripped=raw.replace(/\s*--.*$/,"").trim();
+  if(!stripped) return null;
+  const normalized=stripped.replace(/[“”]/g,'"').replace(/[‘’]/g,"'");
+  const quoted=normalized.match(/^(?:#\s*)?include\s*\(?\s*["']([^"']+)["']\s*\)?\s*;?\s*$/i);
+  if(quoted) return quoted[1].trim();
+  const unquoted=normalized.match(/^(?:#\s*)?include\s*\(?\s*([A-Za-z0-9_\-./]+)\s*\)?\s*;?\s*$/i);
+  return unquoted ? unquoted[1].trim() : null;
+}
+function resolveIncludes(source, seen=new Set()){
+  const lines=String(source||"").split(/\r?\n/);
+  let out=[];
+  for(const line of lines){
+    const name=parseIncludeTarget(line);
+    if(name){
+      if(seen.has(name)) continue;
+      const found=(state.appProject.codeFiles||[]).find(f=>f.name===name);
+      if(found){
+        seen.add(name);
+        out.push(`-- begin include: ${name}`);
+        out.push(resolveIncludes(found.content,seen));
+        out.push(`-- end include: ${name}`);
+        continue;
+      }
+    }
+    out.push(line);
+  }
+  return expandLuaShorthand(out.join("\n").replace(/spr\((\d+[a-z])(\s*,)/gi, 'spr("$1"$2'));
+}
 function getProjectLua(){ saveEditorToCurrentCodeFile(); const main=(state.appProject.codeFiles||[]).find(f=>f.name==="main.lua") || getCurrentCodeFile(); return resolveIncludes(main?main.content:$("codeEditor").value||""); }
 function updateLogicButton(){ const b=$("logicBtn"); if(!b) return; b.textContent = "Code"; }
 function finishNewProject(){
@@ -1103,6 +1132,47 @@ end`}];
   }
   walls.data[14][10]=0;
   walls.data[18][20]=0;
+  finalizeExampleProjectLoad();
+}
+function loadIncludeFunctionCheckExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.project.tile_w=16;
+  p.project.tile_h=16;
+  p.project.map_w=32;
+  p.project.map_h=32;
+  p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
+  p.tileDefs={0:makeBlankTileDef()};
+  p.codeFiles=[
+    {name:"main.lua",tabTheme:0,content:`include "teams.lua"
+
+function _init()
+  build_team()
+end
+
+function _update()
+end
+
+function _draw()
+  cls(color(233,11,88))
+  local y = 12
+  print("include + add/rnd/all test", 8, y, color(255,247,232))
+  y += 14
+  for e in all(teams) do
+    print(e.name, 8, y, color(255,247,232))
+    y += 12
+  end
+end`},
+    {name:"teams.lua",tabTheme:7,content:`names={"dave","carl","mia","zoe","ivy"}
+teams={}
+
+function build_team()
+  teams={}
+  for i=1,5 do
+    add(teams, {name=rnd(names)})
+  end
+end`}
+  ];
   finalizeExampleProjectLoad();
 }
 function finalizeExampleProjectLoad(){
@@ -3677,6 +3747,7 @@ end`},
 function getExampleProjects(){
   return [
     {id:'collision',name:'Scrolling Wall Collision',description:'Separate button + joystick movement, wall checks, map scrolling with camera(), and btnp() zoom controls.',loader:loadExampleProject},
+    {id:'include-function-check',name:'Include + Utility Function Check',description:'Two-file project that validates include, cls(color()), add(), rnd(), print(), and for e in all(list) do loops.',loader:loadIncludeFunctionCheckExampleProject},
     {id:'ui-mouse',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing in the TryCode theme.',loader:loadUiMouseExampleProject},
     {id:'poster',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'operation-corporation',name:'Operation Corporation',description:'Large top-down infiltration campaign demo with enemy capture/recruitment, R&D queue, dispatch missions, and persistent save_data()/load_data().',loader:loadOperationCorporationExampleProject}
