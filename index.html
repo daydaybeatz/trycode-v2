@@ -4350,7 +4350,50 @@ function makeRuntime(){
   }
   function sfxPlay(index, loop=false){ previewSound(index, loop); }
   function musicPlay(src, action='play', loop=true){ playMusicEntry(src, action, loop); }
-  const getFengariApi=()=>window.fengari||globalThis.fengari||null;
+  const getFengariApi=()=>{
+    const root=(typeof window!=='undefined'&&window)||globalThis;
+    return root.fengari || root.fengariWeb?.fengari || root.Fengari?.fengari || null;
+  };
+  const FENGARI_FALLBACK_SRCS=[
+    'https://unpkg.com/fengari-web/dist/fengari-web.js',
+    'https://cdn.jsdelivr.net/npm/fengari-web/dist/fengari-web.js'
+  ];
+  let fengariLoadPromise=null;
+  const loadExternalScript=(src)=>new Promise((resolve,reject)=>{
+    if(!src){ reject(new Error('Missing script URL')); return; }
+    const existing=[...document.querySelectorAll('script[src]')].find(el=>el.src===src);
+    if(existing && existing.dataset.tcLoaded==='1'){ resolve(true); return; }
+    const script=existing||document.createElement('script');
+    const onLoad=()=>{ script.dataset.tcLoaded='1'; cleanup(); resolve(true); };
+    const onError=()=>{ cleanup(); reject(new Error(`Failed to load ${src}`)); };
+    const cleanup=()=>{ script.removeEventListener('load',onLoad); script.removeEventListener('error',onError); };
+    script.addEventListener('load',onLoad,{once:true});
+    script.addEventListener('error',onError,{once:true});
+    if(!existing){
+      script.src=src;
+      script.async=true;
+      script.crossOrigin='anonymous';
+      document.head.appendChild(script);
+    }
+  });
+  const ensureFengariApi=()=>{
+    const cached=getFengariApi();
+    if(cached) return Promise.resolve(cached);
+    if(fengariLoadPromise) return fengariLoadPromise;
+    const existingSrc=(document.querySelector('script[src*="fengari-web"]')||{}).src||null;
+    const uniqueSources=[...new Set([existingSrc,...FENGARI_FALLBACK_SRCS].filter(Boolean))];
+    fengariLoadPromise=(async()=>{
+      for(const src of uniqueSources){
+        try{
+          await loadExternalScript(src);
+          const api=getFengariApi();
+          if(api) return api;
+        }catch(_){}
+      }
+      throw new Error('Unable to load the Lua runtime dependency (fengari-web).');
+    })().finally(()=>{ fengariLoadPromise=null; });
+    return fengariLoadPromise;
+  };
   let lua, lauxlib, lualib, to_luastring, to_jsstring;
   function pushProjectTable(){ lua.lua_newtable(L); lua.lua_pushinteger(L,projectRef.project.tile_w); lua.lua_setfield(L,-2,to_luastring('tile_w')); lua.lua_pushinteger(L,projectRef.project.tile_h); lua.lua_setfield(L,-2,to_luastring('tile_h')); lua.lua_pushinteger(L,projectRef.project.map_w); lua.lua_setfield(L,-2,to_luastring('map_w')); lua.lua_pushinteger(L,projectRef.project.map_h); lua.lua_setfield(L,-2,to_luastring('map_h')); lua.lua_pushinteger(L,projectRef.maps.length); lua.lua_setfield(L,-2,to_luastring('map_count')); lua.lua_pushinteger(L,projectRef.spriteFolders.length); lua.lua_setfield(L,-2,to_luastring('sprite_count')); lua.lua_pushinteger(L,projectRef.sounds.length); lua.lua_setfield(L,-2,to_luastring('sound_count')); lua.lua_pushinteger(L,projectRef.music.length); lua.lua_setfield(L,-2,to_luastring('music_count')); lua.lua_setglobal(L,to_luastring('project')); }
   function build(code){
@@ -4360,8 +4403,16 @@ function makeRuntime(){
     const fengariApi=getFengariApi();
     if(!fengariApi){
       L=null;
-      setLastRunError('Lua runtime unavailable: the Fengari script did not finish loading.');
+      setLastRunError('Loading Lua runtime dependency…');
       cls();
+      ensureFengariApi().then(api=>{
+        if(!api) throw new Error('Lua runtime API not found after script load.');
+        setLastRunError('');
+        build(lastCode||pendingCode||'');
+      }).catch(err=>{
+        const message=`Lua runtime unavailable: ${err?.message||String(err)}`;
+        setLastRunError(message);
+      });
       return;
     }
     ({ lua, lauxlib, lualib, to_luastring, to_jsstring } = fengariApi);
