@@ -2040,12 +2040,10 @@ function loadOperationCorporationExampleProject(){
 --   * data-oriented helper modules
 include "config.lua"
 include "data.lua"
-include "core.lua"
 include "state.lua"
 include "field.lua"
 include "base.lua"
 include "draw.lua"
-include "systems.lua"
 
 function _init() boot_game() end
 function _update() game_update() end
@@ -2365,7 +2363,6 @@ function boot_game()
   end
   load_campaign()
   start_new_operation()
-  init_systems()
   g.mode = "base"
 end
 
@@ -3430,7 +3427,17 @@ function game_update()
     if btnp("right") or menu_axis_pressed("horizontal",1) then g.pause_info_page = 2; g.pause_cursor = 2 end
     return
   end
-  run_frame_pipeline()
+  tick_region_sim()
+  update_roster_injuries()
+  update_research()
+  resolve_dispatch()
+  if g.mode == "field" then
+    update_field()
+  elseif g.mode == "dispatch" then
+    handle_dispatch_inputs()
+  else
+    handle_base_inputs()
+  end
 end`},
     {name:'draw.lua',tabTheme:2,content:`function draw_enemy(e)
   if e.captured then return end
