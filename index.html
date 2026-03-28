@@ -3763,7 +3763,11 @@ function setView(name){
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
   if(name==="music") { refreshMusicUI();  }
   if(name==="map") drawMapEditor();
-  if(name==="runtime") runtime.resizeDisplay();
+  if(name==="runtime"){
+    runtime.resizeDisplay();
+    requestAnimationFrame(()=>runtime.resizeDisplay());
+    setTimeout(()=>runtime.resizeDisplay(),80);
+  }
   if(name==="docs") buildDocs();
 }
 
@@ -4166,7 +4170,20 @@ function makeRuntime(){
   const pointerButtonsToMask=(e,isUp=false)=>{ const buttons=Number(isUp?0:e.buttons)||0; let mask=0; if(buttons&1) mask|=1; if(buttons&4) mask|=2; if(buttons&2) mask|=4; if(!mask && !isUp && (e.pointerType==='touch'||e.pointerType==='pen')) mask|=1; return mask; };
   const refreshMouseButtons=()=>{ let mask=0; input.mouse.pointers.forEach(value=>{ mask|=value; }); input.mouse.down=mask!==0; input.mouse.buttons=mask; };
   const updateMouseFromPointer=(e,isUp=false)=>{ const pos=clientToMouse(e.clientX,e.clientY); input.mouse.x=pos.x; input.mouse.y=pos.y; if(typeof e.pointerId==='number'){ const prev=input.mouse.pointers.get(e.pointerId)||0; const next=pointerButtonsToMask(e,isUp); if(isUp||next===0) input.mouse.pointers.delete(e.pointerId); else input.mouse.pointers.set(e.pointerId,next); const pressed=(~prev)&next; const released=prev&(~next); if(pressed>0) input.mouse.pressed|=pressed; if(released>0) input.mouse.released|=released; } refreshMouseButtons(); };
-  function resizeDisplay(){ const rect=stage.getBoundingClientRect(); const aspect=GAME_W/GAME_H; let w=rect.width, h=Math.floor(w/aspect); if(h>rect.height){ h=rect.height; w=Math.floor(h*aspect);} canvas.style.width=`${Math.floor(w)}px`; canvas.style.height=`${Math.floor(h)}px`; applyInputModeUI(); }
+  function resizeDisplay(){
+    const rect=stage.getBoundingClientRect();
+    const aspect=GAME_W/GAME_H;
+    const stageW=Math.max(1,Math.floor(rect.width||0));
+    const stageH=Math.max(1,Math.floor(rect.height||0));
+    let w=stageW, h=Math.floor(w/aspect);
+    if(h>stageH){
+      h=stageH;
+      w=Math.floor(h*aspect);
+    }
+    canvas.style.width=`${Math.max(1,Math.floor(w))}px`;
+    canvas.style.height=`${Math.max(1,Math.floor(h))}px`;
+    applyInputModeUI();
+  }
   window.addEventListener('resize',resizeDisplay);
   function getImg(file){ if(!file||isEmojiLike(file)||isSpriteIndexLike(file)) return null; if(!assets[file]){ const img=new Image(); img.src=file; assets[file]={img,loaded:false}; img.onload=()=>assets[file].loaded=true; img.onerror=()=>assets[file].loaded=false; } return assets[file]; }
   function attachJoy(rootId,knobId,idx){ const root=$(rootId), knob=$(knobId), R=52, KR=21; function setKnob(nx,ny){ knob.style.left=`calc(50% + ${nx*R}px)`; knob.style.top=`calc(50% + ${ny*R}px)`; knob.style.marginLeft=`-${KR}px`; knob.style.marginTop=`-${KR}px`; } function updateFromClient(clientX,clientY){ const rect=root.getBoundingClientRect(); const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2, dx=clientX-cx, dy=clientY-cy; const len=Math.hypot(dx,dy)||1, m=Math.min(R,len), nx=(dx/len)*(m/R), ny=(dy/len)*(m/R); input.touchJoy[idx].x=clamp(nx,-1,1); input.touchJoy[idx].y=clamp(ny,-1,1); setKnob(nx,ny); recomputeVirtualInput(); } function up(){input.touchJoy[idx].down=false; input.touchJoy[idx].x=0; input.touchJoy[idx].y=0; setKnob(0,0); recomputeVirtualInput(); } root.addEventListener('pointerdown',e=>{root.setPointerCapture(e.pointerId); input.touchJoy[idx].down=true; updateFromClient(e.clientX,e.clientY); e.preventDefault();}); root.addEventListener('pointermove',e=>{ if(!input.touchJoy[idx].down) return; updateFromClient(e.clientX,e.clientY); e.preventDefault(); }); ['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(type=>root.addEventListener(type,e=>{up(); e.preventDefault();})); setKnob(0,0); return { reset:up }; }
