@@ -517,6 +517,18 @@ end
 
 function tan(x)
   return math.tan(tonumber(x) or 0)
+end
+
+function rnd(x)
+  if type(x) == "table" then
+    local count = #x
+    if count < 1 then return nil end
+    local idx = math.floor(math.random() * count) + 1
+    return x[idx]
+  end
+  local limit = tonumber(x)
+  if limit == nil then limit = 1 end
+  return math.random() * limit
 end`;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
@@ -685,6 +697,7 @@ const CODE_API_DOCS = [
   makeDoc("abs(n)", "Returns the absolute value of a number.", [["n", "The number to convert."]], ["if abs(joyx(0)) > 0.2 then moving = true end"], "Helpful for joystick deadzones."),
   makeDoc("flr(n)", "Rounds a number down to the nearest integer.", [["n", "The number to round down."]], ["tile_x = flr(player_x / 8)"], "Useful when turning pixels into tile coordinates."),
   makeDoc("sin(n) / cosin(n) / tan(n)", "Returns the standard math sine, cosine, or tangent of a number in radians.", [["n", "Angle in radians."]], ["wave = sin(t)\nside = cosin(t)\nslope = tan(0.25)"], "Use these for orbits, waves, aiming math, and procedural animation."),
+  makeDoc("rnd(x)", "Returns a random value below a number, or a random entry from a table.", [["x", "Number limit or list-style table."]], ["speed = rnd(4)\nloot = rnd({\"ammo\",\"med\",\"intel\"})"], "With numbers it returns a value in [0, x). With tables it picks one item from index 1 to #table."),
   makeDoc("add(list, value)", "Appends a value to the end of an array-style table and returns it.", [["list", "Table to grow."],["value", "Value to append."]], ["add(particles, {x=mx, y=my})"], "This is handy for projectiles, particles, enemies, and menu items."),
   makeDoc("del(list, value)", "Removes the first matching value from a table and returns it.", [["list", "Table to search."],["value", "Value to remove."]], ["del(particles, particle)"], "Use this when you already have the object you want to remove."),
   makeDoc("deli(list, index)", "Removes a table entry by index and returns it.", [["list", "Table to edit."],["index", "1-based array position. Defaults to the last item."]], ["deli(cards, 2)","last = deli(cards)"], "Use this when you know exactly which slot to remove."),
@@ -781,7 +794,7 @@ function codeTokenHtml(cls,value){ return `<span class="${cls}">${escapeHtml(val
 function highlightLuaLine(line){
   const {code, comment}=splitLuaLineComment(line);
   const keywords=new Set(["function","local","if","then","elseif","else","end","for","in","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
-  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","save_data","load_data","abs","flr","sin","cosin","tan","add","del","deli","all","foreach","pairs"]);
+  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","save_data","load_data","abs","flr","sin","cosin","tan","rnd","add","del","deli","all","foreach","pairs"]);
   let html="";
   const regex=/(\b\d+(?:\.\d+)?\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*|==|~=|<=|>=|\.\.\.|\.\.|[+\-*\/%#=<>]+)/g;
   let last=0, match;
