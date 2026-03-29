@@ -136,8 +136,9 @@
       box-shadow:inset 0 0 0 3px #fff0cb
     }
     #mapCanvas,#spriteCanvas{display:block;image-rendering:pixelated;touch-action:none}
-    .palBtn{height:34px;border:3px solid var(--line);border-radius:10px;cursor:pointer;box-shadow:0 3px 0 #c08b52}
+    .palBtn{height:34px;border:3px solid var(--line);border-radius:10px;cursor:pointer;box-shadow:0 3px 0 #c08b52;position:relative;overflow:hidden}
     .palBtn.active{outline:3px solid var(--accent2);outline-offset:1px}
+    .palBtnIndex{position:absolute;right:3px;bottom:1px;font-size:11px;line-height:1;font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 1px rgba(0,0,0,.85);pointer-events:none}
 
     .overlayTools{position:absolute;right:8px;top:64px;bottom:auto;z-index:25;display:flex;gap:6px;flex-direction:column;align-items:flex-end;max-width:none}
     #spriteOverlayTools{right:8px;top:64px;left:auto;bottom:auto}
@@ -805,7 +806,7 @@ function saveCurrentCodeViewState(){
   view.scrollTop=shell.scrollTop||0;
   view.scrollLeft=shell.scrollLeft||0;
 }
-function applyCodeSearchState({keepIndex=false,scrollToMatch=false}={}){
+function applyCodeSearchState({keepIndex=false,scrollToMatch=false,selectMatch=false}={}){
   const query=String(state.codeSearchQuery||'');
   const source=String($("codeEditor")?.value||'');
   const matches=[];
@@ -829,8 +830,10 @@ function applyCodeSearchState({keepIndex=false,scrollToMatch=false}={}){
     const ed=$("codeEditor"), shell=$("codeScrollShell");
     if(ed&&shell){
       const target=matches[state.codeSearchMatchIndex];
-      ed.focus({preventScroll:true});
-      ed.setSelectionRange(target.start,target.end);
+      if(selectMatch){
+        ed.focus({preventScroll:true});
+        ed.setSelectionRange(target.start,target.end);
+      }
       const before=source.slice(0,target.start);
       const line=Math.max(0,before.split(/\n/).length-1);
       const metrics=getComputedStyle(ed);
@@ -844,7 +847,7 @@ function stepCodeSearchMatch(direction){
   if(!state.codeSearchMatches.length) return;
   const len=state.codeSearchMatches.length;
   state.codeSearchMatchIndex=(state.codeSearchMatchIndex+(direction<0?-1:1)+len)%len;
-  applyCodeSearchState({keepIndex:true,scrollToMatch:true});
+  applyCodeSearchState({keepIndex:true,scrollToMatch:true,selectMatch:true});
   updateCodeLineNumbers();
 }
 function getCurrentCodeFile(){ ensureProjectData(); state.currentCodeFile=clamp(state.currentCodeFile,0,state.appProject.codeFiles.length-1); return state.appProject.codeFiles[state.currentCodeFile]; }
@@ -2114,6 +2117,7 @@ function draw_background()
 end
 
 function draw_hud()
+  zoom(1)
   camera()
   color(255, 247, 232)
   print("coins "..score, 12, 12, 12, color(255, 247, 232))
@@ -2123,6 +2127,7 @@ function draw_hud()
 end
 
 function draw_pause_overlay()
+  zoom(1)
   camera()
   rectfill(68, 30, 410, 242, 0)
   rectfill(78, 42, 400, 230, 6)
@@ -2148,6 +2153,7 @@ function draw_particles()
 end
 
 function draw_menu()
+  zoom(1)
   cls()
   rectfill(0, 0, 479, 269, 1)
   rectfill(56, 40, 423, 219, 6)
@@ -2165,6 +2171,7 @@ function draw_menu()
 end
 
 function draw_win()
+  zoom(1)
   cls()
   rectfill(0, 0, 479, 269, 1)
   rectfill(64, 54, 415, 204, 14)
@@ -2177,6 +2184,7 @@ end
 
 function draw_play()
   cls()
+  zoom(2)
   camera(player.x - 180, 0)
   draw_background()
   map(0)
@@ -4105,6 +4113,10 @@ function refreshPaletteUI(){
     const btn=document.createElement('button');
     btn.className='palBtn'+(i===state.selectedPaletteIndex?' active':'');
     btn.style.background=c;
+    const indexLabel=document.createElement('span');
+    indexLabel.className='palBtnIndex';
+    indexLabel.textContent=String(i);
+    btn.appendChild(indexLabel);
     btn.onclick=(e)=>{ e.preventDefault(); if(state.selectedPaletteIndex===i) openPalettePicker(); else { state.selectedPaletteIndex=i; $("paletteColorInput").value=c; refreshPaletteUI(); refreshEdgePalette(); } };
     wrap.appendChild(btn);
   });
@@ -4121,6 +4133,10 @@ function refreshEdgePalette(){
     const btn=document.createElement('button');
     btn.className='palBtn'+(i===state.selectedPaletteIndex?' active':'');
     btn.style.background=c;
+    const indexLabel=document.createElement('span');
+    indexLabel.className='palBtnIndex';
+    indexLabel.textContent=String(i);
+    btn.appendChild(indexLabel);
     btn.onclick=(e)=>{ e.preventDefault(); if(state.selectedPaletteIndex===i) openPalettePicker(); else { state.selectedPaletteIndex=i; $("paletteColorInput").value=c; refreshPaletteUI(); refreshEdgePalette(); } };
     wrap.appendChild(btn);
   });
