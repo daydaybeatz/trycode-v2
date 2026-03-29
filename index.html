@@ -380,7 +380,7 @@
         <div class="sidebar panelSkin">
           <div class="pane"><h4>PROJECT SIZE</h4><div class="formRow"><div class="field"><label>Tile Width</label><input id="tileWInput" type="number" min="1" value="16"></div><div class="field"><label>Tile Height</label><input id="tileHInput" type="number" min="1" value="16"></div></div><div class="formRow"><div class="field"><label>Map Width (tiles)</label><input id="mapWInput" type="number" min="1" value="32"></div><div class="field"><label>Map Height (tiles)</label><input id="mapHInput" type="number" min="1" value="32"></div></div><div class="formRow"><button class="mbtn" id="applyProjectBtn">Apply Size</button></div></div>
           <div class="pane"><h4>MAPS</h4><div class="formRow"><button class="mbtn" id="addMapBtn">Add Map</button></div><div class="mapList" id="mapList"></div></div>
-          <div class="pane"><h4>TILE EDITOR</h4><div class="formRow"><div class="field"><label>Tile ID</label><input id="tileIdInput" type="number" min="0" value="1"></div></div><div class="formRow"><button class="mbtn" id="addTileBtn">Add Tile</button><button class="mbtn" id="deleteTileBtn">Delete Tile</button></div><div class="formRow"><div class="field"><label>File / Sprite Number</label><input id="tileSourceInput" type="text" placeholder="wall.png or 0"></div></div><div class="formRow"><div class="field"><label>Background Color</label><input id="tileBgColorInput" type="color" value="#444444"></div></div><div class="formRow"><div class="field"><label>Background Fill</label><select id="tileBgEnabledInput"><option value="true">on</option><option value="false">off</option></select></div></div><div class="formRow"><div class="field"><label>Solid</label><select id="tileSolidInput"><option value="false">false</option><option value="true">true</option></select></div></div><div class="formRow"><div class="field"><label>Animated</label><select id="tileAnimatedInput"><option value="false">false</option><option value="true">true</option></select></div></div><div class="formRow hidden" id="tileAnimSettingsRow"><div class="field"><label>Sprite Folder</label><input id="tileAnimFolderInput" type="number" min="0" placeholder="uses sprite box"></div><div class="field"><label>Speed</label><input id="tileAnimSpeedInput" type="number" min="0.1" step="0.1" value="6"></div></div></div>
+          <div class="pane"><h4>TILE EDITOR</h4><div class="formRow"><div class="field"><label>Tile ID</label><input id="tileIdInput" type="number" min="0" value="1"></div></div><div class="formRow"><button class="mbtn" id="addTileBtn">Add Tile</button><button class="mbtn" id="deleteTileBtn">Delete Tile</button></div><div class="formRow"><div class="field"><label>File / Sprite Number</label><input id="tileSourceInput" type="text" placeholder="wall.png or 0"></div></div><div class="formRow" id="tileBgColorRow"><div class="field"><label>Background Color</label><input id="tileBgColorInput" type="color" value="#444444"></div></div><div class="formRow"><div class="field"><label>Background Fill</label><select id="tileBgEnabledInput"><option value="true">on</option><option value="false">off</option><option value="transparent">transparent</option></select></div></div><div class="formRow"><div class="field"><label>Solid</label><select id="tileSolidInput"><option value="false">false</option><option value="true">true</option></select></div></div><div class="formRow"><div class="field"><label>Animated</label><select id="tileAnimatedInput"><option value="false">false</option><option value="true">true</option></select></div></div><div class="formRow hidden" id="tileAnimSettingsRow"><div class="field"><label>Sprite Folder</label><input id="tileAnimFolderInput" type="number" min="0" placeholder="uses sprite box"></div><div class="field"><label>Speed</label><input id="tileAnimSpeedInput" type="number" min="0.1" step="0.1" value="6"></div></div></div>
           <div class="pane"><h4>TILES</h4><div class="tilePalette" id="tilePalette"></div></div>
           <div class="pane"><h4>LAYERS</h4><div class="formRow"><button class="mbtn" id="addLayerBtn">Add Layer</button></div><div class="layerList" id="layerList"></div></div>
         </div>
@@ -972,7 +972,85 @@ function newProject(){ if(!confirm("Are you sure you want to start a new project
 
 function loadAllProjects(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(_){ return {}; } }
 function saveAllProjects(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
-function refreshProjectList(){ const list=$("projectList"); if(!list) return; list.innerHTML=""; const all=loadAllProjects(); const names=Object.keys(all).sort((a,b)=>(all[b].t||0)-(all[a].t||0)); if(!names.length){ const d=document.createElement('div'); d.className='docDesc'; d.style.padding='8px'; d.textContent='No saved projects yet.'; list.appendChild(d); return; } names.forEach(name=>{ const row=document.createElement('div'); row.className='itemRow'; const label=document.createElement('div'); label.textContent=name; label.style.flex='1'; const btn=document.createElement('button'); btn.className='smallbtn'; btn.textContent='Load'; btn.onclick=(e)=>{ e.stopPropagation(); if(!confirm(`Load ${name}? Unsaved changes will be lost.`)) return; const p=all[name]; state.currentProjectName=name; state.hasSaved=true; state.appProject=JSON.parse(JSON.stringify(p.project)); invalidateEditorRenderCache(); ensureProjectData(); state.currentMapIndex=0; state.currentLayerIndex=0; state.currentSpriteIndex=0; state.currentSpriteFrame=0; state.currentSoundIndex=0; state.currentMusicIndex=0; state.currentCodeFile=0; state.selectedTileId=1; state.selectedPaletteIndex=0; state.palettePage=0; state.spriteFramePage=0; state.spriteListPage=0; renderCodeTabs(); loadCurrentCodeFileToEditor(); syncSpriteUI(); drawSpriteEditor(); syncMapUIFromProject(); refreshSoundUI(); drawSoundWaveCanvas(); refreshMusicUI(); refreshMenuSettingsUI(); runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); setView('code'); $("menu").classList.remove('open'); }; row.appendChild(label); row.appendChild(btn); list.appendChild(row); }); }
+function refreshProjectList(){
+  const list=$("projectList");
+  if(!list) return;
+  list.innerHTML="";
+  const all=loadAllProjects();
+  const names=Object.keys(all).sort((a,b)=>(all[b].t||0)-(all[a].t||0));
+  if(!names.length){
+    const d=document.createElement('div');
+    d.className='docDesc';
+    d.style.padding='8px';
+    d.textContent='No saved projects yet.';
+    list.appendChild(d);
+    return;
+  }
+  names.forEach(name=>{
+    const row=document.createElement('div');
+    row.className='itemRow';
+    const label=document.createElement('div');
+    label.textContent=name;
+    label.style.flex='1';
+    const loadBtn=document.createElement('button');
+    loadBtn.className='smallbtn';
+    loadBtn.textContent='Load';
+    loadBtn.onclick=(e)=>{
+      e.stopPropagation();
+      if(!confirm(`Load ${name}? Unsaved changes will be lost.`)) return;
+      const p=all[name];
+      state.currentProjectName=name;
+      state.hasSaved=true;
+      state.appProject=JSON.parse(JSON.stringify(p.project));
+      invalidateEditorRenderCache();
+      ensureProjectData();
+      state.currentMapIndex=0;
+      state.currentLayerIndex=0;
+      state.currentSpriteIndex=0;
+      state.currentSpriteFrame=0;
+      state.currentSoundIndex=0;
+      state.currentMusicIndex=0;
+      state.currentCodeFile=0;
+      state.selectedTileId=1;
+      state.selectedPaletteIndex=0;
+      state.palettePage=0;
+      state.spriteFramePage=0;
+      state.spriteListPage=0;
+      renderCodeTabs();
+      loadCurrentCodeFileToEditor();
+      syncSpriteUI();
+      drawSpriteEditor();
+      syncMapUIFromProject();
+      refreshSoundUI();
+      drawSoundWaveCanvas();
+      refreshMusicUI();
+      refreshMenuSettingsUI();
+      runtime.syncProject(state.appProject);
+      runtime.reset(getProjectLua());
+      setView('code');
+      $("menu").classList.remove('open');
+    };
+    const deleteBtn=document.createElement('button');
+    deleteBtn.className='smallbtn';
+    deleteBtn.textContent='Delete';
+    deleteBtn.onclick=(e)=>{
+      e.stopPropagation();
+      if(!confirm(`Are you sure you want to delete "${name}"?`)) return;
+      delete all[name];
+      saveAllProjects(all);
+      if(state.currentProjectName===name){
+        state.currentProjectName="";
+        state.hasSaved=false;
+      }
+      refreshProjectList();
+      showToast(`Deleted project "${name}".`);
+    };
+    row.appendChild(label);
+    row.appendChild(loadBtn);
+    row.appendChild(deleteBtn);
+    list.appendChild(row);
+  });
+}
 function applyThemeUI(){ ensureProjectData(); document.body.classList.toggle('dark-mode', !!state.appProject.settings.darkMode); }
 function refreshMenuSettingsUI(){ ensureProjectData(); if($("inputModeSelect")) $("inputModeSelect").value=state.appProject.settings.movementInput||'left_joystick'; if($("darkModeToggle")) $("darkModeToggle").checked=!!state.appProject.settings.darkMode; applyThemeUI(); }
 function normalizeProjectNameInput(raw, fallback='project_1'){ const trimmed=String(raw??'').trim(); return trimmed||fallback; }
@@ -1769,6 +1847,8 @@ goal_x = banner.x + 12
 score = 0
 best_score = 0
 time = 0
+paused = false
+sprint_toggle = false
 clouds = {
   {x=30, y=34, speed=0.12},
   {x=180, y=52, speed=0.08},
@@ -1780,6 +1860,8 @@ function reset_world()
   particles = {}
   score = 0
   time = 0
+  paused = false
+  sprint_toggle = false
   build_pickups()
 end
 
@@ -1905,7 +1987,10 @@ function update_player()
   if btn("left") then move = -1 end
   if btn("right") then move = 1 end
 
-  player.vx = move * 1.5
+  local sprint_held = btn("b") or btn("x")
+  local sprinting = (sprint_toggle or sprint_held) and move ~= 0
+  local speed = sprinting and 2.35 or 1.5
+  player.vx = move * speed
   if move ~= 0 then
     player.dir = move > 0 and 1 or -1
     player.anim += 1
@@ -1957,7 +2042,26 @@ function draw_hud()
   color(255, 247, 232)
   print("coins "..score, 12, 12, 12, color(255, 247, 232))
   print("time "..flr(time / 60), 112, 12, 12, color(255, 247, 232))
+  print("sprint "..(sprint_toggle and "toggle on" or "normal"), 208, 12, 12, color(255, 247, 232))
   print("reach the banner", 340, 12, 12, color(255, 247, 232))
+end
+
+function draw_pause_overlay()
+  camera()
+  rectfill(68, 30, 410, 242, 0)
+  rectfill(78, 42, 400, 230, 6)
+  line(78, 42, 400, 42, 7)
+  line(78, 230, 400, 230, 7)
+  line(78, 42, 78, 230, 7)
+  line(400, 42, 400, 230, 7)
+  print("paused", 192, 54, 20, color(255, 247, 232))
+  print("controls", 190, 84, 14, color(255, 247, 232))
+  print("left stick / d-pad : move", 106, 108, 12, color(255, 247, 232))
+  print("a / up / space : jump", 106, 126, 12, color(255, 247, 232))
+  print("b or x : hold sprint", 106, 144, 12, color(255, 247, 232))
+  print("select : toggle sprint", 106, 162, 12, color(255, 247, 232))
+  print("start : pause/resume", 106, 180, 12, color(255, 247, 232))
+  print("press start to continue", 126, 206, 12, color(255, 247, 232))
 end
 
 function draw_particles()
@@ -2021,6 +2125,9 @@ function _init()
 end
 
 function _update()
+  if btnp("select") then
+    sprint_toggle = not sprint_toggle
+  end
   update_clouds()
   update_particles()
 
@@ -2029,8 +2136,13 @@ function _update()
       start_game()
     end
   elseif state == "play" then
-    time += 1
-    update_player()
+    if btnp("start") then
+      paused = not paused
+    end
+    if not paused then
+      time += 1
+      update_player()
+    end
   elseif state == "win" then
     if btnp("a") or keyp("enter") then
       start_game()
@@ -2043,6 +2155,9 @@ function _draw()
     draw_menu()
   elseif state == "play" then
     draw_play()
+    if paused then
+      draw_pause_overlay()
+    end
   else
     draw_win()
   end
@@ -4167,8 +4282,13 @@ function deleteSelectedTile(){
   runtime.syncProject(state.appProject);
 }
 function refreshTileAnimationUI(){ const def=state.appProject.tileDefs[state.selectedTileId]||createTileDefForId(state.selectedTileId); const animated=!!def.animated; $("tileAnimSettingsRow").classList.toggle("hidden", !animated); }
-function refreshTileEditorFromSelected(){ $("tileIdInput").value=state.selectedTileId; const def=state.appProject.tileDefs[state.selectedTileId]||createTileDefForId(state.selectedTileId); if(document.activeElement!==$("tileSourceInput")) $("tileSourceInput").value=def.source||""; $("tileBgColorInput").value=def.bg||(state.selectedTileId===0?"#000000":"#444444"); $("tileBgEnabledInput").value=def.bgEnabled===false?"false":"true"; $("tileSolidInput").value=def.flags&&def.flags[0]?"true":"false"; $("tileAnimatedInput").value=def.animated?"true":"false"; if(document.activeElement!==$("tileAnimFolderInput")) $("tileAnimFolderInput").value=def.animFolder==null||String(def.animFolder).trim()===''?"":String(def.animFolder); if(document.activeElement!==$("tileAnimSpeedInput")) $("tileAnimSpeedInput").value=Number.isFinite(Number(def.animSpeed))?def.animSpeed:6; refreshTileAnimationUI(); syncTileEditorActionButtons(); }
-function applyTileEditorLive(options={}){ const refreshInputs=options.refreshInputs!==false; const id=Math.max(0,parseInt($("tileIdInput").value||"0",10)); state.selectedTileId=id; const base=createTileDefForId(id); state.appProject.tileDefs[id]={...base,...(state.appProject.tileDefs[id]||{})}; state.appProject.tileDefs[id].source=String($("tileSourceInput").value||"").trim(); state.appProject.tileDefs[id].bg=$("tileBgColorInput").value||(id===0?"#000000":"#444444"); state.appProject.tileDefs[id].bgEnabled=$("tileBgEnabledInput").value==="true"; state.appProject.tileDefs[id].flags[0]=$("tileSolidInput").value==="true"; state.appProject.tileDefs[id].animated=$("tileAnimatedInput").value==="true"; const rawAnimFolder=String($("tileAnimFolderInput").value||"").trim(); state.appProject.tileDefs[id].animFolder=rawAnimFolder===''?"":Math.max(0,parseInt(rawAnimFolder,10)); const rawSpeed=$("tileAnimSpeedInput").value; state.appProject.tileDefs[id].animSpeed=Math.max(0.1,parseFloat(rawSpeed===""?"0":rawSpeed)||6); invalidateEditorRenderCache(); refreshTilePalette(); if(refreshInputs) refreshTileEditorFromSelected(); else { refreshTileAnimationUI(); syncTileEditorActionButtons(); } drawMapEditor(); runtime.syncProject(state.appProject); }
+function refreshTileBackgroundUI(){
+  const mode=String($("tileBgEnabledInput")?.value||"true");
+  const colorRow=$("tileBgColorRow");
+  if(colorRow) colorRow.classList.toggle("hidden", mode!=="true");
+}
+function refreshTileEditorFromSelected(){ $("tileIdInput").value=state.selectedTileId; const def=state.appProject.tileDefs[state.selectedTileId]||createTileDefForId(state.selectedTileId); if(document.activeElement!==$("tileSourceInput")) $("tileSourceInput").value=def.source||""; $("tileBgColorInput").value=def.bg||(state.selectedTileId===0?"#000000":"#444444"); $("tileBgEnabledInput").value=def.bgEnabled===false?"transparent":"true"; $("tileSolidInput").value=def.flags&&def.flags[0]?"true":"false"; $("tileAnimatedInput").value=def.animated?"true":"false"; if(document.activeElement!==$("tileAnimFolderInput")) $("tileAnimFolderInput").value=def.animFolder==null||String(def.animFolder).trim()===''?"":String(def.animFolder); if(document.activeElement!==$("tileAnimSpeedInput")) $("tileAnimSpeedInput").value=Number.isFinite(Number(def.animSpeed))?def.animSpeed:6; refreshTileAnimationUI(); refreshTileBackgroundUI(); syncTileEditorActionButtons(); }
+function applyTileEditorLive(options={}){ const refreshInputs=options.refreshInputs!==false; const id=Math.max(0,parseInt($("tileIdInput").value||"0",10)); state.selectedTileId=id; const base=createTileDefForId(id); state.appProject.tileDefs[id]={...base,...(state.appProject.tileDefs[id]||{})}; state.appProject.tileDefs[id].source=String($("tileSourceInput").value||"").trim(); state.appProject.tileDefs[id].bg=$("tileBgColorInput").value||(id===0?"#000000":"#444444"); const bgMode=String($("tileBgEnabledInput").value||"true"); state.appProject.tileDefs[id].bgEnabled=bgMode==="true"; state.appProject.tileDefs[id].flags[0]=$("tileSolidInput").value==="true"; state.appProject.tileDefs[id].animated=$("tileAnimatedInput").value==="true"; const rawAnimFolder=String($("tileAnimFolderInput").value||"").trim(); state.appProject.tileDefs[id].animFolder=rawAnimFolder===''?"":Math.max(0,parseInt(rawAnimFolder,10)); const rawSpeed=$("tileAnimSpeedInput").value; state.appProject.tileDefs[id].animSpeed=Math.max(0.1,parseFloat(rawSpeed===""?"0":rawSpeed)||6); invalidateEditorRenderCache(); refreshTilePalette(); if(refreshInputs) refreshTileEditorFromSelected(); else { refreshTileAnimationUI(); refreshTileBackgroundUI(); syncTileEditorActionButtons(); } drawMapEditor(); runtime.syncProject(state.appProject); }
 function refreshMapList(){ const wrap=$("mapList"); wrap.innerHTML=""; state.appProject.maps.forEach((mapObj,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentMapIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=String(i); row.appendChild(label); row.onclick=()=>{ state.currentMapIndex=i; state.currentLayerIndex=0; refreshMapList(); refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); }
 function refreshTilePalette(){ const wrap=$("tilePalette"); wrap.innerHTML=""; const ids=Object.keys(state.appProject.tileDefs).map(n=>parseInt(n,10)).sort((a,b)=>a-b); for(const id of ids){ const def=state.appProject.tileDefs[id]; const btn=document.createElement('div'); btn.className='tileBtn'+(id===state.selectedTileId?' active':''); btn.onclick=()=>setSelectedTile(id); const thumb=document.createElement('canvas'); thumb.className='tileThumb'; thumb.width=48; thumb.height=48; thumb.getContext('2d').drawImage(getEditorTileCanvas(def,48,48,id,true),0,0); const label=document.createElement('div'); label.textContent=id===0?'delete / none':`id ${id}`; btn.appendChild(thumb); btn.appendChild(label); wrap.appendChild(btn);} syncTileEditorActionButtons(); }
 function makeEyeIconMarkup(hidden){ return hidden?`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle><line x1="5" y1="19" x2="19" y2="5"></line></svg>`:`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>`; }
