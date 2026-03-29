@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>TRY_CODE_FC_V43</title>
   <script src="https://unpkg.com/fengari-web/dist/fengari-web.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:wght@400;700&family=Orbitron:wght@500;700&family=Playfair+Display:wght@500;700&family=Press+Start+2P&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg:#f7eed2;
@@ -445,7 +448,7 @@
 
     <div class="view" id="view-docs"><div class="docsView" id="docsView"></div></div>
 
-    <div class="menu" id="menu"><div class="menuCard"><h3>FILE</h3><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New Project</button><button class="mbtn" id="btnExportHTML">Export .html</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><h3>SETTINGS</h3><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Movement Input</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="monospace">monospace</option><option value="sans-serif">sans-serif</option><option value="serif">serif</option><option value="cursive">cursive</option><option value="fantasy">fantasy</option><option value="system-ui">system-ui</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div><h3>LOAD PROJECT</h3><div class="list" id="projectList"></div></div></div>
+    <div class="menu" id="menu"><div class="menuCard"><h3>FILE</h3><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New Project</button><button class="mbtn" id="btnExportHTML">Export .html</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><h3>SETTINGS</h3><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Movement Input</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div><h3>LOAD PROJECT</h3><div class="list" id="projectList"></div></div></div>
   </div>
 </div>
 
@@ -469,8 +472,8 @@ const FILE_TAB_THEMES = [
   { base: "#ff9dcd", deep: "#d7679d", border: "#8a3961", text: "#351422" },
   { base: "#c7a2ff", deep: "#8e69dc", border: "#593a90", text: "#24163c" }
 ];
-const PRINT_FONTS = ["monospace","sans-serif","serif","cursive","fantasy","system-ui"];
-const DEFAULT_PRINT_FONT = 'monospace';
+const PRINT_FONTS = ["Press Start 2P","Orbitron","Rajdhani","Inter","Merriweather","Playfair Display"];
+const DEFAULT_PRINT_FONT = 'Press Start 2P';
 function normalizePrintFontName(value){
   const raw=String(value??'').trim();
   if(!raw) return DEFAULT_PRINT_FONT;
@@ -767,8 +770,8 @@ const CODE_API_DOCS = [
   makeDoc("circfill(x, y, r, color)", "Draws a filled circle.", [["x", "Center x."],["y", "Center y."],["r", "Radius in pixels."],["color", "Optional palette index."]], ["circfill(96, 64, 7, 11)"], "Great for pings, particles, or rounded UI badges."),
   makeDoc("spr(indexOrSource, x, y)", "Draws a sprite folder frame, sprite reference such as 0a, or image source.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."]], ["spr(0, 40, 20)","spr(\"0b\", 56, 20)"], "Sprite folder indices draw frame a by default."),
   makeDoc("animate(ref, x, y, speed)", "Draws a sprite folder and cycles through its frames automatically.", [["ref", "Folder index or ref such as \"0a\"."],["x", "Destination x."],["y", "Destination y."],["speed", "Frames per second style speed value."]], ["animate(0, 80, 40, 6)","animate(\"0a\", player_x, player_y, 8)"], "Use this when a sprite folder contains several frames."),
-  makeDoc("print(text, fontsize, x, y, color, outlineColor, font)", "Draws text with explicit font size and optional fill/outline colors and font family.", [["text", "Any value converted to text."],["fontsize", "Font size in pixels. Pass nil or \"nil\" for the default size 12."],["x", "Screen/world x position."],["y", "Screen/world y position."],["color", "Fill color string, palette index, color() result, nil, or \"nil\". nil/\"nil\" uses current draw color (default black)."],["outlineColor", "Outline color string, palette index, color() result, nil, or \"nil\". nil/\"nil\" means no outline."],["font", "Optional font family string. nil or \"nil\" uses the default print font from File menu settings."]], ["print(\"score\", nil, 8, 8, nil, nil, nil)","print(score, 14, 8, 20, color(255,255,255), nil, \"sans-serif\")","print(\"alert\", 16, 8, 32, color(255,247,232), color(111,61,32), \"serif\")"], "Preferred order is print(text, fontsize, x, y, color, outlineColor, font). Older print argument layouts are still supported for compatibility."),
-  makeDoc("Fonts", "Available font names you can pass to print(..., font).", [], ["monospace","sans-serif","serif","cursive","fantasy","system-ui"], "If print() receives nil/no font, it uses the default print font selected in the File menu."),
+  makeDoc("print(text, fontsize, x, y, color, outlineColor, font)", "Draws text with explicit font size and optional fill/outline colors and font family.", [["text", "Any value converted to text."],["fontsize", "Font size in pixels. Pass nil or \"nil\" for the default size 12."],["x", "Screen/world x position."],["y", "Screen/world y position."],["color", "Fill color string, palette index, color() result, nil, or \"nil\". nil/\"nil\" uses current draw color (default black)."],["outlineColor", "Outline color string, palette index, color() result, nil, or \"nil\". nil/\"nil\" means no outline."],["font", "Optional font family string. nil or \"nil\" uses the default print font from File menu settings."]], ["print(\"score\", nil, 8, 8, nil, nil, nil)","print(score, 14, 8, 20, color(255,255,255), nil, \"Orbitron\")","print(\"alert\", 16, 8, 32, color(255,247,232), color(111,61,32), \"Merriweather\")"], "Preferred order is print(text, fontsize, x, y, color, outlineColor, font). Older print argument layouts are still supported for compatibility."),
+  makeDoc("Fonts", "Available font names you can pass to print(..., font).", [], ["Press Start 2P","Orbitron","Rajdhani","Inter","Merriweather","Playfair Display"], "If print() receives nil/no font, it uses the default print font selected in the File menu."),
   makeDoc("rectfill(x, y, w, h)", "Draws a filled rectangle using width and height.", [["x", "Left position."],["y", "Top position."],["w", "Width."],["h", "Height."]], ["rectfill(8, 8, 16, 10)"], "Use four arguments for width/height mode."),
   makeDoc("rectfill(x0, y0, x1, y1, color)", "Draws a filled rectangle using end coordinates and an optional color argument.", [["x0", "Left position."],["y0", "Top position."],["x1", "Right position."],["y1", "Bottom position."],["color", "Palette index, color() result, or CSS color string."]], ["rectfill(x, y, x + 7, y + 7, 8)","rectfill(4, 4, 20, 18, color(255,180,80))"], "Use five arguments when you want exact end coordinates with a specific color."),
   makeDoc("color(r, g, b)", "Sets the current draw color for print() and four-argument rectfill(), and returns that color for APIs like default_box().", [["r", "Red 0-255."],["g", "Green 0-255."],["b", "Blue 0-255."]], ["color(255, 255, 255)\nprint(\"hi\", 8, 8)","default_box(\"message\", {bg=color(27, 35, 64), text=color(255, 247, 232)})"], "Call this before drawing if you want a custom RGB color. The returned color value can also be reused in UI styling tables."),
@@ -1170,7 +1173,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "const projectRef="+projectJson+";",
     "const code="+codeJson+";",
     "const c=document.getElementById('c'),ctx=c.getContext('2d'),errEl=document.getElementById('err');ctx.imageSmoothingEnabled=false;function showErr(m){if(errEl){errEl.textContent=String(m);errEl.style.display='block';}}",
-    "let camx=0,camy=0,col={r:0,g:0,b:0},lastColorCall=null,viewZoom=1,zoomOffX=0,zoomOffY=0,clipRect=null;const PRINT_FONTS=['monospace','sans-serif','serif','cursive','fantasy','system-ui'];const DEFAULT_PRINT_FONT='monospace';function normalizePrintFontName(value){const raw=String(value??'').trim();if(!raw)return DEFAULT_PRINT_FONT;return PRINT_FONTS.includes(raw)?raw:DEFAULT_PRINT_FONT}",
+    "let camx=0,camy=0,col={r:0,g:0,b:0},lastColorCall=null,viewZoom=1,zoomOffX=0,zoomOffY=0,clipRect=null;const PRINT_FONTS=['Press Start 2P','Orbitron','Rajdhani','Inter','Merriweather','Playfair Display'];const DEFAULT_PRINT_FONT='Press Start 2P';function normalizePrintFontName(value){const raw=String(value??'').trim();if(!raw)return DEFAULT_PRINT_FONT;return PRINT_FONTS.includes(raw)?raw:DEFAULT_PRINT_FONT}",
     "const input={btn:Array(12).fill(0),btnp:Array(12).fill(0),btnPrev:Array(12).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],btnSystem:[0,0,0,0],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,pointers:new Map()}};",
     "const persistPrefix=()=>'trycode_runtime_save_export:'+(projectRef.meta&&projectRef.meta.name||'project')+':';function saveData(key,value){const k=String(key??'').trim();if(!k)return false;try{localStorage.setItem(persistPrefix()+k,String(value??''));return true}catch{return false}}function loadData(key){const k=String(key??'').trim();if(!k)return null;try{const v=localStorage.getItem(persistPrefix()+k);return v==null?null:v}catch{return null}}",
     "const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7,leftshoulder:8,lb:8,l1:8,rightshoulder:9,rb:9,r1:9,select:10,back:10,start:11};",
@@ -1342,8 +1345,8 @@ function _draw()
   camera(x-240,y-135)
   map(0)
   rectfill(x,y,x+7,y+7,8)
-  print("Buttons + left joystick",x-70,y-24,255,255,255)
-  print("A = zoom 2x, B = zoom 1x",x-76,y-12,255,255,255)
+  print("Buttons + left joystick", 12, x-70, y-24, color(255,255,255))
+  print("A = zoom 2x, B = zoom 1x", 12, x-76, y-12, color(255,255,255))
 end`}];
   const mapObj=p.maps[0]||makeEmptyMap("0",p.project.map_w,p.project.map_h);
   p.maps=[mapObj];
@@ -1387,10 +1390,10 @@ end
 function _draw()
   cls(color(233,11,88))
   local y = 12
-  print("include + add/rnd/all test", 8, y, color(255,247,232))
+  print("include + add/rnd/all test", 12, 8, y, color(255,247,232))
   y += 14
   for e in all(teams) do
-    print(e.name, 8, y, color(255,247,232))
+    print(e.name, 12, 8, y, color(255,247,232))
     y += 12
   end
 end`},
@@ -1543,39 +1546,39 @@ function draw_studio_screen(mx, my)
   draw_box_outline(28, 24, 424, 68, 7)
   rectfill(50, 46, 190, 76, 12)
   rectfill(260, 46, 430, 76, 14)
-  print("trycode studio", 64, 38, 20, 7)
-  print("tap / click for particles", 64, 68, 12, 7)
-  print("press a / enter to edit name", 64, 86, 12, 7)
-  print("press y / tab to switch screens", 64, 102, 12, 7)
+  print("trycode studio", 20, 64, 38, 7)
+  print("tap / click for particles", 12, 64, 68, 7)
+  print("press a / enter to edit name", 12, 64, 86, 7)
+  print("press y / tab to switch screens", 12, 64, 102, 7)
 
   rectfill(40, 142, 212, 236, 7)
   draw_box_outline(40, 142, 172, 94, 10)
-  print("studio screen", 56, 156, 16, 7)
-  print("name: "..name, 56, 184, 14, 7)
-  print("b toggles dark / light", 56, 210, 12, 7)
+  print("studio screen", 16, 56, 156, 7)
+  print("name: "..name, 14, 56, 184, 7)
+  print("b toggles dark / light", 12, 56, 210, 7)
 
   rectfill(254, 142, 440, 236, 6)
   draw_box_outline(254, 142, 186, 94, 7)
-  print("pointer", 270, 156, 16, 7)
+  print("pointer", 16, 270, 156, 7)
   line(304, 194, 388, 194, 8)
   line(346, 152, 346, 236, 8)
   pset(mx, my, 10)
-  print("mx "..mx.."  my "..my, 270, 214, 12, 7)
+  print("mx "..mx.."  my "..my, 12, 270, 214, 7)
 end
 
 function draw_preview_screen(mx, my)
   rectfill(24, 24, 456, 236, 1)
   draw_box_outline(24, 24, 432, 212, 7)
-  print("preview screen", 44, 40, 22, 7)
-  print(name.." is testing the scene.", 44, 72, 14, 7)
-  print("click to explode particles", 44, 96, 14, 7)
-  print("press x for a message", 44, 116, 14, 7)
-  print("press y / tab to return", 44, 136, 14, 7)
+  print("preview screen", 22, 44, 40, 7)
+  print(name.." is testing the scene.", 14, 44, 72, 7)
+  print("click to explode particles", 14, 44, 96, 7)
+  print("press x for a message", 14, 44, 116, 7)
+  print("press y / tab to return", 14, 44, 136, 7)
   rectfill(284, 56, 424, 196, 14)
   draw_box_outline(284, 56, 140, 140, 7)
   line(312, 166, mx, my, 10)
   pset(mx, my, 8)
-  print("sample "..pget(mx, my), 294, 174, 12, 7)
+  print("sample "..pget(mx, my), 12, 294, 174, 7)
 end
 
 function _update()
@@ -1653,8 +1656,8 @@ function _draw()
   end
 
   draw_particles()
-  print("screen: "..screen, 16, 246, 12, 7)
-  print("name: "..name, 172, 246, 12, 7)
+  print("screen: "..screen, 12, 16, 246, 7)
+  print("name: "..name, 12, 172, 246, 7)
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -2130,9 +2133,9 @@ function draw_hud()
   camera()
   color(255, 255, 255)
   print("coins "..score, 12, 12, 12, color(255, 255, 255))
-  print("time "..flr(time / 60), 112, 12, 12, color(255, 255, 255))
-  print("sprint "..(sprint_toggle and "toggle on" or "normal"), 208, 12, 12, color(255, 255, 255))
-  print("reach the banner", 340, 12, 12, color(255, 255, 255))
+  print("time "..flr(time / 60), 12, 112, 12, color(255, 255, 255))
+  print("sprint "..(sprint_toggle and "toggle on" or "normal"), 12, 208, 12, color(255, 255, 255))
+  print("reach the banner", 12, 340, 12, color(255, 255, 255))
 end
 
 function draw_pause_overlay()
@@ -2144,14 +2147,14 @@ function draw_pause_overlay()
   line(78, 230, 400, 230, 7)
   line(78, 42, 78, 230, 7)
   line(400, 42, 400, 230, 7)
-  print("paused", 192, 54, 20, color(255, 247, 232))
-  print("controls", 190, 84, 14, color(255, 247, 232))
-  print("left stick / d-pad : move", 106, 108, 12, color(255, 247, 232))
-  print("a / up / space : jump", 106, 126, 12, color(255, 247, 232))
-  print("b or x : hold sprint", 106, 144, 12, color(255, 247, 232))
-  print("select : toggle sprint", 106, 162, 12, color(255, 247, 232))
-  print("start : pause/resume", 106, 180, 12, color(255, 247, 232))
-  print("press start to continue", 126, 206, 12, color(255, 247, 232))
+  print("paused", 20, 192, 54, color(255, 247, 232))
+  print("controls", 14, 190, 84, color(255, 247, 232))
+  print("left stick / d-pad : move", 12, 106, 108, color(255, 247, 232))
+  print("a / up / space : jump", 12, 106, 126, color(255, 247, 232))
+  print("b or x : hold sprint", 12, 106, 144, color(255, 247, 232))
+  print("select : toggle sprint", 12, 106, 162, color(255, 247, 232))
+  print("start : pause/resume", 12, 106, 180, color(255, 247, 232))
+  print("press start to continue", 12, 126, 206, color(255, 247, 232))
 end
 
 function draw_particles()
@@ -2171,10 +2174,10 @@ function draw_menu()
   line(56, 40, 56, 219, 7)
   line(423, 40, 423, 219, 7)
   color(255, 247, 232)
-  print("mushroom run", 128, 58, 28, color(255, 247, 232))
-  print("a tiny platformer demo for trycode", 98, 98, 14, color(255, 247, 232))
-  print("run, jump, collect coins, and reach the banner", 74, 124, 14, color(255, 247, 232))
-  print("press a or enter to start", 130, 168, 16, color(255, 247, 232))
+  print("mushroom run", 28, 128, 58, color(255, 247, 232))
+  print("a tiny platformer demo for trycode", 14, 98, 98, color(255, 247, 232))
+  print("run, jump, collect coins, and reach the banner", 14, 74, 124, color(255, 247, 232))
+  print("press a or enter to start", 16, 130, 168, color(255, 247, 232))
   spr("0a", 92, 152)
   animate(4, 344, 154, 8)
 end
@@ -2185,9 +2188,9 @@ function draw_win()
   rectfill(0, 0, 479, 269, 1)
   rectfill(64, 54, 415, 204, 14)
   color(255, 247, 232)
-  print("course clear", 138, 74, 28, color(255, 247, 232))
-  print("coins collected "..best_score, 142, 118, 16, color(255, 247, 232))
-  print("press a to play again", 144, 154, 16, color(255, 247, 232))
+  print("course clear", 28, 138, 74, color(255, 247, 232))
+  print("coins collected "..best_score, 16, 142, 118, color(255, 247, 232))
+  print("press a to play again", 16, 144, 154, color(255, 247, 232))
   draw_particles()
 end
 
@@ -3773,8 +3776,8 @@ function draw_hud()
   camera()
   zoom(1)
   rect(10,10,184,28,7)
-  print(g.phase=="extract_ready" and "EXTRACTION READY" or "INFILTRATING",18,16,11)
-  print("HP "..flr(g.player.hp).." STM "..flr(g.player.stamina),214,16,12)
+  print(g.phase=="extract_ready" and "EXTRACTION READY" or "INFILTRATING",11,18,16)
+  print("HP "..flr(g.player.hp).." STM "..flr(g.player.stamina),12,214,16)
 end
 
 function draw_field()
@@ -3823,34 +3826,34 @@ function draw_field()
   draw_hud()
   local y=32
   for msg in all(g.msgs) do
-    if msg.ttl and msg.ttl > 0 then print(msg.text,14,y,12); y = y + 12 end
+    if msg.ttl and msg.ttl > 0 then print(msg.text,12,14,y); y = y + 12 end
   end
   if g.field_menu_open then
     camera()
     zoom(1)
     rectfill(138,78,340,196,1)
     rect(138,78,340,196,7)
-    print("FIELD SUPPORT",182,90,11)
+    print("FIELD SUPPORT",11,182,90)
     local opts={"Recon Pulse","Extraction Flare","Supply Drop","Bomb Run","Close"}
     local oy=108
     for i=1,5 do
       if g.field_menu_cursor==i then rect(150,oy-2,332,oy+12,10) end
-      print(opts[i],160,oy,12)
+      print(opts[i],12,160,oy)
       oy=oy+17
     end
-    print("Use left joystick or d-pad to select",148,186,10)
+    print("Use left joystick or d-pad to select",10,148,186)
   end
   if g.extraction and g.extraction.state=="flare" then
     camera(); zoom(1)
     rectfill(126,16,360,48,1); rect(126,16,360,48,10)
-    print("FLARE ACTIVE - Heli ETA "..flr((g.extraction.timer or 0)/60).."s",136,30,11)
+    print("FLARE ACTIVE - Heli ETA "..flr((g.extraction.timer or 0)/60).."s",11,136,30)
   elseif g.extraction and g.extraction.state=="travel" then
     camera(); zoom(1)
     rectfill(98,18,382,84,1); rect(98,18,382,84,10)
-    print("RETURNING TO BASE",172,30,11)
-    print("ETA "..flr((g.extraction.show_timer or 0)/60).."s",198,44,12)
+    print("RETURNING TO BASE",11,172,30)
+    print("ETA "..flr((g.extraction.show_timer or 0)/60).."s",12,198,44)
     local rr = g.pending_rewards or {}
-    print("Rewards: $"..flr((rr.funds or 0)+(rr.salvage or 0)).." Intel "..flr(rr.intel or 0).." Recruits "..flr(rr.recruits or 0),110,60,12)
+    print("Rewards: $"..flr((rr.funds or 0)+(rr.salvage or 0)).." Intel "..flr(rr.intel or 0).." Recruits "..flr(rr.recruits or 0),12,110,60)
   end
 end
 
@@ -3859,26 +3862,26 @@ function draw_base()
   rectfill(22,20,458,250,2)
   rectfill(24,22,456,98,1)
   rect(22,20,458,250,7)
-  print("BASE COMMAND",36,34,11,color(246,240,220))
-  print("UP/DOWN navigate  A select  X dispatch",36,50,12,color(246,240,220))
-  print("Pages: 1 Personnel  2 Loadout  3 Region/R&D",36,62,10,color(246,240,220))
+  print("BASE COMMAND",11,36,34,color(246,240,220))
+  print("UP/DOWN navigate  A select  X dispatch",12,36,50,color(246,240,220))
+  print("Pages: 1 Personnel  2 Loadout  3 Region/R&D",10,36,62,color(246,240,220))
   if g.base_tab==1 then
     local opts={"Hire brig candidate","Fire last staff","Queue research","Change field region","Deploy to field"}
-    print("Personnel + command",36,78,10,color(246,240,220))
+    print("Personnel + command",10,36,78,color(246,240,220))
     local oy=92
     for i=1,#opts do
       if (g.base_cursor or 1)==i then rect(34,oy-2,242,oy+10,10) end
-      print(opts[i],40,oy,12,color(246,240,220))
+      print(opts[i],12,40,oy,color(246,240,220))
       oy = oy + 14
     end
-    print("Departments",252,78,10,color(246,240,220))
+    print("Departments",10,252,78,color(246,240,220))
     local y=92
     for k,v in pairs(g.departments) do
-      print(k.." lv"..v.lvl.." - "..v.bonus,256,y,12,color(246,240,220))
+      print(k.." lv"..v.lvl.." - "..v.bonus,12,256,y,color(246,240,220))
       y = y + 12
     end
   elseif g.base_tab==2 then
-    print("Loadout slots (A rotates / LB RB quick primary)",36,78,10,color(246,240,220))
+    print("Loadout slots (A rotates / LB RB quick primary)",10,36,78,color(246,240,220))
     local rows={
       "Primary: "..g.player_loadout.primary,
       "Secondary: "..g.player_loadout.secondary,
@@ -3889,33 +3892,33 @@ function draw_base()
     local ly=96
     for i=1,#rows do
       if (g.base_cursor or 1)==i then rect(34,ly-2,242,ly+10,10) end
-      print(rows[i],40,ly,12,color(246,240,220))
+      print(rows[i],12,40,ly,color(246,240,220))
       ly=ly+14
     end
-    print("Rare blueprints:",250,96,10,color(246,240,220))
+    print("Rare blueprints:",10,250,96,color(246,240,220))
     local by=110
-    for i=1,math.min(7,#g.blueprints) do print("- "..g.blueprints[i],254,by,12,color(246,240,220)); by = by + 12 end
+    for i=1,math.min(7,#g.blueprints) do print("- "..g.blueprints[i],12,254,by,color(246,240,220)); by = by + 12 end
   else
     local rows={"Cycle mission region","Queue research","Deploy to field","Manufacture suit","Manufacture throwable"}
-    print("Region map + R&D + manufacture",36,78,10,color(246,240,220))
+    print("Region map + R&D + manufacture",10,36,78,color(246,240,220))
     local sy=92
     for i=1,#rows do
       if (g.base_cursor or 1)==i then rect(34,sy-2,242,sy+10,10) end
-      print(rows[i],40,sy,12,color(246,240,220))
+      print(rows[i],12,40,sy,color(246,240,220))
       sy = sy + 14
     end
     local ry=92
     for id,reg in pairs(g.regions) do
       local marker=(id==g.current_region and "> " or "  ")
-      print(marker..id.." owner:"..reg.owner,252,ry,12,color(246,240,220))
-      print("heat "..flr(reg.heat).." inf "..flr(reg.influence),410,ry,10,color(246,240,220))
+      print(marker..id.." owner:"..reg.owner,12,252,ry,color(246,240,220))
+      print("heat "..flr(reg.heat).." inf "..flr(reg.influence),10,410,ry,color(246,240,220))
       ry = ry + 14
     end
-    print("Roster trauma",252,178,10,color(246,240,220))
+    print("Roster trauma",10,252,178,color(246,240,220))
     local ty=192
     for i=1,math.min(4,#g.roster) do
       local r=g.roster[i]
-      print(r.name.." "..r.injury.." ("..(r.trauma_days or 0).."d) "..r.deep_trait,254,ty,12,color(246,240,220))
+      print(r.name.." "..r.injury.." ("..(r.trauma_days or 0).."d) "..r.deep_trait,12,254,ty,color(246,240,220))
       ty = ty + 12
     end
   end
@@ -3927,13 +3930,13 @@ function draw_menu()
   rectfill(36,28,442,96,9)
   rect(34,26,444,240,7)
   rect(128,108,302,126,10)
-  print("OPERATION CORPORATION (REMAKE)",66,46,7)
-  print("Stylized stealth ops + base growth + dispatch",72,84,6)
-  print("A: start campaign",142,112,14)
-  print("B: nonlethal tranq, A near stunned target to capture",74,138,14)
-  print("Y crouch / X sprint / Select field menu",100,160,14)
-  print("Pause menu includes controls + support tools",90,184,12)
-  print("Secure base resources and sell at extraction",88,204,12)
+  print("OPERATION CORPORATION (REMAKE)",7,66,46)
+  print("Stylized stealth ops + base growth + dispatch",6,72,84)
+  print("A: start campaign",14,142,112)
+  print("B: nonlethal tranq, A near stunned target to capture",14,74,138)
+  print("Y crouch / X sprint / Select field menu",14,100,160)
+  print("Pause menu includes controls + support tools",12,90,184)
+  print("Secure base resources and sell at extraction",12,88,204)
 end
 
 function draw_dispatch()
@@ -3941,30 +3944,30 @@ function draw_dispatch()
   rectfill(26,24,454,246,2)
   rectfill(28,26,452,64,1)
   rect(26,24,454,246,7)
-  print("DISPATCH BOARD",36,36,11,color(246,240,220))
-  print("UP/DOWN select row, LEFT/RIGHT change, X launch",36,52,12,color(246,240,220))
+  print("DISPATCH BOARD",11,36,36,color(246,240,220))
+  print("UP/DOWN select row, LEFT/RIGHT change, X launch",12,36,52,color(246,240,220))
   local y=76
   local mission = dispatch_templates[g.dispatch.mission_cursor or 1] or dispatch_templates[1]
   local staff = g.roster[g.dispatch.selected or 1]
   if (g.dispatch_cursor or 1)==1 then rect(34,y-2,310,y+10,10) end
-  print("Mission: "..mission.name.." ("..mission.req..")",40,y,12,color(246,240,220)); y=y+14
+  print("Mission: "..mission.name.." ("..mission.req..")",12,40,y,color(246,240,220)); y=y+14
   if (g.dispatch_cursor or 1)==2 then rect(34,y-2,310,y+10,10) end
-  print("Assigned lead: "..(staff and staff.name or "none"),40,y,12,color(246,240,220)); y=y+16
+  print("Assigned lead: "..(staff and staff.name or "none"),12,40,y,color(246,240,220)); y=y+16
   if (g.dispatch_cursor or 1)==3 then rect(34,y-2,220,y+10,10) end
-  print("Launch mission",40,y,12,color(246,240,220)); y=y+14
+  print("Launch mission",12,40,y,color(246,240,220)); y=y+14
   if (g.dispatch_cursor or 1)==4 then rect(34,y-2,220,y+10,10) end
-  print("Back to base",40,y,12,color(246,240,220)); y=y+14
+  print("Back to base",12,40,y,color(246,240,220)); y=y+14
   y = y + 4
-  print("Active teams:",36,y,10,color(246,240,220)); y=y+14
-  if #g.dispatch.active<=0 then print("none",40,y,12,color(246,240,220)); y=y+12 end
+  print("Active teams:",10,36,y,color(246,240,220)); y=y+14
+  if #g.dispatch.active<=0 then print("none",12,40,y,color(246,240,220)); y=y+12 end
   for d in all(g.dispatch.active) do
-    print(d.name.." / "..(d.team or "team").." t:"..flr(d.t/60).."s risk:"..flr(d.risk*100).."%",40,y,12,color(246,240,220))
+    print(d.name.." / "..(d.team or "team").." t:"..flr(d.t/60).."s risk:"..flr(d.risk*100).."%",12,40,y,color(246,240,220))
     y = y + 12
   end
   y = y + 8
-  print("Recent outcomes:",36,y,10,color(246,240,220)); y = y + 14
+  print("Recent outcomes:",10,36,y,color(246,240,220)); y = y + 14
   for i=#g.dispatch.log,1,-1 do
-    print(g.dispatch.log[i],40,y,12,color(246,240,220))
+    print(g.dispatch.log[i],12,40,y,color(246,240,220))
     y = y + 12
   end
 end
@@ -3972,29 +3975,29 @@ end
 function draw_pause_overlay()
   rectfill(46,24,434,246,1)
   rect(46,24,434,246,7)
-  print("PAUSED",214,38,8)
-  print("START resumes",186,54,12)
+  print("PAUSED",8,214,38)
+  print("START resumes",12,186,54)
   if (g.pause_cursor or 1)==1 then rect(62,70,188,86,10) else rect(198,70,332,86,10) end
-  print("Overview",74,74,12)
-  print("Controls",214,74,12)
+  print("Overview",12,74,74)
+  print("Controls",12,214,74)
   if g.pause_info_page == 2 then
-    print("FIELD CONTROLS",66,98,10)
-    print("Left stick: move",66,114,12)
-    print("Right stick: aim + lock",66,128,12)
-    print("A capture / secure depots",66,142,12)
-    print("B fire active weapon",66,156,12)
-    print("Y crouch  X sprint",66,170,12)
-    print("SELECT opens support tools menu",66,184,12)
-    print("Flare / supply / bomb run in field menu",66,198,10)
+    print("FIELD CONTROLS",10,66,98)
+    print("Left stick: move",12,66,114)
+    print("Right stick: aim + lock",12,66,128)
+    print("A capture / secure depots",12,66,142)
+    print("B fire active weapon",12,66,156)
+    print("Y crouch  X sprint",12,66,170)
+    print("SELECT opens support tools menu",12,66,184)
+    print("Flare / supply / bomb run in field menu",10,66,198)
   else
     local region = g.regions[g.current_region] or {owner="n/a",heat=0,influence=0}
-    print("MISSION OVERVIEW",66,98,10)
-    print("Funds "..flr(g.resources.funds).."  Fuel "..flr(g.resources.fuel).."  Intel "..flr(g.resources.intel),66,114,12)
-    print("Score "..flr(g.mission_score).."  Alerts "..flr(g.alerts).."  Fultons "..g.fultons,66,128,12)
-    print("Pending sell value "..flr(g.pending_rewards.salvage or 0),66,142,12)
-    print("Region "..g.current_region.." owner "..region.owner,66,156,12)
-    print("Heat "..flr(region.heat).."  Influence "..flr(region.influence),66,170,12)
-    print("Phase: "..g.phase,66,184,12)
+    print("MISSION OVERVIEW",10,66,98)
+    print("Funds "..flr(g.resources.funds).."  Fuel "..flr(g.resources.fuel).."  Intel "..flr(g.resources.intel),12,66,114)
+    print("Score "..flr(g.mission_score).."  Alerts "..flr(g.alerts).."  Fultons "..g.fultons,12,66,128)
+    print("Pending sell value "..flr(g.pending_rewards.salvage or 0),12,66,142)
+    print("Region "..g.current_region.." owner "..region.owner,12,66,156)
+    print("Heat "..flr(region.heat).."  Influence "..flr(region.influence),12,66,170)
+    print("Phase: "..g.phase,12,66,184)
   end
 end
 
