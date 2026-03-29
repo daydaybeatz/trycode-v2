@@ -1747,9 +1747,25 @@ function loadPosterShowcaseExampleProject(){
   p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`state = "menu"
 player = {}
 particles = {}
+pickups = {}
+pickup_spawns = {
+  {x=9*16, y=10*16},
+  {x=18*16, y=9*16},
+  {x=24*16, y=11*16},
+  {x=32*16, y=8*16},
+  {x=39*16, y=10*16}
+}
+flower_spawns = {
+  {x=5*16, y=13*16},
+  {x=12*16, y=13*16},
+  {x=20*16, y=13*16},
+  {x=27*16, y=13*16},
+  {x=34*16, y=13*16}
+}
+banner = {x=43*16, y=13*16}
 spawn_x = 32
 spawn_y = 176
-goal_x = 700
+goal_x = banner.x + 12
 score = 0
 best_score = 0
 time = 0
@@ -1768,13 +1784,10 @@ function reset_world()
 end
 
 function build_pickups()
-  for x=0,project.map_w-1 do
-    for y=0,project.map_h-1 do
-      if mget(x, y, 0, 0) == 6 then
-        mset(x, y, 4, 0, 0)
-      end
-    end
-  end
+  pickups = {}
+  foreach(pickup_spawns, function(p)
+    add(pickups, {x=p.x, y=p.y, taken=false})
+  end)
 end
 
 function start_game()
@@ -1833,19 +1846,17 @@ function move_y()
 end
 
 function collect_pickups()
-  local tx0 = flr((player.x + 4) / 16)
-  local tx1 = flr((player.x + 12) / 16)
-  local ty0 = flr((player.y + 4) / 16)
-  local ty1 = flr((player.y + 12) / 16)
-  for tx=tx0,tx1 do
-    for ty=ty0,ty1 do
-      if mget(tx, ty, 0, 0) == 4 then
-        mset(tx, ty, 6, 0, 0)
+  foreach(pickups, function(p)
+    if not p.taken then
+      local overlap = player.x + 14 >= p.x and player.x <= p.x + 14
+        and player.y + 14 >= p.y and player.y <= p.y + 14
+      if overlap then
+        p.taken = true
         score += 1
-        add_burst(tx * 16 + 8, ty * 16 + 8, 10)
+        add_burst(p.x + 8, p.y + 8, 10)
       end
     end
-  end
+  end)
 end
 
 function add_burst(x, y, color_id)
@@ -1989,6 +2000,17 @@ function draw_play()
   camera(player.x - 180, 0)
   draw_background()
   map(0)
+  foreach(flower_spawns, function(p)
+    spr("3a", p.x, p.y)
+  end)
+  foreach(pickups, function(p)
+    if not p.taken then
+      animate(4, p.x, p.y, 8)
+    else
+      spr("6a", p.x, p.y)
+    end
+  end)
+  animate(5, banner.x, banner.y, 2)
   spr(player_frame(), player.x, player.y)
   draw_particles()
   draw_hud()
@@ -2051,9 +2073,9 @@ end`}];
   [23,24,25].forEach(x=>{ scenery.data[12][x]=2; solids.data[12][x]=2; });
   [28,29,30,31].forEach(x=>{ scenery.data[9][x]=2; solids.data[9][x]=2; });
   [36,37,38].forEach(x=>{ scenery.data[11][x]=2; solids.data[11][x]=2; });
-  [[9,10],[18,9],[24,11],[32,8],[39,10]].forEach(([x,y])=>{ scenery.data[y][x]=4; });
-  [[5,13],[12,13],[20,13],[27,13],[34,13]].forEach(([x,y])=>{ scenery.data[y][x]=3; });
-  scenery.data[13][43]=5;
+  [[9,10],[18,9],[24,11],[32,8],[39,10]].forEach(([x,y])=>{ scenery.data[y][x]=1; });
+  [[5,13],[12,13],[20,13],[27,13],[34,13]].forEach(([x,y])=>{ scenery.data[y][x]=1; });
+  scenery.data[13][43]=1;
   finalizeExampleProjectLoad();
 }
 
