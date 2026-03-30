@@ -169,8 +169,10 @@
     .runtimeErrorBox{position:absolute;left:16px;top:16px;z-index:35;display:none;max-width:min(420px,calc(100% - 32px));padding:10px 12px;border:3px solid #5f0f10;border-radius:16px;background:rgba(97,16,18,.94);box-shadow:0 6px 0 rgba(42,6,8,.45);color:#fff7ee}
     .runtimeErrorBox.show{display:block}
     .runtimeErrorHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+    .runtimeErrorActions{display:flex;align-items:center;gap:6px}
     .runtimeErrorTitle{font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
     .runtimeErrorCopyBtn{padding:4px 10px;font-size:11px;min-width:auto;box-shadow:0 3px 0 #6d3117}
+    .runtimeErrorGotoBtn{padding:4px 10px;font-size:11px;min-width:auto;box-shadow:0 3px 0 #6d3117}
     .runtimeErrorText{margin:0;font:12px/1.35 Consolas,"SFMono-Regular",monospace;white-space:pre-wrap;word-break:break-word}
     .runtimeDialogLayer{position:absolute;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;padding:16px;pointer-events:none}
     .runtimeDialogLayer.hidden{display:none}
@@ -410,7 +412,7 @@
         <div class="screenStage"><canvas id="screen" width="480" height="270"></canvas></div>
         <div class="runtimeBar"><button class="uiBtn" id="runBtn">Run</button><button class="uiBtn" id="resetBtn">Reset</button></div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
-          <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button></div>
+          <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><div class="runtimeErrorActions"><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button><button class="uiBtn runtimeErrorGotoBtn" id="gotoRuntimeErrorBtn">Go to</button></div></div>
           <pre class="runtimeErrorText" id="runtimeErrorText"></pre>
         </div>
         <div class="toast" id="toast"></div>
@@ -708,6 +710,40 @@ function currentMapHasAnimatedTiles(){ const mapObj=state.appProject&&state.appP
 function runEditorAnimationFrame(){ if(state.activeView==='sprites' && state.spriteAnimPlaying){ drawSpriteAnimPreview(); } if(state.activeView==='map' && state.mapAnimPlaying && currentMapHasAnimatedTiles()){ drawMapEditor(); } requestAnimationFrame(runEditorAnimationFrame); }
 function renderRuntimeError(){ const box=$("runtimeErrorBox"), text=$("runtimeErrorText"); if(!box||!text) return; const hasError=!!state.lastRunError; text.textContent=state.lastRunError||""; box.classList.toggle("show", hasError); }
 async function copyLastRunError(){ if(!state.lastRunError){ toast('No run error has been captured yet.'); return; } try{ await copyTextToClipboard(state.lastRunError); toast('Copied last run error to clipboard.'); }catch(err){ toast(`<b>Copy failed:</b> ${escapeHtml(err&&err.message?err.message:err)}`); } }
+function getLineNumberFromLastRunError(){
+  const message=String(state.lastRunError||"");
+  const match=message.match(/:(\d+):/);
+  if(!match) return null;
+  const line=parseInt(match[1],10);
+  return Number.isFinite(line)&&line>0?line:null;
+}
+function goToCodeLine(lineNumber){
+  const line=Math.max(1,lineNumber|0);
+  saveCurrentCodeViewState();
+  setView("code");
+  const editor=$("codeEditor"), shell=$("codeScrollShell");
+  if(!editor||!shell) return;
+  const source=String(editor.value||"");
+  const lines=source.split('\n');
+  const targetLine=Math.min(line, Math.max(1, lines.length));
+  let start=0;
+  for(let i=0;i<targetLine-1;i++) start += lines[i].length + 1;
+  const end=start+Math.max(0, lines[targetLine-1]?.length||0);
+  editor.focus({preventScroll:true});
+  editor.setSelectionRange(start,end);
+  const metrics=getComputedStyle(editor);
+  const lineHeight=parseFloat(metrics.lineHeight)||18;
+  const paddingTop=parseFloat(metrics.paddingTop)||0;
+  shell.scrollTop=Math.max(0, Math.round(((targetLine-1)*lineHeight)+paddingTop-lineHeight*2));
+  saveCurrentCodeViewState();
+}
+function gotoLastRunErrorLine(){
+  if(!state.lastRunError){ toast('No run error has been captured yet.'); return; }
+  const line=getLineNumberFromLastRunError();
+  if(!line){ toast('Could not find a line number in the latest run error.'); return; }
+  goToCodeLine(line);
+  toast(`Jumped to line ${line}.`);
+}
 async function copyTextToClipboard(text){ const value=String(text||""); if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(value); return true; } const area=document.createElement('textarea'); area.value=value; area.setAttribute('readonly','readonly'); area.style.position='fixed'; area.style.opacity='0'; area.style.pointerEvents='none'; document.body.appendChild(area); area.select(); const ok=document.execCommand('copy'); area.remove(); return ok; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function isImageLike(s){ return /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(String(s||"")); }
@@ -2711,18 +2747,18 @@ function clear_lines()
       if board[y][x] == 0 then full = false break end
     end
     if full then
-      removed += 1
+      removed = removed + 1
       for pull=y,2,-1 do
         for x=1,board_w do board[pull][x] = board[pull-1][x] end
       end
       for x=1,board_w do board[1][x] = 0 end
     else
-      y -= 1
+      y = y - 1
     end
   end
   if removed > 0 then
-    lines += removed
-    score += removed * removed * 100
+    lines = lines + removed
+    score = score + removed * removed * 100
     level = 1 + flr(lines / 10)
     fall_delay = math.max(6, 28 - (level - 1) * 2)
     last_clear_flash = 8
@@ -2755,8 +2791,8 @@ end
 
 function move_piece(dx, dy)
   if can_place(active, active.rot, active.x + dx, active.y + dy) then
-    active.x += dx
-    active.y += dy
+    active.x = active.x + dx
+    active.y = active.y + dy
     return true
   end
   return false
@@ -2772,18 +2808,18 @@ function rotate_piece()
   end
   if can_place(active, new_rot, active.x - 1, active.y) then
     active.rot = new_rot
-    active.x -= 1
+    active.x = active.x - 1
     return
   end
   if can_place(active, new_rot, active.x + 1, active.y) then
     active.rot = new_rot
-    active.x += 1
+    active.x = active.x + 1
   end
 end
 
 function hard_drop()
   while move_piece(0, 1) do
-    score += 2
+    score = score + 2
   end
   lock_piece()
   clear_lines()
@@ -2794,12 +2830,12 @@ function update_play()
   if btnp("left") then move_piece(-1,0) end
   if btnp("right") then move_piece(1,0) end
   if btnp("down") then
-    if move_piece(0,1) then score += 1 end
+    if move_piece(0,1) then score = score + 1 end
   end
   if btnp("a") or btnp("up") then rotate_piece() end
   if btnp("x") then hard_drop() end
 
-  fall_timer += 1
+  fall_timer = fall_timer + 1
   if fall_timer >= fall_delay then
     fall_timer = 0
     if not move_piece(0,1) then
@@ -2809,7 +2845,7 @@ function update_play()
     end
   end
 
-  if last_clear_flash > 0 then last_clear_flash -= 1 end
+  if last_clear_flash > 0 then last_clear_flash = last_clear_flash - 1 end
 end
 
 function draw_board()
@@ -3754,6 +3790,7 @@ function wireUI(){
   bindClick("addCodeTabBtn",()=>{ saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); const name=prompt("New file name:",`file${state.appProject.codeFiles.length+1}.lua`); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some(f=>f.name===trimmed)){ alert("A file with that name already exists."); return; } state.appProject.codeFiles.push({name:trimmed,content:"",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}); state.currentCodeFile=state.appProject.codeFiles.length-1; renderCodeTabs(); loadCurrentCodeFileToEditor(); });
   bindClick("renameCodeTabBtn",()=>{ const f=getCurrentCodeFile(); const name=prompt("Rename file:",f.name); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some((x,i)=>i!==state.currentCodeFile&&x.name===trimmed)){ alert("A file with that name already exists."); return; } f.name=trimmed; renderCodeTabs(); });
   bindClick("copyRuntimeErrorBtn",copyLastRunError);
+  bindClick("gotoRuntimeErrorBtn",gotoLastRunErrorLine);
   bindClick("spriteListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.spriteFolders?.length||0)/SPRITE_LIST_PAGE_SIZE)); state.spriteListPage=(state.spriteListPage-1+pages)%pages; refreshSpriteList(); });
   bindClick("spriteListNextBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.spriteFolders?.length||0)/SPRITE_LIST_PAGE_SIZE)); state.spriteListPage=(state.spriteListPage+1)%pages; refreshSpriteList(); });
   bindClick("spriteFramePrevBtn",()=>{ const folder=currentSpriteFolder(); const pages=Math.max(1,Math.ceil(folder.frames.length/SPRITE_FRAMES_PER_PAGE)); state.spriteFramePage=(state.spriteFramePage-1+pages)%pages; refreshSpriteFrames(); });
