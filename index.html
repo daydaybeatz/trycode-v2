@@ -745,6 +745,44 @@ function ensureProjectData(){
 function makeDoc(signature, summary, args, examples, howTo){
   return { signature, summary, args, examples, howTo };
 }
+const DOC_CATEGORY_ORDER = [
+  "main callbacks",
+  "drawing",
+  "controls",
+  "math",
+  "tables",
+  "map",
+  "helpers/collision",
+  "ui boxes",
+  "data/save/load",
+  "system/fonts/defaults/include",
+  "other"
+];
+
+function getDocCategory(signature){
+  const sig=String(signature||"").toLowerCase();
+  if(sig==="_init()"||sig==="_update()"||sig==="_draw()") return "main callbacks";
+  if(sig.startsWith("btn(")||sig.startsWith("btnp(")||sig.startsWith("mouse(")||sig.startsWith("joyx(")||sig.startsWith("joyy(")) return "controls";
+  if(sig.startsWith("camera(")||sig.startsWith("map(")||sig.startsWith("pmap(")||sig.startsWith("mget(")||sig.startsWith("mset(")||sig.startsWith("fget(")||sig.startsWith("solid(")||sig.startsWith("wall(")) return "map";
+  if(sig.startsWith("distance(")||sig.startsWith("abs(")||sig.startsWith("flr(")||sig.startsWith("sin(")||sig.startsWith("rnd(")) return "math";
+  if(sig.startsWith("add(")||sig.startsWith("del(")||sig.startsWith("deli(")||sig.startsWith("all(")||sig.startsWith("foreach(")||sig.startsWith("pairs(")||sig.startsWith("get_value(")||sig.startsWith("set_value(")||sig.startsWith("mod_value(")) return "tables";
+  if(sig.startsWith("col(")||sig.startsWith("col2(")) return "helpers/collision";
+  if(sig.startsWith("message_box(")||sig.startsWith("confirm_box(")||sig.startsWith("entry_box(")||sig.startsWith("default_box(")) return "ui boxes";
+  if(sig.startsWith("save_data(")||sig.startsWith("load_data(")) return "data/save/load";
+  if(sig.startsWith("sfx(")||sig.startsWith("music(")||sig.startsWith("default_font(")||sig.startsWith("fonts")||sig.startsWith("include ")||sig.startsWith("x +=")) return "system/fonts/defaults/include";
+  if(sig.startsWith("pset(")||sig.startsWith("pget(")||sig.startsWith("line(")||sig.startsWith("rect(")||sig.startsWith("circ(")||sig.startsWith("circfill(")||sig.startsWith("spr(")||sig.startsWith("r_spr(")||sig.startsWith("animate(")||sig.startsWith("print(")||sig.startsWith("rectfill(")||sig.startsWith("color(")||sig.startsWith("cls(")||sig.startsWith("clip(")||sig.startsWith("zoom(")) return "drawing";
+  return "other";
+}
+
+function compareDocsByCategory(a,b){
+  const categoryA=getDocCategory(a.signature);
+  const categoryB=getDocCategory(b.signature);
+  const rankA=DOC_CATEGORY_ORDER.indexOf(categoryA);
+  const rankB=DOC_CATEGORY_ORDER.indexOf(categoryB);
+  if(rankA!==rankB) return rankA-rankB;
+  return String(a.signature||"").localeCompare(String(b.signature||""));
+}
+
 const CODE_API_DOCS = [
   makeDoc("_init()", "Runs once when the program starts or resets.", [], ["function _init()\n  x = 32\n  y = 24\nend"], "Create starting values, tables, or level state here."),
   makeDoc("_update()", "Runs once per frame for movement and gameplay logic.", [], ["function _update()\n  if btn(0) then y -= 1 end\nend"], "Read input, update positions, and trigger sounds here."),
@@ -806,7 +844,7 @@ const CODE_API_DOCS = [
   makeDoc("load_data(key)", "Loads a previously stored string value, or nil when missing.", [["key", "Save slot key."]], ["local blob = load_data(\"save_slot\")"], "Use this in _init() to restore campaign progress and settings."),
   makeDoc("include \"file.lua\"", "Inserts another code tab into main.lua before the program runs.", [["\"file.lua\"", "Exact code file name to include."]], ["include \"player.lua\"","include player.lua","#include \"enemy.lua\""], "Use quoted or unquoted file names; #include also works. Keep main.lua small by splitting reusable systems into separate files."),
   makeDoc("x += value / x -= value", "Shorthand for updating an existing variable.", [["value", "The amount to add or subtract."]], ["x += 1","y -= speed"], "The app expands this into standard Lua before running your code.")
-].sort((a,b)=>a.signature.localeCompare(b.signature));
+].sort(compareDocsByCategory);
 let docsPage = 0;
 function getCodeFileViewState(index){
   const key=String(index|0);
@@ -1544,43 +1582,47 @@ function draw_box_outline(x, y, w, h, c)
 end
 
 function draw_studio_screen(mx, my)
+  local text_color = dark_style and 7 or 15
+  local sub_color = dark_style and 6 or 11
   rectfill(28, 24, 452, 92, 13)
   draw_box_outline(28, 24, 424, 68, 7)
   rectfill(50, 46, 190, 76, 12)
   rectfill(260, 46, 430, 76, 14)
-  print("trycode studio", 20, 64, 38, 7)
-  print("tap / click for particles", 12, 64, 68, 7)
-  print("press a / enter to edit name", 12, 64, 86, 7)
-  print("press y / tab to switch screens", 12, 64, 102, 7)
+  print("trycode studio", 20, 64, 38, text_color)
+  print("tap / click for particles", 12, 64, 68, text_color)
+  print("press a / enter to edit name", 12, 64, 86, text_color)
+  print("press y / tab to switch screens", 12, 64, 102, text_color)
 
-  rectfill(40, 142, 212, 236, 7)
+  rectfill(40, 142, 212, 236, dark_style and 2 or 6)
   draw_box_outline(40, 142, 172, 94, 10)
-  print("studio screen", 16, 56, 156, 7)
-  print("name: "..name, 14, 56, 184, 7)
-  print("b toggles dark / light", 12, 56, 210, 7)
+  print("studio screen", 16, 56, 156, text_color)
+  print("name: "..name, 14, 56, 184, text_color)
+  print("b toggles dark / light", 12, 56, 210, sub_color)
 
-  rectfill(254, 142, 440, 236, 6)
+  rectfill(254, 142, 440, 236, dark_style and 2 or 7)
   draw_box_outline(254, 142, 186, 94, 7)
-  print("pointer", 16, 270, 156, 7)
+  print("pointer", 16, 270, 156, text_color)
   line(304, 194, 388, 194, 8)
   line(346, 152, 346, 236, 8)
   pset(mx, my, 10)
-  print("mx "..mx.."  my "..my, 12, 270, 214, 7)
+  print("mx "..mx.."  my "..my, 12, 270, 214, text_color)
 end
 
 function draw_preview_screen(mx, my)
+  local text_color = dark_style and 7 or 15
+  local sub_color = dark_style and 6 or 11
   rectfill(24, 24, 456, 236, 1)
   draw_box_outline(24, 24, 432, 212, 7)
-  print("preview screen", 22, 44, 40, 7)
-  print(name.." is testing the scene.", 14, 44, 72, 7)
-  print("click to explode particles", 14, 44, 96, 7)
-  print("press x for a message", 14, 44, 116, 7)
-  print("press y / tab to return", 14, 44, 136, 7)
+  print("preview screen", 22, 44, 40, text_color)
+  print(name.." is testing the scene.", 14, 44, 72, text_color)
+  print("click to explode particles", 14, 44, 96, text_color)
+  print("press x for a message", 14, 44, 116, text_color)
+  print("press y / tab to return", 14, 44, 136, sub_color)
   rectfill(284, 56, 424, 196, 14)
   draw_box_outline(284, 56, 140, 140, 7)
   line(312, 166, mx, my, 10)
   pset(mx, my, 8)
-  print("sample "..pget(mx, my), 12, 294, 174, 7)
+  print("sample "..pget(mx, my), 12, 294, 174, text_color)
 end
 
 function _update()
@@ -2292,1772 +2334,602 @@ end`}];
   finalizeExampleProjectLoad();
 }
 
-function loadOperationCorporationExampleProject(){
+
+function loadMenuScreenSwapExampleProject(){
   finishNewProject();
   const p=state.appProject;
   p.project.tile_w=16;
   p.project.tile_h=16;
-  p.project.map_w=80;
-  p.project.map_h=64;
-  p.settings.movementInput='left_joystick';
-  p.settings.touchOnly=true;
+  p.project.map_w=32;
+  p.project.map_h=18;
+  p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
+  p.tileDefs={0:makeBlankTileDef()};
   p.palette=[...DEFAULT_PALETTE];
-  p.palette[1]='#111726'; p.palette[2]='#1b2b3a'; p.palette[3]='#25414d'; p.palette[4]='#3b6a5b'; p.palette[5]='#7fa26f';
-  p.palette[6]='#d7cfa8'; p.palette[7]='#f6efd2'; p.palette[8]='#c84d47'; p.palette[9]='#8b2e40'; p.palette[10]='#f4ac61';
-  p.palette[11]='#75a7da'; p.palette[12]='#9fd7f0'; p.palette[13]='#5a6671'; p.palette[14]='#2b3038'; p.palette[15]='#090b0f';
-  const spriteFromArt=(rows,map)=>{ const sp=makeSprite(16,16); for(let y=0;y<16;y++){ const row=rows[y]||'................'; for(let x=0;x<16;x++){ const ch=row[x]||'.'; sp.pixels[y][x]=Object.prototype.hasOwnProperty.call(map,ch)?map[ch]:-1; } } return sp; };
-  const mkUnit=(primary,secondary,accent)=>spriteFromArt([
-    '......aa........','.....aaaa.......','....abbbba......','....abccba......','....abbbba......','...aaaddaad.....','...d644446d.....','..d64444446d....','..d444ff444d....','..d44f77f44d....','..e44f77f44e....','..ee4f77f4ee....','...e4ffff4e.....','...e4....4e.....','..66......66....','................'
-  ],{'.':-1,'a':primary,'b':secondary,'c':accent,'d':6,'4':14,'e':13,'f':15,'7':7,'6':5});
-  p.spriteFolders=[
-    {frames:[mkUnit(13,6,8),mkUnit(13,7,10)]},
-    {frames:[mkUnit(9,8,10),mkUnit(9,6,8)]},
-    {frames:[mkUnit(11,6,5)]},
-    {frames:[mkUnit(8,10,7)]},
-    {frames:[spriteFromArt(['2222222222222222','2333333333333332','2335555555555332','2335666666665332','2335667777665332','2335667777665332','2335666666665332','2335555555555332','2334444444444332','2334aaaaaaa44332','2334a444444a4332','2334a444444a4332','2334aaaaaaa44332','2334444444444332','2333333333333332','2222222222222222'],{'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'a':14})]},
-    {frames:[spriteFromArt(['1111111111111111','1bbbbbbbbbbbbbb1','1b444444444444b1','1b455555555554b1','1b456666666654b1','1b456777776654b1','1b456777776654b1','1b456666666654b1','1b455555555554b1','1b444444444444b1','1b455555555554b1','1b456666666654b1','1b456777776654b1','1b444444444444b1','1bbbbbbbbbbbbbb1','1111111111111111'],{'1':14,'b':13,'4':4,'5':5,'6':6,'7':11})]},
-    {frames:[spriteFromArt(['..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.','.3..3..3..3..3..','3..3..3..3..3..3','..3..3..3..3..3.'],{'.':14,'3':13})]},
-    {frames:[spriteFromArt(['................','.....7777.......','....777777......','...77777777.....','..7777aa7777....','..777aaaa777....','..77aaaaaa77....','...77aaaa77.....','....777777......','.....7777.......','......77........','................','................','................','................','................'],{'.':-1,'7':10,'a':7})]},
-    {frames:[spriteFromArt(['................','....888888......','...88aaaa88.....','..88a9999a88....','..88a9aa9a88....','..88a9999a88....','...88aaaa88.....','....888888......','....88..88......','...88....88.....','...88....88.....','...88....88.....','................','................','................','................'],{'.':-1,'8':8,'9':15,'a':13})]},
-    {frames:[spriteFromArt(['................','................','.....9999.......','....9aaaa9......','...9a9999a9.....','...9a9999a9.....','...9a9999a9.....','...9a9999a9.....','....9aaaa9......','.....9999.......','................','................','................','................','................','................'],{'.':-1,'9':9,'a':8})]},
+  p.palette[1]="#13233a";
+  p.palette[2]="#1f3c66";
+  p.palette[6]="#d6ecff";
+  p.palette[7]="#ffffff";
+  p.palette[8]="#ffb347";
+  p.palette[10]="#ffd166";
+  p.palette[11]="#5ccf8a";
+  p.palette[12]="#8ad7ff";
+  p.palette[13]="#ef476f";
+  p.palette[14]="#ffe29a";
+  const arrow=makeSprite(16,16);
+  const rows=[
+    ".......6........",
+    "......666.......",
+    ".....66666......",
+    "....6666666.....",
+    "...666666666....",
+    "..66666666666...",
+    ".6666666666666..",
+    "666666666666666.",
+    ".6666666666666..",
+    "..66666666666...",
+    "...666666666....",
+    "....6666666.....",
+    ".....66666......",
+    "......666.......",
+    ".......6........",
+    "................"
   ];
-  p.tileDefs={
-    0:makeBlankTileDef(),
-    1:{source:'4a',flags:{0:false},bg:'#1b2b3a',bgEnabled:true,animated:false,animFolder:4,animSpeed:6},
-    2:{source:'5a',flags:{0:true},bg:'#2b3038',bgEnabled:false,animated:false,animFolder:5,animSpeed:6},
-    3:{source:'6a',flags:{0:false},bg:'#152224',bgEnabled:true,animated:false,animFolder:6,animSpeed:6},
-    4:{source:'7a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:true,animFolder:7,animSpeed:5},
-    5:{source:'8a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:false,animFolder:8,animSpeed:6},
-    6:{source:'9a',flags:{0:false},bg:'#111726',bgEnabled:false,animated:false,animFolder:9,animSpeed:6}
-  };
-  p.maps=[makeEmptyMap('0',p.project.map_w,p.project.map_h)];
-  p.music=[makeMusic(),makeMusic()];
-  p.codeFiles=[
-    {name:'main.lua',tabTheme:0,content:`-- Operation Corporation V3.5 architecture pass
--- style cues inspired by open-source patterns from LOVE2D projects:
---   * tiny ECS scheduling loops
---   * explicit simulation phase pipelines
---   * data-oriented helper modules
-include "config.lua"
-include "data.lua"
-include "state.lua"
-include "field.lua"
-include "base.lua"
-include "draw.lua"
+  for(let y=0;y<16;y++) for(let x=0;x<16;x++) arrow.pixels[y][x]=(rows[y][x]==='6'?6:-1);
+  p.spriteFolders=[{frames:[arrow]}];
+  p.codeFiles=[{name:"main.lua",tabTheme:2,content:`screen = "menu"
+menu_items = {"start game", "controls", "about"}
+menu_index = 1
+player = {x=240, y=135, speed=2.1, angle=0, flip=false}
+stars = {}
+notes = {}
+wave_t = 0
 
-function _init() boot_game() end
-function _update() game_update() end
-function _draw() game_draw() end`},
-    {name:'config.lua',tabTheme:1,content:`cfg = {
-  walk = 1.15,
-  crouch = 0.72,
-  sprint = 1.95,
-  max_noise = 120,
-  extract_radius = 24,
-  body_notice_radius = 92,
-  dispatch_min_team = 3,
-  lock_memory = 900,
-  field_zoom = 2,
-  menu_repeat_delay = 14,
-  menu_deadzone = 0.72,
-  flare_wait = 240,
-  heli_travel = 210,
-  save_slot = "operation_corp_slot_v2"
-}
-
-vision_settings = {
-  idle = {range=90, cone=0.82, gain=0.75},
-  suspicious = {range=110, cone=0.95, gain=1.2},
-  alert = {range=132, cone=1.15, gain=1.9}
-}
-
-plan_bulletins_done = {
-  "[x] 1 High concept loop",
-  "[x] 4 Base + Field + Dispatch modes",
-  "[x] 5 Short/medium loop connections",
-  "[x] 7 Vision + LOS + sound + concealment",
-  "[x] 9 Enemy state machine basics",
-  "[x] 10 Procedural outpost templates + variables",
-  "[x] 11 Mission type/modifier/objective tables",
-  "[x] 12 Capture -> recruit processing",
-  "[x] 13 Departments (core impact values)",
-  "[x] 14 Research queue + unlock categories",
-  "[x] 16 Dispatch simulation outcomes",
-  "[x] 17 Resource economy (core currencies)",
-  "[x] 18 Heat/threat escalation",
-  "[x] 19 Extraction gate for rewards",
-  "[x] 22 Mission rank/scoring",
-  "[x] 23 Persistent save data",
-  "[x] 24 Data-driven defs (enemy/staff/mission)",
-  "[x] 21 Companion/support basics (recon ping + supply refill)",
-  "[x] 3 Camera/presentation pass (2x field zoom + themed UI art)",
-  "[x] 10 Outpost generation upgraded to BSP room partitioning",
-  "[x] Enemy lock-memory LOS visualization + lethal body bloodstains"
-}
-
-plan_bulletins_todo = {
-  "[x] 8 Expanded weapon categories + damage model",
-  "[x] 10 Multi-theme biome outpost modules",
-  "[x] 15 Full loadout slot + suit selection UI",
-  "[x] 18 Region map + faction control simulation",
-  "[x] 20 Advanced injury/trauma model for roster",
-  "[x] 25-5 Expansion pass (elites, rare blueprints, deep traits)",
-  "[ ] 2 Core pillars polish pass",
-  "[ ] 6 Player progression depth",
-  "[ ] 25 Support call variants + companion depth"
-}`},
-    {name:'data.lua',tabTheme:2,content:`enemy_defs = {
-  guard = {class="rifle_guard", hp=100, speed=0.65, vision_range=92, vision_angle=0.9, hearing_range=90, rank=1, recruitable=true},
-  scout = {class="scout", hp=80, speed=1.05, vision_range=84, vision_angle=1.0, hearing_range=100, rank=2, recruitable=true},
-  heavy = {class="heavy", hp=145, speed=0.48, vision_range=100, vision_angle=0.75, hearing_range=85, rank=3, recruitable=true},
-  officer = {class="officer", hp=95, speed=0.7, vision_range=118, vision_angle=1.1, hearing_range=110, rank=4, recruitable=true}
-}
-
-mission_templates = {
-  {id="capture_outpost", name="Capture Outpost", primary={"neutralize command","plant beacon","extract"}, secondary={"no alarm","capture officer"}},
-  {id="rescue_staff", name="Rescue Prisoners", primary={"free cells","escort to zone","extract"}, secondary={"no kill"}},
-  {id="steal_intel", name="Steal Intel", primary={"hack terminal","steal drive","extract"}, secondary={"no alert","time bonus"}}
-}
-
-outpost_templates = {
-  {id="checkpoint", walls=1, patrol=6, cameras=1, prisoners=1, resources=2},
-  {id="radar_station", walls=2, patrol=8, cameras=3, prisoners=1, resources=3},
-  {id="supply_depot", walls=3, patrol=10, cameras=2, prisoners=2, resources=5},
-  {id="prison_camp", walls=2, patrol=9, cameras=2, prisoners=4, resources=2}
-}
-
-weather_mods = {"clear","rain","fog","heat_haze"}
-time_mods = {"dawn","day","dusk","night"}
-
-research_tree = {
-  {id="tranq_plus", name="Tranq Dart v2", cost=90, t=500, cat="tranq", unlock="silent_boots"},
-  {id="silent_boots", name="Silent Step Boots", cost=110, t=650, cat="stealth", unlock="smoke_mk2"},
-  {id="smoke_mk2", name="Smoke Capsule MkII", cost=150, t=760, cat="gadgets", unlock="drone_ping"},
-  {id="drone_ping", name="Scout Ping Drone", cost=210, t=930, cat="recon", unlock=nil}
-}
-
-department_defs = {
-  command={lvl=1, bonus="staff cap"},
-  rnd={lvl=1, bonus="research speed"},
-  security={lvl=1, bonus="captured processing"},
-  medical={lvl=1, bonus="injury recovery"},
-  intel={lvl=1, bonus="patrol reveal"},
-  dispatch={lvl=1, bonus="mission outcomes"}
-}
-
-dispatch_templates = {
-  {name="Supply Raid", duration=460, reward=110, risk=0.18, req="combat"},
-  {name="Intel Sweep", duration=700, reward=165, risk=0.27, req="intel"},
-  {name="Hostage Rescue", duration=980, reward=255, risk=0.42, req="stealth"}
-}
-
-traits = {"Night Ops","Fast Learner","Cowardly","Resourceful","Leader","Saboteur"}
-
-weapon_defs = {
-  pistol={cat="sidearm", dmg=24, noise=28, kind="ballistic"},
-  smg={cat="primary", dmg=18, noise=34, kind="ballistic"},
-  ar={cat="primary", dmg=29, noise=40, kind="ballistic"},
-  shotgun={cat="primary", dmg=48, noise=56, kind="ballistic"},
-  sniper={cat="primary", dmg=64, noise=62, kind="ballistic"},
-  tranq={cat="special", dmg=0, noise=16, kind="tranq"},
-  stun={cat="special", dmg=6, noise=22, kind="stun"},
-  gas={cat="throw", dmg=2, noise=18, kind="gas"},
-  frag={cat="throw", dmg=74, noise=80, kind="explosive"},
-  baton={cat="melee", dmg=18, noise=10, kind="melee"},
-  knife={cat="melee", dmg=30, noise=8, kind="melee"}
-}
-
-damage_profile = {
-  light={ballistic=1.0, explosive=1.1, tranq=1.0, stun=1.1, gas=1.2, melee=1.0},
-  medium={ballistic=0.82, explosive=1.0, tranq=0.84, stun=0.92, gas=1.0, melee=0.94},
-  heavy={ballistic=0.66, explosive=0.9, tranq=0.68, stun=0.74, gas=0.84, melee=0.8},
-  shield={ballistic=0.54, explosive=0.86, tranq=0.5, stun=0.8, gas=0.72, melee=0.75}
-}
-
-biome_themes = {
-  scrublands={conceal=0.34, weather={"clear","heat_haze","dust"}, tint=4},
-  alpine={conceal=0.22, weather={"clear","fog","snow"}, tint=11},
-  coastal={conceal=0.28, weather={"rain","storm","fog"}, tint=12},
-  industrial={conceal=0.18, weather={"clear","rain","smog"}, tint=2},
-  wetland={conceal=0.4, weather={"fog","rain","mist"}, tint=3}
-}
-
-biome_outpost_modules = {
-  scrublands={"checkpoint","supply_depot","fuel_farm"},
-  alpine={"radar_station","relay_tower","ski_garrison"},
-  coastal={"shipyard","warehouse_port","prison_camp"},
-  industrial={"refinery","rail_hub","prison_camp"},
-  wetland={"flood_gate","bio_lab","checkpoint"}
-}
-
-loadout_slot_defs = {
-  "primary","secondary","support","gadget","throwable","suit","passive","recovery"
-}
-
-suit_defs = {
-  sneaksuit={conceal=0.25, armor="light", stamina=12, noise=-10},
-  battleframe={conceal=-0.08, armor="heavy", stamina=30, noise=8},
-  amphib_ops={conceal=0.18, armor="medium", stamina=18, noise=-4},
-  arctic_veil={conceal=0.2, armor="medium", stamina=14, noise=-8}
-}
-
-region_defs = {
-  ash_fork={name="Ash Fork", biome="scrublands", owner="sentinel_union", heat=18, influence=6},
-  frostline={name="Frostline", biome="alpine", owner="north_veil", heat=24, influence=4},
-  hardport={name="Hardport", biome="coastal", owner="carthage_pmc", heat=28, influence=3},
-  iron_corridor={name="Iron Corridor", biome="industrial", owner="sentinel_union", heat=31, influence=2},
-  hollow_marsh={name="Hollow Marsh", biome="wetland", owner="north_veil", heat=22, influence=5}
-}
-
-faction_defs = {
-  sentinel_union={pressure=1.05, doctrine="sensors + armor"},
-  north_veil={pressure=0.96, doctrine="recon + snipers"},
-  carthage_pmc={pressure=1.12, doctrine="rapid response + elites"}
-}
-
-injury_defs = {
-  bruised={days=2, mod=0.96, mood=-1},
-  fractured={days=5, mod=0.82, mood=-4},
-  trauma={days=8, mod=0.7, mood=-8},
-  critical={days=12, mod=0.54, mood=-12}
-}
-
-elite_defs = {
-  hunter={bonus_hp=34, bonus_detect=12, weapon="sniper"},
-  warder={bonus_hp=52, bonus_detect=6, weapon="shotgun"},
-  jammer={bonus_hp=24, bonus_detect=18, weapon="smg"}
-}
-
-rare_blueprints = {
-  "Ghost Weave Suit",
-  "Adaptive Tranq Injector",
-  "EM Snare Mine",
-  "Drone Relay Harness",
-  "Reactive Trauma Gel"
-}
-
-deep_traits = {
-  "Signal Savant",
-  "Unflinching",
-  "Field Surgeon",
-  "Counterintel Mind",
-  "Sabotage Artist",
-  "Extraction Addict"
-}`},
-    {name:'core.lua',tabTheme:4,content:`core = {}
-
-function core.clamp(v,a,b)
-  return math.max(a, math.min(b, v))
-end
-
-function core.sign(v)
-  if v > 0 then return 1 end
-  if v < 0 then return -1 end
-  return 0
-end
-
-function core.dist(ax,ay,bx,by)
-  local dx,dy = bx-ax, by-ay
-  return math.sqrt(dx*dx + dy*dy)
-end
-
-function core.manhattan(ax,ay,bx,by)
-  return abs(ax-bx) + abs(ay-by)
-end
-
-function core.pick(list, seed)
-  if not list or #list == 0 then return nil end
-  return list[(seed % #list) + 1]
-end
-
-function core.run_systems(systems)
-  for sys in all(systems) do
-    if sys and sys.enabled ~= false and sys.step then
-      sys.step()
-    end
+function reset_game_screen()
+  player.x = 240
+  player.y = 135
+  player.angle = 0
+  player.flip = false
+  stars = {}
+  for i=1,50 do
+    add(stars, {x=rnd(480), y=rnd(270), twinkle=rnd(6.28318)})
   end
+  notes = {}
 end
 
-function core.count_where(list, pred)
-  local count = 0
-  for v in all(list) do
-    if pred(v) then count = count + 1 end
-  end
-  return count
-end`},
-    {name:'state.lua',tabTheme:3,content:`function rand_trait(seed)
-  return traits[(seed % #traits)+1]
+function spawn_note(text)
+  add(notes, {text=text, life=120})
 end
 
-function rand_deep_trait(seed)
-  return deep_traits[(seed % #deep_traits)+1]
-end
-
-function make_staff(name, rank, seed)
-  return {
-    name=name,
-    rank=rank,
-    stats={combat=40+rank*8, stealth=35+rank*6, research=22+rank*7, engineering=20+rank*8, command=16+rank*7, intel=25+rank*6},
-    morale=55+rank*7,
-    loyalty=50+rank*8,
-    trait=rand_trait(seed),
-    deep_trait=rand_deep_trait(seed*3+rank),
-    status="active",
-    injury="none",
-    trauma_days=0
-  }
-end
-
-function fresh_game_state()
-  return {
-    scene="menu",
-    tick=0,
-    mode="field",
-    player={x=90,y=90,vx=0,vy=0,dir=1,hp=100,stamina=100,noise=0,conceal=0,crouch=false,carrying=false,anim_t=0,wake_t=0,last_hit=0},
-    player_loadout={primary="tranq",secondary="pistol",support="drone_ping",gadget="stun",throwable="gas",suit="sneaksuit",passive="signal_tap",recovery="med_kit"},
-    cam={x=0,y=0},
-    resources={funds=260,fuel=140,metals=65,chem=42,intel=18,morale=72,influence=10},
-    departments=department_defs,
-    roster={},
-    brig={},
-    enemies={},
-    prisoners={},
-    resource_nodes={},
-    projectiles={},
-    particles={},
-    extraction={state="none",timer=0,show_timer=0,reward_tally=nil},
-    evidence=0,
-    alerts=0,
-    global_heat=0,
-    fultons=6,
-    current_mission=nil,
-    mission_score=0,
-    pending_rewards={funds=0,fuel=0,intel=0,recruits=0,salvage=0},
-    research={active=nil,queue={},done={tranq_plus=true}},
-    dispatch={active={},log={},selected=1,mission_cursor=1},
-    support={recon_cd=0,supply_cd=0,bomb_cd=0},
-    blueprints={},
-    regions={},
-    current_region="ash_fork",
-    region_tick=0,
-    base_tab=1,
-    msgs={},
-    msg_seq=0,
-    menu_hold={vert=0,horiz=0,vert_tick=0,horiz_tick=0},
-    cursor=1,
-    base_cursor=1,
-    dispatch_cursor=1,
-    phase="infiltrate",
-    pause_info_page=1,
-    pause_cursor=1,
-    field_menu_open=false,
-    field_menu_cursor=1,
-    operation_index=0
-  }
-end
-
-function boot_game()
-  g = fresh_game_state()
-  for id,reg in pairs(region_defs) do
-    g.regions[id]={owner=reg.owner,heat=reg.heat,influence=reg.influence}
-  end
-  load_campaign()
-  start_new_operation()
-  g.mode = "base"
-end
-
-function push_msg(text)
-  g.msg_seq = (g.msg_seq or 0) + 1
-  add(g.msgs, {text=text, ttl=480, id=g.msg_seq})
-  if #g.msgs > 8 then deli(g.msgs,1) end
-end
-
-function tick_messages()
-  local i=1
-  while i<=#g.msgs do
-    local msg = g.msgs[i]
-    if type(msg)=="string" then
-      g.msgs[i]={text=msg,ttl=240,id=i}
-      msg = g.msgs[i]
-    end
-    msg.ttl = (msg.ttl or 240) - 1
-    if msg.ttl <= 0 then
-      deli(g.msgs,i)
+function update_notes()
+  local i = 1
+  while i <= #notes do
+    local n = notes[i]
+    n.life -= 1
+    if n.life <= 0 then
+      del(notes, n)
     else
-      i = i + 1
+      i += 1
     end
   end
 end
 
-function start_new_operation()
-  g.operation_index = (g.operation_index or 0) + 1
-  g.current_mission = roll_mission()
-  generate_outpost(g.current_mission)
-  g.player.x, g.player.y = 54, 54
-  g.player.hp = 100
-  g.player.carrying = false
-  g.player.wake_t = 45
-  g.player.last_hit = 0
-  g.projectiles = {}
-  g.particles = {}
-  g.extraction = {state="none",timer=0,show_timer=0,reward_tally=nil}
-  g.phase = "infiltrate"
-  g.paused = false
-  g.field_menu_open = false
-  g.pending_rewards = {funds=0,fuel=0,intel=0,recruits=0,salvage=0}
-  g.mission_score = 0
-  g.alerts = 0
-  g.evidence = 0
+function _init()
+  reset_game_screen()
 end
 
-function save_campaign()
-  local blob = "funds="..flr(g.resources.funds)..";fuel="..flr(g.resources.fuel)..";intel="..flr(g.resources.intel)..";fultons="..flr(g.fultons)..";roster="..#g.roster..";heat="..flr(g.global_heat)
-  save_data(cfg.save_slot, blob)
-end
-
-function load_campaign()
-  local blob = load_data(cfg.save_slot)
-  if not blob or #blob < 3 then return end
-  local funds = tonumber(blob:match("funds=(%d+)"))
-  local fuel = tonumber(blob:match("fuel=(%d+)"))
-  local intel = tonumber(blob:match("intel=(%d+)"))
-  local fultons = tonumber(blob:match("fultons=(%d+)"))
-  local roster = tonumber(blob:match("roster=(%d+)"))
-  local heat = tonumber(blob:match("heat=(%d+)"))
-  if funds then g.resources.funds = funds end
-  if fuel then g.resources.fuel = fuel end
-  if intel then g.resources.intel = intel end
-  if fultons then g.fultons = fultons end
-  if heat then g.global_heat = heat end
-  if roster then
-    for i=1,roster do add(g.roster, make_staff("R"..i, (i%4)+1, i*7)) end
+function update_menu()
+  if btnp("down") then
+    menu_index += 1
+    if menu_index > #menu_items then menu_index = 1 end
   end
-end`},
-    {name:'field.lua',tabTheme:5,content:`function roll_mission()
-  local region = g.regions[g.current_region] or {owner="sentinel_union",heat=20}
-  local reg_cfg = region_defs[g.current_region] or region_defs.ash_fork
-  local biome_id = reg_cfg.biome
-  local biome = biome_themes[biome_id] or biome_themes.scrublands
-  local faction = faction_defs[region.owner] or faction_defs.sentinel_union
-  local m = mission_templates[(g.tick % #mission_templates)+1]
-  local t = outpost_templates[((g.tick*3) % #outpost_templates)+1]
-  local biome_modules = biome_outpost_modules[biome_id] or biome_outpost_modules.scrublands
-  local module_name = biome_modules[((g.tick*2)%#biome_modules)+1]
-  local guard_pressure = (region.heat*0.09) * (faction.pressure or 1)
-  return {
-    mission_id=m.id,
-    mission_name=m.name,
-    outpost=t.id,
-    weather=biome.weather[((g.tick*5) % #biome.weather)+1],
-    tod=time_mods[((g.tick*7) % #time_mods)+1],
-    biome=biome_id,
-    faction_owner=region.owner,
-    module=module_name,
-    primary=m.primary,
-    secondary=m.secondary,
-    guard_count=t.patrol + flr(g.global_heat/4) + flr(guard_pressure),
-    resource_nodes=t.resources,
-    prisoner_count=t.prisoners,
-    alert_baseline=flr(g.global_heat/10)
-  }
-end
-
-function clear_map()
-  for y=0,project.map_h-1 do
-    for x=0,project.map_w-1 do
-      mset(x,y,1,0,0)
-      if x==0 or y==0 or x==project.map_w-1 or y==project.map_h-1 then
-        mset(x,y,2,1,0)
-      else
-        mset(x,y,0,1,0)
-      end
-    end
+  if btnp("up") then
+    menu_index -= 1
+    if menu_index < 1 then menu_index = #menu_items end
   end
-end
-
-function build_outpost_room(x0,y0,w,h,door_side)
-  local x1,y1 = x0+w-1,y0+h-1
-  for x=x0,x1 do mset(x,y0,2,1,0) mset(x,y1,2,1,0) end
-  for y=y0,y1 do mset(x0,y,2,1,0) mset(x1,y,2,1,0) end
-  local dx,dy = flr((x0+x1)/2), flr((y0+y1)/2)
-  if door_side==1 then mset(dx,y0,0,1,0) mset(dx+1,y0,0,1,0)
-  elseif door_side==2 then mset(dx,y1,0,1,0) mset(dx+1,y1,0,1,0)
-  elseif door_side==3 then mset(x0,dy,0,1,0) mset(x0,dy+1,0,1,0)
-  else mset(x1,dy,0,1,0) mset(x1,dy+1,0,1,0) end
-end
-
-function carve_corridor(x0,y0,x1,y1)
-  local x = x0
-  local y = y0
-  while x ~= x1 do
-    mset(x,y,0,1,0)
-    x = x + (x1>x and 1 or -1)
-  end
-  while y ~= y1 do
-    mset(x,y,0,1,0)
-    y = y + (y1>y and 1 or -1)
-  end
-  mset(x1,y1,0,1,0)
-end
-
-function bsp_split_area(area, depth, min_w, min_h, out)
-  if depth <= 0 or area.w < (min_w*2) or area.h < (min_h*2) then
-    add(out, area)
-    return
-  end
-  local split_vertical = area.w > area.h
-  if area.w > min_w*2 and area.h > min_h*2 then
-    split_vertical = ((area.x + area.y + g.operation_index + depth + g.tick) % 2) == 0
-  end
-  if split_vertical then
-    local cut = area.x + min_w + ((g.operation_index*7 + depth*13 + g.tick) % math.max(1, area.w - min_w*2))
-    local left = {x=area.x,y=area.y,w=cut-area.x,h=area.h}
-    local right = {x=cut,y=area.y,w=area.x+area.w-cut,h=area.h}
-    bsp_split_area(left, depth-1, min_w, min_h, out)
-    bsp_split_area(right, depth-1, min_w, min_h, out)
-  else
-    local cut = area.y + min_h + ((g.operation_index*5 + depth*11 + g.tick) % math.max(1, area.h - min_h*2))
-    local top = {x=area.x,y=area.y,w=area.w,h=cut-area.y}
-    local bottom = {x=area.x,y=cut,w=area.w,h=area.y+area.h-cut}
-    bsp_split_area(top, depth-1, min_w, min_h, out)
-    bsp_split_area(bottom, depth-1, min_w, min_h, out)
-  end
-end
-
-function clamp_to_walkable(x,y)
-  local tx = math.max(1, math.min(project.map_w-2, flr(x/project.tile_w)))
-  local ty = math.max(1, math.min(project.map_h-2, flr(y/project.tile_h)))
-  if not wall(tx*project.tile_w+2, ty*project.tile_h+2, 1, 0) then
-    return tx*project.tile_w+2, ty*project.tile_h+2
-  end
-  for r=1,12 do
-    for ox=-r,r do
-      for oy=-r,r do
-        local nx = tx + ox
-        local ny = ty + oy
-        if nx>0 and ny>0 and nx<project.map_w-1 and ny<project.map_h-1 then
-          if not wall(nx*project.tile_w+2, ny*project.tile_h+2, 1, 0) then
-            return nx*project.tile_w+2, ny*project.tile_h+2
-          end
-        end
-      end
-    end
-  end
-  return 54,54
-end
-
-function generate_outpost(m)
-  clear_map()
-  g.prisoners = {}
-  g.resource_nodes = {}
-  g.blood = {}
-  local room_centers = {}
-  local xa, xb = 8, project.map_w-9
-  local ya, yb = 8, project.map_h-9
-  for x=xa,xb do mset(x,ya,2,1,0) mset(x,yb,2,1,0) end
-  for y=ya,yb do mset(xa,y,2,1,0) mset(xb,y,2,1,0) end
-  local gate = 18 + ((g.operation_index*9 + g.tick) % (project.map_w-36))
-  mset(gate,ya,0,1,0) mset(gate+1,ya,0,1,0)
-  local leaves = {}
-  bsp_split_area({x=12,y=12,w=project.map_w-24,h=project.map_h-24}, 3, 10, 9, leaves)
-  local structures = 0
-  local max_rooms = math.min(#leaves, 1 + ((g.operation_index*3 + m.guard_count + g.tick) % 10))
-  for i=1,max_rooms do
-    local leaf = leaves[i]
-    local rw = math.max(7, leaf.w - 2 - ((i + g.tick) % 3))
-    local rh = math.max(6, leaf.h - 2 - ((i + g.operation_index) % 3))
-    local rx = leaf.x + 1
-    local ry = leaf.y + 1
-    if rw > 6 and rh > 5 then
-      build_outpost_room(rx,ry,rw,rh,((i+g.operation_index)%4)+1)
-      add(room_centers,{x=flr(rx+rw/2),y=flr(ry+rh/2)})
-      structures = structures + 1
-    end
-  end
-
-  for i=2,#room_centers do
-    local prev = room_centers[i-1]
-    local cur = room_centers[i]
-    carve_corridor(prev.x, prev.y, cur.x, cur.y)
-  end
-  local entry_x = gate+1
-  carve_corridor(entry_x, ya+1, room_centers[1] and room_centers[1].x or entry_x, room_centers[1] and room_centers[1].y or (ya+8))
-
-  for i=1,m.resource_nodes do
-    local rx = 12 + ((g.operation_index*17 + i*13 + g.tick) % (project.map_w-24))
-    local ry = 12 + ((g.operation_index*7 + i*15 + g.tick*3) % (project.map_h-24))
-    mset(rx,ry,4,0,0)
-    local is_large = ((i + g.operation_index + g.tick) % 3)==0
-    add(g.resource_nodes,{x=rx*16+8,y=ry*16+8,amount=28+((i+g.operation_index)%4)*10 + (is_large and 42 or 0),taken=false,large=is_large})
-  end
-
-  for i=1,m.prisoner_count do
-    local px = 180 + ((g.operation_index*31 + i*43) % 760)
-    local py = 170 + ((g.operation_index*23 + i*37) % 540)
-    add(g.prisoners,{x=px,y=py,rescued=false,rank=(i%4)+1})
-  end
-
-  g.enemies = {}
-  for i=1,m.guard_count do
-    local kind = (i%9==0 and "officer") or (i%5==0 and "heavy") or (i%3==0 and "scout") or "guard"
-    local def = enemy_defs[kind]
-    local elite = (i%13==0) and elite_defs[((i*3)%3==0 and "hunter") or ((i*2)%3==0 and "warder") or "jammer"] or nil
-    local weapon = (kind=="officer" and "pistol") or (kind=="heavy" and "shotgun") or (kind=="scout" and "smg") or "ar"
-    if elite and elite.weapon then weapon = elite.weapon end
-    local hp_bonus = elite and elite.bonus_hp or 0
-    local base_room = room_centers[((i-1) % math.max(1,#room_centers))+1] or {x=entry_x+2,y=ya+4}
-    local ex = base_room.x*16 + 8 + (((i*19 + g.tick) % 24)-12)
-    local ey = base_room.y*16 + 8 + (((i*23 + g.tick) % 24)-12)
-    ex,ey = clamp_to_walkable(ex,ey)
-    add(g.enemies,{
-      kind=kind,x=ex,y=ey,dir=((i%2==0) and 1 or -1),
-      hp=def.hp+hp_bonus,max_hp=def.hp+hp_bonus,state="patrol",detect=0,last_heard=nil,last_seen=nil,stunned=0,captured=false,bound=false,
-      vision=def.vision_range,cone=def.vision_angle,hearing=def.hearing_range,rank=def.rank,special=(i%7==0),
-      armor=(kind=="heavy" and "heavy") or (kind=="officer" and "medium") or "light",
-      weapon=weapon,
-      elite=elite ~= nil,
-      dead=false,
-      extractable=true,
-      locked_once=false,
-      marked_timer=0,
-      blood=nil,
-      route_i=1,
-      route={
-        {x=math.max(24,ex-28),y=ey},
-        {x=ex,y=math.max(24,ey-20)},
-        {x=math.min(project.map_w*16-24,ex+28),y=ey},
-        {x=ex,y=math.min(project.map_h*16-24,ey+20)}
-      }
-    })
-  end
-  g.player.x, g.player.y = clamp_to_walkable(54,54)
-  g.extract_point = {x=(gate+1)*16+8,y=(ya+1)*16+8}
-  push_msg("Mission: "..m.mission_name.." / "..m.outpost.." ("..m.module..") / "..m.weather.." "..m.tod)
-  push_msg("Outpost regenerated: "..structures.." structures, "..#g.resource_nodes.." depots")
-end
-
-function actor_solid(x,y)
-  return wall(x,y,1,0) or wall(x+13,y,1,0) or wall(x,y+13,1,0) or wall(x+13,y+13,1,0)
-end
-
-function apply_damage_to_enemy(e, amount, dtype)
-  if e.dead then return end
-  local profile = damage_profile[e.armor] or damage_profile.light
-  local mult = profile[dtype] or 1
-  local final = amount * mult
-  if dtype=="tranq" then
-    e.stunned = math.max(e.stunned, 220 + flr(final*4))
-    e.state = "down"
-    return
-  end
-  if dtype=="stun" or dtype=="gas" then
-    e.stunned = math.max(e.stunned, 160 + flr(final*3))
-    return
-  end
-  e.hp = e.hp - final
-  if e.hp <= 0 then
-    e.hp = 0
-    e.dead = true
-    e.extractable = false
-    e.stunned = 0
-    e.state = "dead"
-    e.detect = 0
-    e.blood = {x=e.x+8,y=e.y+10,size=8 + ((g.tick + e.rank) % 6)}
-    add(g.blood,{x=e.x+8,y=e.y+10,size=8 + ((g.tick + e.rank) % 6),ttl=9999})
-    g.mission_score = g.mission_score + 4
-  end
-end
-
-function player_suit_profile()
-  local suit = g.player_loadout and suit_defs[g.player_loadout.suit] or suit_defs.sneaksuit
-  return suit or suit_defs.sneaksuit
-end
-
-function damage_player(amount, dtype)
-  local suit = player_suit_profile()
-  local armor = damage_profile[suit.armor or "light"] or damage_profile.light
-  local mult = armor[dtype] or 1
-  local final = amount * mult
-  g.player.hp = math.max(0, g.player.hp - final)
-  if final > 0 then g.player.last_hit = 18 end
-  if final > 0.24 and #g.roster > 0 and (g.tick % 40 == 0) then
-    local idx = ((g.tick/40) % #g.roster)+1
-    local member = g.roster[flr(idx)]
-    if member and member.trauma_days <= 0 then
-      member.injury = "bruised"
-      member.trauma_days = injury_defs.bruised.days
-    end
-  end
-  if g.player.hp <= 0 then
-    g.pending_rewards = {funds=0,fuel=0,intel=0,recruits=0,salvage=0}
-    g.player_loadout.primary = "tranq"
-    g.player_loadout.secondary = "pistol"
-    g.player_loadout.throwable = "gas"
-    g.player_loadout.suit = "sneaksuit"
-    g.mode = "base"
-    push_msg("Operator KIA. Gear lost. Returned to base.")
-    start_new_operation()
-  end
-end
-
-function emit_noise(power)
-  g.player.noise = math.max(0, math.min(cfg.max_noise, power))
-end
-
-function emit_particles(x,y,col,count)
-  for i=1,count do
-    add(g.particles,{
-      x=x,y=y,
-      vx=(((g.tick+i*5)%9)-4)*0.36,
-      vy=(((g.tick+i*7)%9)-4)*0.36,
-      t=16+((g.tick+i)%12),
-      c=col or 10
-    })
-  end
-end
-
-function spawn_projectile(target)
-  if not target then return end
-  local dx,dy = (target.x-g.player.x),(target.y-g.player.y)
-  local dist = math.max(1, math.sqrt(dx*dx+dy*dy))
-  add(g.projectiles,{
-    x=g.player.x+8,y=g.player.y+8,
-    vx=(dx/dist)*4.2,vy=(dy/dist)*4.2,
-    t=70,kind=g.player_loadout.primary or "tranq"
-  })
-end
-
-function update_projectiles()
-  local i=1
-  while i<=#g.projectiles do
-    local p=g.projectiles[i]
-    p.x = p.x + p.vx
-    p.y = p.y + p.vy
-    p.t = p.t - 1
-    local hit=false
-    if wall(p.x,p.y,1,0) then
-      emit_particles(p.x,p.y,13,5)
-      hit=true
+  if btnp("a") or keyp("enter") then
+    if menu_index == 1 then
+      screen = "game"
+      reset_game_screen()
+      spawn_note("game screen loaded")
+    elseif menu_index == 2 then
+      screen = "controls"
     else
-      for e in all(g.enemies) do
-        if not e.captured and not e.dead and e.stunned<=0 and abs(e.x+8-p.x)+abs(e.y+8-p.y)<14 then
-          local wp = weapon_defs[p.kind] or weapon_defs.tranq
-          apply_damage_to_enemy(e, wp.dmg + 12, wp.kind or "tranq")
-          g.mission_score = g.mission_score + 6
-          emit_particles(p.x,p.y,11,6)
-          hit=true
-          break
-        end
-      end
-    end
-    if hit or p.t<=0 then
-      deli(g.projectiles,i)
-    else
-      i=i+1
+      screen = "about"
     end
   end
 end
 
-function update_particles()
-  local i=1
-  while i<=#g.particles do
-    local p=g.particles[i]
-    p.x = p.x + p.vx
-    p.y = p.y + p.vy
-    p.vx = p.vx * 0.94
-    p.vy = p.vy * 0.94
-    p.t = p.t - 1
-    if p.t<=0 then deli(g.particles,i) else i=i+1 end
+function update_controls_like_screen()
+  if btnp("b") or keyp("escape") then
+    screen = "menu"
   end
 end
 
-function lock_target_from_aim()
-  local ax,ay = joyx(1),joyy(1)
-  local mag = math.sqrt(ax*ax + ay*ay)
-  if mag < 0.28 then return end
-  local best=nil
-  local best_score=-99999
-  for e in all(g.enemies) do
-    if not e.captured and e.stunned<=0 then
-      local dx,dy = e.x-g.player.x, e.y-g.player.y
-      local dist = math.sqrt(dx*dx + dy*dy)
-      if dist > 6 and dist < 260 then
-        local dot = (dx*ax + dy*ay) / (dist * mag)
-        local score = dot*100 - dist*0.08
-        if dot > 0.32 and score > best_score then
-          best=e
-          best_score=score
-        end
-      end
-    end
-  end
-  g.player.aim = best
-  if best then
-    best.locked_once = true
-    best.marked_timer = math.max(best.marked_timer or 0, cfg.lock_memory or 600)
-  end
-end
+function update_game()
+  wave_t += 0.07
+  local jx = joyx(0)
+  local jy = joyy(0)
 
-function move_player()
-  local mx,my = joyx(0),joyy(0)
-  g.player.crouch = btn("y")
-  local suit = player_suit_profile()
-  local sprinting = btn("x") and not g.player.crouch and g.player.stamina>10
-  local speed = g.player.crouch and cfg.crouch or (sprinting and cfg.sprint or cfg.walk)
-  speed = speed + ((suit.stamina or 0) * 0.004)
-  if sprinting then g.player.stamina = g.player.stamina - 0.32 else g.player.stamina = math.min(100, g.player.stamina+0.18) end
-  g.player.vx,g.player.vy = mx*speed,my*speed
-  if mx ~= 0 then g.player.dir = mx > 0 and 1 or -1 end
-  local nx,ny = g.player.x + g.player.vx, g.player.y + g.player.vy
-  if not actor_solid(nx,g.player.y) then g.player.x = nx end
-  if not actor_solid(g.player.x,ny) then g.player.y = ny end
-  emit_noise((g.player.crouch and 14 or (sprinting and 80 or 34)) + (suit.noise or 0))
-end
+  if abs(jx) < 0.15 then jx = 0 end
+  if abs(jy) < 0.15 then jy = 0 end
 
-function player_concealment()
-  local suit = player_suit_profile()
-  local tx,ty = flr((g.player.x+8)/project.tile_w), flr((g.player.y+8)/project.tile_h)
-  local tile = mget(tx,ty,0)
-  local base = (tile==3 and 0.55) or (tile==4 and 0.3) or 0
-  local biome = biome_themes[g.current_mission.biome] or biome_themes.scrublands
-  g.player.conceal = math.max(0, base + (suit.conceal or 0) + (biome.conceal or 0)*0.3)
-end
+  if jx == 0 and jy == 0 then
+    if btn("left") then jx = -1 end
+    if btn("right") then jx = 1 end
+    if btn("up") then jy = -1 end
+    if btn("down") then jy = 1 end
+  end
 
-function los_to_player(e)
-  local dx,dy = g.player.x-e.x, g.player.y-e.y
-  local dist = math.sqrt(dx*dx + dy*dy)
-  if dist > e.vision then return false,dist end
-  local facing = e.facing or {x=e.dir,y=0}
-  local mag = math.max(0.001, math.sqrt(facing.x*facing.x + facing.y*facing.y))
-  local view_x = facing.x / mag
-  local view_y = facing.y / mag
-  local toward = (dx*view_x + dy*view_y) / math.max(0.001, dist)
-  if toward < (e.cone or 0.75) then return false,dist end
-  local steps = math.max(3, flr(dist/12))
-  for i=1,steps-1 do
-    local t = i/steps
-    local sx = e.x + dx*t
-    local sy = e.y + dy*t
-    if wall(sx,sy,1,0) then return false,dist end
-  end
-  return true, dist
-end
+  player.x += jx * player.speed
+  player.y += jy * player.speed
+  player.x = math.max(16, math.min(448, player.x))
+  player.y = math.max(24, math.min(246, player.y))
 
-function react_to_sound(e)
-  local dx,dy = abs(e.x-g.player.x), abs(e.y-g.player.y)
-  local hear = math.max(0, g.player.noise - (g.player.conceal*22))
-  if dx+dy < e.hearing and hear > 42 then
-    e.last_heard={x=g.player.x,y=g.player.y}
-    if e.state=="patrol" then e.state="investigate" end
+  if jx ~= 0 or jy ~= 0 then
+    player.angle = math.deg(math.atan(jy, jx))
+    player.flip = jx < 0
   end
-end
 
-function enemy_try_step(e, tx, ty)
-  local oldx, oldy = e.x, e.y
-  if not actor_solid(tx, e.y) then
-    e.x = tx
-  else
-    e.dir = -e.dir
+  if btnp("x") then
+    screen = "pause"
+    spawn_note("paused")
   end
-  if not actor_solid(e.x, ty) then
-    e.y = ty
-  end
-  local dx = e.x - oldx
-  local dy = e.y - oldy
-  if abs(dx)+abs(dy) > 0.01 then
-    e.facing = {x=dx,y=dy}
-    if abs(dx) > 0.04 then e.dir = dx > 0 and 1 or -1 end
-  end
-end
 
-function update_enemy(e)
-  if e.captured then return end
-  if e.marked_timer and e.marked_timer > 0 then e.marked_timer = e.marked_timer - 1 end
-  if e.dead then return end
-  if e.stunned > 0 then
-    e.stunned = e.stunned - 1
-    if e.stunned <= 0 then e.wake_t = 36; e.state="suspicious"; emit_particles(e.x+8,e.y+8,10,7) end
-    return
-  end
-  if e.wake_t and e.wake_t > 0 then e.wake_t = e.wake_t - 1 end
-  react_to_sound(e)
-  local can_see,dist = los_to_player(e)
-  local gain = can_see and (1.7 - g.player.conceal) or -0.8
-  if e.state=="investigate" then gain = gain + 0.4 end
-  if e.state=="alert" then gain = gain + 0.8 end
-  e.detect = math.max(0, math.min(100, e.detect + gain))
-  if e.detect > 76 then e.state="alert"; e.last_seen={x=g.player.x,y=g.player.y}; g.alerts = g.alerts + 1; g.global_heat = g.global_heat + 0.02
-  elseif e.detect > 36 and e.state=="patrol" then e.state="suspicious"
-  elseif e.detect < 10 and e.state~="patrol" then e.state="patrol" end
-
-  if e.state=="patrol" then
-    local route = e.route or {}
-    if #route > 0 then
-      e.route_i = e.route_i or 1
-      local node = route[e.route_i]
-      local sx = node.x > e.x and 0.62 or -0.62
-      local sy = node.y > e.y and 0.62 or -0.62
-      enemy_try_step(e, e.x + sx, e.y + sy)
-      if abs(e.x-node.x)+abs(e.y-node.y) < 10 then
-        e.route_i = (e.route_i % #route) + 1
-      end
-    else
-      enemy_try_step(e, e.x + 0.5 * e.dir, e.y)
-    end
-  elseif e.state=="investigate" and e.last_heard then
-    enemy_try_step(e, e.x + (e.last_heard.x > e.x and 0.7 or -0.7), e.y + (e.last_heard.y > e.y and 0.7 or -0.7))
-    if abs(e.x-e.last_heard.x)+abs(e.y-e.last_heard.y) < 12 then e.state="search" end
-  elseif e.state=="alert" then
-    enemy_try_step(e, e.x + (g.player.x > e.x and 1.05 or -1.05), e.y + (g.player.y > e.y and 1.05 or -1.05))
-    if dist < 18 then
-      local wp = weapon_defs[e.weapon] or weapon_defs.ar
-      damage_player((wp.dmg or 24)/140, wp.kind or "ballistic")
-    end
-  elseif e.state=="search" then
-    enemy_try_step(e, e.x + 0.42 * (e.dir), e.y)
-    if (g.tick + e.rank) % 45 == 0 then e.dir = -e.dir end
-  end
-end
-
-function nonlethal_actions()
   if btnp("b") then
-    local primary = weapon_defs[g.player_loadout.primary] or weapon_defs.tranq
-    emit_noise(primary.noise + 22)
-    emit_particles(g.player.x+8,g.player.y+8,10,4)
-    local target = g.player.aim
-    if target and not target.captured and target.stunned<=0 then
-      spawn_projectile(target)
-      return
-    end
-    for e in all(g.enemies) do
-      if not e.captured and e.stunned<=0 then
-        local dx,dy = abs(e.x-g.player.x), abs(e.y-g.player.y)
-        if dx<130 and dy<90 then
-          spawn_projectile(e)
-          break
-        end
-      end
-    end
+    screen = "menu"
   end
-  if btnp("a") then
-    for e in all(g.enemies) do
-      local near = abs(e.x-g.player.x)+abs(e.y-g.player.y) < cfg.extract_radius
-      if near and e.stunned>0 and g.fultons>0 and not e.captured and not e.dead and e.extractable~=false then
-        e.captured=true
-        g.fultons = g.fultons - 1
-        add(g.brig,{name="POW-"..(#g.brig+1), rank=e.rank, trait=rand_trait(g.tick+#g.brig), loyalty=35+e.rank*9})
-        g.pending_rewards.funds = g.pending_rewards.funds + 24 + e.rank*8
-        g.pending_rewards.recruits = g.pending_rewards.recruits + 1
-        if e.elite and ((g.tick + e.rank) % 3 == 0) then
-          local bp = rare_blueprints[((g.tick+#g.blueprints*2)%#rare_blueprints)+1]
-          add(g.blueprints, bp)
-          push_msg("Recovered rare blueprint: "..bp)
-        end
-        g.mission_score = g.mission_score + 20
-        push_msg("Captured enemy rank "..e.rank)
-        return
-      end
-    end
-    for n in all(g.resource_nodes) do
-      if not n.taken and abs(n.x-g.player.x)+abs(n.y-g.player.y) < 28 then
-        n.taken = true
-        if n.large then
-          g.player.carrying = {amount=n.amount}
-          push_msg("Picked up large container. Extract to keep it.")
-        else
-          g.pending_rewards.salvage = g.pending_rewards.salvage + n.amount
-        end
-        g.pending_rewards.intel = g.pending_rewards.intel + 1
-        g.mission_score = g.mission_score + 12
-        push_msg("Secured depot cargo +"..n.amount.." credits")
-        return
-      end
-    end
-  end
+
+  update_notes()
 end
 
-function support_actions()
-  if btnp("leftshoulder") and g.support.recon_cd <= 0 then
-    g.support.recon_cd = 420
-    for e in all(g.enemies) do
-      if not e.captured and e.stunned <= 0 then
-        local d = abs(e.x-g.player.x)+abs(e.y-g.player.y)
-        if d < 320 then
-          e.detect = math.max(0, e.detect - 14)
-          e.last_seen = {x=e.x,y=e.y}
-          e.marked_timer = math.max(e.marked_timer or 0, 540)
-          e.locked_once = true
-        end
-      end
-    end
-    push_msg("Support: recon pulse")
-  end
-  if btnp("rightshoulder") and g.support.supply_cd <= 0 then
-    g.support.supply_cd = 720
-    g.player.stamina = math.min(100, g.player.stamina + 35)
-    g.fultons = math.min(9, g.fultons + 1)
-    push_msg("Support: supply drop (+stamina, +1 fulton)")
-  end
-end
-
-function update_objectives()
-  local active = 0
-  for e in all(g.enemies) do if not e.captured and e.stunned<=0 then active = active + 1 end end
-  if active <= 3 and g.phase=="infiltrate" then g.phase="extract_ready"; push_msg("Command structure disrupted. Extract!") end
-end
-
-function complete_extraction(early)
-  if g.player.carrying then
-    g.pending_rewards.salvage = (g.pending_rewards.salvage or 0) + (g.player.carrying.amount or 0)
-    g.player.carrying = false
-  end
-  local salvage = g.pending_rewards.salvage or 0
-  local reward_scale = early and 0.62 or 1
-  g.resources.funds = g.resources.funds + flr((g.pending_rewards.funds + salvage) * reward_scale)
-  g.resources.fuel = g.resources.fuel + flr((16 + flr(g.pending_rewards.recruits*2) + flr(salvage/24)) * reward_scale)
-  g.resources.intel = g.resources.intel + flr((4 + flr(g.alerts==0 and 4 or 0) + (g.pending_rewards.intel or 0)) * reward_scale)
-  g.mission_score = g.mission_score + flr(math.max(0, 120 - g.alerts*8) * reward_scale)
-  local region = g.regions[g.current_region]
-  if region then
-    region.influence = math.min(100, region.influence + 1 + flr(g.pending_rewards.recruits/2))
-    region.heat = math.max(0, region.heat - 1)
-  end
-  if early then
-    push_msg("Emergency extraction complete. Reduced payout applied.")
-  else
-    push_msg("Extraction success. Sold depot cargo for "..flr(salvage)..". Score "..flr(g.mission_score))
-  end
-  process_brig_recruits()
-  g.mode = "base"
-  start_new_operation()
-  save_campaign()
-end
-
-function process_brig_recruits()
-  while #g.brig > 0 do
-    local p = deli(g.brig,1)
-    local recruit = make_staff("Agent "..(#g.roster+1), p.rank, g.tick+#g.roster*5)
-    if ((g.tick + #g.roster) % 4 == 0) then recruit.deep_trait = rand_deep_trait(g.tick + #g.roster*8) end
-    add(g.roster, recruit)
-  end
-end
-
-function menu_axis_pressed(axis, dir)
-  local threshold = cfg.menu_deadzone or 0.72
-  local repeat_delay = cfg.menu_repeat_delay or 14
-  local hold_key = axis=="vertical" and "vert" or "horiz"
-  local tick_key = axis=="vertical" and "vert_tick" or "horiz_tick"
-  local value = axis=="vertical" and joyy(0) or joyx(0)
-  local pressed = false
-  local hold = g.menu_hold[hold_key] or 0
-  local hold_tick = g.menu_hold[tick_key] or 0
-  if dir < 0 and value <= -threshold then
-    if hold >= 0 then pressed = true; hold_tick = repeat_delay
-    elseif hold_tick <= 0 then pressed = true; hold_tick = repeat_delay
-    else hold_tick = hold_tick - 1 end
-    g.menu_hold[hold_key] = -1
-    g.menu_hold[tick_key] = hold_tick
-  elseif dir > 0 and value >= threshold then
-    if hold <= 0 then pressed = true; hold_tick = repeat_delay
-    elseif hold_tick <= 0 then pressed = true; hold_tick = repeat_delay
-    else hold_tick = hold_tick - 1 end
-    g.menu_hold[hold_key] = 1
-    g.menu_hold[tick_key] = hold_tick
-  else
-    g.menu_hold[hold_key] = 0
-    g.menu_hold[tick_key] = 0
-  end
-  return pressed
-end
-
-function trigger_support_action(idx)
-  if idx==1 then
-    if g.support.recon_cd <= 0 then
-      g.support.recon_cd = 420
-      for e in all(g.enemies) do
-        if not e.captured and e.stunned <= 0 then
-          local d = abs(e.x-g.player.x)+abs(e.y-g.player.y)
-          if d < 320 then
-            e.detect = math.max(0, e.detect - 14)
-            e.last_seen = {x=e.x,y=e.y}
-            e.marked_timer = math.max(e.marked_timer or 0, 540)
-            e.locked_once = true
-          end
-        end
-      end
-      push_msg("Support: recon pulse")
-    else
-      push_msg("Recon pulse cooling down")
-    end
-    return
-  elseif idx==2 then
-    if g.extraction.state~="none" then
-      push_msg("Extraction already in progress")
-      return
-    end
-    if g.phase=="extract_ready" and abs(g.player.x-g.extract_point.x)+abs(g.player.y-g.extract_point.y) < 72 then
-      g.extraction.state = "flare"
-      g.extraction.timer = cfg.flare_wait or 240
-      g.extraction.reward_tally = {funds=g.pending_rewards.funds or 0,salvage=g.pending_rewards.salvage or 0,intel=g.pending_rewards.intel or 0,recruits=g.pending_rewards.recruits or 0}
-      push_msg("Extraction flare thrown. Hold position.")
-      return
-    end
-    g.extraction.state = "flare"
-    g.extraction.timer = cfg.flare_wait or 240
-    push_msg("Emergency flare thrown outside LZ.")
-    return
-  elseif idx==3 then
-    if g.support.supply_cd <= 0 then
-      g.support.supply_cd = 700
-      g.player.stamina = math.min(100, g.player.stamina + 45)
-      g.fultons = math.min(9, g.fultons + 2)
-      push_msg("Support: emergency supply drop")
-    else
-      push_msg("Supply drop cooling down")
-    end
-    return
-  elseif idx==4 then
-    if g.support.bomb_cd == nil then g.support.bomb_cd = 0 end
-    if g.support.bomb_cd <= 0 then
-      g.support.bomb_cd = 820
-      for e in all(g.enemies) do
-        if not e.captured and e.stunned<=0 then
-          local d = abs(e.x-g.player.x)+abs(e.y-g.player.y)
-          if d < 180 then apply_damage_to_enemy(e, 28, "explosive") end
-        end
-      end
-      g.alerts = g.alerts + 2
-      push_msg("Support: bomb run inbound")
-    else
-      push_msg("Bomb run cooling down")
-    end
-    return
-  end
-end
-
-function update_field()
-  if btnp("select") then
-    g.field_menu_open = not g.field_menu_open
-    g.field_menu_cursor = 1
-    g.menu_hold.vert = 0
-    g.menu_hold.horiz = 0
-  end
-  if g.field_menu_open then
-    if btnp("up") or menu_axis_pressed("vertical",-1) then g.field_menu_cursor = math.max(1, g.field_menu_cursor-1) end
-    if btnp("down") or menu_axis_pressed("vertical",1) then g.field_menu_cursor = math.min(5, g.field_menu_cursor+1) end
-    if btnp("a") then
-      if g.field_menu_cursor>=1 and g.field_menu_cursor<=4 then
-        trigger_support_action(g.field_menu_cursor)
-      else
-        g.field_menu_open = false
-      end
-    end
-    if btnp("b") then g.field_menu_open = false; g.menu_hold.vert = 0; g.menu_hold.horiz = 0 end
-    return
-  end
-
-  move_player()
-  if abs(g.player.vx)+abs(g.player.vy) < 0.08 then g.player.anim_t = g.player.anim_t + 1 else g.player.anim_t = 0 end
-  if g.player.wake_t and g.player.wake_t > 0 then g.player.wake_t = g.player.wake_t - 1 end
-  if g.player.last_hit and g.player.last_hit > 0 then g.player.last_hit = g.player.last_hit - 1 end
-  lock_target_from_aim()
-  player_concealment()
-  if g.support.recon_cd > 0 then g.support.recon_cd = g.support.recon_cd - 1 end
-  if g.support.supply_cd > 0 then g.support.supply_cd = g.support.supply_cd - 1 end
-  if g.support.bomb_cd and g.support.bomb_cd > 0 then g.support.bomb_cd = g.support.bomb_cd - 1 end
-  for e in all(g.enemies) do update_enemy(e) end
-  update_projectiles()
-  update_particles()
-  nonlethal_actions()
-  support_actions()
-  update_objectives()
-  if g.extraction.state=="flare" then
-    g.extraction.timer = g.extraction.timer - 1
-    if g.extraction.timer <= 0 then
-      g.extraction.state = "travel"
-      g.extraction.timer = cfg.heli_travel or 210
-      g.extraction.show_timer = cfg.heli_travel or 210
-      push_msg("Helicopter inbound. Returning to base.")
-    end
-  elseif g.extraction.state=="travel" then
-    g.extraction.timer = g.extraction.timer - 1
-    g.extraction.show_timer = g.extraction.timer
-    if g.extraction.timer <= 0 then
-      complete_extraction(g.phase~="extract_ready")
-      g.extraction.state = "none"
-    end
-  end
-  if g.tick % 600 == 0 then
-    local ids={"ash_fork","frostline","hardport","iron_corridor","hollow_marsh"}
-    g.current_region = ids[((g.tick/600)%#ids)+1]
-  end
-  g.cam.x = g.player.x - 240
-  g.cam.y = g.player.y - 135
-end`},
-    {name:'base.lua',tabTheme:6,content:`function queue_research()
-  for item in all(research_tree) do
-    if not g.research.done[item.id] and g.resources.funds >= item.cost then
-      g.resources.funds = g.resources.funds - item.cost
-      add(g.research.queue,{id=item.id,name=item.name,t=item.t})
-      push_msg("R&D started: "..item.name)
-      return
-    end
-  end
-  push_msg("No affordable R&D item")
-end
-
-function update_research()
-  if g.research.active then
-    g.research.active.t = g.research.active.t - 1
-    if g.research.active.t <= 0 then
-      local done = g.research.active
-      g.research.done[done.id] = true
-      g.research.active = nil
-      push_msg("R&D complete: "..done.name)
-    end
-  elseif #g.research.queue > 0 then
-    g.research.active = deli(g.research.queue,1)
-  end
-end
-
-function launch_dispatch()
-  if #g.roster < cfg.dispatch_min_team then
-    push_msg("Dispatch needs "..cfg.dispatch_min_team.." staff")
-    return
-  end
-  local idx = g.dispatch.mission_cursor or 1
-  local t = dispatch_templates[idx] or dispatch_templates[1]
-  local intel_bonus = g.departments.intel.lvl * 0.04
-  local team_name = g.roster[(g.dispatch.selected or 1)] and g.roster[(g.dispatch.selected or 1)].name or "Team "..(#g.dispatch.active+1)
-  add(g.dispatch.active,{name=t.name,team=team_name,t=t.duration,reward=t.reward,risk=math.max(0.05,t.risk-intel_bonus),req=t.req})
-  push_msg("Dispatch launched: "..t.name.." / "..team_name)
-end
-
-function cycle_loadout(slot, dir)
-  local pool = {}
-  if slot=="primary" then pool={"tranq","smg","ar","shotgun","sniper"}
-  elseif slot=="secondary" then pool={"pistol","stun","knife"}
-  elseif slot=="gadget" then pool={"stun","gas","frag"}
-  elseif slot=="throwable" then pool={"gas","frag"}
-  elseif slot=="suit" then pool={"sneaksuit","battleframe","amphib_ops","arctic_veil"}
-  else pool={"drone_ping","signal_tap","med_kit"} end
-  local current = g.player_loadout[slot]
-  local idx=1
-  for i=1,#pool do if pool[i]==current then idx=i break end end
-  idx = idx + dir
-  if idx < 1 then idx = #pool end
-  if idx > #pool then idx = 1 end
-  g.player_loadout[slot] = pool[idx]
-  push_msg("Loadout "..slot..": "..pool[idx])
-end
-
-function tick_region_sim()
-  g.region_tick = g.region_tick + 1
-  if g.region_tick % 180 ~= 0 then return end
-  for id,reg in pairs(g.regions) do
-    local faction = faction_defs[reg.owner] or faction_defs.sentinel_union
-    reg.heat = math.max(0, math.min(100, reg.heat + faction.pressure - 0.52))
-    if id == g.current_region then
-      reg.influence = math.min(100, reg.influence + 0.18)
-    else
-      reg.influence = math.max(0, reg.influence - 0.06)
-    end
-    if reg.influence > 80 and reg.owner ~= "carthage_pmc" then reg.owner = "carthage_pmc"; reg.heat = reg.heat + 7 end
-    if reg.influence < 16 and reg.owner ~= "north_veil" then reg.owner = "north_veil" end
-  end
-end
-
-function update_roster_injuries()
-  for s in all(g.roster) do
-    if s.trauma_days and s.trauma_days > 0 and (g.tick % 120 == 0) then
-      s.trauma_days = s.trauma_days - 1
-      if s.trauma_days <= 0 then s.injury = "none" end
-    end
-  end
-end
-
-function resolve_dispatch()
-  local i=1
-  while i<=#g.dispatch.active do
-    local d=g.dispatch.active[i]
-    d.t = d.t - 1
-    if d.t<=0 then
-      local roll = math.random()
-      local outcome = "FAIL"
-      if roll > d.risk+0.25 then
-        outcome = "PERFECT"
-        g.resources.funds = g.resources.funds + d.reward + 50
-        g.resources.intel = g.resources.intel + 8
-        g.resources.morale = math.min(100, g.resources.morale + 4)
-      elseif roll > d.risk then
-        outcome = "SUCCESS"
-        g.resources.funds = g.resources.funds + d.reward
-        g.resources.fuel = g.resources.fuel + flr(d.reward/6)
-      elseif roll > d.risk-0.16 then
-        outcome = "PARTIAL"
-        g.resources.funds = g.resources.funds + flr(d.reward*0.45)
-        g.resources.morale = g.resources.morale - 3
-      else
-        g.resources.morale = g.resources.morale - 8
-        g.global_heat = g.global_heat + 3
-        if #g.roster > 0 then
-          local victim = g.roster[((g.tick+i) % #g.roster)+1]
-          if victim then
-            victim.injury = "fractured"
-            victim.trauma_days = injury_defs.fractured.days
-          end
-        end
-      end
-      add(g.dispatch.log, outcome.." "..d.name)
-      if #g.dispatch.log > 5 then deli(g.dispatch.log,1) end
-      deli(g.dispatch.active,i)
-    else
-      i = i + 1
-    end
-  end
-end
-
-function hire_candidate()
-  if #g.brig <= 0 then push_msg("No candidates in brig") return end
-  local p = deli(g.brig,1)
-  add(g.roster, make_staff("Agent "..(#g.roster+1), p.rank, g.tick+#g.roster*5))
-  push_msg("Hired candidate from brig")
-end
-
-function fire_last_staff()
-  if #g.roster <= 0 then push_msg("Roster already empty") return end
-  local gone = deli(g.roster, #g.roster)
-  push_msg("Fired "..gone.name)
-end
-
-function manufacture_loadout_item(slot)
-  local item = g.player_loadout[slot]
-  local cost_funds = 26
-  local cost_metals = 4
-  if slot=="primary" then cost_funds=48 cost_metals=9
-  elseif slot=="suit" then cost_funds=64 cost_metals=12
-  elseif slot=="throwable" then cost_funds=34 cost_metals=6 end
-  if g.resources.funds < cost_funds or g.resources.metals < cost_metals then
-    push_msg("Manufacturing shortfall for "..slot)
-    return
-  end
-  g.resources.funds = g.resources.funds - cost_funds
-  g.resources.metals = g.resources.metals - cost_metals
-  g.resources.morale = math.min(100, g.resources.morale + 1)
-  push_msg("Manufactured "..slot..": "..item)
-end
-
-function cycle_region(dir)
-  local ids={"ash_fork","frostline","hardport","iron_corridor","hollow_marsh"}
-  local idx=1
-  for i=1,#ids do if ids[i]==g.current_region then idx=i break end end
-  idx = idx + dir
-  if idx<1 then idx=#ids end
-  if idx>#ids then idx=1 end
-  g.current_region = ids[idx]
-  push_msg("Field operation relocated: "..g.current_region)
-end
-
-function handle_base_inputs()
-  if btnp("left") or menu_axis_pressed("horizontal",-1) then g.base_tab = math.max(1, g.base_tab-1); g.base_cursor=1 end
-  if btnp("right") or menu_axis_pressed("horizontal",1) then g.base_tab = math.min(3, g.base_tab+1); g.base_cursor=1 end
-  if btnp("up") or menu_axis_pressed("vertical",-1) then g.base_cursor = math.max(1,(g.base_cursor or 1)-1) end
-  if btnp("down") or menu_axis_pressed("vertical",1) then g.base_cursor = math.min(5,(g.base_cursor or 1)+1) end
-  if btnp("x") then g.mode = "dispatch"; return end
-  if g.base_tab==1 then
-    if btnp("a") then
-      if g.base_cursor==1 then hire_candidate()
-      elseif g.base_cursor==2 then fire_last_staff()
-      elseif g.base_cursor==3 then queue_research()
-      elseif g.base_cursor==4 then cycle_region(1)
-      elseif g.base_cursor==5 then g.mode = "field" end
-    end
-  elseif g.base_tab==2 then
-    if btnp("leftshoulder") then cycle_loadout("primary",-1) end
-    if btnp("rightshoulder") then cycle_loadout("primary",1) end
-    if btnp("a") then
-      if g.base_cursor==1 then cycle_loadout("primary",1)
-      elseif g.base_cursor==2 then cycle_loadout("secondary",1)
-      elseif g.base_cursor==3 then cycle_loadout("throwable",1)
-      elseif g.base_cursor==4 then cycle_loadout("suit",1)
-      elseif g.base_cursor==5 then manufacture_loadout_item("primary") end
+function _update()
+  if screen == "menu" then
+    update_menu()
+  elseif screen == "controls" or screen == "about" or screen == "pause" then
+    update_controls_like_screen()
+    if screen == "pause" and (btnp("x") or keyp("enter")) then
+      screen = "game"
     end
   else
-    if btnp("a") then
-      if g.base_cursor==1 then cycle_region(1)
-      elseif g.base_cursor==2 then queue_research()
-      elseif g.base_cursor==3 then g.mode="field"
-      elseif g.base_cursor==4 then manufacture_loadout_item("suit")
-      else manufacture_loadout_item("throwable") end
-    end
-  end
-end
-
-function handle_dispatch_inputs()
-  if btnp("up") or menu_axis_pressed("vertical",-1) then g.dispatch_cursor = math.max(1,(g.dispatch_cursor or 1)-1) end
-  if btnp("down") or menu_axis_pressed("vertical",1) then g.dispatch_cursor = math.min(4,(g.dispatch_cursor or 1)+1) end
-  if btnp("left") or menu_axis_pressed("horizontal",-1) then
-    if g.dispatch_cursor==1 then g.dispatch.mission_cursor = math.max(1,(g.dispatch.mission_cursor or 1)-1)
-    elseif g.dispatch_cursor==2 then g.dispatch.selected = math.max(1,(g.dispatch.selected or 1)-1) end
-  end
-  if btnp("right") or menu_axis_pressed("horizontal",1) then
-    if g.dispatch_cursor==1 then g.dispatch.mission_cursor = math.min(#dispatch_templates,(g.dispatch.mission_cursor or 1)+1)
-    elseif g.dispatch_cursor==2 then g.dispatch.selected = math.min(math.max(1,#g.roster),(g.dispatch.selected or 1)+1) end
-  end
-  if btnp("x") or (btnp("a") and g.dispatch_cursor==3) then launch_dispatch() return end
-  if btnp("a") and g.dispatch_cursor==4 then g.mode = "base" end
-end
-
-function game_update()
-  g.tick = g.tick + 1
-  tick_messages()
-  if btnp("start") then
-    g.paused = not g.paused
-    g.menu_hold.vert = 0
-    g.menu_hold.horiz = 0
-  end
-  if g.scene == "menu" then
-    if btnp("a") then g.scene = "game" end
-    return
-  end
-  if g.paused then
-    if btnp("up") or menu_axis_pressed("vertical",-1) or btnp("down") or menu_axis_pressed("vertical",1) then g.pause_cursor = 3 - (g.pause_cursor or 1) end
-    if btnp("a") then g.pause_info_page = g.pause_cursor or 1 end
-    if btnp("left") or menu_axis_pressed("horizontal",-1) then g.pause_info_page = 1; g.pause_cursor = 1 end
-    if btnp("right") or menu_axis_pressed("horizontal",1) then g.pause_info_page = 2; g.pause_cursor = 2 end
-    return
-  end
-  tick_region_sim()
-  update_roster_injuries()
-  update_research()
-  resolve_dispatch()
-  if g.mode == "field" then
-    update_field()
-  elseif g.mode == "dispatch" then
-    handle_dispatch_inputs()
-  else
-    handle_base_inputs()
-  end
-end`},
-    {name:'draw.lua',tabTheme:2,content:`function draw_enemy(e)
-  if e.captured then return end
-  local ref = (e.state=="alert" and "3a") or (e.kind=="officer" and "2a") or "1a"
-  if e.dead then ref = "9a"
-  elseif e.stunned>0 then ref = "8a" end
-  if e.blood then
-    circfill(e.blood.x,e.blood.y,e.blood.size or 8,9)
-    circfill(e.blood.x+3,e.blood.y+1,math.max(2,(e.blood.size or 8)-4),8)
-  end
-  if e.dead or e.stunned>0 then
-    spr(ref,e.x,e.y)
-  elseif e.wake_t and e.wake_t > 0 then
-    animate("2a",e.x,e.y,5)
-    circ(e.x+8,e.y+8,8+(e.wake_t%4),10)
-  elseif e.state=="patrol" then
-    animate(ref,e.x,e.y,6)
-  else
-    spr(ref,e.x,e.y)
-  end
-  if e.elite then rect(e.x+2,e.y-3,e.x+13,e.y-1,8) end
-  if e.state=="alert" then circ(e.x+8,e.y-4,5,8) end
-  if e.state=="suspicious" then circ(e.x+8,e.y-4,4,10) end
-  local fx = e.facing and e.facing.x or e.dir
-  local fy = e.facing and e.facing.y or 0
-  local mag = math.max(0.001, math.sqrt(fx*fx + fy*fy))
-  line(e.x+8,e.y+8,e.x+8+(fx/mag)*12,e.y+8+(fy/mag)*12,10)
-  if not e.dead and (e.locked_once or (e.marked_timer or 0) > 0) then
-    local range = e.vision or 90
-    local tipx = e.x+8+(fx/mag)*range
-    local tipy = e.y+8+(fy/mag)*range
-    line(e.x+8,e.y+8,tipx,tipy,11)
-    circ(tipx,tipy,4,11)
-  end
-end
-
-function draw_hud()
-  camera()
-  zoom(1)
-  rect(10,10,184,28,7)
-  print(g.phase=="extract_ready" and "EXTRACTION READY" or "INFILTRATING",11,18,16)
-  print("HP "..flr(g.player.hp).." STM "..flr(g.player.stamina),12,214,16)
-end
-
-function draw_field()
-  cls(1)
-  zoom(cfg.field_zoom or 2)
-  camera(g.cam.x,g.cam.y)
-  rectfill(g.cam.x-120,g.cam.y-120,g.cam.x+620,g.cam.y+420,1)
-  map(0)
-  for i=1,22 do
-    local sx = g.cam.x + ((i*97 + g.tick*0.4) % 780) - 120
-    local sy = g.cam.y + ((i*61 + g.tick*0.25) % 520) - 120
-    pset(sx,sy,12)
-  end
-  for b in all(g.blood or {}) do
-    circfill(b.x,b.y,b.size or 6,9)
-    circfill(b.x+2,b.y+1,math.max(2,(b.size or 6)-3),8)
-  end
-  for e in all(g.enemies) do draw_enemy(e) end
-  for p in all(g.prisoners) do if not p.rescued then spr("2a",p.x,p.y) end end
-  if g.player.wake_t and g.player.wake_t > 0 then
-    animate(0,g.player.x,g.player.y,4)
-    circ(g.player.x+8,g.player.y+8,10+(g.player.wake_t%6),11)
-  elseif g.player.anim_t and g.player.anim_t > 18 then
-    spr("0a",g.player.x,g.player.y)
-  else
-    animate(0,g.player.x,g.player.y,8)
-  end
-  if g.player.last_hit and g.player.last_hit > 0 then rect(g.player.x-2,g.player.y-2,g.player.x+18,g.player.y+18,8) end
-  if g.research.done.drone_ping then circ(g.player.x+8,g.player.y+8,24+(g.tick%24),11) end
-  if g.player.aim and not g.player.aim.captured and g.player.aim.stunned<=0 and not g.player.aim.dead then
-    rect(g.player.aim.x-3,g.player.aim.y-3,g.player.aim.x+19,g.player.aim.y+19,8)
-  end
-  if g.extract_point then
-    circ(g.extract_point.x,g.extract_point.y,20,10)
-    if g.phase=="extract_ready" then rect(g.extract_point.x-22,g.extract_point.y-22,g.extract_point.x+22,g.extract_point.y+22,10) end
-  end
-  for n in all(g.resource_nodes) do
-    if not n.taken then
-      if n.large then rectfill(n.x-8,n.y-8,n.x+8,n.y+8,10); rect(n.x-9,n.y-9,n.x+9,n.y+9,7)
-      else rect(n.x-5,n.y-5,n.x+5,n.y+5,10) end
-    end
-  end
-  if g.player.carrying then rectfill(g.player.x-2,g.player.y+18,g.player.x+18,g.player.y+24,10) end
-  for b in all(g.projectiles or {}) do circfill(b.x,b.y,2,11) end
-  for p in all(g.particles or {}) do pset(p.x,p.y,p.c or 10) end
-  draw_hud()
-  local y=32
-  for msg in all(g.msgs) do
-    if msg.ttl and msg.ttl > 0 then print(msg.text,12,14,y); y = y + 12 end
-  end
-  if g.field_menu_open then
-    camera()
-    zoom(1)
-    rectfill(138,78,340,196,1)
-    rect(138,78,340,196,7)
-    print("FIELD SUPPORT",11,182,90)
-    local opts={"Recon Pulse","Extraction Flare","Supply Drop","Bomb Run","Close"}
-    local oy=108
-    for i=1,5 do
-      if g.field_menu_cursor==i then rect(150,oy-2,332,oy+12,10) end
-      print(opts[i],12,160,oy)
-      oy=oy+17
-    end
-    print("Use left joystick or d-pad to select",10,148,186)
-  end
-  if g.extraction and g.extraction.state=="flare" then
-    camera(); zoom(1)
-    rectfill(126,16,360,48,1); rect(126,16,360,48,10)
-    print("FLARE ACTIVE - Heli ETA "..flr((g.extraction.timer or 0)/60).."s",11,136,30)
-  elseif g.extraction and g.extraction.state=="travel" then
-    camera(); zoom(1)
-    rectfill(98,18,382,84,1); rect(98,18,382,84,10)
-    print("RETURNING TO BASE",11,172,30)
-    print("ETA "..flr((g.extraction.show_timer or 0)/60).."s",12,198,44)
-    local rr = g.pending_rewards or {}
-    print("Rewards: $"..flr((rr.funds or 0)+(rr.salvage or 0)).." Intel "..flr(rr.intel or 0).." Recruits "..flr(rr.recruits or 0),12,110,60)
-  end
-end
-
-function draw_base()
-  cls(14)
-  rectfill(22,20,458,250,2)
-  rectfill(24,22,456,98,1)
-  rect(22,20,458,250,7)
-  print("BASE COMMAND",11,36,34,color(246,240,220))
-  print("UP/DOWN navigate  A select  X dispatch",12,36,50,color(246,240,220))
-  print("Pages: 1 Personnel  2 Loadout  3 Region/R&D",10,36,62,color(246,240,220))
-  if g.base_tab==1 then
-    local opts={"Hire brig candidate","Fire last staff","Queue research","Change field region","Deploy to field"}
-    print("Personnel + command",10,36,78,color(246,240,220))
-    local oy=92
-    for i=1,#opts do
-      if (g.base_cursor or 1)==i then rect(34,oy-2,242,oy+10,10) end
-      print(opts[i],12,40,oy,color(246,240,220))
-      oy = oy + 14
-    end
-    print("Departments",10,252,78,color(246,240,220))
-    local y=92
-    for k,v in pairs(g.departments) do
-      print(k.." lv"..v.lvl.." - "..v.bonus,12,256,y,color(246,240,220))
-      y = y + 12
-    end
-  elseif g.base_tab==2 then
-    print("Loadout slots (A rotates / LB RB quick primary)",10,36,78,color(246,240,220))
-    local rows={
-      "Primary: "..g.player_loadout.primary,
-      "Secondary: "..g.player_loadout.secondary,
-      "Throwable: "..g.player_loadout.throwable,
-      "Suit: "..g.player_loadout.suit,
-      "Manufacture selected primary"
-    }
-    local ly=96
-    for i=1,#rows do
-      if (g.base_cursor or 1)==i then rect(34,ly-2,242,ly+10,10) end
-      print(rows[i],12,40,ly,color(246,240,220))
-      ly=ly+14
-    end
-    print("Rare blueprints:",10,250,96,color(246,240,220))
-    local by=110
-    for i=1,math.min(7,#g.blueprints) do print("- "..g.blueprints[i],12,254,by,color(246,240,220)); by = by + 12 end
-  else
-    local rows={"Cycle mission region","Queue research","Deploy to field","Manufacture suit","Manufacture throwable"}
-    print("Region map + R&D + manufacture",10,36,78,color(246,240,220))
-    local sy=92
-    for i=1,#rows do
-      if (g.base_cursor or 1)==i then rect(34,sy-2,242,sy+10,10) end
-      print(rows[i],12,40,sy,color(246,240,220))
-      sy = sy + 14
-    end
-    local ry=92
-    for id,reg in pairs(g.regions) do
-      local marker=(id==g.current_region and "> " or "  ")
-      print(marker..id.." owner:"..reg.owner,12,252,ry,color(246,240,220))
-      print("heat "..flr(reg.heat).." inf "..flr(reg.influence),10,410,ry,color(246,240,220))
-      ry = ry + 14
-    end
-    print("Roster trauma",10,252,178,color(246,240,220))
-    local ty=192
-    for i=1,math.min(4,#g.roster) do
-      local r=g.roster[i]
-      print(r.name.." "..r.injury.." ("..(r.trauma_days or 0).."d) "..r.deep_trait,12,254,ty,color(246,240,220))
-      ty = ty + 12
-    end
+    update_game()
   end
 end
 
 function draw_menu()
-  cls(14)
-  rectfill(34,26,444,240,2)
-  rectfill(36,28,442,96,9)
-  rect(34,26,444,240,7)
-  rect(128,108,302,126,10)
-  print("OPERATION CORPORATION (REMAKE)",7,66,46)
-  print("Stylized stealth ops + base growth + dispatch",6,72,84)
-  print("A: start campaign",14,142,112)
-  print("B: nonlethal tranq, A near stunned target to capture",14,74,138)
-  print("Y crouch / X sprint / Select field menu",14,100,160)
-  print("Pause menu includes controls + support tools",12,90,184)
-  print("Secure base resources and sell at extraction",12,88,204)
-end
-
-function draw_dispatch()
-  cls(14)
-  rectfill(26,24,454,246,2)
-  rectfill(28,26,452,64,1)
-  rect(26,24,454,246,7)
-  print("DISPATCH BOARD",11,36,36,color(246,240,220))
-  print("UP/DOWN select row, LEFT/RIGHT change, X launch",12,36,52,color(246,240,220))
-  local y=76
-  local mission = dispatch_templates[g.dispatch.mission_cursor or 1] or dispatch_templates[1]
-  local staff = g.roster[g.dispatch.selected or 1]
-  if (g.dispatch_cursor or 1)==1 then rect(34,y-2,310,y+10,10) end
-  print("Mission: "..mission.name.." ("..mission.req..")",12,40,y,color(246,240,220)); y=y+14
-  if (g.dispatch_cursor or 1)==2 then rect(34,y-2,310,y+10,10) end
-  print("Assigned lead: "..(staff and staff.name or "none"),12,40,y,color(246,240,220)); y=y+16
-  if (g.dispatch_cursor or 1)==3 then rect(34,y-2,220,y+10,10) end
-  print("Launch mission",12,40,y,color(246,240,220)); y=y+14
-  if (g.dispatch_cursor or 1)==4 then rect(34,y-2,220,y+10,10) end
-  print("Back to base",12,40,y,color(246,240,220)); y=y+14
-  y = y + 4
-  print("Active teams:",10,36,y,color(246,240,220)); y=y+14
-  if #g.dispatch.active<=0 then print("none",12,40,y,color(246,240,220)); y=y+12 end
-  for d in all(g.dispatch.active) do
-    print(d.name.." / "..(d.team or "team").." t:"..flr(d.t/60).."s risk:"..flr(d.risk*100).."%",12,40,y,color(246,240,220))
-    y = y + 12
-  end
-  y = y + 8
-  print("Recent outcomes:",10,36,y,color(246,240,220)); y = y + 14
-  for i=#g.dispatch.log,1,-1 do
-    print(g.dispatch.log[i],12,40,y,color(246,240,220))
-    y = y + 12
+  rectfill(70, 28, 410, 240, 2)
+  print("basic menu + screen swap", 18, 96, 46, 7)
+  print("use dpad/left stick + a", 12, 116, 68, 14)
+  for i=1,#menu_items do
+    local y = 108 + i * 30
+    local selected = i == menu_index
+    rectfill(122, y - 8, 358, y + 14, selected and 8 or 1)
+    print(menu_items[i], 14, 146, y, selected and 15 or 6)
   end
 end
 
-function draw_pause_overlay()
-  rectfill(46,24,434,246,1)
-  rect(46,24,434,246,7)
-  print("PAUSED",8,214,38)
-  print("START resumes",12,186,54)
-  if (g.pause_cursor or 1)==1 then rect(62,70,188,86,10) else rect(198,70,332,86,10) end
-  print("Overview",12,74,74)
-  print("Controls",12,214,74)
-  if g.pause_info_page == 2 then
-    print("FIELD CONTROLS",10,66,98)
-    print("Left stick: move",12,66,114)
-    print("Right stick: aim + lock",12,66,128)
-    print("A capture / secure depots",12,66,142)
-    print("B fire active weapon",12,66,156)
-    print("Y crouch  X sprint",12,66,170)
-    print("SELECT opens support tools menu",12,66,184)
-    print("Flare / supply / bomb run in field menu",10,66,198)
+function draw_controls()
+  rectfill(44, 24, 436, 246, 1)
+  print("controls", 20, 186, 42, 10)
+  print("left joystick aims arrow", 14, 92, 88, 7)
+  print("spr(0,...,flip) shows mirror", 14, 92, 112, 7)
+  print("r_spr(0,...,angle,flip)", 14, 92, 136, 7)
+  print("sin/cosin animate background", 14, 92, 160, 7)
+  print("add/del used in note bubbles", 14, 92, 184, 7)
+  print("press b to go back", 14, 132, 214, 14)
+end
+
+function draw_about()
+  rectfill(44, 24, 436, 246, 6)
+  print("about", 20, 212, 42, 13)
+  print("this example uses clear, readable", 14, 86, 96, 15)
+  print("state screens with simple if blocks.", 14, 86, 120, 15)
+  print("no tricky compact patterns.", 14, 86, 144, 15)
+  print("press b to go back", 14, 132, 214, 13)
+end
+
+function draw_game()
+  for s in all(stars) do
+    local wobble = sin(wave_t + s.twinkle) * 2
+    pset(s.x + wobble, s.y + cosin(wave_t + s.twinkle) * 2, 12)
+  end
+  rectfill(12, 12, 468, 258, 1)
+  line(12, 12, 468, 12, 6)
+  line(12, 258, 468, 258, 6)
+
+  spr(0, player.x - 36, player.y - 8, player.flip)
+  r_spr(0, player.x - 8, player.y - 8, player.angle, player.flip)
+
+  print("left: spr flip", 12, 20, 20, 14)
+  print("right: r_spr joystick heading", 12, 266, 20, 14)
+  print("x pause  b menu", 12, 174, 244, 7)
+
+  local y = 214
+  for n in all(notes) do
+    print(n.text, 12, 18, y, 10)
+    y -= 14
+  end
+end
+
+function draw_pause()
+  draw_game()
+  rectfill(130, 92, 350, 178, 13)
+  print("paused", 20, 194, 118, 7)
+  print("press x to resume", 14, 164, 148, 7)
+end
+
+function _draw()
+  cls(color(10, 16, 28))
+  if screen == "menu" then
+    draw_menu()
+  elseif screen == "controls" then
+    draw_controls()
+  elseif screen == "about" then
+    draw_about()
+  elseif screen == "pause" then
+    draw_pause()
   else
-    local region = g.regions[g.current_region] or {owner="n/a",heat=0,influence=0}
-    print("MISSION OVERVIEW",10,66,98)
-    print("Funds "..flr(g.resources.funds).."  Fuel "..flr(g.resources.fuel).."  Intel "..flr(g.resources.intel),12,66,114)
-    print("Score "..flr(g.mission_score).."  Alerts "..flr(g.alerts).."  Fultons "..g.fultons,12,66,128)
-    print("Pending sell value "..flr(g.pending_rewards.salvage or 0),12,66,142)
-    print("Region "..g.current_region.." owner "..region.owner,12,66,156)
-    print("Heat "..flr(region.heat).."  Influence "..flr(region.influence),12,66,170)
-    print("Phase: "..g.phase,12,66,184)
+    draw_game()
   end
-end
-
-function game_draw()
-  zoom(1)
-  if g.scene == "menu" then draw_menu() return end
-  if g.mode == "field" then
-    draw_field()
-  elseif g.mode == "dispatch" then
-    draw_dispatch()
-  else
-    draw_base()
-  end
-  if g.paused then draw_pause_overlay() end
-end`},
-    {name:'systems.lua',tabTheme:7,content:`systems = {global={}, mode={}}
-
-function init_systems()
-  systems.global = {
-    {name="region_sim", step=tick_region_sim},
-    {name="roster_injuries", step=update_roster_injuries},
-    {name="research", step=update_research},
-    {name="dispatch", step=resolve_dispatch}
-  }
-  systems.mode = {
-    field = {
-      {name="field_step", step=update_field}
-    },
-    dispatch = {
-      {name="dispatch_input", step=handle_dispatch_inputs}
-    },
-    base = {
-      {name="base_input", step=handle_base_inputs}
-    }
-  }
-end
-
-function run_frame_pipeline()
-  if not systems or not systems.global or #systems.global == 0 then
-    init_systems()
-  end
-  core.run_systems(systems.global)
-  local active = systems.mode[g.mode] or systems.mode.base
-  core.run_systems(active)
-end`},
-
-  ];
+end`}];
   finalizeExampleProjectLoad();
 }
 
+function loadTetrisThemeExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.project.tile_w=8;
+  p.project.tile_h=8;
+  p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
+  p.tileDefs={0:makeBlankTileDef()};
+  p.palette=[...DEFAULT_PALETTE];
+  p.palette[1]="#101820";
+  p.palette[2]="#1b2a41";
+  p.palette[3]="#324a5f";
+  p.palette[4]="#1b998b";
+  p.palette[5]="#2d3047";
+  p.palette[6]="#fffd82";
+  p.palette[7]="#ffffff";
+  p.palette[8]="#ff9b71";
+  p.palette[9]="#e84855";
+  p.palette[10]="#f9dc5c";
+  p.palette[11]="#7bd389";
+  p.palette[12]="#5bc0eb";
+  p.palette[13]="#c3423f";
+  p.palette[14]="#f4b860";
+  p.palette[15]="#f7f7ff";
+  p.codeFiles=[{name:"main.lua",tabTheme:4,content:`board_w = 10
+board_h = 20
+cell = 10
+board_x = 120
+board_y = 30
+fall_delay = 28
+fall_timer = 0
+score = 0
+lines = 0
+level = 1
+state = "title"
+active = nil
+next_piece = nil
+board = {}
+high_scores = {}
+last_clear_flash = 0
+title_t = 0
+
+pieces = {
+  {name="I", color=12, rots={{{-1,0},{0,0},{1,0},{2,0}}, {{1,-1},{1,0},{1,1},{1,2}}}},
+  {name="O", color=10, rots={{{0,0},{1,0},{0,1},{1,1}}}},
+  {name="T", color=14, rots={{{-1,0},{0,0},{1,0},{0,1}}, {{0,-1},{0,0},{0,1},{1,0}}, {{-1,0},{0,0},{1,0},{0,-1}}, {{0,-1},{0,0},{0,1},{-1,0}}}},
+  {name="L", color=8, rots={{{-1,0},{0,0},{1,0},{1,1}}, {{0,-1},{0,0},{0,1},{1,-1}}, {{-1,-1},{-1,0},{0,0},{1,0}}, {{-1,1},{0,-1},{0,0},{0,1}}}},
+  {name="J", color=11, rots={{{-1,0},{0,0},{1,0},{-1,1}}, {{0,-1},{0,0},{0,1},{1,1}}, {{1,-1},{-1,0},{0,0},{1,0}}, {{-1,-1},{0,-1},{0,0},{0,1}}}},
+  {name="S", color=4, rots={{{0,0},{1,0},{-1,1},{0,1}}, {{0,-1},{0,0},{1,0},{1,1}}}},
+  {name="Z", color=9, rots={{{-1,0},{0,0},{0,1},{1,1}}, {{1,-1},{0,0},{1,0},{0,1}}}}
+}
+
+function copy_scores(src)
+  local out = {}
+  for item in all(src) do add(out, item) end
+  return out
+end
+
+function save_scores()
+  local raw = ""
+  for i=1,math.min(5,#high_scores) do
+    raw = raw .. tostring(high_scores[i])
+    if i < math.min(5,#high_scores) then raw = raw .. "," end
+  end
+  save_data("tetris_high_scores", raw)
+end
+
+function load_scores()
+  high_scores = {}
+  local raw = load_data("tetris_high_scores")
+  if raw and raw ~= "" then
+    local value = ""
+    for i=1,#raw do
+      local ch = string.sub(raw, i, i)
+      if ch == "," then
+        if value ~= "" then add(high_scores, tonumber(value) or 0) end
+        value = ""
+      else
+        value = value .. ch
+      end
+    end
+    if value ~= "" then add(high_scores, tonumber(value) or 0) end
+  end
+  while #high_scores < 5 do add(high_scores, 0) end
+end
+
+function clear_board()
+  board = {}
+  for y=1,board_h do
+    board[y] = {}
+    for x=1,board_w do board[y][x] = 0 end
+  end
+end
+
+function new_piece_from(def)
+  return {def=def, rot=1, x=5, y=1}
+end
+
+function random_piece()
+  return pieces[flr(rnd(#pieces)) + 1]
+end
+
+function piece_cells(piece, test_rot, test_x, test_y)
+  local rot = test_rot or piece.rot
+  local px = test_x or piece.x
+  local py = test_y or piece.y
+  local cells = {}
+  local shape = piece.def.rots[rot]
+  for i=1,#shape do
+    add(cells, {x = px + shape[i][1], y = py + shape[i][2]})
+  end
+  return cells
+end
+
+function can_place(piece, test_rot, test_x, test_y)
+  local cells = piece_cells(piece, test_rot, test_x, test_y)
+  for c in all(cells) do
+    if c.x < 1 or c.x > board_w or c.y > board_h then return false end
+    if c.y >= 1 and board[c.y][c.x] ~= 0 then return false end
+  end
+  return true
+end
+
+function lock_piece()
+  for c in all(piece_cells(active)) do
+    if c.y >= 1 then board[c.y][c.x] = active.def.color end
+  end
+end
+
+function clear_lines()
+  local removed = 0
+  local y = board_h
+  while y >= 1 do
+    local full = true
+    for x=1,board_w do
+      if board[y][x] == 0 then full = false break end
+    end
+    if full then
+      removed += 1
+      for pull=y,2,-1 do
+        for x=1,board_w do board[pull][x] = board[pull-1][x] end
+      end
+      for x=1,board_w do board[1][x] = 0 end
+    else
+      y -= 1
+    end
+  end
+  if removed > 0 then
+    lines += removed
+    score += removed * removed * 100
+    level = 1 + flr(lines / 10)
+    fall_delay = math.max(6, 28 - (level - 1) * 2)
+    last_clear_flash = 8
+  end
+end
+
+function spawn_piece()
+  active = new_piece_from(next_piece or random_piece())
+  next_piece = random_piece()
+  if not can_place(active) then
+    add(high_scores, score)
+    table.sort(high_scores, function(a,b) return a > b end)
+    while #high_scores > 5 do deli(high_scores, #high_scores) end
+    save_scores()
+    state = "game_over"
+  end
+end
+
+function start_game()
+  clear_board()
+  score = 0
+  lines = 0
+  level = 1
+  fall_delay = 28
+  fall_timer = 0
+  next_piece = random_piece()
+  state = "play"
+  spawn_piece()
+end
+
+function move_piece(dx, dy)
+  if can_place(active, active.rot, active.x + dx, active.y + dy) then
+    active.x += dx
+    active.y += dy
+    return true
+  end
+  return false
+end
+
+function rotate_piece()
+  local total = #active.def.rots
+  local new_rot = active.rot + 1
+  if new_rot > total then new_rot = 1 end
+  if can_place(active, new_rot, active.x, active.y) then
+    active.rot = new_rot
+    return
+  end
+  if can_place(active, new_rot, active.x - 1, active.y) then
+    active.rot = new_rot
+    active.x -= 1
+    return
+  end
+  if can_place(active, new_rot, active.x + 1, active.y) then
+    active.rot = new_rot
+    active.x += 1
+  end
+end
+
+function hard_drop()
+  while move_piece(0, 1) do
+    score += 2
+  end
+  lock_piece()
+  clear_lines()
+  spawn_piece()
+end
+
+function update_play()
+  if btnp("left") then move_piece(-1,0) end
+  if btnp("right") then move_piece(1,0) end
+  if btnp("down") then
+    if move_piece(0,1) then score += 1 end
+  end
+  if btnp("a") or btnp("up") then rotate_piece() end
+  if btnp("x") then hard_drop() end
+
+  fall_timer += 1
+  if fall_timer >= fall_delay then
+    fall_timer = 0
+    if not move_piece(0,1) then
+      lock_piece()
+      clear_lines()
+      spawn_piece()
+    end
+  end
+
+  if last_clear_flash > 0 then last_clear_flash -= 1 end
+end
+
+function draw_board()
+  rectfill(board_x - 8, board_y - 8, board_x + board_w*cell + 8, board_y + board_h*cell + 8, 2)
+  for y=1,board_h do
+    for x=1,board_w do
+      local color_index = board[y][x]
+      if color_index ~= 0 then
+        local px = board_x + (x-1)*cell
+        local py = board_y + (y-1)*cell
+        rectfill(px+1, py+1, px+cell-2, py+cell-2, color_index)
+      end
+    end
+  end
+  if active then
+    for c in all(piece_cells(active)) do
+      if c.y >= 1 then
+        local px = board_x + (c.x-1)*cell
+        local py = board_y + (c.y-1)*cell
+        rectfill(px+1, py+1, px+cell-2, py+cell-2, active.def.color)
+      end
+    end
+  end
+
+  if last_clear_flash > 0 then
+    rectfill(board_x - 8, board_y - 8, board_x + board_w*cell + 8, board_y + board_h*cell + 8, 6)
+  end
+end
+
+function draw_side_panel()
+  rectfill(258, 30, 430, 230, 5)
+  print("tetronimoes", 16, 282, 44, 10)
+  print("score "..score, 14, 278, 74, 15)
+  print("lines "..lines, 14, 278, 96, 15)
+  print("level "..level, 14, 278, 118, 15)
+  print("next", 14, 278, 144, 14)
+
+  if next_piece then
+    for c in all(piece_cells({def=next_piece, rot=1, x=0, y=0})) do
+      local px = 332 + c.x*10
+      local py = 172 + c.y*10
+      rectfill(px, py, px+8, py+8, next_piece.color)
+    end
+  end
+
+  print("high score board", 12, 278, 200, 6)
+end
+
+function draw_high_scores()
+  rectfill(258, 232, 430, 264, 3)
+  for i=1,5 do
+    print(i..". "..high_scores[i], 11, 268, 230 + i*6, 7)
+  end
+end
+
+function _init()
+  load_scores()
+end
+
+function _update()
+  if state == "title" then
+    title_t += 1
+    if btnp("a") or keyp("enter") then start_game() end
+    return
+  end
+
+  if state == "play" then
+    update_play()
+    return
+  end
+
+  if state == "game_over" then
+    if btnp("a") or keyp("enter") then
+      state = "title"
+    end
+  end
+end
+
+function draw_title()
+  local bob = sin(title_t * 0.08) * 4
+  rectfill(40, 26, 440, 244, 1)
+  print("neon stack - tetris style", 22, 74, 56 + bob, 12)
+  print("tetronimoes puzzle block falling", 14, 102, 106, 10)
+  print("line completion + rotation + points", 14, 96, 130, 11)
+  print("persistent high score board", 14, 116, 154, 14)
+  print("press a / enter", 16, 164, 198, 7)
+end
+
+function draw_game_over()
+  rectfill(96, 92, 384, 184, 13)
+  print("game over", 20, 178, 116, 7)
+  print("score "..score, 14, 186, 144, 7)
+  print("press a to return", 14, 152, 166, 7)
+end
+
+function _draw()
+  cls(color(8, 12, 18))
+  if state == "title" then
+    draw_title()
+    draw_high_scores()
+    return
+  end
+
+  draw_board()
+  draw_side_panel()
+  draw_high_scores()
+
+  if state == "game_over" then draw_game_over() end
+end`}];
+  finalizeExampleProjectLoad();
+}
 
 function getExampleProjects(){
   return [
     {id:'collision',name:'Scrolling Wall Collision',description:'Separate button + joystick movement, wall checks, map scrolling with camera(), and btnp() zoom controls.',loader:loadExampleProject},
     {id:'include-function-check',name:'Include + Utility Function Check',description:'Two-file project that validates include, cls(color()), add(), rnd(), print(), and for e in all(list) do loops.',loader:loadIncludeFunctionCheckExampleProject},
-    {id:'ui-mouse',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing in the TryCode theme.',loader:loadUiMouseExampleProject},
+    {id:'menu-screen-swap',name:'Basic Menu + Screen Swap',description:'Simple readable menu/game/pause screen flow with r_spr(), spr flip, joystick direction aiming, sin/cosin motion, and add()/del() notes.',loader:loadMenuScreenSwapExampleProject},
+    {id:'ui-mouse',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing with higher-contrast readability colors.',loader:loadUiMouseExampleProject},
     {id:'poster',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
-    {id:'operation-corporation',name:'Operation Corporation',description:'Large top-down infiltration campaign demo with enemy capture/recruitment, R&D queue, dispatch missions, and persistent save_data()/load_data().',loader:loadOperationCorporationExampleProject}
+    {id:'tetris-theme',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
