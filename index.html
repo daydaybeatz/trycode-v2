@@ -55,8 +55,8 @@
     .codeTabsRow{display:flex;align-items:center;gap:8px;min-width:0}
     .codeTabsBar{display:flex;gap:8px;min-width:0;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none;flex:1}
     .codeTabsBar::-webkit-scrollbar{display:none}
-    .codeTabActions{display:flex;gap:8px;flex:0 0 auto;flex-wrap:wrap;white-space:nowrap;align-items:center}
-    .codeSearchBar{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+    .codeTabActions{display:flex;gap:8px;flex:0 0 auto;flex-wrap:nowrap;white-space:nowrap;align-items:center;overflow-x:auto}
+    .codeSearchBar{display:flex;align-items:center;gap:5px;flex-wrap:nowrap}
     .codeSearchInput{width:180px;max-width:40vw;border:2px solid var(--line);border-radius:10px;padding:5px 8px;background:#fffaf1;color:var(--ink);font-size:12px}
     .codeSearchCount{font-size:11px;font-weight:700;opacity:.88;min-width:58px;text-align:center}
     .tok-search{background:rgba(255,214,82,.35);border-radius:3px}
@@ -250,6 +250,18 @@
     .menuToggleInput::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:linear-gradient(180deg,#fffaf0,#fff0cc);box-shadow:0 2px 0 rgba(111,61,32,.22);transition:transform .15s ease}
     .menuToggleInput:checked{background:linear-gradient(180deg,var(--accent2),var(--accent));border-color:#fff2ce}
     .menuToggleInput:checked::after{transform:translateX(20px)}
+    .menuSection{border:3px solid rgba(111,61,32,.35);border-radius:14px;padding:6px 6px 0;margin:0 0 10px}
+    .menuSectionHeader{width:100%;display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin:0 0 8px;border:3px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#fff7e3,#f0d7a2);font-weight:900;letter-spacing:.06em}
+    .menuSectionHeader::after{content:'>';font-weight:900}
+    .menuSection.open .menuSectionHeader::after{content:'v'}
+    .menuSectionBody{display:none}
+    .menuSection.open .menuSectionBody{display:block}
+    .menuLoadPanel{position:absolute;inset:12px;border:4px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 6px 0 #9a6a38;padding:10px;z-index:3}
+    .menuLoadPanel.hidden{display:none}
+    .menuLoadHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .miniBtn{padding:4px 8px;font-size:11px;line-height:1;box-shadow:0 3px 0 var(--shadow)}
+    #addCodeTabBtn,#deleteCodeTabBtn{padding:4px 8px;font-size:11px;line-height:1}
+    #mapRectBtn.rect-outline{background:transparent}
     body.dark-mode{--bg:#0f1220;--paper:#12182c;--panel:#1b2340;--panel2:#283256;--line:#96a3cf;--shadow:#070b17;--ink:#f6f1df;--accent:#ff6b8f;--accent2:#f7b267;--blue:#86b1ff;--green:#93de86;--cream:#344062;--danger:#ff8a9c;background:linear-gradient(180deg,#05070d 0 20px,#11172a 20px 100%)}
     body.dark-mode .topbar{background:linear-gradient(180deg,#4f618d,#39486c);box-shadow:inset 0 -3px 0 #222b46}
     body.dark-mode .brand{background:linear-gradient(180deg,#e55b7a,#8e3851);color:#fff8ef;text-shadow:2px 2px 0 #341521;box-shadow:0 4px 0 #2a1020}
@@ -333,20 +345,20 @@
       </div>
       <div class="tabs" id="toolbarSub" style="display:none"></div>
     </div>
-    <button class="fileBtn" id="fileBtn">File</button>
+    <button class="fileBtn" id="fileBtn">Menu</button>
   </div>
 
   <div class="views">
     <div class="view active" id="view-code">
       <div class="codeView">
         <div class="codeHeaderBar">
-          <div class="codeTabsRow"><div class="codeTabsBar" id="codeTabsBar"></div><button class="uiBtn" id="addCodeTabBtn">Add</button></div>
+          <div class="codeTabsRow"><div class="codeTabsBar" id="codeTabsBar"></div><button class="uiBtn" id="addCodeTabBtn">Add</button><button class="uiBtn" id="deleteCodeTabBtn">Delete</button></div>
           <div class="codeTabActions">
             <button class="uiBtn" id="toggleCodeSearchBtn">Search</button>
             <div class="codeSearchBar hidden" id="codeSearchBar">
               <input class="codeSearchInput" id="codeSearchInput" type="text" placeholder="Find in file" autocomplete="off" spellcheck="false">
-              <button class="uiBtn" id="codeSearchPrevBtn">◀</button>
-              <button class="uiBtn" id="codeSearchNextBtn">▶</button>
+              <button class="uiBtn" id="codeSearchPrevBtn">&lt;</button>
+              <button class="uiBtn" id="codeSearchNextBtn">&gt;</button>
               <div class="codeSearchCount" id="codeSearchCount">0 / 0</div>
             </div>
             <input type="file" id="importCodeFileInput" accept=".lua,.txt" style="display:none">
@@ -359,11 +371,11 @@
     <div class="view" id="view-sprites">
       <div class="splitView" id="spriteView">
         <div class="sidebar panelSkin">
-          <div class="pane"><h4>SPRITES</h4><div class="formRow"><button class="mbtn" id="addSpriteBtn">Add Sprite</button></div><div class="pageRow compact"><button class="uiBtn" id="spriteListPrevBtn">◀</button><div class="docDesc" id="spriteListPageLabel">1 / 1</div><button class="uiBtn" id="spriteListNextBtn">▶</button></div><div class="spriteList" id="spriteList"></div><div class="spritePanelPreview"><canvas id="spritePanelPreviewCanvas" width="44" height="44"></canvas><div class="spritePanelPreviewLabel" id="spritePanelPreviewLabel">Sprite 0</div></div><div class="formRow" style="margin-top:8px"><div class="field"><label>Frames In Folder</label><div class="pageRow"><button class="uiBtn" id="spriteFolderMinusBtn">-</button><div class="docDesc" id="spriteFolderCountLabel">1</div><button class="uiBtn" id="spriteFolderPlusBtn">+</button></div></div></div><div class="frameGrid" id="spriteFrameList"></div><div class="pageRow" style="margin-top:8px"><button class="uiBtn" id="spriteFramePrevBtn">◀</button><div class="docDesc" id="spriteFramePageLabel">1 / 1</div><button class="uiBtn" id="spriteFrameNextBtn">▶</button></div></div>
+          <div class="pane"><h4>SPRITES</h4><div class="formRow"><button class="mbtn" id="addSpriteBtn">Add Sprite</button></div><div class="pageRow compact" id="spriteListPagerRow"><button class="uiBtn" id="spriteListPrevBtn">&lt;</button><div class="docDesc" id="spriteListPageLabel">1 / 1</div><button class="uiBtn" id="spriteListNextBtn">&gt;</button></div><div class="spriteList" id="spriteList"></div><div class="spritePanelPreview"><canvas id="spritePanelPreviewCanvas" width="44" height="44"></canvas><div class="spritePanelPreviewLabel" id="spritePanelPreviewLabel">Sprite 0</div></div><div class="formRow" style="margin-top:8px"><div class="field"><label>Frames In Folder</label><div class="pageRow"><button class="uiBtn" id="spriteFolderMinusBtn">-</button><div class="docDesc" id="spriteFolderCountLabel">1</div><button class="uiBtn" id="spriteFolderPlusBtn">+</button></div></div></div><div class="frameGrid" id="spriteFrameList"></div><div class="pageRow" style="margin-top:8px" id="spriteFramePagerRow"><button class="uiBtn" id="spriteFramePrevBtn">&lt;</button><div class="docDesc" id="spriteFramePageLabel">1 / 1</div><button class="uiBtn" id="spriteFrameNextBtn">&gt;</button></div></div>
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
-          <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">◀</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">▶</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
+          <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">◀</button><button class="uiBtn" id="spriteEditNextBtn">▶</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
       </div>
     </div>
 
@@ -404,7 +416,7 @@
           <div class="pane"><h4>TILES</h4><div class="tilePalette" id="tilePalette"></div></div>
           <div class="pane"><h4>LAYERS</h4><div class="formRow"><button class="mbtn" id="addLayerBtn">Add Layer</button></div><div class="layerList" id="layerList"></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
       </div>
     </div>
 
@@ -451,7 +463,12 @@
     <div class="view" id="view-docs"><div class="docsView" id="docsView"></div></div>
 
     <div class="menuBackdrop" id="menuBackdrop"></div>
-    <div class="menu" id="menu"><div class="menuCard"><h3>FILE</h3><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnImportCodeFile">Import Code File</button><button class="mbtn" id="btnNewProject">New Project</button><button class="mbtn" id="btnExportHTML">Export .html</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><h3>SETTINGS</h3><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Movement Input</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div><h3>LOAD PROJECT</h3><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">◀</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">▶</button></div><div class="list" id="projectList"></div></div></div>
+    <div class="menu" id="menu"><div class="menuCard">
+      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnImportCodeFile">Import</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div></div></div>
+      <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Movement Input</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
+      <div class="menuSection" id="menuSectionLoad"><button class="menuSectionHeader" id="menuSectionLoadToggle">LOAD PROJECT</button><div class="menuSectionBody"><div class="docDesc" style="padding:0 6px 10px">Use the Load button in FILE to open the project list.</div></div></div>
+      <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div><div class="list" id="projectList"></div></div>
+    </div></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -618,7 +635,7 @@ function get_value(t, key)
 end`;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"paint",mapAnimPlaying:true,mapAnimPausedAt:0,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -708,7 +725,17 @@ function isDesktopUI(){
 function syncResponsiveUI(){ document.body.classList.toggle('desktop-ui', isDesktopUI()); }
 function getMapAnimationTimeMs(){ return state.mapAnimPlaying ? performance.now() : state.mapAnimPausedAt; }
 function updateMapAnimToggleButton(){ const btn=$("mapAnimToggleBtn"); if(!btn) return; btn.textContent=state.mapAnimPlaying?"Pause":"Play"; btn.classList.toggle('active', !state.mapAnimPlaying); btn.title=state.mapAnimPlaying?"Pause animated tile preview":"Play animated tile preview"; }
-function updateMapToolButtons(){ $("mapPanBtn")?.classList.toggle('active', state.mapTool==='pan'); $("mapFillBtn")?.classList.toggle('active', state.mapTool==='fill'); }
+function updateMapToolButtons(){
+  $("mapDrawBtn")?.classList.toggle('active', state.mapTool==='draw');
+  const rectBtn=$("mapRectBtn");
+  if(rectBtn){
+    rectBtn.classList.toggle('active', state.mapTool==='rectfill');
+    rectBtn.classList.toggle('rect-outline', state.mapTool==='rect');
+    rectBtn.textContent=state.mapTool==='rectfill'?'Rect Fill':'Rect';
+  }
+  $("mapPanBtn")?.classList.toggle('active', state.mapTool==='pan');
+  $("mapFillBtn")?.classList.toggle('active', state.mapTool==='fill');
+}
 function currentMapHasAnimatedTiles(){ const mapObj=state.appProject&&state.appProject.maps&&state.appProject.maps[state.currentMapIndex]; if(!mapObj) return false; const ids=new Set(); for(const layer of mapObj.layers||[]){ if(!layer||layer.visible===false) continue; for(const row of layer.data||[]) for(const tid of row||[]) if(tid) ids.add(tid); } for(const id of ids){ const def=state.appProject.tileDefs&&state.appProject.tileDefs[id]; if(def&&def.animated) return true; } return false; }
 function runEditorAnimationFrame(){ if(state.activeView==='sprites' && state.spriteAnimPlaying){ drawSpriteAnimPreview(); } if(state.activeView==='map' && state.mapAnimPlaying && currentMapHasAnimatedTiles()){ drawMapEditor(); } requestAnimationFrame(runEditorAnimationFrame); }
 function renderRuntimeError(){ const box=$("runtimeErrorBox"), text=$("runtimeErrorText"); if(!box||!text) return; const hasError=!!state.lastRunError; text.textContent=state.lastRunError||""; box.classList.toggle("show", hasError); }
@@ -955,8 +982,23 @@ function renameCurrentCodeFile(){
   f.name=trimmed;
   renderCodeTabs();
 }
+function deleteCurrentCodeFile(){
+  ensureProjectData();
+  if((state.appProject.codeFiles||[]).length<=1){
+    toast('At least one code file is required.');
+    return;
+  }
+  const current=getCurrentCodeFile();
+  if(!current) return;
+  if(!confirm(`Delete ${current.name}?`)) return;
+  state.appProject.codeFiles.splice(state.currentCodeFile,1);
+  state.currentCodeFile=Math.max(0, Math.min(state.currentCodeFile, state.appProject.codeFiles.length-1));
+  renderCodeTabs();
+  loadCurrentCodeFileToEditor();
+  runtime.setLua(getProjectLua());
+}
 function renderCodeTabs(){ const bar=$("codeTabsBar"); if(!bar) return; bar.innerHTML=""; ensureProjectData(); state.appProject.codeFiles.forEach((f,i)=>{ const b=document.createElement("button"); const theme=FILE_TAB_THEMES[(Number.isInteger(f.tabTheme)?f.tabTheme:0)%FILE_TAB_THEMES.length]; b.className="codeFileTab"+(i===state.currentCodeFile?" active":""); b.textContent=f.name; b.style.setProperty("--tab-base", theme.base); b.style.setProperty("--tab-deep", theme.deep); b.style.setProperty("--tab-border", theme.border); b.style.setProperty("--tab-text", theme.text); b.onclick=()=>{ if(i===state.currentCodeFile){ renameCurrentCodeFile(); return; } saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); state.currentCodeFile=i; loadCurrentCodeFileToEditor(); renderCodeTabs(); }; bar.appendChild(b); }); }
-function loadCurrentCodeFileToEditor(){ const f=getCurrentCodeFile(); if(f) $("codeEditor").value=f.content||""; const bar=$("codeSearchBar"), btn=$("toggleCodeSearchBtn"), input=$("codeSearchInput"); if(bar) bar.classList.toggle("hidden",!state.codeSearchOpen); if(btn) btn.classList.toggle("active",state.codeSearchOpen); if(input) input.value=state.codeSearchQuery||""; applyCodeSearchState(); updateCodeLineNumbers(); const shell=$("codeScrollShell"), view=getCodeFileViewState(state.currentCodeFile); if(shell){ shell.scrollTop=view.scrollTop||0; shell.scrollLeft=view.scrollLeft||0; } }
+function loadCurrentCodeFileToEditor(){ const f=getCurrentCodeFile(); if(f) $("codeEditor").value=f.content||""; const bar=$("codeSearchBar"), btn=$("toggleCodeSearchBtn"), input=$("codeSearchInput"), deleteBtn=$("deleteCodeTabBtn"); if(bar) bar.classList.toggle("hidden",!state.codeSearchOpen); if(btn) btn.classList.toggle("active",state.codeSearchOpen); if(input) input.value=state.codeSearchQuery||""; if(deleteBtn) deleteBtn.disabled=(state.appProject?.codeFiles?.length||0)<=1; applyCodeSearchState(); updateCodeLineNumbers(); const shell=$("codeScrollShell"), view=getCodeFileViewState(state.currentCodeFile); if(shell){ shell.scrollTop=view.scrollTop||0; shell.scrollLeft=view.scrollLeft||0; } }
 function resetCodePaneScroll(){
   const ed=$("codeEditor"), highlight=$("codeHighlight");
   if(ed){
@@ -1178,7 +1220,7 @@ function refreshProjectList(){
     row.className='itemRow';
     const label=document.createElement('div');
     label.textContent=name;
-    label.style.flex='1';
+    label.className='projName';
     const loadBtn=document.createElement('button');
     loadBtn.className='smallbtn';
     loadBtn.textContent='Load';
@@ -1231,6 +1273,25 @@ function refreshProjectList(){
     const deleteBtn=document.createElement('button');
     deleteBtn.className='smallbtn';
     deleteBtn.textContent='Delete';
+    const renameBtn=document.createElement('button');
+    renameBtn.className='smallbtn';
+    renameBtn.textContent='Rename';
+    renameBtn.onclick=(e)=>{
+      e.stopPropagation();
+      const next=promptForProjectName('Rename project:', name);
+      if(!next || next===name) return;
+      if(all[next]){
+        alert(`A project named "${next}" already exists.`);
+        return;
+      }
+      all[next]=all[name];
+      all[next].t=Date.now();
+      delete all[name];
+      saveAllProjects(all);
+      if(state.currentProjectName===name) state.currentProjectName=next;
+      refreshProjectList();
+      toast(`<b>Renamed:</b> ${escapeHtml(name)} → ${escapeHtml(next)}`);
+    };
     deleteBtn.onclick=(e)=>{
       e.stopPropagation();
       if(!confirm(`Are you sure you want to delete "${name}"?`)) return;
@@ -1245,6 +1306,7 @@ function refreshProjectList(){
     };
     row.appendChild(label);
     row.appendChild(loadBtn);
+    row.appendChild(renameBtn);
     row.appendChild(deleteBtn);
     list.appendChild(row);
   });
@@ -1284,6 +1346,7 @@ function importCodeFile(file){
 function saveProject(){ saveEditorToCurrentCodeFile(); const all=loadAllProjects(); const defaultName=state.currentProjectName||'project_1'; const name=promptForProjectName('Save project as:', defaultName); if(!name) return; state.currentProjectName=name; state.hasSaved=true; all[name]={ t:Date.now(), project: JSON.parse(JSON.stringify(state.appProject)) }; saveAllProjects(all); refreshProjectList();
 updateCodeLineNumbers(); toast(`<b>Saved:</b> ${escapeHtml(name)}`); }
 let exportFengariSourcePromise=null;
+let jsZipLoadPromise=null;
 function escapeInlineScript(text){
   return String(text ?? '')
     .replace(/<\/script/gi,'<\\/script')
@@ -1300,6 +1363,21 @@ async function getExportFengariSource(){
       .then(source=>{ window.__TRYCODE_EXPORT_FENGARI_SOURCE=source; return source; });
   }
   return exportFengariSourcePromise;
+}
+async function ensureJsZipLoaded(){
+  if(window.JSZip) return window.JSZip;
+  if(!jsZipLoadPromise){
+    jsZipLoadPromise=new Promise((resolve,reject)=>{
+      const script=document.createElement('script');
+      script.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+      script.onload=()=>resolve(window.JSZip);
+      script.onerror=()=>reject(new Error('Failed to load zip library.'));
+      document.head.appendChild(script);
+    });
+  }
+  const lib=await jsZipLoadPromise;
+  if(!lib) throw new Error('Zip library did not initialize.');
+  return lib;
 }
 function buildExportRuntimeSource(projectJson, codeJson){
   return [
@@ -1349,7 +1427,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
   ].join('\n');
 }
 function buildExportHTMLDocument(fengariSource, runtimeJs){
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title><style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:34px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:34px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:34px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">▲</div><div class="dpadBtn left" data-dpad-btn="2">◀</div><div class="dpadBtn right" data-dpad-btn="3">▶</div><div class="dpadBtn down" data-dpad-btn="1">▼</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><script>${escapeInlineScript(fengariSource)}</script><script>${escapeInlineScript(runtimeJs)}</script></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title><style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:34px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:34px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:34px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">▲</div><div class="dpadBtn left" data-dpad-btn="2">&lt;</div><div class="dpadBtn right" data-dpad-btn="3">&gt;</div><div class="dpadBtn down" data-dpad-btn="1">▼</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><script>${escapeInlineScript(fengariSource)}</script><script>${escapeInlineScript(runtimeJs)}</script></body></html>`;
 }
 async function exportHTML(){
   saveEditorToCurrentCodeFile();
@@ -1371,6 +1449,39 @@ async function exportHTML(){
     toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
   }
 }
+async function exportProjectZip(){
+  saveEditorToCurrentCodeFile();
+  const exportName=promptForProjectName('Project file name for export:', state.currentProjectName||'project_1');
+  if(!exportName) return;
+  const exportFilename=makeProjectFilename(exportName);
+  try{
+    const JSZip=await ensureJsZipLoaded();
+    const zip=new JSZip();
+    (state.appProject.codeFiles||[]).forEach(file=>{
+      const name=String(file.name||'file.lua').trim()||'file.lua';
+      zip.file(`lua/${name}`, String(file.content||''));
+    });
+    zip.file('sprites/sprite_folders.json', JSON.stringify(state.appProject.spriteFolders||[], null, 2));
+    zip.file('maps/maps.json', JSON.stringify(state.appProject.maps||[], null, 2));
+    zip.file('music/music.json', JSON.stringify(state.appProject.music||[], null, 2));
+    zip.file('project/project.json', JSON.stringify(state.appProject.project||{}, null, 2));
+    const blob=await zip.generateAsync({type:'blob'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=exportFilename+'.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    toast(`<b>Exported project bundle:</b> ${escapeHtml(exportFilename)}.zip`);
+  }catch(err){
+    console.error(err);
+    toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
+  }
+}
+function exportProject(){
+  const choice=prompt('Export format? Type ".html" or ".zip".','.html');
+  if(choice==null) return;
+  const normalized=String(choice).trim().toLowerCase();
+  if(normalized==='.zip' || normalized==='zip') exportProjectZip();
+  else if(normalized==='.html' || normalized==='html') exportHTML();
+  else toast('Export canceled: choose .html or .zip.');
+}
 function buildDocs(){
   const root=$("docsView");
   const perPage=5;
@@ -1380,7 +1491,7 @@ function buildDocs(){
   root.innerHTML='';
   const sec=document.createElement('div');
   sec.className='docsSection';
-  sec.innerHTML=`<h3 class="docsHeader"><span>CODE API</span><span class="docActions"><button class="uiBtn" id="docsPrevBtn">◀</button><div class="docDesc">Page ${docsPage+1} / ${pages}</div><button class="uiBtn" id="docsNextBtn">▶</button></span></h3>`;
+  sec.innerHTML=`<h3 class="docsHeader"><span>CODE API</span><span class="docActions"><button class="uiBtn" id="docsPrevBtn">&lt;</button><div class="docDesc">Page ${docsPage+1} / ${pages}</div><button class="uiBtn" id="docsNextBtn">&gt;</button></span></h3>`;
   slice.forEach(doc=>{
     const argsHtml=(doc.args||[]).length
       ? `<div class="docDesc"><b>Args</b></div>${doc.args.map(([arg,desc])=>`<div class="docDesc"><code>${escapeHtml(arg)}</code> — ${escapeHtml(desc)}</div>`).join('')}`
@@ -3159,6 +3270,7 @@ function refreshSpriteList(){
   });
   const pageLabel=$("spriteListPageLabel");
   if(pageLabel) pageLabel.textContent=`${state.spriteListPage+1} / ${pages}`;
+  $("spriteListPagerRow")?.classList.toggle('hidden', pages<=1);
   const folder=currentSpriteFolder();
   if($("spriteFolderCountLabel")) $("spriteFolderCountLabel").textContent=String(folder.frames.length);
   drawSpritePanelPreview();
@@ -3202,6 +3314,7 @@ function refreshSpriteFrames(){
     wrap.appendChild(btn);
   });
   const label=$("spriteFramePageLabel"); if(label) label.textContent=`${state.spriteFramePage+1} / ${pages}`;
+  $("spriteFramePagerRow")?.classList.toggle('hidden', pages<=1);
   updateSpriteFrameStatus();
 }
 function updateSpriteFrameStatus(){
@@ -3380,6 +3493,19 @@ function floodFillMap(tx,ty,target,replacement){ if(target===replacement) return
 function mapCoordsFromEvent(e){ const wrap=$("mapCanvasWrap"); const z=state.mapZoom||1, ox=state.mapOffsetX||0, oy=state.mapOffsetY||0; const tw=state.appProject.project.tile_w, th=state.appProject.project.tile_h; const rect=wrap.getBoundingClientRect(); const lx=(e.clientX-rect.left-ox)/z, ly=(e.clientY-rect.top-oy)/z; return {tx:Math.floor(lx/tw), ty:Math.floor(ly/th)}; }
 function paintMapPoint(tx,ty,tileId=state.selectedTileId){ if(tx<0||ty<0||tx>=state.appProject.project.map_w||ty>=state.appProject.project.map_h) return false; const lay=currentLayers()[state.currentLayerIndex]; if(lay.data[ty][tx]===tileId) return false; lay.data[ty][tx]=tileId; return true; }
 function paintMapAtEvent(e,lastPoint,mode='paint'){ const {tx,ty}=mapCoordsFromEvent(e); if(tx<0||ty<0||tx>=state.appProject.project.map_w||ty>=state.appProject.project.map_h) return {tx,ty}; const lay=currentLayers()[state.currentLayerIndex]; const tileId=mode==='erase'?0:state.selectedTileId; let changed=false; if(mode!=='erase' && state.mapTool==='fill'){ const target=lay.data[ty][tx]; if(target===tileId) return {tx,ty}; floodFillMap(tx,ty,target,tileId); changed=true; } else { const start=lastPoint||{tx,ty}; forEachLinePoint(start.tx,start.ty,tx,ty,(x,y)=>{ if(paintMapPoint(x,y,tileId)) changed=true; }); } if(changed){ drawMapEditor(); scheduleProjectSync(); } return {tx,ty}; }
+function paintMapRect(start,end,filled){
+  if(!start||!end) return;
+  const lay=currentLayers()[state.currentLayerIndex];
+  const tileId=state.selectedTileId;
+  const minX=Math.max(0,Math.min(start.tx,end.tx)), maxX=Math.min(state.appProject.project.map_w-1,Math.max(start.tx,end.tx));
+  const minY=Math.max(0,Math.min(start.ty,end.ty)), maxY=Math.min(state.appProject.project.map_h-1,Math.max(start.ty,end.ty));
+  let changed=false;
+  for(let y=minY;y<=maxY;y++) for(let x=minX;x<=maxX;x++){
+    if(!filled && x>minX && x<maxX && y>minY && y<maxY) continue;
+    if(lay.data[y][x]!==tileId){ lay.data[y][x]=tileId; changed=true; }
+  }
+  if(changed){ drawMapEditor(); scheduleProjectSync(); }
+}
 function midiToHz(n){ return 440*Math.pow(2,(n-69)/12); }
 async function previewSound(index,loop=false){ const snd=state.appProject.sounds[index]; if(!snd) return; const ac=ctxAudio(); try{ await ac.resume(); }catch{} const now=ac.currentTime; const len=Math.max(0.05,snd.length); const steps=Math.max(1,snd.wavetable.length); const stepDur=len/steps; if(snd.wave==="noise"){ const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ const seq=snd.wavetable[Math.floor((i/data.length)*steps)]||0; data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65); } const src=ac.createBufferSource(); const gain=ac.createGain(); src.buffer=buffer; src.loop=!!loop; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(snd.volume,now+snd.attack); gain.gain.linearRampToValueAtTime(snd.volume*snd.sustain,now+snd.attack+snd.decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+snd.release); src.connect(gain).connect(ac.destination); src.start(now); if(!loop) src.stop(now+len+snd.release+0.02); return; }
  const osc=ac.createOscillator(); const gain=ac.createGain(); osc.type=(snd.wave==="wavetable"?"sine":snd.wave); gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(snd.volume,now+snd.attack); gain.gain.linearRampToValueAtTime(snd.volume*snd.sustain,now+snd.attack+snd.decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+snd.release); const base=snd.pitch; for(let i=0;i<steps;i++){ const seq=snd.wavetable[i]||0; const semis=seq*12; const freq=base*Math.pow(2,semis/12); osc.frequency.setValueAtTime(freq, now+i*stepDur); }
@@ -3810,6 +3936,11 @@ function wireUI(){
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); setView('runtime'); resetToolbar(); });
   const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); };
   bindClick("fileBtn",e=>{ e.stopPropagation(); const isOpen=$("menu")?.classList.contains('open'); setFileMenuOpen(!isOpen); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
+  const toggleMenuSection=(id)=>$(id)?.classList.toggle('open');
+  bindClick("menuSectionFileToggle",()=>toggleMenuSection('menuSectionFile'));
+  bindClick("menuSectionSettingsToggle",()=>toggleMenuSection('menuSectionSettings'));
+  bindClick("menuSectionLoadToggle",()=>toggleMenuSection('menuSectionLoad'));
+  const setLoadPanelOpen=open=>$("menuLoadPanel")?.classList.toggle('hidden', !open);
   
   bind("menu","click",e=>e.stopPropagation());
   ["pointerdown","mousedown","click"].forEach(type=>{ bind("inputModeSelect",type,e=>e.stopPropagation()); bind("defaultPrintFontSelect",type,e=>e.stopPropagation()); });
@@ -3819,7 +3950,9 @@ function wireUI(){
   bindClick("btnImportCodeFile",e=>{ e.stopPropagation(); setFileMenuOpen(false); $("importCodeFileInput")?.click(); });
   bind("importCodeFileInput",'change',e=>{ const input=e.target; const file=input?.files?.[0]; if(file) importCodeFile(file); if(input) input.value=''; });
   bindClick("btnNewProject",e=>{ e.stopPropagation(); setFileMenuOpen(false); newProject(); });
-  bindClick("btnExportHTML",e=>{ e.stopPropagation(); setFileMenuOpen(false); exportHTML(); });
+  bindClick("btnExport",e=>{ e.stopPropagation(); setFileMenuOpen(false); exportProject(); });
+  bindClick("btnMenuLoadProjects",e=>{ e.stopPropagation(); refreshProjectList(); setLoadPanelOpen(true); });
+  bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); setLoadPanelOpen(false); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
   bind("inputModeSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.movementInput=$("inputModeSelect")?.value==='dpad'?'dpad':'left_joystick'; runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
   bindClick("projectListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/3)); state.projectListPage=(state.projectListPage-1+pages)%pages; refreshProjectList(); });
@@ -3834,6 +3967,8 @@ function wireUI(){
   const zoomMapAtPoint=(nextZoom,clientX,clientY)=>{ const wrap=$("mapCanvasWrap"); const rect=wrap.getBoundingClientRect(); const oldZoom=state.mapZoom||1; const newZoom=clamp(nextZoom,0.5,8); const lx=(clientX-rect.left-(state.mapOffsetX||0))/oldZoom; const ly=(clientY-rect.top-(state.mapOffsetY||0))/oldZoom; state.mapZoom=newZoom; state.mapOffsetX=(clientX-rect.left)-lx*newZoom; state.mapOffsetY=(clientY-rect.top)-ly*newZoom; drawMapEditor(); };
   bindClick("mapZoomInBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)+0.25, rect.left+rect.width/2, rect.top+rect.height/2); });
   bindClick("mapZoomOutBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)-0.25, rect.left+rect.width/2, rect.top+rect.height/2); });
+  bindClick("mapDrawBtn",()=>{ state.mapTool = state.mapTool==='draw'?null:'draw'; updateMapToolButtons(); });
+  bindClick("mapRectBtn",()=>{ if(state.mapTool==='rect') state.mapTool='rectfill'; else if(state.mapTool==='rectfill') state.mapTool=null; else state.mapTool='rect'; updateMapToolButtons(); });
   bindClick("mapPanBtn",()=>{ state.mapTool = state.mapTool==='pan'?null:'pan'; updateMapToolButtons(); });
   bindClick("mapFillBtn",()=>{ state.mapTool = state.mapTool==='fill'?null:'fill'; updateMapToolButtons(); });
   bindClick("mapAnimToggleBtn",()=>{ state.mapAnimPlaying=!state.mapAnimPlaying; if(!state.mapAnimPlaying) state.mapAnimPausedAt=performance.now(); updateMapAnimToggleButton(); drawMapEditor(); });
@@ -3845,7 +3980,21 @@ function wireUI(){
   bind("tileIdInput",'input',()=>{ const id=Math.max(0,parseInt($("tileIdInput")?.value||0,10)); state.appProject.tileDefs[id]=state.appProject.tileDefs[id]||createTileDefForId(id); setSelectedTile(id); });
   bind("tileSourceInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileBgColorInput",'input',applyTileEditorLive); bind("tileBgEnabledInput",'change',applyTileEditorLive); bind("tileSolidInput",'change',applyTileEditorLive); bind("tileAnimatedInput",'change',applyTileEditorLive); bind("tileAnimFolderInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileAnimSpeedInput",'input',()=>applyTileEditorLive({refreshInputs:false}));
   bindClick("addLayerBtn",()=>{ const data=[]; for(let y=0;y<state.appProject.project.map_h;y++){ const row=[]; for(let x=0;x<state.appProject.project.map_w;x++) row.push(0); data.push(row); } currentLayers().push({name:`new layer`,visible:true,data}); invalidateEditorRenderCache(); state.currentLayerIndex=currentLayers().length-1; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); });
-  let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint'; bind("mapCanvas",'contextmenu',e=>e.preventDefault()); bind("mapCanvas",'pointerdown',e=>{ e.preventDefault(); if(e.button===1 || state.mapTool==='pan'){ mapPanning=true; mapLast={x:e.clientX,y:e.clientY}; return; } if(e.button===0 && !state.mapTool){ toast('Select a map tool first.'); return; } painting=true; mapPaintMode=e.button===2?'erase':'paint'; mapPaintLast=paintMapAtEvent(e, undefined, mapPaintMode); }); window.addEventListener('pointerup',()=>{painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint';}); bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); }); bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.25:-0.25), e.clientX, e.clientY); },{passive:false});
+  let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint', mapRectStart=null;
+  bind("mapCanvas",'contextmenu',e=>e.preventDefault());
+  bind("mapCanvas",'pointerdown',e=>{
+    e.preventDefault();
+    if(e.button===1 || state.mapTool==='pan'){ mapPanning=true; mapLast={x:e.clientX,y:e.clientY}; return; }
+    if(e.button===0 && !state.mapTool){ toast('Select a map tool first.'); return; }
+    if(state.mapTool==='rect' || state.mapTool==='rectfill'){ mapRectStart=mapCoordsFromEvent(e); return; }
+    painting=true; mapPaintMode=e.button===2?'erase':'paint'; mapPaintLast=paintMapAtEvent(e, undefined, mapPaintMode);
+  });
+  window.addEventListener('pointerup',e=>{
+    if((state.mapTool==='rect' || state.mapTool==='rectfill') && mapRectStart && e.button===0) paintMapRect(mapRectStart,mapCoordsFromEvent(e),state.mapTool==='rectfill');
+    painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint'; mapRectStart=null;
+  });
+  bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
+  bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.25:-0.25), e.clientX, e.clientY); },{passive:false});
   bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); state.currentSpriteIndex=state.appProject.spriteFolders.length-1; state.currentSpriteFrame=0; state.spriteFramePage=0; state.spriteListPage=Math.floor(state.currentSpriteIndex/SPRITE_LIST_PAGE_SIZE); spriteHistory.undo.length=0; spriteHistory.redo.length=0; syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("applySpriteSizeBtn",()=>{ const s=currentSprite(); const nw=Math.max(1,parseInt($("spriteWInput")?.value||s.w,10)); const nh=Math.max(1,parseInt($("spriteHInput")?.value||s.h,10)); pushSpriteHistory(); const newPixels=[]; for(let y=0;y<nh;y++){ const row=[]; for(let x=0;x<nw;x++) row.push((s.pixels[y]&&s.pixels[y][x]!=null)?s.pixels[y][x]:-1); newPixels.push(row); } s.w=nw; s.h=nh; s.pixels=newPixels; invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); });
   bindClick("spriteDrawBtn",()=>setSpriteTool(state.spriteTool==='draw'?null:'draw')); bindClick("spriteEraseBtn",()=>setSpriteTool(state.spriteTool==='erase'?null:'erase')); bindClick("spriteFillBtn",()=>setSpriteTool(state.spriteTool==='fill'?null:'fill')); bindClick("spritePanBtn",()=>setSpriteTool(state.spriteTool==='pan'?null:'pan'));
@@ -3853,6 +4002,7 @@ function wireUI(){
   bindClick("spriteRedoBtn",()=>{ if(!spriteHistory.redo.length) return; spriteHistory.undo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.redo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("spriteZoomInBtn",()=>{ state.spriteZoom=Math.min(64,state.spriteZoom+2); drawSpriteEditor(); }); bindClick("spriteZoomOutBtn",()=>{ state.spriteZoom=Math.max(1,state.spriteZoom-2); drawSpriteEditor(); }); bindClick("spriteClearBtn",clearCurrentSpriteFrame); const adjustSpriteFolderFrames=(delta)=>{ const folder=currentSpriteFolder(); const n=Math.max(1,Math.min(26,folder.frames.length+delta)); if(n===folder.frames.length) return; while(folder.frames.length<n) folder.frames.push(makeSprite(currentSprite().w,currentSprite().h)); while(folder.frames.length>n){ const removedFrame=folder.frames[folder.frames.length-1]; if(!isSpriteFrameEmpty(removedFrame) && !confirm(`Remove frame ${spriteFrameName(folder.frames.length-1)}? This frame is not empty.`)) return; folder.frames.pop(); } invalidateEditorRenderCache(); state.currentSpriteFrame=Math.min(state.currentSpriteFrame, folder.frames.length-1); syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); }; bindClick("spriteFolderMinusBtn",()=>adjustSpriteFolderFrames(-1)); bindClick("spriteFolderPlusBtn",()=>adjustSpriteFolderFrames(1));
   bindClick("addCodeTabBtn",()=>{ saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); const name=prompt("New file name:",`file${state.appProject.codeFiles.length+1}.lua`); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some(f=>f.name===trimmed)){ alert("A file with that name already exists."); return; } state.appProject.codeFiles.push({name:trimmed,content:"",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}); state.currentCodeFile=state.appProject.codeFiles.length-1; renderCodeTabs(); loadCurrentCodeFileToEditor(); });
+  bindClick("deleteCodeTabBtn",deleteCurrentCodeFile);
   bindClick("copyRuntimeErrorBtn",copyLastRunError);
   bindClick("gotoRuntimeErrorBtn",gotoLastRunErrorLine);
   bindClick("spriteListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.spriteFolders?.length||0)/SPRITE_LIST_PAGE_SIZE)); state.spriteListPage=(state.spriteListPage-1+pages)%pages; refreshSpriteList(); });
