@@ -147,7 +147,7 @@
     .overlayTools{position:absolute;right:8px;top:64px;bottom:auto;z-index:25;display:flex;gap:6px;flex-direction:column;align-items:flex-end;max-width:none}
     #spriteOverlayTools{right:8px;top:64px;left:auto;bottom:auto}
     #spriteOverlayTools.hidden,#mapOverlayTools.hidden{display:none}
-    .overlayTools .uiBtn{padding:4px 8px;font-size:11px;min-width:54px}
+    .overlayTools .uiBtn{padding:4px 6px;font-size:11px;min-width:46px}
     .overlayTools .uiBtn.destructive{background:linear-gradient(180deg,#ff9ca2,#c94c67);border-color:#ffd7dc;box-shadow:0 4px 0 #5a2030;color:#20111a}
     .animPreviewBar{position:absolute;left:64px;right:14px;bottom:14px;z-index:25;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 4px 0 #c08b52}
     .animPreviewBar canvas{width:72px;height:72px;border:3px solid var(--line);border-radius:12px;background:
@@ -218,7 +218,10 @@
     .row{display:flex;gap:8px;flex-wrap:wrap;padding:0 6px 10px}
     .menuSettingRow{padding:0 6px 10px}
     .menuSettingRow select{width:100%;border:3px solid var(--line);border-radius:12px;padding:8px;background:#fffaf1;color:var(--ink)}
-    .projName{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+    .projName{width:100%;font-weight:800;word-break:break-word;line-height:1.25}
+    .projectCard{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px;padding:10px}
+    .projectCardActions{display:flex;flex-wrap:wrap;gap:6px}
+    .projectCardActions .smallbtn{padding:5px 10px;font-size:11px;line-height:1}
     .docsView{overflow:auto}
     .docsSection{border:4px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 6px 0 #9a6a38;margin-bottom:14px;overflow:hidden}
     .docsSection h3{margin:0;padding:10px 12px;background:linear-gradient(180deg,#d74034,#a12522);color:#fff8e8;text-shadow:1px 1px 0 #5d1313}
@@ -259,10 +262,11 @@
     .menuLoadPanel{position:absolute;inset:12px;border:4px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 6px 0 #9a6a38;padding:10px;z-index:3}
     .menuLoadPanel.hidden{display:none}
     .menuLoadHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .menuLoadList{display:flex;flex-direction:column;gap:8px}
     .miniBtn{padding:4px 8px;font-size:11px;line-height:1;box-shadow:0 3px 0 var(--shadow)}
-    #addCodeTabBtn,#deleteCodeTabBtn{padding:4px 8px;font-size:11px;line-height:1}
+    #addCodeTabBtn,#deleteCodeTabBtn,#btnImportCodeFile{padding:4px 8px;font-size:11px;line-height:1}
     #mapRectBtn.rect-outline{background:transparent}
-    body.dark-mode{--bg:#0f1220;--paper:#12182c;--panel:#1b2340;--panel2:#283256;--line:#96a3cf;--shadow:#070b17;--ink:#f6f1df;--accent:#ff6b8f;--accent2:#f7b267;--blue:#86b1ff;--green:#93de86;--cream:#344062;--danger:#ff8a9c;background:linear-gradient(180deg,#05070d 0 20px,#11172a 20px 100%)}
+    body.dark-mode{--bg:#0f1220;--paper:#12182c;--panel:#1b2340;--panel2:#283256;--line:#5f6f98;--shadow:#070b17;--ink:#f6f1df;--accent:#ff6b8f;--accent2:#f7b267;--blue:#86b1ff;--green:#93de86;--cream:#344062;--danger:#ff8a9c;background:linear-gradient(180deg,#05070d 0 20px,#11172a 20px 100%)}
     body.dark-mode .topbar{background:linear-gradient(180deg,#4f618d,#39486c);box-shadow:inset 0 -3px 0 #222b46}
     body.dark-mode .brand{background:linear-gradient(180deg,#e55b7a,#8e3851);color:#fff8ef;text-shadow:2px 2px 0 #341521;box-shadow:0 4px 0 #2a1020}
     body.dark-mode .tab,
@@ -318,6 +322,7 @@
     body.dark-mode .eyeToggleBtn.is-hidden .eyeIcon circle,
     body.dark-mode .eyeToggleBtn.is-hidden .eyeIcon line{stroke:#8491b8}
     body.dark-mode .menuCard{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 6px 0 #0f1528}
+    body.dark-mode .menuLoadPanel{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 6px 0 #0f1528}
     body.dark-mode .menuSection{border-color:rgba(150,163,207,.45)}
     body.dark-mode .menuSectionHeader{background:linear-gradient(180deg,#303d62,#1a223c);box-shadow:0 3px 0 #0f1528;color:#f6f1df}
     body.dark-mode .menuSettingRow select{background:#10162a;color:var(--ink)}
@@ -333,6 +338,11 @@
     body.dark-mode .menuToggleInput{background:linear-gradient(180deg,#39486c,#20263f);box-shadow:inset 0 0 0 2px rgba(11,16,33,.28)}
     body.dark-mode .menuToggleInput::after{background:linear-gradient(180deg,#fff8ef,#d8e1f4);box-shadow:0 2px 0 rgba(11,16,33,.35)}
     body.dark-mode .codeSearchInput{background:#10162a;color:#f6f1df;border-color:#96a3cf}
+    body.dark-mode .codeScrollShell{background:linear-gradient(180deg,#1d243d,#13192e);box-shadow:inset 0 0 0 3px rgba(199,208,232,.12)}
+    body.dark-mode .codeEditorSurface{background:#0f1526;box-shadow:inset 0 0 0 3px rgba(89,107,151,.55)}
+    body.dark-mode .codeLineNumbers{background:linear-gradient(180deg,#202946,#151d34);color:#9fb0d9}
+    body.dark-mode .codeHighlight{color:#f1f5ff}
+    body.dark-mode .tok-identifier{color:#edf2ff}
 </style>
 </head>
 <body>
@@ -354,7 +364,7 @@
     <div class="view active" id="view-code">
       <div class="codeView">
         <div class="codeHeaderBar">
-          <div class="codeTabsRow"><div class="codeTabsBar" id="codeTabsBar"></div><button class="uiBtn" id="addCodeTabBtn">Add</button><button class="uiBtn" id="deleteCodeTabBtn">Delete</button><button class="uiBtn" id="btnImportCodeFile">Import</button></div>
+          <div class="codeTabsRow"><div class="codeTabsBar" id="codeTabsBar"></div><button class="uiBtn" id="addCodeTabBtn">+</button><button class="uiBtn" id="deleteCodeTabBtn">del</button><button class="uiBtn" id="btnImportCodeFile">📂</button></div>
           <div class="codeTabActions">
             <button class="uiBtn" id="toggleCodeSearchBtn">Search</button>
             <div class="codeSearchBar hidden" id="codeSearchBar">
@@ -377,7 +387,7 @@
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
       </div>
     </div>
 
@@ -466,9 +476,9 @@
 
     <div class="menuBackdrop" id="menuBackdrop"></div>
     <div class="menu" id="menu"><div class="menuCard">
-      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div></div></div>
+      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button></div></div></div>
       <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Movement Input</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
-            <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div><div class="list" id="projectList"></div></div>
+            <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="list menuLoadList" id="projectList"></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div></div>
     </div></div>
   </div>
 </div>
@@ -636,7 +646,7 @@ function get_value(t, key)
 end`;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,currentCodeFile:0,spriteAnimPlaying:true,spriteGridVisible:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteGridVisible:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -999,7 +1009,8 @@ function deleteCurrentCodeFile(){
   loadCurrentCodeFileToEditor();
   runtime.setLua(getProjectLua());
 }
-function renderCodeTabs(){ const bar=$("codeTabsBar"); if(!bar) return; bar.innerHTML=""; ensureProjectData(); state.appProject.codeFiles.forEach((f,i)=>{ const b=document.createElement("button"); const theme=FILE_TAB_THEMES[(Number.isInteger(f.tabTheme)?f.tabTheme:0)%FILE_TAB_THEMES.length]; b.className="codeFileTab"+(i===state.currentCodeFile?" active":""); b.textContent=f.name; b.style.setProperty("--tab-base", theme.base); b.style.setProperty("--tab-deep", theme.deep); b.style.setProperty("--tab-border", theme.border); b.style.setProperty("--tab-text", theme.text); b.onclick=()=>{ if(i===state.currentCodeFile){ renameCurrentCodeFile(); return; } saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); state.currentCodeFile=i; loadCurrentCodeFileToEditor(); renderCodeTabs(); }; bar.appendChild(b); }); }
+function codeTabLabel(name){ const raw=String(name||'').trim(); return raw.toLowerCase().endsWith('.lua')?raw.slice(0,-4):raw; }
+function renderCodeTabs(){ const bar=$("codeTabsBar"); if(!bar) return; bar.innerHTML=""; ensureProjectData(); state.appProject.codeFiles.forEach((f,i)=>{ const b=document.createElement("button"); const theme=FILE_TAB_THEMES[(Number.isInteger(f.tabTheme)?f.tabTheme:0)%FILE_TAB_THEMES.length]; b.className="codeFileTab"+(i===state.currentCodeFile?" active":""); b.textContent=codeTabLabel(f.name); b.title=f.name; b.style.setProperty("--tab-base", theme.base); b.style.setProperty("--tab-deep", theme.deep); b.style.setProperty("--tab-border", theme.border); b.style.setProperty("--tab-text", theme.text); b.onclick=()=>{ if(i===state.currentCodeFile){ renameCurrentCodeFile(); return; } saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); state.currentCodeFile=i; loadCurrentCodeFileToEditor(); renderCodeTabs(); }; bar.appendChild(b); }); }
 function loadCurrentCodeFileToEditor(){ const f=getCurrentCodeFile(); if(f) $("codeEditor").value=f.content||""; const bar=$("codeSearchBar"), btn=$("toggleCodeSearchBtn"), input=$("codeSearchInput"), deleteBtn=$("deleteCodeTabBtn"); if(bar) bar.classList.toggle("hidden",!state.codeSearchOpen); if(btn) btn.classList.toggle("active",state.codeSearchOpen); if(input) input.value=state.codeSearchQuery||""; if(deleteBtn) deleteBtn.disabled=(state.appProject?.codeFiles?.length||0)<=1; applyCodeSearchState(); updateCodeLineNumbers(); const shell=$("codeScrollShell"), view=getCodeFileViewState(state.currentCodeFile); if(shell){ shell.scrollTop=view.scrollTop||0; shell.scrollLeft=view.scrollLeft||0; } }
 function resetCodePaneScroll(){
   const ed=$("codeEditor"), highlight=$("codeHighlight");
@@ -1219,7 +1230,7 @@ function refreshProjectList(){
   const start=state.projectListPage*perPage;
   names.slice(start,start+perPage).forEach(name=>{
     const row=document.createElement('div');
-    row.className='itemRow';
+    row.className='itemRow projectCard';
     const label=document.createElement('div');
     label.textContent=name;
     label.className='projName';
@@ -1306,10 +1317,13 @@ function refreshProjectList(){
       refreshProjectList();
       showToast(`Deleted project "${name}".`);
     };
+    const actions=document.createElement('div');
+    actions.className='projectCardActions';
+    actions.appendChild(loadBtn);
+    actions.appendChild(renameBtn);
+    actions.appendChild(deleteBtn);
     row.appendChild(label);
-    row.appendChild(loadBtn);
-    row.appendChild(renameBtn);
-    row.appendChild(deleteBtn);
+    row.appendChild(actions);
     list.appendChild(row);
   });
 }
@@ -1476,13 +1490,10 @@ async function exportProjectZip(){
     toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
   }
 }
-function exportProject(){
-  const choice=prompt('Export format? Type ".html" or ".zip".','.html');
-  if(choice==null) return;
-  const normalized=String(choice).trim().toLowerCase();
+function exportProject(format){
+  const normalized=String(format||'').trim().toLowerCase();
   if(normalized==='.zip' || normalized==='zip') exportProjectZip();
   else if(normalized==='.html' || normalized==='html') exportHTML();
-  else toast('Export canceled: choose .html or .zip.');
 }
 function buildDocs(){
   const root=$("docsView");
@@ -3361,7 +3372,8 @@ function syncSpriteCanvasChrome(){
   const spriteOverlayTools=$("spriteOverlayTools");
   if(spriteOverlayTools) spriteOverlayTools.classList.toggle("hidden", !sidebarHidden);
   const animPreviewBar=$("animPreviewBar");
-  if(animPreviewBar) animPreviewBar.classList.toggle("hidden", !sidebarHidden);
+  if(animPreviewBar) animPreviewBar.classList.toggle("hidden", !sidebarHidden || state.spriteAnimPreviewVisible===false);
+  $("spriteAnimPreviewToggleBtn")?.classList.toggle("active", state.spriteAnimPreviewVisible!==false);
 }
 function getEditorSpriteCanvas(spriteRef){
   const ref=typeof spriteRef==='object'?spriteRef:parseSpriteRef(spriteRef);
@@ -3936,7 +3948,7 @@ function wireUI(){
   bindClick("graphicsBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('graphics'); });
   bindClick("soundBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('sound'); });
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); setView('runtime'); resetToolbar(); });
-  const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); };
+  const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open) $("exportFormatRow")?.classList.add('hidden'); };
   bindClick("fileBtn",e=>{ e.stopPropagation(); const isOpen=$("menu")?.classList.contains('open'); setFileMenuOpen(!isOpen); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
   const toggleMenuSection=(id)=>$(id)?.classList.toggle('open');
   bindClick("menuSectionFileToggle",()=>toggleMenuSection('menuSectionFile'));
@@ -3951,7 +3963,10 @@ function wireUI(){
   bindClick("btnImportCodeFile",e=>{ e.stopPropagation(); setFileMenuOpen(false); $("importCodeFileInput")?.click(); });
   bind("importCodeFileInput",'change',e=>{ const input=e.target; const file=input?.files?.[0]; if(file) importCodeFile(file); if(input) input.value=''; });
   bindClick("btnNewProject",e=>{ e.stopPropagation(); setFileMenuOpen(false); newProject(); });
-  bindClick("btnExport",e=>{ e.stopPropagation(); setFileMenuOpen(false); exportProject(); });
+  const setExportFormatRowOpen=open=>$("exportFormatRow")?.classList.toggle('hidden', !open);
+  bindClick("btnExport",e=>{ e.stopPropagation(); const row=$("exportFormatRow"); setExportFormatRowOpen(row?.classList.contains('hidden')); });
+  bindClick("btnExportZip",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.zip'); });
+  bindClick("btnExportHtml",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.html'); });
   bindClick("btnMenuLoadProjects",e=>{ e.stopPropagation(); refreshProjectList(); setLoadPanelOpen(true); });
   bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); setLoadPanelOpen(false); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
@@ -4003,6 +4018,7 @@ function wireUI(){
   bindClick("spriteUndoBtn",()=>{ if(!spriteHistory.undo.length) return; spriteHistory.redo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.undo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("spriteRedoBtn",()=>{ if(!spriteHistory.redo.length) return; spriteHistory.undo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.redo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("spriteZoomInBtn",()=>{ state.spriteZoom=Math.min(64,state.spriteZoom+2); drawSpriteEditor(); }); bindClick("spriteZoomOutBtn",()=>{ state.spriteZoom=Math.max(1,state.spriteZoom-2); drawSpriteEditor(); }); bindClick("spriteGridBtn",()=>{ state.spriteGridVisible=!(state.spriteGridVisible!==false); drawSpriteEditor(); }); bindClick("spriteClearBtn",clearCurrentSpriteFrame); const adjustSpriteFolderFrames=(delta)=>{ const folder=currentSpriteFolder(); const n=Math.max(1,Math.min(26,folder.frames.length+delta)); if(n===folder.frames.length) return; while(folder.frames.length<n) folder.frames.push(makeSprite(currentSprite().w,currentSprite().h)); while(folder.frames.length>n){ const removedFrame=folder.frames[folder.frames.length-1]; if(!isSpriteFrameEmpty(removedFrame) && !confirm(`Remove frame ${spriteFrameName(folder.frames.length-1)}? This frame is not empty.`)) return; folder.frames.pop(); } invalidateEditorRenderCache(); state.currentSpriteFrame=Math.min(state.currentSpriteFrame, folder.frames.length-1); syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); }; bindClick("spriteFolderMinusBtn",()=>adjustSpriteFolderFrames(-1)); bindClick("spriteFolderPlusBtn",()=>adjustSpriteFolderFrames(1));
+  bindClick("spriteAnimPreviewToggleBtn",()=>{ state.spriteAnimPreviewVisible=!(state.spriteAnimPreviewVisible!==false); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); });
   bindClick("addCodeTabBtn",()=>{ saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); const name=prompt("New file name:",`file${state.appProject.codeFiles.length+1}.lua`); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some(f=>f.name===trimmed)){ alert("A file with that name already exists."); return; } state.appProject.codeFiles.push({name:trimmed,content:"",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}); state.currentCodeFile=state.appProject.codeFiles.length-1; renderCodeTabs(); loadCurrentCodeFileToEditor(); });
   bindClick("deleteCodeTabBtn",deleteCurrentCodeFile);
   bindClick("copyRuntimeErrorBtn",copyLastRunError);
