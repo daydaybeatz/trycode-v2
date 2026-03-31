@@ -52,10 +52,11 @@
     .codeView,.docsView{position:absolute;inset:10px;padding:12px}
     .codeView{display:flex;flex-direction:column;min-height:0;gap:0;background:linear-gradient(180deg,#fff9ec,#f5e4bf);border:4px solid var(--line);box-shadow:inset 0 0 0 3px #fff2d2,0 6px 0 #8f6136;border-radius:22px}
     .codeHeaderBar{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-bottom:12px;min-width:0;flex:0 0 auto;padding:4px 2px 0}
-    .codeTabsBar{display:flex;gap:8px;min-width:0;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none}
+    .codeTabsRow{display:flex;align-items:center;gap:8px;min-width:0}
+    .codeTabsBar{display:flex;gap:8px;min-width:0;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none;flex:1}
     .codeTabsBar::-webkit-scrollbar{display:none}
     .codeTabActions{display:flex;gap:8px;flex:0 0 auto;flex-wrap:wrap;white-space:nowrap;align-items:center}
-    .codeSearchBar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .codeSearchBar{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
     .codeSearchInput{width:180px;max-width:40vw;border:2px solid var(--line);border-radius:10px;padding:5px 8px;background:#fffaf1;color:var(--ink);font-size:12px}
     .codeSearchCount{font-size:11px;font-weight:700;opacity:.88;min-width:58px;text-align:center}
     .tok-search{background:rgba(255,214,82,.35);border-radius:3px}
@@ -148,7 +149,7 @@
     #spriteOverlayTools.hidden,#mapOverlayTools.hidden{display:none}
     .overlayTools .uiBtn{padding:4px 8px;font-size:11px;min-width:54px}
     .overlayTools .uiBtn.destructive{background:linear-gradient(180deg,#ff9ca2,#c94c67);border-color:#ffd7dc;box-shadow:0 4px 0 #5a2030;color:#20111a}
-    .animPreviewBar{position:absolute;left:14px;right:14px;bottom:14px;z-index:25;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 4px 0 #c08b52}
+    .animPreviewBar{position:absolute;left:64px;right:14px;bottom:14px;z-index:25;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 4px 0 #c08b52}
     .animPreviewBar canvas{width:72px;height:72px;border:3px solid var(--line);border-radius:12px;background:
       linear-gradient(45deg, rgba(0,0,0,.07) 25%, transparent 25%),
       linear-gradient(-45deg, rgba(0,0,0,.07) 25%, transparent 25%),
@@ -158,7 +159,7 @@
       background-size:14px 14px;
       background-position:0 0, 0 7px, 7px -7px, -7px 0;
       image-rendering:pixelated;flex:0 0 auto}
-    .edgePalette{position:absolute;left:8px;top:56px;bottom:8px;width:44px;z-index:26;display:flex;flex-direction:column;gap:6px;overflow-y:auto;padding:4px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 3px 0 #c08b52}
+    .edgePalette{position:absolute;left:8px;top:56px;bottom:8px;width:44px;z-index:26;display:flex;flex-direction:column;gap:6px;overflow-y:auto;overflow-x:hidden;padding:4px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 3px 0 #c08b52}
     .edgePalette .palBtn{height:32px;min-height:32px}
     .hidden{display:none !important}
 
@@ -209,6 +210,9 @@
     .eyeToggleBtn.is-hidden .eyeIcon path,.eyeToggleBtn.is-hidden .eyeIcon circle,.eyeToggleBtn.is-hidden .eyeIcon line{stroke:#946746}
     .menu{position:absolute;top:58px;right:10px;width:340px;padding:10px;display:none;z-index:80}
     .menu.open{display:block}
+    .menuBackdrop{position:fixed;inset:0;background:rgba(36,22,10,.22);backdrop-filter:blur(4px);z-index:75;display:none}
+    .menuBackdrop.open{display:block}
+    .codeSearchBar .uiBtn{padding:5px 8px;font-size:11px;line-height:1;box-shadow:0 3px 0 var(--shadow)}
     .menuCard{padding:10px;border:4px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 6px 0 #9a6a38}
     .menu h3{margin:4px 8px 10px;font-size:12px;letter-spacing:.08em;color:var(--danger)}
     .row{display:flex;gap:8px;flex-wrap:wrap;padding:0 6px 10px}
@@ -229,7 +233,7 @@
     .docBody{padding:0 12px 12px}
     .docDesc{font-size:13px;line-height:1.4;margin-top:4px}
     .docCode{margin-top:8px;padding:8px;border:3px solid var(--line);border-radius:12px;background:#231b15;color:#faefd4;white-space:pre;overflow-x:auto;font-family:Consolas,monospace;font-size:12px}
-    .toast{position:absolute;left:12px;top:58px;padding:10px 12px;border:4px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 5px 0 #9a6a38;font-weight:700;display:none;z-index:70;max-width:min(560px,calc(100% - 24px))}
+    .toast{position:fixed;left:12px;top:58px;padding:10px 12px;border:4px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 5px 0 #9a6a38;font-weight:700;display:none;z-index:110;max-width:min(560px,calc(100% - 24px))}
     .toast.show{display:block}
     .waveCanvas{width:100%;height:120px;border:4px solid var(--line);border-radius:16px;background:#fff9ed;touch-action:none}
     .musicGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
@@ -336,11 +340,8 @@
     <div class="view active" id="view-code">
       <div class="codeView">
         <div class="codeHeaderBar">
-          <div class="codeTabsBar" id="codeTabsBar"></div>
+          <div class="codeTabsRow"><div class="codeTabsBar" id="codeTabsBar"></div><button class="uiBtn" id="addCodeTabBtn">Add</button></div>
           <div class="codeTabActions">
-            <button class="uiBtn" id="addCodeTabBtn">Add</button>
-            <button class="uiBtn" id="renameCodeTabBtn">Rename</button>
-            <button class="uiBtn" id="importCodeTabBtn">Import</button>
             <button class="uiBtn" id="toggleCodeSearchBtn">Search</button>
             <div class="codeSearchBar hidden" id="codeSearchBar">
               <input class="codeSearchInput" id="codeSearchInput" type="text" placeholder="Find in file" autocomplete="off" spellcheck="false">
@@ -415,7 +416,6 @@
           <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><div class="runtimeErrorActions"><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button><button class="uiBtn runtimeErrorGotoBtn" id="gotoRuntimeErrorBtn">Go to</button></div></div>
           <pre class="runtimeErrorText" id="runtimeErrorText"></pre>
         </div>
-        <div class="toast" id="toast"></div>
         <div class="runtimeDialogLayer hidden" id="runtimeDialogLayer" aria-live="polite">
           <div class="runtimeDialogScrim" id="runtimeDialogScrim"></div>
           <div class="runtimeDialogCard" id="runtimeDialogCard">
@@ -450,9 +450,11 @@
 
     <div class="view" id="view-docs"><div class="docsView" id="docsView"></div></div>
 
-    <div class="menu" id="menu"><div class="menuCard"><h3>FILE</h3><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New Project</button><button class="mbtn" id="btnExportHTML">Export .html</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><h3>SETTINGS</h3><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Movement Input</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div><h3>LOAD PROJECT</h3><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">◀</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">▶</button></div><div class="list" id="projectList"></div></div></div>
+    <div class="menuBackdrop" id="menuBackdrop"></div>
+    <div class="menu" id="menu"><div class="menuCard"><h3>FILE</h3><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnImportCodeFile">Import Code File</button><button class="mbtn" id="btnNewProject">New Project</button><button class="mbtn" id="btnExportHTML">Export .html</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><h3>SETTINGS</h3><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Movement Input</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div><h3>LOAD PROJECT</h3><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">◀</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">▶</button></div><div class="list" id="projectList"></div></div></div>
   </div>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
 (() => {
@@ -616,7 +618,7 @@ function get_value(t, key)
 end`;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:20,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"paint",mapAnimPlaying:true,mapAnimPausedAt:0,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"paint",mapAnimPlaying:true,mapAnimPausedAt:0,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -706,6 +708,7 @@ function isDesktopUI(){
 function syncResponsiveUI(){ document.body.classList.toggle('desktop-ui', isDesktopUI()); }
 function getMapAnimationTimeMs(){ return state.mapAnimPlaying ? performance.now() : state.mapAnimPausedAt; }
 function updateMapAnimToggleButton(){ const btn=$("mapAnimToggleBtn"); if(!btn) return; btn.textContent=state.mapAnimPlaying?"Pause":"Play"; btn.classList.toggle('active', !state.mapAnimPlaying); btn.title=state.mapAnimPlaying?"Pause animated tile preview":"Play animated tile preview"; }
+function updateMapToolButtons(){ $("mapPanBtn")?.classList.toggle('active', state.mapTool==='pan'); $("mapFillBtn")?.classList.toggle('active', state.mapTool==='fill'); }
 function currentMapHasAnimatedTiles(){ const mapObj=state.appProject&&state.appProject.maps&&state.appProject.maps[state.currentMapIndex]; if(!mapObj) return false; const ids=new Set(); for(const layer of mapObj.layers||[]){ if(!layer||layer.visible===false) continue; for(const row of layer.data||[]) for(const tid of row||[]) if(tid) ids.add(tid); } for(const id of ids){ const def=state.appProject.tileDefs&&state.appProject.tileDefs[id]; if(def&&def.animated) return true; } return false; }
 function runEditorAnimationFrame(){ if(state.activeView==='sprites' && state.spriteAnimPlaying){ drawSpriteAnimPreview(); } if(state.activeView==='map' && state.mapAnimPlaying && currentMapHasAnimatedTiles()){ drawMapEditor(); } requestAnimationFrame(runEditorAnimationFrame); }
 function renderRuntimeError(){ const box=$("runtimeErrorBox"), text=$("runtimeErrorText"); if(!box||!text) return; const hasError=!!state.lastRunError; text.textContent=state.lastRunError||""; box.classList.toggle("show", hasError); }
@@ -941,7 +944,18 @@ function stepCodeSearchMatch(direction){
 }
 function getCurrentCodeFile(){ ensureProjectData(); state.currentCodeFile=clamp(state.currentCodeFile,0,state.appProject.codeFiles.length-1); return state.appProject.codeFiles[state.currentCodeFile]; }
 function saveEditorToCurrentCodeFile(){ const f=getCurrentCodeFile(); if(f) f.content=$("codeEditor").value||""; }
-function renderCodeTabs(){ const bar=$("codeTabsBar"); if(!bar) return; bar.innerHTML=""; ensureProjectData(); state.appProject.codeFiles.forEach((f,i)=>{ const b=document.createElement("button"); const theme=FILE_TAB_THEMES[(Number.isInteger(f.tabTheme)?f.tabTheme:0)%FILE_TAB_THEMES.length]; b.className="codeFileTab"+(i===state.currentCodeFile?" active":""); b.textContent=f.name; b.style.setProperty("--tab-base", theme.base); b.style.setProperty("--tab-deep", theme.deep); b.style.setProperty("--tab-border", theme.border); b.style.setProperty("--tab-text", theme.text); b.onclick=()=>{ saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); state.currentCodeFile=i; loadCurrentCodeFileToEditor(); renderCodeTabs(); }; bar.appendChild(b); }); }
+function renameCurrentCodeFile(){
+  const f=getCurrentCodeFile();
+  if(!f) return;
+  const name=prompt("Rename file:",f.name);
+  if(!name) return;
+  const trimmed=name.trim();
+  if(!trimmed) return;
+  if(state.appProject.codeFiles.some((x,i)=>i!==state.currentCodeFile&&x.name===trimmed)){ alert("A file with that name already exists."); return; }
+  f.name=trimmed;
+  renderCodeTabs();
+}
+function renderCodeTabs(){ const bar=$("codeTabsBar"); if(!bar) return; bar.innerHTML=""; ensureProjectData(); state.appProject.codeFiles.forEach((f,i)=>{ const b=document.createElement("button"); const theme=FILE_TAB_THEMES[(Number.isInteger(f.tabTheme)?f.tabTheme:0)%FILE_TAB_THEMES.length]; b.className="codeFileTab"+(i===state.currentCodeFile?" active":""); b.textContent=f.name; b.style.setProperty("--tab-base", theme.base); b.style.setProperty("--tab-deep", theme.deep); b.style.setProperty("--tab-border", theme.border); b.style.setProperty("--tab-text", theme.text); b.onclick=()=>{ if(i===state.currentCodeFile){ renameCurrentCodeFile(); return; } saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); state.currentCodeFile=i; loadCurrentCodeFileToEditor(); renderCodeTabs(); }; bar.appendChild(b); }); }
 function loadCurrentCodeFileToEditor(){ const f=getCurrentCodeFile(); if(f) $("codeEditor").value=f.content||""; const bar=$("codeSearchBar"), btn=$("toggleCodeSearchBtn"), input=$("codeSearchInput"); if(bar) bar.classList.toggle("hidden",!state.codeSearchOpen); if(btn) btn.classList.toggle("active",state.codeSearchOpen); if(input) input.value=state.codeSearchQuery||""; applyCodeSearchState(); updateCodeLineNumbers(); const shell=$("codeScrollShell"), view=getCodeFileViewState(state.currentCodeFile); if(shell){ shell.scrollTop=view.scrollTop||0; shell.scrollLeft=view.scrollLeft||0; } }
 function resetCodePaneScroll(){
   const ed=$("codeEditor"), highlight=$("codeHighlight");
@@ -1107,6 +1121,9 @@ function finishNewProject(){
   state.spriteFramePage = 0;
   state.spriteListPage = 0;
   state.projectListPage = 0;
+  state.spriteZoom = 16;
+  state.spriteOffsetX = 0;
+  state.spriteOffsetY = 0;
   state.lastEdited = "code";
   state.appProject = defaultProject();
   invalidateEditorRenderCache();
@@ -1192,6 +1209,9 @@ function refreshProjectList(){
       state.spriteFramePage=0;
       state.spriteListPage=0;
       state.projectListPage=0;
+      state.spriteZoom=16;
+      state.spriteOffsetX=0;
+      state.spriteOffsetY=0;
       renderCodeTabs();
       loadCurrentCodeFileToEditor();
       syncSpriteUI();
@@ -1205,6 +1225,8 @@ function refreshProjectList(){
       runtime.reset(getProjectLua());
       setView('code');
       $("menu").classList.remove('open');
+      $("menuBackdrop")?.classList.remove('open');
+      toast(`<b>Loaded:</b> ${escapeHtml(name)}`);
     };
     const deleteBtn=document.createElement('button');
     deleteBtn.className='smallbtn';
@@ -1232,7 +1254,34 @@ function refreshMenuSettingsUI(){ ensureProjectData(); if($("inputModeSelect")) 
 function normalizeProjectNameInput(raw, fallback='project_1'){ const trimmed=String(raw??'').trim(); return trimmed||fallback; }
 function makeProjectFilename(name){ return normalizeProjectNameInput(name).replace(/[\\/:*?"<>|]+/g,'-'); }
 function promptForProjectName(message, fallback='project_1'){ const name=prompt(message, normalizeProjectNameInput(fallback)); if(name===null) return null; const trimmed=String(name).trim(); if(!trimmed) return null; return trimmed; }
-function saveProject(){ saveEditorToCurrentCodeFile(); const all=loadAllProjects(); let name=state.currentProjectName; if(!name){ name=promptForProjectName('Project name:', 'project_1'); if(!name) return; } state.currentProjectName=name; state.hasSaved=true; all[name]={ t:Date.now(), project: JSON.parse(JSON.stringify(state.appProject)) }; saveAllProjects(all); refreshProjectList();
+function importCodeFile(file){
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const content=typeof reader.result==='string'?reader.result:'';
+    const fallback=String(file.name||`file${state.appProject.codeFiles.length+1}.lua`).trim()||`file${state.appProject.codeFiles.length+1}.lua`;
+    const chosen=prompt('Import file as:', fallback);
+    if(chosen==null) return;
+    const targetName=chosen.trim();
+    if(!targetName){ toast('Import canceled: file name is required.'); return; }
+    const existingIndex=state.appProject.codeFiles.findIndex(f=>f.name===targetName);
+    if(existingIndex>=0){
+      if(!confirm(`"${targetName}" exists. Overwrite it?`)) return;
+      state.appProject.codeFiles[existingIndex].content=content;
+      state.currentCodeFile=existingIndex;
+    }else{
+      state.appProject.codeFiles.push({name:targetName,content,tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)});
+      state.currentCodeFile=state.appProject.codeFiles.length-1;
+    }
+    renderCodeTabs();
+    loadCurrentCodeFileToEditor();
+    runtime.setLua(getProjectLua());
+    toast(`<b>Imported:</b> ${escapeHtml(targetName)}`);
+  };
+  reader.onerror=()=>toast('<b>Import failed:</b> Could not read file.');
+  reader.readAsText(file);
+}
+function saveProject(){ saveEditorToCurrentCodeFile(); const all=loadAllProjects(); const defaultName=state.currentProjectName||'project_1'; const name=promptForProjectName('Save project as:', defaultName); if(!name) return; state.currentProjectName=name; state.hasSaved=true; all[name]={ t:Date.now(), project: JSON.parse(JSON.stringify(state.appProject)) }; saveAllProjects(all); refreshProjectList();
 updateCodeLineNumbers(); toast(`<b>Saved:</b> ${escapeHtml(name)}`); }
 let exportFengariSourcePromise=null;
 function escapeInlineScript(text){
@@ -3055,13 +3104,10 @@ function refreshPaletteUI(){
   $("palettePageLabel").textContent=`${state.palettePage+1} / ${pages}`;
   $("paletteColorInput").value=state.appProject.palette[state.selectedPaletteIndex]||"#ffffff";
 }
-function setSpriteTool(name){ state.spriteTool=name; ["spriteDrawBtn","spriteEraseBtn","spriteFillBtn","spritePanBtn"].forEach(id=>$(id)?.classList.remove("active")); if(name==="draw") $("spriteDrawBtn")?.classList.add("active"); if(name==="erase") $("spriteEraseBtn")?.classList.add("active"); if(name==="fill") $("spriteFillBtn")?.classList.add("active"); if(name==="pan") $("spritePanBtn")?.classList.add("active"); }
+function setSpriteTool(name){ state.spriteTool=name||null; ["spriteDrawBtn","spriteEraseBtn","spriteFillBtn","spritePanBtn"].forEach(id=>$(id)?.classList.remove("active")); if(state.spriteTool==="draw") $("spriteDrawBtn")?.classList.add("active"); if(state.spriteTool==="erase") $("spriteEraseBtn")?.classList.add("active"); if(state.spriteTool==="fill") $("spriteFillBtn")?.classList.add("active"); if(state.spriteTool==="pan") $("spritePanBtn")?.classList.add("active"); }
 function refreshEdgePalette(){
   const wrap=$("spriteEdgePalette"); if(!wrap) return; wrap.innerHTML='';
-  const perPage=16, total=state.appProject.palette.length;
-  const start=state.palettePage*perPage;
-  state.appProject.palette.slice(start,start+perPage).forEach((c,off)=>{
-    const i=start+off;
+  state.appProject.palette.forEach((c,i)=>{
     const btn=document.createElement('button');
     btn.className='palBtn'+(i===state.selectedPaletteIndex?' active':'');
     btn.style.background=c;
@@ -3762,15 +3808,19 @@ function wireUI(){
   bindClick("graphicsBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('graphics'); });
   bindClick("soundBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('sound'); });
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); setView('runtime'); resetToolbar(); });
-  bindClick("fileBtn",e=>{ e.stopPropagation(); const menu=$("menu"); if(menu) menu.classList.toggle('open'); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
+  const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); };
+  bindClick("fileBtn",e=>{ e.stopPropagation(); const isOpen=$("menu")?.classList.contains('open'); setFileMenuOpen(!isOpen); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
   
   bind("menu","click",e=>e.stopPropagation());
   ["pointerdown","mousedown","click"].forEach(type=>{ bind("inputModeSelect",type,e=>e.stopPropagation()); bind("defaultPrintFontSelect",type,e=>e.stopPropagation()); });
-  document.addEventListener('click',e=>{ if(e.target.closest('#menu')||e.target.closest('#fileBtn')) return; const menu=$("menu"); if(menu) menu.classList.remove('open'); if(!e.target.closest('.topbar')) resetToolbar(); });
-  bindClick("btnSaveProject",e=>{ e.stopPropagation(); const menu=$("menu"); if(menu) menu.classList.remove('open'); saveProject(); });
-  bindClick("btnNewProject",e=>{ e.stopPropagation(); const menu=$("menu"); if(menu) menu.classList.remove('open'); newProject(); });
-  bindClick("btnExportHTML",e=>{ e.stopPropagation(); const menu=$("menu"); if(menu) menu.classList.remove('open'); exportHTML(); });
-  bindClick("btnOpenDocs",e=>{ e.stopPropagation(); const menu=$("menu"); if(menu) menu.classList.remove('open'); setView('docs'); });
+  bindClick("menuBackdrop",()=>setFileMenuOpen(false));
+  document.addEventListener('click',e=>{ if(e.target.closest('#menu')||e.target.closest('#fileBtn')) return; setFileMenuOpen(false); if(!e.target.closest('.topbar')) resetToolbar(); });
+  bindClick("btnSaveProject",e=>{ e.stopPropagation(); setFileMenuOpen(false); saveProject(); });
+  bindClick("btnImportCodeFile",e=>{ e.stopPropagation(); setFileMenuOpen(false); $("importCodeFileInput")?.click(); });
+  bind("importCodeFileInput",'change',e=>{ const input=e.target; const file=input?.files?.[0]; if(file) importCodeFile(file); if(input) input.value=''; });
+  bindClick("btnNewProject",e=>{ e.stopPropagation(); setFileMenuOpen(false); newProject(); });
+  bindClick("btnExportHTML",e=>{ e.stopPropagation(); setFileMenuOpen(false); exportHTML(); });
+  bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
   bind("inputModeSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.movementInput=$("inputModeSelect")?.value==='dpad'?'dpad':'left_joystick'; runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
   bindClick("projectListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/3)); state.projectListPage=(state.projectListPage-1+pages)%pages; refreshProjectList(); });
   bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/3)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
@@ -3784,8 +3834,8 @@ function wireUI(){
   const zoomMapAtPoint=(nextZoom,clientX,clientY)=>{ const wrap=$("mapCanvasWrap"); const rect=wrap.getBoundingClientRect(); const oldZoom=state.mapZoom||1; const newZoom=clamp(nextZoom,0.5,8); const lx=(clientX-rect.left-(state.mapOffsetX||0))/oldZoom; const ly=(clientY-rect.top-(state.mapOffsetY||0))/oldZoom; state.mapZoom=newZoom; state.mapOffsetX=(clientX-rect.left)-lx*newZoom; state.mapOffsetY=(clientY-rect.top)-ly*newZoom; drawMapEditor(); };
   bindClick("mapZoomInBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)+0.25, rect.left+rect.width/2, rect.top+rect.height/2); });
   bindClick("mapZoomOutBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)-0.25, rect.left+rect.width/2, rect.top+rect.height/2); });
-  bindClick("mapPanBtn",()=>{ state.mapTool = state.mapTool==='pan'?'paint':'pan'; const mapPanBtn=$("mapPanBtn"), mapFillBtn=$("mapFillBtn"); if(mapPanBtn) mapPanBtn.classList.toggle('active', state.mapTool==='pan'); if(mapFillBtn) mapFillBtn.classList.remove('active'); });
-  bindClick("mapFillBtn",()=>{ state.mapTool = state.mapTool==='fill'?'paint':'fill'; const mapFillBtn=$("mapFillBtn"), mapPanBtn=$("mapPanBtn"); if(mapFillBtn) mapFillBtn.classList.toggle('active', state.mapTool==='fill'); if(mapPanBtn) mapPanBtn.classList.remove('active'); });
+  bindClick("mapPanBtn",()=>{ state.mapTool = state.mapTool==='pan'?null:'pan'; updateMapToolButtons(); });
+  bindClick("mapFillBtn",()=>{ state.mapTool = state.mapTool==='fill'?null:'fill'; updateMapToolButtons(); });
   bindClick("mapAnimToggleBtn",()=>{ state.mapAnimPlaying=!state.mapAnimPlaying; if(!state.mapAnimPlaying) state.mapAnimPausedAt=performance.now(); updateMapAnimToggleButton(); drawMapEditor(); });
   bindClick("mapClearBtn",clearCurrentMapLayer);
   bindClick("applyProjectBtn",()=>{ const p=state.appProject.project; p.tile_w=Math.max(1,parseInt($("tileWInput")?.value||16,10)); p.tile_h=Math.max(1,parseInt($("tileHInput")?.value||16,10)); p.map_w=Math.max(1,parseInt($("mapWInput")?.value||32,10)); p.map_h=Math.max(1,parseInt($("mapHInput")?.value||32,10)); invalidateEditorRenderCache(); ensureProjectData(); syncMapUIFromProject(); runtime.syncProject(state.appProject); });
@@ -3795,15 +3845,14 @@ function wireUI(){
   bind("tileIdInput",'input',()=>{ const id=Math.max(0,parseInt($("tileIdInput")?.value||0,10)); state.appProject.tileDefs[id]=state.appProject.tileDefs[id]||createTileDefForId(id); setSelectedTile(id); });
   bind("tileSourceInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileBgColorInput",'input',applyTileEditorLive); bind("tileBgEnabledInput",'change',applyTileEditorLive); bind("tileSolidInput",'change',applyTileEditorLive); bind("tileAnimatedInput",'change',applyTileEditorLive); bind("tileAnimFolderInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileAnimSpeedInput",'input',()=>applyTileEditorLive({refreshInputs:false}));
   bindClick("addLayerBtn",()=>{ const data=[]; for(let y=0;y<state.appProject.project.map_h;y++){ const row=[]; for(let x=0;x<state.appProject.project.map_w;x++) row.push(0); data.push(row); } currentLayers().push({name:`new layer`,visible:true,data}); invalidateEditorRenderCache(); state.currentLayerIndex=currentLayers().length-1; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); });
-  let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint'; bind("mapCanvas",'contextmenu',e=>e.preventDefault()); bind("mapCanvas",'pointerdown',e=>{ e.preventDefault(); if(e.button===1 || state.mapTool==='pan'){ mapPanning=true; mapLast={x:e.clientX,y:e.clientY}; return; } painting=true; mapPaintMode=e.button===2?'erase':'paint'; mapPaintLast=paintMapAtEvent(e, undefined, mapPaintMode); }); window.addEventListener('pointerup',()=>{painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint';}); bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); }); bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.25:-0.25), e.clientX, e.clientY); },{passive:false});
+  let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint'; bind("mapCanvas",'contextmenu',e=>e.preventDefault()); bind("mapCanvas",'pointerdown',e=>{ e.preventDefault(); if(e.button===1 || state.mapTool==='pan'){ mapPanning=true; mapLast={x:e.clientX,y:e.clientY}; return; } if(e.button===0 && !state.mapTool){ toast('Select a map tool first.'); return; } painting=true; mapPaintMode=e.button===2?'erase':'paint'; mapPaintLast=paintMapAtEvent(e, undefined, mapPaintMode); }); window.addEventListener('pointerup',()=>{painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint';}); bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); }); bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.25:-0.25), e.clientX, e.clientY); },{passive:false});
   bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); state.currentSpriteIndex=state.appProject.spriteFolders.length-1; state.currentSpriteFrame=0; state.spriteFramePage=0; state.spriteListPage=Math.floor(state.currentSpriteIndex/SPRITE_LIST_PAGE_SIZE); spriteHistory.undo.length=0; spriteHistory.redo.length=0; syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("applySpriteSizeBtn",()=>{ const s=currentSprite(); const nw=Math.max(1,parseInt($("spriteWInput")?.value||s.w,10)); const nh=Math.max(1,parseInt($("spriteHInput")?.value||s.h,10)); pushSpriteHistory(); const newPixels=[]; for(let y=0;y<nh;y++){ const row=[]; for(let x=0;x<nw;x++) row.push((s.pixels[y]&&s.pixels[y][x]!=null)?s.pixels[y][x]:-1); newPixels.push(row); } s.w=nw; s.h=nh; s.pixels=newPixels; invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); });
-  bindClick("spriteDrawBtn",()=>setSpriteTool('draw')); bindClick("spriteEraseBtn",()=>setSpriteTool('erase')); bindClick("spriteFillBtn",()=>setSpriteTool('fill')); bindClick("spritePanBtn",()=>setSpriteTool('pan'));
+  bindClick("spriteDrawBtn",()=>setSpriteTool(state.spriteTool==='draw'?null:'draw')); bindClick("spriteEraseBtn",()=>setSpriteTool(state.spriteTool==='erase'?null:'erase')); bindClick("spriteFillBtn",()=>setSpriteTool(state.spriteTool==='fill'?null:'fill')); bindClick("spritePanBtn",()=>setSpriteTool(state.spriteTool==='pan'?null:'pan'));
   bindClick("spriteUndoBtn",()=>{ if(!spriteHistory.undo.length) return; spriteHistory.redo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.undo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("spriteRedoBtn",()=>{ if(!spriteHistory.redo.length) return; spriteHistory.undo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.redo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("spriteZoomInBtn",()=>{ state.spriteZoom=Math.min(64,state.spriteZoom+2); drawSpriteEditor(); }); bindClick("spriteZoomOutBtn",()=>{ state.spriteZoom=Math.max(1,state.spriteZoom-2); drawSpriteEditor(); }); bindClick("spriteClearBtn",clearCurrentSpriteFrame); const adjustSpriteFolderFrames=(delta)=>{ const folder=currentSpriteFolder(); const n=Math.max(1,Math.min(26,folder.frames.length+delta)); if(n===folder.frames.length) return; while(folder.frames.length<n) folder.frames.push(makeSprite(currentSprite().w,currentSprite().h)); while(folder.frames.length>n){ const removedFrame=folder.frames[folder.frames.length-1]; if(!isSpriteFrameEmpty(removedFrame) && !confirm(`Remove frame ${spriteFrameName(folder.frames.length-1)}? This frame is not empty.`)) return; folder.frames.pop(); } invalidateEditorRenderCache(); state.currentSpriteFrame=Math.min(state.currentSpriteFrame, folder.frames.length-1); syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); }; bindClick("spriteFolderMinusBtn",()=>adjustSpriteFolderFrames(-1)); bindClick("spriteFolderPlusBtn",()=>adjustSpriteFolderFrames(1));
   bindClick("addCodeTabBtn",()=>{ saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); const name=prompt("New file name:",`file${state.appProject.codeFiles.length+1}.lua`); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some(f=>f.name===trimmed)){ alert("A file with that name already exists."); return; } state.appProject.codeFiles.push({name:trimmed,content:"",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}); state.currentCodeFile=state.appProject.codeFiles.length-1; renderCodeTabs(); loadCurrentCodeFileToEditor(); });
-  bindClick("renameCodeTabBtn",()=>{ const f=getCurrentCodeFile(); const name=prompt("Rename file:",f.name); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some((x,i)=>i!==state.currentCodeFile&&x.name===trimmed)){ alert("A file with that name already exists."); return; } f.name=trimmed; renderCodeTabs(); });
   bindClick("copyRuntimeErrorBtn",copyLastRunError);
   bindClick("gotoRuntimeErrorBtn",gotoLastRunErrorLine);
   bindClick("spriteListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.spriteFolders?.length||0)/SPRITE_LIST_PAGE_SIZE)); state.spriteListPage=(state.spriteListPage-1+pages)%pages; refreshSpriteList(); });
@@ -3817,7 +3866,7 @@ function wireUI(){
   bind("paletteColorInput",'input',()=>{ state.appProject.palette[state.selectedPaletteIndex]=$("paletteColorInput")?.value||'#ffffff'; invalidateEditorRenderCache(); refreshPaletteUI(); refreshEdgePalette(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); });
   bindClick("removePaletteColorBtn",()=>{ if(state.appProject.palette.length<=1) return; const removed=state.selectedPaletteIndex; state.appProject.palette.splice(removed,1); invalidateEditorRenderCache(); state.selectedPaletteIndex=Math.max(0,Math.min(state.selectedPaletteIndex,state.appProject.palette.length-1)); state.appProject.spriteFolders.forEach(folder=>folder.frames.forEach(sp=>{ for(let y=0;y<sp.h;y++) for(let x=0;x<sp.w;x++){ const p=sp.pixels[y][x]; if(p===removed) sp.pixels[y][x]=-1; else if(p>removed) sp.pixels[y][x]=p-1; } })); refreshPaletteUI(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); });
   const zoomSpriteAtPoint=(nextZoom,clientX,clientY)=>{ const canvas=$("spriteCanvas"); const rect=canvas.getBoundingClientRect(); const px=(clientX-rect.left)*(canvas.width/rect.width); const py=(clientY-rect.top)*(canvas.height/rect.height); const {baseX,baseY}=getSpriteCanvasMetrics(); const oldZoom=getSpriteDisplayZoom(); const worldX=(px-(baseX+state.spriteOffsetX))/oldZoom; const worldY=(py-(baseY+state.spriteOffsetY))/oldZoom; state.spriteZoom=clamp(Math.round(nextZoom),1,64); const {baseX:nextBaseX,baseY:nextBaseY}=getSpriteCanvasMetrics(); state.spriteOffsetX=px-nextBaseX-worldX*state.spriteZoom; state.spriteOffsetY=py-nextBaseY-worldY*state.spriteZoom; drawSpriteEditor(); };
-  let spritePainting=false, spritePanning=false, lastPan={x:0,y:0}, spritePaintLast=null, spritePointerMode='tool'; bind("spriteCanvas",'contextmenu',e=>e.preventDefault()); bind("spriteCanvas",'pointerdown',e=>{ e.preventDefault(); spritePointerMode=e.button===1?'pan':(e.button===2?'erase':'tool'); if(spritePointerMode==='pan' || state.spriteTool==='pan'){ spritePanning=true; lastPan.x=e.clientX; lastPan.y=e.clientY; return; } spritePainting=true; if(state.spriteTool!=='fill' || spritePointerMode==='erase') pushSpriteHistory(); if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e); }); bind("spriteCanvas",'pointermove',e=>{ e.preventDefault(); if(spritePanning){ state.spriteOffsetX += e.clientX-lastPan.x; state.spriteOffsetY += e.clientY-lastPan.y; lastPan.x=e.clientX; lastPan.y=e.clientY; drawSpriteEditor(); return; } if(spritePainting && (state.spriteTool!=='fill' || spritePointerMode==='erase')){ if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); } }); ['pointerup','pointercancel'].forEach(ev=>bind("spriteCanvas",ev,e=>{ e.preventDefault(); spritePainting=false; spritePanning=false; spritePaintLast=null; spritePointerMode='tool'; })); bind("spriteCanvasWrap",'touchmove',e=>e.preventDefault(),{passive:false}); bind("spriteCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomSpriteAtPoint((state.spriteZoom||1)+(e.deltaY<0?2:-2), e.clientX, e.clientY); },{passive:false});
+  let spritePainting=false, spritePanning=false, lastPan={x:0,y:0}, spritePaintLast=null, spritePointerMode='tool'; bind("spriteCanvas",'contextmenu',e=>e.preventDefault()); bind("spriteCanvas",'pointerdown',e=>{ e.preventDefault(); spritePointerMode=e.button===1?'pan':(e.button===2?'erase':'tool'); if(spritePointerMode==='pan' || state.spriteTool==='pan'){ spritePanning=true; lastPan.x=e.clientX; lastPan.y=e.clientY; return; } if(e.button===0 && !state.spriteTool){ toast('Select a sprite tool first.'); return; } spritePainting=true; if(state.spriteTool!=='fill' || spritePointerMode==='erase') pushSpriteHistory(); if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e); }); bind("spriteCanvas",'pointermove',e=>{ e.preventDefault(); if(spritePanning){ state.spriteOffsetX += e.clientX-lastPan.x; state.spriteOffsetY += e.clientY-lastPan.y; lastPan.x=e.clientX; lastPan.y=e.clientY; drawSpriteEditor(); return; } if(spritePainting && (state.spriteTool!=='fill' || spritePointerMode==='erase')){ if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); } }); ['pointerup','pointercancel'].forEach(ev=>bind("spriteCanvas",ev,e=>{ e.preventDefault(); spritePainting=false; spritePanning=false; spritePaintLast=null; spritePointerMode='tool'; })); bind("spriteCanvasWrap",'touchmove',e=>e.preventDefault(),{passive:false}); bind("spriteCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomSpriteAtPoint((state.spriteZoom||1)+(e.deltaY<0?2:-2), e.clientX, e.clientY); },{passive:false});
   bindClick("addSoundBtn",()=>{ state.appProject.sounds.push(makeSound()); state.currentSoundIndex=state.appProject.sounds.length-1; refreshSoundUI(); drawSoundWaveCanvas(); });
   ["soundWaveInput","soundLengthInput","soundVolumeInput","soundPitchInput","soundAttackInput","soundDecayInput","soundSustainInput","soundReleaseInput"].forEach(id=>bind(id,'input',()=>{ updateCurrentSoundFromUI(); drawSoundWaveCanvas(); })); bindClick("previewSoundBtn",async()=>{ try{ await ctxAudio().resume(); }catch{} previewSound(state.currentSoundIndex,false); });
   let soundDraw=false; bind("soundWaveCanvas",'pointerdown',e=>{ soundDraw=true; e.preventDefault(); writeWavePoint(e); }); bind("soundWaveCanvas",'pointermove',e=>{ if(soundDraw){ e.preventDefault(); writeWavePoint(e); }}); window.addEventListener('pointerup',()=>soundDraw=false);
@@ -3840,6 +3889,7 @@ function wireUI(){
   bindClick("spriteAnimPauseBtn",()=>{ state.spriteAnimPlaying=false; updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
   bind("spriteAnimSpeedInput",'input',()=>{ state.spriteAnimSpeed=Math.max(1,parseFloat($("spriteAnimSpeedInput")?.value)||6); updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
   updateMapAnimToggleButton();
+  updateMapToolButtons();
   syncResponsiveUI();
   window.addEventListener('resize',syncResponsiveUI);
   syncSidebarToggleButton("toggleMapSidebarBtn","mapView");
