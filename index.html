@@ -210,12 +210,12 @@
     .eyeIcon{width:18px;height:18px;display:block}
     .eyeIcon path,.eyeIcon circle,.eyeIcon line{stroke:#5a341b;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;fill:none}
     .eyeToggleBtn.is-hidden .eyeIcon path,.eyeToggleBtn.is-hidden .eyeIcon circle,.eyeToggleBtn.is-hidden .eyeIcon line{stroke:#946746}
-    .menu{position:absolute;top:58px;right:10px;width:340px;padding:10px;display:none;z-index:80}
+    .menu{position:absolute;top:58px;right:10px;width:min(340px,calc(100vw - 20px));height:min(640px,calc(100vh - 86px));padding:10px;display:none;z-index:80;max-height:calc(100vh - 86px)}
     .menu.open{display:block}
     .menuBackdrop{position:fixed;inset:0;background:rgba(36,22,10,.22);backdrop-filter:blur(4px);z-index:75;display:none}
     .menuBackdrop.open{display:block}
     .codeSearchBar .uiBtn{padding:5px 8px;font-size:11px;line-height:1;box-shadow:0 3px 0 var(--shadow)}
-    .menuCard{padding:10px;border:4px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 6px 0 #9a6a38}
+    .menuCard{height:100%;min-height:0;overflow:auto;padding:10px;border:4px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 6px 0 #9a6a38}
     .menu h3{margin:4px 8px 10px;font-size:12px;letter-spacing:.08em;color:var(--danger)}
     .row{display:flex;gap:8px;flex-wrap:wrap;padding:0 6px 10px}
     .menuSettingRow{padding:0 6px 10px}
@@ -261,10 +261,10 @@
     .menuSection.open .menuSectionHeader::after{content:'v'}
     .menuSectionBody{display:none}
     .menuSection.open .menuSectionBody{display:block}
-    .menuLoadPanel{position:absolute;inset:12px;border:4px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 6px 0 #9a6a38;padding:10px;z-index:3;display:flex;flex-direction:column;min-height:0}
+    .menuLoadPanel{position:absolute;inset:12px;border:4px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e3,#efd4a0);box-shadow:0 6px 0 #9a6a38;padding:10px;z-index:3;display:flex;flex-direction:column;min-height:0;max-height:calc(100% - 24px)}
     .menuLoadPanel.hidden{display:none}
     .menuLoadHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .menuLoadList{display:flex;flex-direction:column;gap:8px;flex:1;min-height:236px;overflow:auto;padding-right:4px}
+    .menuLoadList{display:flex;flex-direction:column;gap:8px;flex:1;min-height:0;overflow:auto;padding-right:4px}
     .miniBtn{padding:4px 8px;font-size:11px;line-height:1;box-shadow:0 3px 0 var(--shadow)}
     #addCodeTabBtn,#deleteCodeTabBtn,#btnImportCodeFile{padding:4px 8px;font-size:11px;line-height:1}
     #mapRectBtn.rect-outline{background:transparent}
@@ -479,7 +479,7 @@
     <div class="menuBackdrop" id="menuBackdrop"></div>
     <div class="menu" id="menu"><div class="menuCard">
       <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button></div></div></div>
-      <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal</option><option value="mobile_fullscreen">Mobile fullscreen</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
+      <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal (480x270)</option><option value="mobile_fullscreen">Mobile fullscreen (viewport size)</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
             <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="list menuLoadList" id="projectList"></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div></div>
     </div></div>
   </div>
@@ -932,6 +932,7 @@ const CODE_API_DOCS = [
   makeDoc("x += value / x -= value", "Shorthand for updating an existing variable.", [["value", "The amount to add or subtract."]], ["x += 1","y -= speed"], "The app expands this into standard Lua before running your code.")
 ].sort(compareDocsByCategory);
 let docsPage = 0;
+let examplesPage = 0;
 function getCodeFileViewState(index){
   const key=String(index|0);
   if(!state.codeViewByFile[key]) state.codeViewByFile[key]={scrollTop:0,scrollLeft:0};
@@ -1511,9 +1512,16 @@ function buildDocs(){
     if(!docsByCategory.has(category)) docsByCategory.set(category,[]);
     docsByCategory.get(category).push(doc);
   });
-  DOC_CATEGORY_ORDER.forEach(category=>{
+  const docCategories=DOC_CATEGORY_ORDER.filter(category=>(docsByCategory.get(category)||[]).length);
+  const docPages=Math.max(1, docCategories.length);
+  docsPage=Math.max(0, Math.min(docsPage, docPages-1));
+  const docPager=document.createElement('div');
+  docPager.className='pageRow';
+  docPager.innerHTML=`<button class="uiBtn" id="docsCategoryPrevBtn">&lt;</button><div class="docDesc" id="docsCategoryPageLabel">1 / 1</div><button class="uiBtn" id="docsCategoryNextBtn">&gt;</button>`;
+  root.appendChild(docPager);
+  if(docCategories.length){
+    const category=docCategories[docsPage];
     const docs=docsByCategory.get(category)||[];
-    if(!docs.length) return;
     const sec=document.createElement('div');
     sec.className='docsSection';
     sec.innerHTML=`<h3>${escapeHtml(category.toUpperCase())}</h3>`;
@@ -1530,20 +1538,57 @@ function buildDocs(){
       sec.appendChild(item);
     });
     root.appendChild(sec);
+  }
+  const examplesByCategory=new Map();
+  getExampleProjects().forEach(example=>{
+    const category=example.category||'misc';
+    if(!examplesByCategory.has(category)) examplesByCategory.set(category,[]);
+    examplesByCategory.get(category).push(example);
   });
-  const categories=[...new Set(getExampleProjects().map(example=>example.category||'misc'))];
-  categories.forEach(category=>{
+  const exampleCategories=[...examplesByCategory.keys()];
+  const examplePages=Math.max(1, exampleCategories.length);
+  examplesPage=Math.max(0, Math.min(examplesPage, examplePages-1));
+  const examplesPager=document.createElement('div');
+  examplesPager.className='pageRow';
+  examplesPager.innerHTML=`<button class="uiBtn" id="examplesCategoryPrevBtn">&lt;</button><div class="docDesc" id="examplesCategoryPageLabel">1 / 1</div><button class="uiBtn" id="examplesCategoryNextBtn">&gt;</button>`;
+  root.appendChild(examplesPager);
+  if(exampleCategories.length){
+    const category=exampleCategories[examplesPage];
     const ex=document.createElement('div');
     ex.className='docsSection';
     ex.innerHTML=`<h3>${escapeHtml(('EXAMPLES: '+category).toUpperCase())}</h3>`;
-    getExampleProjects().filter(example=>(example.category||'misc')===category).forEach(example=>{
+    (examplesByCategory.get(category)||[]).forEach(example=>{
       const item=document.createElement('details');
       item.className='docItem';
       item.innerHTML=`<summary class="docSummary"><span class="docName">${escapeHtml(example.name)}</span></summary><div class="docBody"><div class="docDesc">${escapeHtml(example.description)}</div><div class="docActions"><button class="loadExampleBtn" data-example-id="${escapeHtml(example.id)}">Load Example Project</button></div></div>`;
       ex.appendChild(item);
     });
     root.appendChild(ex);
+  }
+  const docsLabel=$("docsCategoryPageLabel");
+  if(docsLabel) docsLabel.textContent=`${docCategories.length?docsPage+1:0} / ${docPages}`;
+  $("docsCategoryPrevBtn")?.addEventListener('click',()=>{
+    docsPage=(docsPage-1+docPages)%docPages;
+    buildDocs();
   });
+  $("docsCategoryNextBtn")?.addEventListener('click',()=>{
+    docsPage=(docsPage+1)%docPages;
+    buildDocs();
+  });
+  $("docsCategoryPrevBtn")?.classList.toggle('hidden', docPages<=1);
+  $("docsCategoryNextBtn")?.classList.toggle('hidden', docPages<=1);
+  const examplesLabel=$("examplesCategoryPageLabel");
+  if(examplesLabel) examplesLabel.textContent=`${exampleCategories.length?examplesPage+1:0} / ${examplePages}`;
+  $("examplesCategoryPrevBtn")?.addEventListener('click',()=>{
+    examplesPage=(examplesPage-1+examplePages)%examplePages;
+    buildDocs();
+  });
+  $("examplesCategoryNextBtn")?.addEventListener('click',()=>{
+    examplesPage=(examplesPage+1)%examplePages;
+    buildDocs();
+  });
+  $("examplesCategoryPrevBtn")?.classList.toggle('hidden', examplePages<=1);
+  $("examplesCategoryNextBtn")?.classList.toggle('hidden', examplePages<=1);
   root.querySelectorAll('[data-example-id]').forEach(btn=>{
     btn.onclick=()=>{
       const example=getExampleProjects().find(entry=>entry.id===btn.dataset.exampleId);
@@ -2213,7 +2258,7 @@ function loadPosterShowcaseExampleProject(){
   };
   p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
   p.music=[makeMusic()];
-  p.settings.movementInput='left_joystick';
+  p.settings.movementInput='dpad';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`state = "menu"
 player = {}
@@ -2613,6 +2658,8 @@ function loadMenuScreenSwapExampleProject(){
   p.palette[12]="#8ad7ff";
   p.palette[13]="#ef476f";
   p.palette[14]="#ffe29a";
+  p.settings.movementInput='dpad';
+  p.settings.displayMode='normal';
   const arrow=makeSprite(16,16);
   const rows=[
     ".......6........",
@@ -2855,6 +2902,8 @@ function loadTetrisThemeExampleProject(){
   p.palette[13]="#c3423f";
   p.palette[14]="#f4b860";
   p.palette[15]="#f7f7ff";
+  p.settings.movementInput='dpad';
+  p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:4,content:`board_w = 10
 board_h = 20
 cell = 10
