@@ -105,6 +105,9 @@
     .pageRow .uiBtn{padding:4px 8px;font-size:12px}
     .itemRow{display:flex;gap:8px;align-items:center;justify-content:space-between;border:3px solid var(--line);border-radius:12px;padding:7px 9px;background:linear-gradient(180deg,#fff6df,#efd39f);box-shadow:0 3px 0 #c08b52;cursor:pointer}
     .itemRow.active{border-color:var(--accent);box-shadow:0 3px 0 #7f2b1f}
+    .spriteListRow{display:flex;align-items:center;gap:6px;width:100%}
+    .spriteIndexBtn{flex:1 1 auto;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .spriteActionBtn{flex:0 0 auto;padding:3px 9px;font-size:11px;line-height:1;min-width:auto}
     .spritePanelPreview{display:flex;flex-direction:column;align-items:center;gap:6px;margin:8px 0 10px;padding:8px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff6df,#efd39f);box-shadow:0 3px 0 #c08b52}
     .spritePanelPreview canvas{width:44px;height:44px;border:3px solid var(--line);border-radius:10px;background:
       linear-gradient(45deg, rgba(0,0,0,.07) 25%, transparent 25%),
@@ -385,7 +388,7 @@
     <div class="view" id="view-sprites">
       <div class="splitView" id="spriteView">
         <div class="sidebar panelSkin">
-          <div class="pane"><h4>SPRITES</h4><div class="formRow"><button class="mbtn" id="addSpriteBtn">Add Sprite</button></div><div class="pageRow compact" id="spriteListPagerRow"><button class="uiBtn" id="spriteListPrevBtn">&lt;</button><div class="docDesc" id="spriteListPageLabel">1 / 1</div><button class="uiBtn" id="spriteListNextBtn">&gt;</button></div><div class="spriteList" id="spriteList"></div><div class="spritePanelPreview"><canvas id="spritePanelPreviewCanvas" width="44" height="44"></canvas><div class="spritePanelPreviewLabel" id="spritePanelPreviewLabel">Sprite 0</div></div><div class="formRow" style="margin-top:8px"><div class="field"><label>Frames In Folder</label><div class="pageRow"><button class="uiBtn" id="spriteFolderMinusBtn">-</button><div class="docDesc" id="spriteFolderCountLabel">1</div><button class="uiBtn" id="spriteFolderPlusBtn">+</button></div></div></div><div class="frameGrid" id="spriteFrameList"></div><div class="pageRow" style="margin-top:8px" id="spriteFramePagerRow"><button class="uiBtn" id="spriteFramePrevBtn">&lt;</button><div class="docDesc" id="spriteFramePageLabel">1 / 1</div><button class="uiBtn" id="spriteFrameNextBtn">&gt;</button></div></div>
+          <div class="pane"><h4>SPRITES</h4><div class="formRow"><button class="mbtn" id="addSpriteBtn">Add Sprite</button></div><div class="pageRow compact" id="spriteListPagerRow"><button class="uiBtn" id="spriteListPrevBtn">&lt;</button><div class="docDesc" id="spriteListPageLabel">1 / 1</div><button class="uiBtn" id="spriteListNextBtn">&gt;</button></div><div class="spriteList" id="spriteList"></div><input type="file" id="spriteImportPngInput" accept="image/png" style="display:none"><div class="spritePanelPreview"><canvas id="spritePanelPreviewCanvas" width="44" height="44"></canvas><div class="spritePanelPreviewLabel" id="spritePanelPreviewLabel">Sprite 0</div></div><div class="formRow" style="margin-top:8px"><div class="field"><label>Frames In Folder</label><div class="pageRow"><button class="uiBtn" id="spriteFolderMinusBtn">-</button><div class="docDesc" id="spriteFolderCountLabel">1</div><button class="uiBtn" id="spriteFolderPlusBtn">+</button></div></div></div><div class="frameGrid" id="spriteFrameList"></div><div class="pageRow" style="margin-top:8px" id="spriteFramePagerRow"><button class="uiBtn" id="spriteFramePrevBtn">&lt;</button><div class="docDesc" id="spriteFramePageLabel">1 / 1</div><button class="uiBtn" id="spriteFrameNextBtn">&gt;</button></div></div>
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
@@ -1216,6 +1219,14 @@ function newProject(){ if(!confirm("Are you sure you want to start a new project
 
 function loadAllProjects(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(_){ return {}; } }
 function saveAllProjects(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
+function cloneProjectSnapshot(projectLike){
+  const fallback=defaultProject();
+  if(!projectLike||typeof projectLike!=='object') return fallback;
+  const clone=JSON.parse(JSON.stringify(projectLike));
+  if(!Array.isArray(clone.palette)) clone.palette=[...fallback.palette];
+  else clone.palette=clone.palette.slice();
+  return clone;
+}
 function refreshProjectList(){
   const list=$("projectList");
   if(!list) return;
@@ -1251,7 +1262,7 @@ function refreshProjectList(){
       const p=all[name];
       state.currentProjectName=name;
       state.hasSaved=true;
-      state.appProject=JSON.parse(JSON.stringify(p.project));
+      state.appProject=cloneProjectSnapshot(p.project);
       invalidateEditorRenderCache();
       ensureProjectData();
       state.currentMapIndex=0;
@@ -1367,7 +1378,7 @@ function importCodeFile(file){
   reader.onerror=()=>toast('<b>Import failed:</b> Could not read file.');
   reader.readAsText(file);
 }
-function saveProject(){ saveEditorToCurrentCodeFile(); const all=loadAllProjects(); const defaultName=state.currentProjectName||'project_1'; const name=promptForProjectName('Save project as:', defaultName); if(!name) return; state.currentProjectName=name; state.hasSaved=true; all[name]={ t:Date.now(), project: JSON.parse(JSON.stringify(state.appProject)) }; saveAllProjects(all); refreshProjectList();
+function saveProject(){ saveEditorToCurrentCodeFile(); const all=loadAllProjects(); const defaultName=state.currentProjectName||'project_1'; const name=promptForProjectName('Save project as:', defaultName); if(!name) return; state.currentProjectName=name; state.hasSaved=true; all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject) }; saveAllProjects(all); refreshProjectList();
 updateCodeLineNumbers(); toast(`<b>Saved:</b> ${escapeHtml(name)}`); }
 let exportFengariSourcePromise=null;
 let jsZipLoadPromise=null;
@@ -1488,7 +1499,12 @@ async function exportProjectZip(){
     zip.file('sprites/sprite_folders.json', JSON.stringify(state.appProject.spriteFolders||[], null, 2));
     zip.file('maps/maps.json', JSON.stringify(state.appProject.maps||[], null, 2));
     zip.file('music/music.json', JSON.stringify(state.appProject.music||[], null, 2));
+    zip.file('sounds/sounds.json', JSON.stringify(state.appProject.sounds||[], null, 2));
+    zip.file('palette/palette.json', JSON.stringify(state.appProject.palette||[], null, 2));
+    zip.file('tiles/tile_defs.json', JSON.stringify(state.appProject.tileDefs||{}, null, 2));
+    zip.file('settings/settings.json', JSON.stringify(state.appProject.settings||{}, null, 2));
     zip.file('project/project.json', JSON.stringify(state.appProject.project||{}, null, 2));
+    zip.file('project/full_project.json', JSON.stringify(state.appProject||{}, null, 2));
     const blob=await zip.generateAsync({type:'blob'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download=exportFilename+'.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
@@ -3240,74 +3256,243 @@ function loadUiDropdownExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='mobile_fullscreen';
   p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`menu_open = false
-selected = 1
-options = {"small","medium","large"}
-screen = "home"
+menu_index = 1
+menu_items = {
+  {label="start game", screen="game"},
+  {label="toggle controls", action="controls"},
+  {label="palette pulse", action="palette"},
+  {label="back to menu", screen="menu"}
+}
+screen = "menu"
+controls_visible = false
+time = 0
+stars = {}
+hud_rows = {"fps stable", "api demo loaded", "table + draw + state"}
+stats = {shots=0, score=0}
+player = {x=236, y=136, angle=0, speed=2.2}
+crosshair = {x=236, y=136}
+sparkles = {}
 
 function _init()
   default_controls("none")
+  seed_stars()
+end
+
+function seed_stars()
+  stars = {}
+  for i=1,80 do
+    add(stars, {x=rnd(480), y=rnd(270), s=rnd(2)+0.4})
+  end
+end
+
+function toggle_controls()
+  controls_visible = not controls_visible
+  default_controls(controls_visible and "left_joystick" or "none")
+end
+
+function activate_menu_item(item)
+  if item.screen then
+    screen = item.screen
+    menu_open = false
+    if screen == "menu" then
+      default_controls("none")
+      controls_visible = false
+    else
+      default_controls(controls_visible and "left_joystick" or "none")
+    end
+    return
+  end
+  if item.action == "controls" then
+    toggle_controls()
+  elseif item.action == "palette" then
+    stats.score += 25
+  end
+end
+
+function handle_menu_click(mx,my)
+  if hit(34, 56, 218, 28, mx, my) then
+    menu_open = not menu_open
+    return
+  end
+  if menu_open then
+    for i=1,#menu_items do
+      local y = 88 + (i-1)*26
+      if hit(34, y, 218, 24, mx, my) then
+        menu_index = i
+        activate_menu_item(menu_items[i])
+        return
+      end
+    end
+  end
+  if hit(270, 56, 180, 28, mx, my) then
+    screen = "menu"
+    menu_open = false
+    controls_visible = false
+    default_controls("none")
+  elseif hit(270, 90, 180, 28, mx, my) then
+    screen = "game"
+    default_controls(controls_visible and "left_joystick" or "none")
+  end
+end
+
+function handle_game_click(mx,my)
+  if hit(332, 220, 128, 28, mx, my) then
+    controls_visible = not controls_visible
+    default_controls(controls_visible and "left_joystick" or "none")
+  elseif hit(332, 188, 128, 28, mx, my) then
+    screen = "menu"
+    menu_open = false
+    controls_visible = false
+    default_controls("none")
+  else
+    add(sparkles, {x=mx, y=my, life=20, vx=rnd(2)-1, vy=rnd(2)-1})
+    stats.shots += 1
+  end
+end
+
+function update_player()
+  local dx = joyx(0)
+  local dy = joyy(0)
+  player.x += dx * player.speed
+  player.y += dy * player.speed
+  if player.x < 20 then player.x = 20 end
+  if player.x > 460 then player.x = 460 end
+  if player.y < 20 then player.y = 20 end
+  if player.y > 250 then player.y = 250 end
+  local mx,my = mouse()
+  crosshair.x = mx
+  crosshair.y = my
+  local dirx = crosshair.x - player.x
+  local diry = crosshair.y - player.y
+  if dirx ~= 0 or diry ~= 0 then
+    player.angle = math.atan(diry, dirx) * 57.2958
+  end
+end
+
+function update_sparkles()
+  for p in all(sparkles) do
+    p.life -= 1
+    p.x += p.vx
+    p.y += p.vy
+    p.vy += 0.05
+    if p.life <= 0 then
+      del(sparkles, p)
+    end
+  end
+end
+
+function _update()
+  time += 1
+  local mx,my,mb,mbr = mouse()
+  if (mbr & 1) ~= 0 then
+    if screen == "menu" then
+      handle_menu_click(mx,my)
+    else
+      handle_game_click(mx,my)
+    end
+  end
+
+  if screen == "menu" then
+    if keyp("down") then menu_index = math.min(#menu_items, menu_index + 1) end
+    if keyp("up") then menu_index = math.max(1, menu_index - 1) end
+    if keyp("enter") then activate_menu_item(menu_items[menu_index]) end
+  else
+    update_player()
+    update_sparkles()
+  end
 end
 
 function hit(x,y,w,h,mx,my)
   return mx >= x and mx <= x + w and my >= y and my <= y + h
 end
 
-function _update()
-  local mx,my,mb,mbr = mouse()
-  if (mbr & 1) ~= 0 then
-    if hit(20,30,180,26,mx,my) then
-      menu_open = not menu_open
-    elseif menu_open then
-      for i=1,#options do
-        if hit(20,30 + i*24,180,22,mx,my) then
-          selected = i
-          menu_open = false
-        end
-      end
-    end
-    if hit(20,150,180,28,mx,my) then
-      screen = "home"
-    end
-    if hit(220,150,180,28,mx,my) then
-      screen = "game"
-    end
+function draw_backdrop()
+  cls(1)
+  for s in all(stars) do
+    local twinkle = (sin((time * 0.03) + s.x) + 1) * 0.5
+    pset(s.x, s.y, twinkle > 0.5 and 7 or 12)
   end
+  rectfill(18, 18, 462, 252, 2)
+  rect(18, 18, 462, 252, 12)
+  print("ui dropdown + screens lab", 16, 30, 24, 7)
+  print("menu: no onscreen controls | game: controls optional", 11, 30, 44, 10)
 end
 
 function draw_dropdown()
-  rectfill(20,30,200,56,12)
-  print("layout: "..options[selected], 12, 30, 38, 7)
+  rectfill(34,56,252,84,12)
+  rect(34,56,252,84,7)
+  print("mode: "..menu_items[menu_index].label, 12, 44, 66, 1)
+  print(menu_open and "close" or "open", 11, 210, 66, 8)
   if menu_open then
-    for i=1,#options do
-      rectfill(20,30 + i*24,200,52 + i*24, i==selected and 10 or 6)
-      print(options[i], 12, 30, 38 + i*24, 1)
+    for i,item in pairs(menu_items) do
+      local y = 88 + (i-1)*26
+      rectfill(34,y,252,y+24, i==menu_index and 10 or 6)
+      rect(34,y,252,y+24,7)
+      print(item.label, 11, 44, y + 7, 1)
     end
   end
 end
 
 function draw_cards()
-  rectfill(20,84,200,136,6)
-  rectfill(220,84,400,136,14)
-  print("simple card", 12, 30, 96, 1)
-  print("status card", 12, 230, 96, 1)
-  print("shared spacing + corners", 12, 30, 118, 11)
+  rectfill(34,180,252,238,6)
+  rectfill(270,124,450,238,14)
+  rect(34,180,252,238,7)
+  rect(270,124,450,238,7)
+  print("layout card", 12, 44, 190, 1)
+  print("spacing, borders, labels", 11, 44, 206, 11)
+  print("table rows:", 11, 44, 220, 1)
+  for i,row in pairs(hud_rows) do
+    print("- "..row, 10, 54, 220 + i*10, 1)
+  end
+  print("screen card", 12, 280, 134, 1)
+  print("screen: "..screen, 11, 280, 152, 1)
+  print("controls: "..(controls_visible and "shown" or "hidden"), 11, 280, 166, 1)
 end
 
-function draw_tabs()
-  rectfill(20,150,200,178, screen=="home" and 8 or 2)
-  rectfill(220,150,400,178, screen=="game" and 8 or 2)
-  print("home", 12, 90, 160, 7)
-  print("game", 12, 290, 160, 7)
+function draw_menu_buttons()
+  rectfill(270,56,450,84,8)
+  rectfill(270,90,450,118,11)
+  rect(270,56,450,84,7)
+  rect(270,90,450,118,7)
+  print("menu screen", 11, 322, 66, 7)
+  print("game screen", 11, 322, 100, 7)
+end
+
+function draw_game_screen()
+  rectfill(34,56,314,238,3)
+  rect(34,56,314,238,12)
+  pset(crosshair.x, crosshair.y, 10)
+  line(player.x, player.y, crosshair.x, crosshair.y, 10)
+  circ(player.x, player.y, 10, 11)
+  rectfill(player.x-5, player.y-5, player.x+5, player.y+5, 8)
+  r_spr(0, player.x-8, player.y-8, player.angle)
+  for p in all(sparkles) do
+    circfill(p.x, p.y, 2, 14)
+  end
+
+  rectfill(332,56,460,112,6)
+  rect(332,56,460,112,7)
+  print("table data", 11, 342, 66, 1)
+  print("shots: "..stats.shots, 11, 342, 82, 1)
+  print("score: "..stats.score, 11, 342, 96, 1)
+
+  rectfill(332,188,460,216,13)
+  rectfill(332,220,460,248,controls_visible and 8 or 2)
+  rect(332,188,460,216,7)
+  rect(332,220,460,248,7)
+  print("back to menu", 11, 356, 198, 7)
+  print(controls_visible and "hide controls" or "show controls", 11, 344, 230, 7)
 end
 
 function _draw()
-  cls(0)
-  draw_dropdown()
-  draw_cards()
-  draw_tabs()
-  print("ui structures: dropdown + cards + tabs", 12, 20, 206, 7)
-  print("onscreen controls are disabled", 12, 20, 224, 10)
-  print("display: mobile fullscreen", 12, 20, 242, 10)
+  draw_backdrop()
+  if screen == "menu" then
+    draw_dropdown()
+    draw_cards()
+    draw_menu_buttons()
+  else
+    draw_game_screen()
+  end
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -3318,7 +3503,7 @@ function getExampleProjects(){
     {id:'include-function-check',category:'logic',name:'Include + Utility Function Check',description:'Two-file project that validates include, cls(color()), add(), rnd(), print(), and for e in all(list) do loops.',loader:loadIncludeFunctionCheckExampleProject},
     {id:'menu-screen-swap',category:'ui examples',name:'Basic Menu + Screen Swap',description:'Simple readable menu/game/pause screen flow with r_spr(), spr flip, joystick direction aiming, sin/cosin motion, and add()/del() notes.',loader:loadMenuScreenSwapExampleProject},
     {id:'ui-mouse',category:'ui examples',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing with higher-contrast readability colors.',loader:loadUiMouseExampleProject},
-    {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Simple dropdowns, cards, and tab-like screens using mouse() with no onscreen controls and mobile fullscreen display.',loader:loadUiDropdownExampleProject},
+    {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject}
   ];
@@ -3439,6 +3624,106 @@ function drawSpritePanelPreview(){
     }
   }
 }
+function selectSpriteFolder(index){
+  const folders=state.appProject.spriteFolders||[];
+  if(!folders.length) return;
+  const next=clamp(index|0,0,folders.length-1);
+  state.currentSpriteIndex=next;
+  state.currentSpriteFrame=0;
+  state.spriteFramePage=0;
+  state.spriteListPage=Math.floor(next/SPRITE_LIST_PAGE_SIZE);
+  spriteHistory.undo.length=0;
+  spriteHistory.redo.length=0;
+  syncSpriteUI();
+  drawSpriteEditor();
+  refreshTilePalette();
+  runtime.syncProject(state.appProject);
+}
+function hexToRgb(value){
+  const s=String(value||"").trim();
+  if(/^#([0-9a-f]{3})$/i.test(s)){
+    const m=s.slice(1);
+    return {r:parseInt(m[0]+m[0],16), g:parseInt(m[1]+m[1],16), b:parseInt(m[2]+m[2],16)};
+  }
+  if(/^#([0-9a-f]{6})$/i.test(s)){
+    return {r:parseInt(s.slice(1,3),16), g:parseInt(s.slice(3,5),16), b:parseInt(s.slice(5,7),16)};
+  }
+  const rgb=s.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/i);
+  return rgb?{r:parseInt(rgb[1],10),g:parseInt(rgb[2],10),b:parseInt(rgb[3],10)}:null;
+}
+function closestPaletteIndexForRgb(r,g,b){
+  let best=0,bestDist=Infinity;
+  (state.appProject.palette||[]).forEach((hex,i)=>{
+    const c=hexToRgb(hex);
+    if(!c) return;
+    const dr=r-c.r,dg=g-c.g,db=b-c.b;
+    const dist=dr*dr+dg*dg+db*db;
+    if(dist<bestDist){ bestDist=dist; best=i; }
+  });
+  return best;
+}
+function importPngIntoSpriteFolder(folderIndex,file){
+  if(!file) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      const folder=state.appProject.spriteFolders[folderIndex];
+      if(!folder) return;
+      const target=folder.frames[0]||makeSprite(16,16);
+      const w=Math.max(1,img.naturalWidth|0), h=Math.max(1,img.naturalHeight|0);
+      const canvas=makeCanvas(w,h), ctx=canvas.getContext('2d',{willReadFrequently:true});
+      if(!ctx) return;
+      ctx.imageSmoothingEnabled=false;
+      ctx.clearRect(0,0,w,h);
+      ctx.drawImage(img,0,0,w,h);
+      const data=ctx.getImageData(0,0,w,h).data;
+      target.w=w; target.h=h;
+      target.pixels=Array.from({length:h},()=>Array.from({length:w},()=>-1));
+      for(let y=0;y<h;y++) for(let x=0;x<w;x++){
+        const idx=(y*w+x)*4, a=data[idx+3];
+        if(a<16){ target.pixels[y][x]=-1; continue; }
+        target.pixels[y][x]=closestPaletteIndexForRgb(data[idx],data[idx+1],data[idx+2]);
+      }
+      folder.frames[0]=target;
+      while(folder.frames.length>1) folder.frames.pop();
+      invalidateEditorRenderCache();
+      selectSpriteFolder(folderIndex);
+      toast(`<b>Imported PNG</b> into sprite ${folderIndex}`);
+    };
+    img.onerror=()=>toast('<b>Import failed:</b> Could not decode PNG image.');
+    img.src=String(reader.result||'');
+  };
+  reader.onerror=()=>toast('<b>Import failed:</b> Could not read PNG file.');
+  reader.readAsDataURL(file);
+}
+function deleteSpriteFolder(index){
+  const folders=state.appProject.spriteFolders||[];
+  if(folders.length<=1){ toast('At least one sprite folder is required.'); return; }
+  const folder=folders[index];
+  const hasPixels=!!folder&&folder.frames?.some(frame=>!isSpriteFrameEmpty(frame));
+  if(hasPixels && !confirm(`Delete sprite ${index}? This folder has drawn pixels.`)) return;
+  if(!hasPixels && !confirm(`Delete sprite ${index}?`)) return;
+  folders.splice(index,1);
+  Object.values(state.appProject.tileDefs||{}).forEach(def=>{
+    if(!def) return;
+    const ref=parseSpriteRef(def.source||'');
+    if(ref){
+      if(ref.folder===index) def.source='';
+      else if(ref.folder>index) def.source=`${ref.folder-1}${String.fromCharCode(97+ref.frame)}`;
+    }
+    const raw=String(def.animFolder??'').trim();
+    if(raw!=='' && Number.isFinite(Number(raw))){
+      const val=parseInt(raw,10);
+      if(val===index) def.animFolder='';
+      else if(val>index) def.animFolder=val-1;
+    }
+  });
+  invalidateEditorRenderCache();
+  const next=Math.min(index,folders.length-1);
+  selectSpriteFolder(next);
+  toast(`<b>Deleted sprite</b> ${index}`);
+}
 function refreshSpriteList(){
   const wrap=$("spriteList"); if(!wrap) return; wrap.innerHTML="";
   const folders=state.appProject.spriteFolders||[];
@@ -3449,8 +3734,37 @@ function refreshSpriteList(){
     const i=start+off;
     const row=document.createElement('div');
     row.className='itemRow'+(i===state.currentSpriteIndex?' active':'');
-    row.textContent=String(i);
-    row.onclick=()=>{ state.currentSpriteIndex=i; state.currentSpriteFrame=0; state.spriteFramePage=0; state.spriteListPage=Math.floor(i/SPRITE_LIST_PAGE_SIZE); spriteHistory.undo.length=0; spriteHistory.redo.length=0; syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); };
+    const rowInner=document.createElement('div');
+    rowInner.className='spriteListRow';
+    const selectBtn=document.createElement('button');
+    selectBtn.className='smallbtn spriteIndexBtn';
+    selectBtn.textContent=`Sprite ${i}`;
+    selectBtn.onclick=(e)=>{ e.stopPropagation(); selectSpriteFolder(i); };
+    const actionBtn=document.createElement('button');
+    actionBtn.className='smallbtn spriteActionBtn';
+    actionBtn.textContent='⋮';
+    actionBtn.title='Import PNG or delete sprite';
+    actionBtn.onclick=(e)=>{
+      e.stopPropagation();
+      const action=prompt(`Sprite ${i} action: type import or delete`, 'import');
+      if(action==null) return;
+      const normalized=String(action).trim().toLowerCase();
+      if(normalized==='import'){
+        const input=$("spriteImportPngInput");
+        if(!input) return;
+        input.value='';
+        input.onchange=()=>{ const file=input.files&&input.files[0]; if(file) importPngIntoSpriteFolder(i,file); input.value=''; };
+        input.click();
+      }else if(normalized==='delete'){
+        deleteSpriteFolder(i);
+      }else{
+        toast('Action canceled. Type import or delete.');
+      }
+    };
+    rowInner.appendChild(selectBtn);
+    rowInner.appendChild(actionBtn);
+    row.appendChild(rowInner);
+    row.onclick=()=>selectSpriteFolder(i);
     wrap.appendChild(row);
   });
   const pageLabel=$("spriteListPageLabel");
@@ -4193,7 +4507,7 @@ function wireUI(){
   });
   bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
   bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.25:-0.25), e.clientX, e.clientY); },{passive:false});
-  bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); state.currentSpriteIndex=state.appProject.spriteFolders.length-1; state.currentSpriteFrame=0; state.spriteFramePage=0; state.spriteListPage=Math.floor(state.currentSpriteIndex/SPRITE_LIST_PAGE_SIZE); spriteHistory.undo.length=0; spriteHistory.redo.length=0; syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
+  bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); selectSpriteFolder(state.appProject.spriteFolders.length-1); });
   bindClick("applySpriteSizeBtn",()=>{ const s=currentSprite(); const nw=Math.max(1,parseInt($("spriteWInput")?.value||s.w,10)); const nh=Math.max(1,parseInt($("spriteHInput")?.value||s.h,10)); pushSpriteHistory(); const newPixels=[]; for(let y=0;y<nh;y++){ const row=[]; for(let x=0;x<nw;x++) row.push((s.pixels[y]&&s.pixels[y][x]!=null)?s.pixels[y][x]:-1); newPixels.push(row); } s.w=nw; s.h=nh; s.pixels=newPixels; invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); });
   bindClick("spriteDrawBtn",()=>setSpriteTool(state.spriteTool==='draw'?null:'draw')); bindClick("spriteEraseBtn",()=>setSpriteTool(state.spriteTool==='erase'?null:'erase')); bindClick("spriteFillBtn",()=>setSpriteTool(state.spriteTool==='fill'?null:'fill')); bindClick("spritePanBtn",()=>setSpriteTool(state.spriteTool==='pan'?null:'pan'));
   bindClick("spriteUndoBtn",()=>{ if(!spriteHistory.undo.length) return; spriteHistory.redo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.undo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
