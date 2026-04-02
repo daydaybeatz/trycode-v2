@@ -4088,13 +4088,16 @@ function makeRuntime(){
     const stageH=Math.max(1,Math.floor(rect.height||0));
     const displayMode=(projectRef.settings&&projectRef.settings.displayMode)||'normal';
     stage.classList.toggle('mobile-fullscreen', displayMode==='mobile_fullscreen');
+    const aspect=GAME_W/GAME_H;
     if(displayMode==='mobile_fullscreen'){
-      canvas.style.width=`${stageW}px`;
-      canvas.style.height=`${stageH}px`;
+      const scale=Math.min(stageW/GAME_W, stageH/GAME_H);
+      const w=Math.max(1,Math.floor(GAME_W*scale));
+      const h=Math.max(1,Math.floor(GAME_H*scale));
+      canvas.style.width=`${w}px`;
+      canvas.style.height=`${h}px`;
       applyInputModeUI();
       return;
     }
-    const aspect=GAME_W/GAME_H;
     let w=stageW, h=Math.floor(w/aspect);
     if(h>stageH){
       h=stageH;
