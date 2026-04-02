@@ -4119,6 +4119,16 @@ function makeRuntime(){
   window.addEventListener('blur',()=>{ input.btnDpad.fill(0); input.btnFace.fill(0); input.btnSystem.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); keyDown.clear(); keyPressed.clear(); leftJoy.reset(); rightJoy.reset(); recomputeVirtualInput(); }); applyInputModeUI(); applyDialogStyles('message'); renderDialog();
   let col={r:255,g:255,b:255}, lastColorCall=null, camx=0, camy=0, viewZoom=1, zoomOffX=0, zoomOffY=0, clipRect=null;
   const defaultPrintState={font:null,size:null,color:null};
+  function resetRuntimeDefaults(){
+    col={r:255,g:255,b:255};
+    lastColorCall=null;
+    resetViewTransform();
+    clipRect=null;
+    defaultPrintState.font=null;
+    defaultPrintState.size=null;
+    defaultPrintState.color=null;
+    resetUiBoxStyle();
+  }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
   function clip(x,y,w,h){ if(arguments.length===0||x==null){ clipRect=null; return 0; } clipRect={x:Number(x)||0,y:Number(y)||0,w:Math.max(0,Number(w)||0),h:Math.max(0,Number(h)||0)}; return 0; }
   function clipPush(){ if(!clipRect) return false; ctx.save(); ctx.beginPath(); ctx.rect(Math.round(clipRect.x),Math.round(clipRect.y),Math.round(clipRect.w),Math.round(clipRect.h)); ctx.clip(); return true; }
@@ -4336,7 +4346,7 @@ function makeRuntime(){
   function build(code){
     lastCode=code||'';
     builtOk=false;
-    resetViewTransform();
+    resetRuntimeDefaults();
     const fengariApi=getFengariApi();
     if(!fengariApi){
       L=null;
@@ -4409,7 +4419,7 @@ function makeRuntime(){
   function reset(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); toast(`<b>${escapeHtml(name)} error:</b> ${escapeHtml(err)}`); builtOk=false; L=null; } } else lua.lua_pop(L,1); }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } callMaybe('_update'); callMaybe('_draw'); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); ensureProjectData(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); renderDialog(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); renderDialog(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
