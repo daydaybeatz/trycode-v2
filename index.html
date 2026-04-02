@@ -1232,7 +1232,7 @@ function refreshProjectList(){
   if(!list) return;
   list.innerHTML="";
   const all=loadAllProjects();
-  const perPage=3;
+  const perPage=5;
   const names=Object.keys(all).sort((a,b)=>(all[b].t||0)-(all[a].t||0));
   const pages=Math.max(1,Math.ceil(names.length/perPage));
   state.projectListPage=Math.max(0,Math.min(state.projectListPage,pages-1));
@@ -1298,8 +1298,7 @@ function refreshProjectList(){
       runtime.syncProject(state.appProject);
       runtime.reset(getProjectLua());
       setView('code');
-      $("menu").classList.remove('open');
-      $("menuBackdrop")?.classList.remove('open');
+      setFileMenuOpen(false);
       toast(`<b>Loaded:</b> ${escapeHtml(name)}`);
     };
     const deleteBtn=document.createElement('button');
@@ -4455,12 +4454,13 @@ function wireUI(){
   bindClick("graphicsBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('graphics'); });
   bindClick("soundBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('sound'); });
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); setView('runtime'); resetToolbar(); });
-  const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open) $("exportFormatRow")?.classList.add('hidden'); };
+  const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ $("exportFormatRow")?.classList.add('hidden'); closeLoadPanel(); } };
   bindClick("fileBtn",e=>{ e.stopPropagation(); const isOpen=$("menu")?.classList.contains('open'); setFileMenuOpen(!isOpen); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
   const toggleMenuSection=(id)=>$(id)?.classList.toggle('open');
   bindClick("menuSectionFileToggle",()=>toggleMenuSection('menuSectionFile'));
   bindClick("menuSectionSettingsToggle",()=>toggleMenuSection('menuSectionSettings'));
   const setLoadPanelOpen=open=>$("menuLoadPanel")?.classList.toggle('hidden', !open);
+  const closeLoadPanel=()=>setLoadPanelOpen(false);
   
   bind("menu","click",e=>e.stopPropagation());
   ["pointerdown","mousedown","click"].forEach(type=>{ bind("inputModeSelect",type,e=>e.stopPropagation()); bind("resolutionSelect",type,e=>e.stopPropagation()); bind("defaultPrintFontSelect",type,e=>e.stopPropagation()); });
@@ -4475,12 +4475,12 @@ function wireUI(){
   bindClick("btnExportZip",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.zip'); });
   bindClick("btnExportHtml",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.html'); });
   bindClick("btnMenuLoadProjects",e=>{ e.stopPropagation(); refreshProjectList(); setLoadPanelOpen(true); });
-  bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); setLoadPanelOpen(false); });
+  bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); closeLoadPanel(); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
   bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
   bind("resolutionSelect",'change',()=>{ ensureProjectData(); const value=$("resolutionSelect")?.value; state.appProject.settings.displayMode=value==='mobile_fullscreen'?'mobile_fullscreen':'normal'; runtime.syncProject(state.appProject); runtime.resizeDisplay(); });
-  bindClick("projectListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/3)); state.projectListPage=(state.projectListPage-1+pages)%pages; refreshProjectList(); });
-  bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/3)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
+  bindClick("projectListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage-1+pages)%pages; refreshProjectList(); });
+  bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
   bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
   bind("darkModeToggle",'change',()=>{ ensureProjectData(); state.appProject.settings.darkMode=!!$("darkModeToggle")?.checked; applyThemeUI(); });
   bindClick("runBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); });
