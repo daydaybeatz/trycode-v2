@@ -3507,77 +3507,92 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`tick = 0
-view = "overview"
-message = ""
-flash = 0
+screen = "command"
+msg = ""
+msg_timer = 0
 buttons = {}
-selected_route = 1
-selected_factory = 1
-selected_recipe = 1
-selected_mission = 1
+selected_cell = 1
+selected_squad = 1
+selected_issue = 1
+selected_project = 1
+selected_prisoner = 1
 
-views = {"overview","industry","trade","missions","war room","workshop"}
+time_rate = 2
+rates = {0,1,2,4}
+rate_labels = {"pause","1x","2x","4x"}
 
-world = {
+game = {
   day = 1,
-  season = "spring",
-  credits = 1400,
-  demand = 58,
-  stability = 64,
-  pressure = 22,
-  rivalry = 26,
-  influence = 12,
-  war_meter = 9,
-  public_trust = 51,
-  morale = 57,
-  convoy_tokens = 1,
-  mission_cd = 0,
-  income = 0,
-  expenses = 0
-}
-
-stock = {
-  ore = 28,
+  season = "dust",
+  treasury = 780,
+  food = 26,
   fuel = 18,
-  food = 22,
-  alloy = 5,
-  electronics = 3,
-  medicine = 0,
-  parts = 0
+  parts = 11,
+  medicine = 7,
+  intel = 32,
+  morale = 58,
+  heat = 24,
+  legitimacy = 34,
+  fame = 12,
+  threat = 28,
+  payroll = 0,
+  upkeep = 0,
+  income = 0,
+  casualties = 0,
+  prisoners = 1,
+  migrants = 0
 }
 
-factories = {
-  {name="steel foundry", level=1, active=true, health=88, throughput=1.0, upkeep=42, recipe="alloy"},
-  {name="assembly line", level=1, active=false, health=100, throughput=1.0, upkeep=36, recipe="parts"},
-  {name="field refinery", level=1, active=false, health=100, throughput=1.0, upkeep=32, recipe="fuel"}
+screens = {"command","world","squads","base","court","stories"}
+
+cells = {
+  {name="black dunes", ctrl=22, law=31, wealth=66, danger=61, pop=58, biome="wasteland", route=1},
+  {name="iron deltas", ctrl=44, law=45, wealth=74, danger=43, pop=64, biome="swamp", route=1},
+  {name="glass ridge", ctrl=36, law=29, wealth=58, danger=68, pop=47, biome="plateau", route=0},
+  {name="silent coast", ctrl=53, law=54, wealth=82, danger=36, pop=71, biome="coast", route=1},
+  {name="bone valley", ctrl=18, law=22, wealth=61, danger=73, pop=42, biome="badlands", route=0}
 }
 
-routes = {
-  {name="coastal merchant run", risk=18, distance=2, volume=1, tariff=26, unlocked=true, partner="free ports"},
-  {name="ridge convoy corridor", risk=34, distance=3, volume=2, tariff=42, unlocked=false, partner="frontier guild"},
-  {name="northern relief bridge", risk=44, distance=4, volume=2, tariff=64, unlocked=false, partner="civic coalition"}
+squads = {
+  {name="ghost-1", type="recon", ready=79, stealth=84, power=42, supply=66, fatigue=14, home=1, veteran=23},
+  {name="anvil-2", type="assault", ready=64, stealth=38, power=76, supply=58, fatigue=25, home=2, veteran=31},
+  {name="mule-3", type="logistics", ready=71, stealth=41, power=48, supply=82, fatigue=9, home=4, veteran=16}
 }
 
-recipes = {
-  alloy = {need_ore=4, need_fuel=2, out=2, unlock_day=1},
-  parts = {need_alloy=2, need_electronics=1, out=2, unlock_day=4},
-  fuel = {need_ore=2, need_food=1, out=3, unlock_day=1},
-  medicine = {need_food=2, need_electronics=1, out=1, unlock_day=8}
+issues = {
+  {name="bandit raid chain", cell=1, severity=66, timer=6, kind="security", reward=170},
+  {name="famine outbreak", cell=5, severity=71, timer=5, kind="humanitarian", reward=150},
+  {name="tax revolt", cell=3, severity=58, timer=7, kind="politics", reward=180},
+  {name="spy auction", cell=2, severity=46, timer=8, kind="intel", reward=140}
 }
 
-missions = {
-  {name="escort vulnerable convoy", kind="defense", cost=60, risk=22, reward=120, effect="stability", unlock=1},
-  {name="secure black market contracts", kind="economy", cost=90, risk=34, reward=190, effect="credits", unlock=3},
-  {name="counter sabotage network", kind="intel", cost=120, risk=42, reward=260, effect="pressure", unlock=6},
-  {name="mediate militia ceasefire", kind="diplomacy", cost=130, risk=38, reward=250, effect="trust", unlock=9}
+projects = {
+  {name="water reclaimers", cost=180, days=6, done=false, bonus="+food +legitimacy"},
+  {name="radio net", cost=160, days=5, done=false, bonus="+intel -threat"},
+  {name="armor press", cost=210, days=7, done=false, bonus="+parts +squad power"},
+  {name="civil schools", cost=240, days=8, done=false, bonus="+law +morale"}
 }
 
-upgrades = {
-  {name="warehouse expansion", cost=220, done=false, text="+route volume, +stock cap"},
-  {name="defense drones", cost=260, done=false, text="-route risk, -war meter"},
-  {name="quality labs", cost=280, done=false, text="+profit margin"},
-  {name="civil council", cost=320, done=false, text="+public trust events"}
+base = {
+  level = 1,
+  storage = 46,
+  infirmary = 32,
+  workshop = 35,
+  prison = 24,
+  progress = 0,
+  queue = 0,
+  queue_days = 0,
+  salvagers = 1,
+  farmers = 1,
+  crafters = 1
 }
+
+prisoners = {
+  {name="kess", risk=52, value=3, loyalty=8, role="raider"},
+  {name="murn", risk=34, value=2, loyalty=21, role="smuggler"}
+}
+
+stories = {}
 
 function clamp(v,a,b)
   if v < a then return a end
@@ -3585,386 +3600,464 @@ function clamp(v,a,b)
   return v
 end
 
-function chance(percent)
-  return rnd(100) < percent
+function chance(p)
+  return rnd(100) < p
 end
 
-function add_msg(txt)
-  message = txt
-  flash = 180
+function push_story(t)
+  add(stories, "d"..game.day..": "..t)
+  if #stories > 20 then deli(stories,1) end
+  msg = t
+  msg_timer = 180
 end
 
-function recipe_unlocked(name)
-  return world.day >= recipes[name].unlock_day
+function advance_season()
+  if game.season == "dust" then game.season = "storm"
+  elseif game.season == "storm" then game.season = "cold"
+  elseif game.season == "cold" then game.season = "bloom"
+  else game.season = "dust" end
 end
 
-function current_margin()
-  local margin = 1.0 + (world.influence / 100)
-  if upgrades[3].done then margin = margin + 0.16 end
-  margin = margin - (world.pressure / 320)
-  return clamp(margin, 0.7, 1.8)
+function recalc_costs()
+  game.payroll = 36 + #squads*18 + #prisoners*6
+  game.upkeep = 12 + base.level*10 + base.storage//8 + base.infirmary//12
 end
 
-function advance_day()
-  world.day = world.day + 1
-  if world.day % 12 == 0 then
-    world.season = (world.season == "spring" and "summer") or (world.season == "summer" and "autumn") or (world.season == "autumn" and "winter") or "spring"
-  end
-
-  local upkeep = 0
-  local production_value = 0
-  for i,f in pairs(factories) do
-    if f.active then
-      upkeep = upkeep + f.upkeep + f.level * 6
-      run_factory(f)
-      production_value = production_value + (18 * f.level)
-      if chance(8 + world.pressure/6) then
-        f.health = clamp(f.health - 4, 0, 100)
-      end
-    end
-  end
-
-  world.expenses = upkeep
-  local trade_income = run_routes()
-  local mission_pressure = world.mission_cd > 0 and 1 or 0
-  world.mission_cd = clamp(world.mission_cd - 1, 0, 99)
-
-  world.income = flr((production_value + trade_income) * current_margin())
-  world.credits = world.credits + world.income - world.expenses
-  if world.credits < 0 then
-    world.stability = clamp(world.stability - 4, 0, 100)
-    world.morale = clamp(world.morale - 3, 0, 100)
-  end
-
-  world.demand = clamp(world.demand + flr(rnd(7)) - 2 + mission_pressure, 35, 92)
-  world.pressure = clamp(world.pressure + flr(rnd(5)) - (upgrades[2].done and 2 or 0), 0, 100)
-  world.rivalry = clamp(world.rivalry + flr(rnd(4)) + (world.income > 400 and 1 or 0), 0, 100)
-  world.war_meter = clamp(world.war_meter + flr(world.rivalry/26) + (world.pressure > 62 and 1 or 0), 0, 100)
-  world.public_trust = clamp(world.public_trust + (upgrades[4].done and 1 or 0) - (world.pressure > 55 and 1 or 0), 0, 100)
-
-  if chance(16) then random_event() end
-  check_unlocks()
+function season_modifier()
+  if game.season == "storm" then return -5 end
+  if game.season == "cold" then return -3 end
+  if game.season == "bloom" then return 4 end
+  return 0
 end
 
-function run_factory(f)
-  if f.recipe == "alloy" and recipe_unlocked("alloy") then
-    local batches = flr(f.level * f.throughput)
-    if stock.ore >= 4 * batches and stock.fuel >= 2 * batches then
-      stock.ore = stock.ore - 4 * batches
-      stock.fuel = stock.fuel - 2 * batches
-      stock.alloy = stock.alloy + 2 * batches
-    end
-  elseif f.recipe == "parts" and recipe_unlocked("parts") then
-    local batches = flr(f.level * f.throughput)
-    if stock.alloy >= 2 * batches and stock.electronics >= 1 * batches then
-      stock.alloy = stock.alloy - 2 * batches
-      stock.electronics = stock.electronics - 1 * batches
-      stock.parts = stock.parts + 2 * batches
-    end
-  elseif f.recipe == "fuel" and recipe_unlocked("fuel") then
-    local batches = flr(f.level * f.throughput)
-    if stock.ore >= 2 * batches and stock.food >= 1 * batches then
-      stock.ore = stock.ore - 2 * batches
-      stock.food = stock.food - 1 * batches
-      stock.fuel = stock.fuel + 3 * batches
-    end
+function run_base_cycle()
+  game.food = game.food + base.farmers*2 + season_modifier()//2
+  game.parts = game.parts + base.crafters
+  game.fuel = game.fuel + base.salvagers
+  if chance(14 + game.threat//8) then
+    base.storage = clamp(base.storage - 1, 10, 99)
+    push_story("supply theft at base perimeter")
   end
 end
 
-function run_routes()
-  local total = 0
-  for i,r in pairs(routes) do
-    if r.unlocked then
-      local risk_roll = r.risk + flr(world.rivalry/4) + (world.pressure > 60 and 6 or 0)
-      local payload = 24 * r.volume
-      if upgrades[1].done then payload = payload + 10 end
-      if chance(clamp(100-risk_roll, 8, 94)) then
-        total = total + payload + r.tariff
-      else
-        world.pressure = clamp(world.pressure + 3, 0, 100)
-        world.stability = clamp(world.stability - 2, 0, 100)
-      end
-    end
+function run_world_drift()
+  for c in all(cells) do
+    c.danger = clamp(c.danger + flr(rnd(5))-2 + (game.threat>60 and 1 or 0), 8, 95)
+    c.law = clamp(c.law + (game.legitimacy>45 and 1 or 0) - (c.danger>65 and 1 or 0), 6, 98)
+    c.ctrl = clamp(c.ctrl + (c.law>52 and 1 or 0) - (c.danger>70 and 1 or 0), 5, 99)
   end
-  return total
 end
 
-function random_event()
-  local roll = flr(rnd(4))
-  if roll == 0 then
-    stock.electronics = stock.electronics + 2
-    add_msg("market surplus: +2 electronics")
-  elseif roll == 1 then
-    world.credits = world.credits + 90
-    world.influence = clamp(world.influence + 2, 0, 100)
-    add_msg("review buzz: margin confidence rises")
-  elseif roll == 2 then
-    world.pressure = clamp(world.pressure + 5, 0, 100)
-    add_msg("forum leak: rivals exploit your route plans")
+function run_squad_drift()
+  for s in all(squads) do
+    s.supply = clamp(s.supply - 2 + (base.storage>55 and 1 or 0), 0, 100)
+    s.fatigue = clamp(s.fatigue + 2 - (base.infirmary>45 and 1 or 0), 0, 100)
+    s.ready = clamp(s.ready + 1 - (s.fatigue>55 and 2 or 0), 5, 100)
+    if s.supply < 18 then s.ready = clamp(s.ready - 6, 0, 100) end
+  end
+end
+
+function run_issue_decay()
+  for i=#issues,1,-1 do
+    local q = issues[i]
+    q.timer = q.timer - 1
+    q.severity = clamp(q.severity + 2, 10, 99)
+    if q.timer <= 0 then
+      local cell = cells[q.cell]
+      cell.danger = clamp(cell.danger + 8, 0, 100)
+      game.threat = clamp(game.threat + 6, 0, 100)
+      game.legitimacy = clamp(game.legitimacy - 4, 0, 100)
+      push_story("unresolved: "..q.name)
+      deli(issues,i)
+    end
+  end
+  if #issues < 4 and chance(30) then spawn_issue() end
+end
+
+function spawn_issue()
+  local idx = 1 + flr(rnd(#cells))
+  local c = cells[idx]
+  local names = {"supply hijack","warlord parade","mine collapse","village dispute"}
+  local name = names[1+flr(rnd(#names))]
+  add(issues,{name=name,cell=idx,severity=38+flr(rnd(30)),timer=5+flr(rnd(4)),kind="dynamic",reward=120+flr(rnd(90))})
+  push_story("new issue in "..c.name..": "..name)
+end
+
+function run_project_tick()
+  if base.queue == 0 then return end
+  base.queue_days = base.queue_days - 1
+  base.progress = clamp(100 - (base.queue_days*100//projects[base.queue].days), 0, 100)
+  if base.queue_days <= 0 then
+    local p = projects[base.queue]
+    p.done = true
+    apply_project_bonus(base.queue)
+    push_story("project complete: "..p.name)
+    base.queue = 0
+    base.progress = 0
+  end
+end
+
+function apply_project_bonus(i)
+  if i == 1 then game.food = game.food + 10 game.legitimacy = clamp(game.legitimacy + 4,0,100) end
+  if i == 2 then game.intel = clamp(game.intel + 8,0,100) game.threat = clamp(game.threat - 5,0,100) end
+  if i == 3 then game.parts = game.parts + 8 for s in all(squads) do s.power = clamp(s.power + 4,0,100) end end
+  if i == 4 then for c in all(cells) do c.law = clamp(c.law + 4,0,100) end game.morale = clamp(game.morale + 5,0,100) end
+end
+
+function run_finance()
+  local control_sum = 0
+  for c in all(cells) do control_sum = control_sum + c.ctrl end
+  game.income = 28 + control_sum//8 + game.fame
+  game.treasury = game.treasury + game.income - game.payroll - game.upkeep
+  if game.treasury < 0 then
+    game.morale = clamp(game.morale - 6, 0, 100)
+    game.legitimacy = clamp(game.legitimacy - 3, 0, 100)
+    push_story("treasury deficit hurts morale")
+  end
+end
+
+function daily_tick()
+  game.day = game.day + 1
+  if game.day % 12 == 0 then advance_season() end
+  recalc_costs()
+  run_base_cycle()
+  run_world_drift()
+  run_squad_drift()
+  run_issue_decay()
+  run_project_tick()
+  run_finance()
+
+  game.threat = clamp(game.threat + flr(rnd(4)) - (game.intel>45 and 1 or 0), 0, 100)
+  game.morale = clamp(game.morale + (game.legitimacy>50 and 1 or 0) - (game.food<10 and 2 or 0), 0, 100)
+  game.fame = clamp(game.fame + (game.legitimacy>55 and 1 or 0), 0, 100)
+
+  if game.threat > 82 then
+    game.casualties = game.casualties + 1
+    game.food = clamp(game.food - 2, 0, 999)
+    push_story("high threat strike caused casualties")
+  end
+end
+
+function resolve_issue(idx)
+  local q = issues[idx]
+  local s = squads[selected_squad]
+  local c = cells[q.cell]
+  local cost = 38 + q.severity//2
+  if game.treasury < cost then push_story("need "..cost.." credits") return end
+  game.treasury = game.treasury - cost
+  local power = s.ready + s.power + s.stealth - s.fatigue + game.intel//2
+  local roll = clamp(35 + power//3 - q.severity + (c.ctrl//8), 10, 94)
+  if chance(roll) then
+    game.treasury = game.treasury + q.reward
+    game.legitimacy = clamp(game.legitimacy + 4,0,100)
+    game.intel = clamp(game.intel + 3,0,100)
+    c.ctrl = clamp(c.ctrl + 5,0,100)
+    c.danger = clamp(c.danger - 8,0,100)
+    s.veteran = clamp(s.veteran + 2,0,99)
+    s.fatigue = clamp(s.fatigue + 7,0,100)
+    push_story("issue solved: "..q.name)
   else
-    world.public_trust = clamp(world.public_trust + 3, 0, 100)
-    add_msg("community aid mission improves trust")
+    game.threat = clamp(game.threat + 6,0,100)
+    game.legitimacy = clamp(game.legitimacy - 3,0,100)
+    s.ready = clamp(s.ready - 6,0,100)
+    s.fatigue = clamp(s.fatigue + 9,0,100)
+    push_story("operation failed: "..q.name)
   end
+  deli(issues, idx)
+  if #issues < 1 then selected_issue = 1 else selected_issue = clamp(selected_issue,1,#issues) end
 end
 
-function check_unlocks()
-  if world.day >= 3 then factories[2].active = true end
-  if world.day >= 5 then routes[2].unlocked = true end
-  if world.day >= 7 then factories[3].active = true end
-  if world.day >= 9 then routes[3].unlocked = true end
-end
-
-function buy_factory_upgrade()
-  local f = factories[selected_factory]
-  local cost = 120 + f.level * 70
-  if world.credits < cost then add_msg("not enough credits for upgrade") return end
-  world.credits = world.credits - cost
-  f.level = f.level + 1
-  f.health = clamp(f.health + 8, 0, 100)
-  add_msg(f.name.." upgraded to lv"..f.level)
-end
-
-function retool_factory()
-  local f = factories[selected_factory]
-  local names = {"alloy","parts","fuel"}
-  local idx = 1
-  for i,n in pairs(names) do if n == f.recipe then idx = i end end
-  idx = idx + 1
-  if idx > #names then idx = 1 end
-  if not recipe_unlocked(names[idx]) then add_msg("recipe not unlocked yet") return end
-  f.recipe = names[idx]
-  add_msg(f.name.." now crafts "..f.recipe)
-end
-
-function launch_mission(m)
-  if world.day < m.unlock then add_msg("mission locked") return end
-  if world.credits < m.cost then add_msg("not enough credits") return end
-  if world.mission_cd > 0 then add_msg("ops team is regrouping") return end
-  world.credits = world.credits - m.cost
-  local success = clamp(72 - m.risk + flr(world.influence/4) + (upgrades[2].done and 8 or 0), 18, 95)
-  if chance(success) then
-    world.credits = world.credits + m.reward
-    world.influence = clamp(world.influence + 3, 0, 100)
-    if m.effect == "stability" then world.stability = clamp(world.stability + 7, 0, 100) end
-    if m.effect == "pressure" then world.pressure = clamp(world.pressure - 10, 0, 100) end
-    if m.effect == "trust" then world.public_trust = clamp(world.public_trust + 8, 0, 100) end
-    add_msg(m.name.." succeeded")
+function run_prisoner_action(mode)
+  local p = prisoners[selected_prisoner]
+  if not p then push_story("no prisoner selected") return end
+  if mode == "recruit" then
+    local chance_recruit = clamp(22 + game.legitimacy//2 + p.loyalty - p.risk, 8, 80)
+    if chance(chance_recruit) then
+      add(squads,{name="aux-"..flr(rnd(90)+10), type="aux", ready=56, stealth=33, power=44, supply=48, fatigue=12, home=selected_cell, veteran=8})
+      game.prisoners = clamp(game.prisoners - 1, 0, 999)
+      push_story(p.name.." recruited into auxiliary squad")
+      deli(prisoners, selected_prisoner)
+    else
+      game.threat = clamp(game.threat + 4,0,100)
+      push_story(p.name.." refused recruitment")
+    end
+  elseif mode == "ransom" then
+    local gain = 70 + p.value*35
+    game.treasury = game.treasury + gain
+    game.legitimacy = clamp(game.legitimacy - 2,0,100)
+    push_story(p.name.." ransomed for "..gain)
+    deli(prisoners, selected_prisoner)
   else
-    world.pressure = clamp(world.pressure + 8, 0, 100)
-    world.war_meter = clamp(world.war_meter + 6, 0, 100)
-    add_msg(m.name.." failed")
+    game.legitimacy = clamp(game.legitimacy + 3,0,100)
+    game.morale = clamp(game.morale + 2,0,100)
+    push_story(p.name.." released as goodwill")
+    deli(prisoners, selected_prisoner)
   end
-  world.mission_cd = 2
+  if #prisoners < 1 then selected_prisoner = 1 else selected_prisoner = clamp(selected_prisoner,1,#prisoners) end
 end
 
-function buy_upgrade(i)
-  local u = upgrades[i]
-  if u.done then add_msg("already unlocked") return end
-  if world.credits < u.cost then add_msg("need more credits") return end
-  world.credits = world.credits - u.cost
-  u.done = true
-  add_msg("unlocked: "..u.name)
+function start_project(i)
+  local p = projects[i]
+  if p.done then push_story("already completed") return end
+  if base.queue ~= 0 then push_story("another project is in progress") return end
+  if game.treasury < p.cost then push_story("need "..p.cost.." credits") return end
+  game.treasury = game.treasury - p.cost
+  base.queue = i
+  base.queue_days = p.days
+  base.progress = 1
+  push_story("project started: "..p.name)
 end
 
-function draw_button(id,label,x,y,w,h,c)
-  rectfill(x,y,x+w,y+h,c)
+function draw_btn(id,label,x,y,w,h,col)
+  rectfill(x,y,x+w,y+h,col)
   rect(x,y,x+w,y+h,7)
-  print(label, 10, x+6, y+8, 1)
+  print(label,9,x+4,y+5,1)
   buttons[id] = {x=x,y=y,w=w,h=h}
 end
 
+function hit(id,mx,my)
+  local b = buttons[id]
+  return b and mx>=b.x and mx<=b.x+b.w and my>=b.y and my<=b.y+b.h
+end
+
 function draw_tabs()
-  for i,v in pairs(views) do
-    local x = 8 + (i-1)*76
-    draw_button("tab_"..i, v, x, 8, 72, 24, view == v and 11 or 5)
+  for i,s in pairs(screens) do
+    draw_btn("tab_"..i,s,8+(i-1)*78,8,74,16,screen==s and 11 or 5)
   end
 end
 
 function draw_header()
-  rectfill(8,38,470,80,2)
-  rect(8,38,470,80,7)
-  print("operation corporation // frontier review campaign", 11, 18, 46, 10)
-  print("day "..world.day.." ("..world.season..")", 10, 18, 62, 7)
-  print("credits "..world.credits.."  income "..world.income.."  costs "..world.expenses, 10, 156, 62, 7)
+  rectfill(8,28,470,54,2)
+  rect(8,28,470,54,7)
+  print("operation corporation // iron frontier remake",11,16,34,10)
+  print("day "..game.day.." ("..game.season..")  "..rate_labels[time_rate],9,16,44,7)
+  print("$"..game.treasury.." food "..game.food.." fuel "..game.fuel.." parts "..game.parts.." intel "..game.intel,9,214,44,7)
 end
 
 function draw_footer()
   rectfill(8,246,470,264,3)
   rect(8,246,470,264,7)
-  if flash > 0 then
-    print(message, 10, 18, 252, 10)
+  if msg_timer > 0 then
+    print(msg,9,14,252,10)
   else
-    print("loop: craft -> route -> mission -> unlock -> defend the region economy", 9, 18, 252, 12)
+    print("loop: scout -> choose risk -> build base -> govern people -> survive",9,14,252,12)
   end
 end
 
-function draw_overview()
-  rectfill(8,88,470,240,1)
-  rect(8,88,470,240,7)
-  print("regional pulse", 12, 18, 96, 10)
-  print("stability "..world.stability.."  pressure "..world.pressure.."  rivalry "..world.rivalry, 10, 18, 116, 7)
-  print("war risk "..world.war_meter.."  trust "..world.public_trust.."  influence "..world.influence, 10, 18, 132, 7)
-  print("stocks ore:"..stock.ore.." fuel:"..stock.fuel.." alloy:"..stock.alloy.." electronics:"..stock.electronics, 9, 18, 154, 7)
-  print("parts:"..stock.parts.." food:"..stock.food.." medicine:"..stock.medicine, 9, 18, 168, 7)
-  draw_button("advance", "advance day", 318, 106, 136, 22, 8)
-  draw_button("quick_mission", "run mission", 318, 136, 136, 22, 6)
-  draw_button("quick_upgrade", "buy unlock", 318, 166, 136, 22, 12)
-  draw_button("quick_factory", "configure factory", 318, 196, 136, 22, 14)
-end
+function draw_command()
+  rectfill(8,58,470,240,1)
+  rect(8,58,470,240,7)
+  print("command board",11,16,66,10)
+  print("legitimacy "..game.legitimacy.." morale "..game.morale.." threat "..game.threat.." fame "..game.fame,9,16,82,7)
+  print("income "..game.income.." payroll "..game.payroll.." upkeep "..game.upkeep.." casualties "..game.casualties,9,16,96,7)
+  print("active issues: "..#issues.."  squads: "..#squads.."  projects done: "..completed_projects(),9,16,110,7)
+  draw_btn("cmd_advance","advance day",300,70,154,20,8)
+  draw_btn("cmd_world","open world",300,96,154,20,6)
+  draw_btn("cmd_issue","resolve issue",300,122,154,20,14)
+  draw_btn("cmd_speed_dn","speed -",300,148,74,20,5)
+  draw_btn("cmd_speed_up","speed +",380,148,74,20,5)
+  draw_btn("cmd_loot","salvage run",300,174,154,20,12)
+  draw_btn("cmd_migrate","settler caravan",300,200,154,20,6)
 
-function draw_industry()
-  rectfill(8,88,470,240,1)
-  rect(8,88,470,240,7)
-  print("manufacturing & factory setup", 12, 18, 96, 10)
-  for i,f in pairs(factories) do
-    local y = 116 + (i-1)*34
-    draw_button("factory_"..i, f.name, 18, y, 182, 24, selected_factory == i and 11 or 5)
-    print("lv"..f.level.." "..f.recipe.." hp:"..f.health.."%", 9, 206, y+8, 7)
-  end
-  local f = factories[selected_factory]
-  print("selected: "..f.name.." crafting "..f.recipe, 10, 18, 224, 7)
-  draw_button("upgrade_factory", "upgrade", 318, 116, 136, 22, 8)
-  draw_button("retool_factory", "switch recipe", 318, 146, 136, 22, 6)
-  draw_button("repair_factory", "repair (70)", 318, 176, 136, 22, 12)
-end
-
-function draw_trade()
-  rectfill(8,88,470,240,1)
-  rect(8,88,470,240,7)
-  print("merchant routes & profit margins", 12, 18, 96, 10)
-  print("global margin x"..current_margin(), 10, 18, 114, 7)
-  for i,r in pairs(routes) do
-    local y = 126 + (i-1)*32
-    draw_button("route_"..i, r.name, 18, y, 222, 22, selected_route == i and 11 or (r.unlocked and 5 or 2))
-    print((r.unlocked and "open" or "locked").." risk:"..r.risk.." vol:"..r.volume.." tariff:"..r.tariff, 9, 246, y+7, 7)
-  end
-  draw_button("boost_route", "invest route (80)", 318, 198, 136, 22, 8)
-end
-
-function draw_missions()
-  rectfill(8,88,470,240,1)
-  rect(8,88,470,240,7)
-  print("missions: hold back conflict", 12, 18, 96, 10)
-  for i,m in pairs(missions) do
-    local y = 116 + (i-1)*28
-    draw_button("mission_"..i, m.name, 18, y, 232, 20, selected_mission == i and 11 or 5)
-    print("unlock d"..m.unlock.." risk:"..m.risk.." cost:"..m.cost.." reward:"..m.reward, 9, 256, y+6, 7)
-  end
-  draw_button("launch_mission", "launch selected", 318, 216, 136, 20, 14)
-end
-
-function draw_war_room()
-  rectfill(8,88,470,240,1)
-  rect(8,88,470,240,7)
-  print("war room: consequence tracker", 12, 18, 96, 10)
-  rectfill(20,118,220,136,4)
-  rectfill(20,118,20+world.war_meter*2,136,8)
-  rect(20,118,220,136,7)
-  print("war meter "..world.war_meter.."/100", 10, 228, 122, 7)
-  print("if meter > 80: daily sabotage drains credits and trust", 9, 18, 152, 7)
-  print("if stability < 25: factories run at half throughput", 9, 18, 168, 7)
-  print("if trust > 70: emergency aid grants free convoy token", 9, 18, 184, 7)
-  draw_button("deescalate", "de-escalate (110)", 318, 206, 136, 22, 8)
-end
-
-function draw_workshop()
-  rectfill(8,88,470,240,1)
-  rect(8,88,470,240,7)
-  print("unlockables & strategic investments", 12, 18, 96, 10)
-  for i,u in pairs(upgrades) do
-    local y = 118 + (i-1)*30
-    draw_button("upgrade_"..i, u.name, 18, y, 202, 20, u.done and 3 or 6)
-    print((u.done and "owned" or ("cost "..u.cost)).."  "..u.text, 9, 226, y+6, 7)
+  local issue = issues[selected_issue]
+  if issue then
+    local c = cells[issue.cell]
+    print("selected issue: "..issue.name,9,16,136,7)
+    print("zone "..c.name.." sev "..issue.severity.." timer "..issue.timer.." reward "..issue.reward,9,16,150,7)
+  else
+    print("no issue queued. world is temporarily stable.",9,16,136,7)
   end
 end
 
-function hit(id,mx,my)
-  local b = buttons[id]
-  return b and mx >= b.x and mx <= b.x+b.w and my >= b.y and my <= b.y+b.h
+function draw_world()
+  rectfill(8,58,470,240,1)
+  rect(8,58,470,240,7)
+  print("world cells",11,16,66,10)
+  for i,c in pairs(cells) do
+    local y = 84 + (i-1)*28
+    draw_btn("cell_"..i,c.name,16,y,146,20,selected_cell==i and 11 or 5)
+    print("ctrl "..c.ctrl.." law "..c.law.." danger "..c.danger.." wealth "..c.wealth,9,168,y+6,7)
+  end
+  local c = cells[selected_cell]
+  print("selected: "..c.name.." / "..c.biome.." / pop "..c.pop,9,16,228,7)
+  draw_btn("world_patrol","patrol",356,84,98,18,8)
+  draw_btn("world_aid","aid convoy",356,106,98,18,6)
+  draw_btn("world_tax","adjust tax",356,128,98,18,12)
+end
+
+function draw_squads()
+  rectfill(8,58,470,240,1)
+  rect(8,58,470,240,7)
+  print("squad roster",11,16,66,10)
+  for i,s in pairs(squads) do
+    local y = 86 + (i-1)*28
+    draw_btn("squad_"..i,s.name.." ("..s.type..")",16,y,164,20,selected_squad==i and 11 or 5)
+    print("ready "..s.ready.." stealth "..s.stealth.." power "..s.power.." fatigue "..s.fatigue,9,186,y+6,7)
+  end
+  draw_btn("squad_rest","rest",356,86,98,18,8)
+  draw_btn("squad_train","train",356,108,98,18,6)
+  draw_btn("squad_move","rebase",356,130,98,18,12)
+end
+
+function draw_base()
+  rectfill(8,58,470,240,1)
+  rect(8,58,470,240,7)
+  print("base management",11,16,66,10)
+  print("hq lv"..base.level.." storage "..base.storage.." infirmary "..base.infirmary.." workshop "..base.workshop,9,16,84,7)
+  print("workers: salvagers "..base.salvagers.." farmers "..base.farmers.." crafters "..base.crafters,9,16,98,7)
+  draw_btn("base_upgrade","upgrade hq",16,122,118,18,8)
+  draw_btn("base_staff","rebalance crew",138,122,130,18,6)
+  draw_btn("base_resupply","buy supplies",272,122,118,18,12)
+
+  print("projects",10,16,150,10)
+  for i,p in pairs(projects) do
+    local y = 166 + (i-1)*18
+    draw_btn("proj_"..i,p.name,16,y,160,14,p.done and 3 or 5)
+    print((p.done and "done" or ("cost "..p.cost.." d"..p.days)).." "..p.bonus,9,180,y+4,7)
+  end
+  if base.queue ~= 0 then
+    print("in progress: "..projects[base.queue].name.." "..base.progress.."%",9,16,236,7)
+  end
+end
+
+function draw_court()
+  rectfill(8,58,470,240,1)
+  rect(8,58,470,240,7)
+  print("court & prisoners",11,16,66,10)
+  print("captives "..#prisoners.."  policy changes legitimacy and threat",9,16,84,7)
+  for i,p in pairs(prisoners) do
+    local y = 104 + (i-1)*24
+    draw_btn("pris_"..i,p.name.." ("..p.role..")",16,y,174,18,selected_prisoner==i and 11 or 5)
+    print("risk "..p.risk.." value "..p.value.." loyalty "..p.loyalty,9,196,y+5,7)
+  end
+  draw_btn("court_recruit","recruit",356,104,98,18,8)
+  draw_btn("court_ransom","ransom",356,126,98,18,6)
+  draw_btn("court_release","release",356,148,98,18,12)
+end
+
+function draw_stories()
+  rectfill(8,58,470,240,1)
+  rect(8,58,470,240,7)
+  print("campaign log",11,16,66,10)
+  if #stories == 0 then print("no stories yet",9,16,86,7) end
+  for i=0,7 do
+    local idx = #stories - i
+    if idx > 0 then
+      rectfill(14,84+i*19,462,100+i*19,4)
+      rect(14,84+i*19,462,100+i*19,7)
+      print(stories[idx],9,18,90+i*19,7)
+    end
+  end
+end
+
+function completed_projects()
+  local count = 0
+  for p in all(projects) do if p.done then count = count + 1 end end
+  return count
 end
 
 function on_click(mx,my)
-  for i,v in pairs(views) do
-    if hit("tab_"..i,mx,my) then view = v return end
-  end
+  for i,s in pairs(screens) do if hit("tab_"..i,mx,my) then screen = s return end end
 
-  if view == "overview" then
-    if hit("advance",mx,my) then advance_day() end
-    if hit("quick_mission",mx,my) then view = "missions" end
-    if hit("quick_upgrade",mx,my) then view = "workshop" end
-    if hit("quick_factory",mx,my) then view = "industry" end
-  elseif view == "industry" then
-    for i,f in pairs(factories) do if hit("factory_"..i,mx,my) then selected_factory = i end end
-    if hit("upgrade_factory",mx,my) then buy_factory_upgrade() end
-    if hit("retool_factory",mx,my) then retool_factory() end
-    if hit("repair_factory",mx,my) then
-      if world.credits >= 70 then
-        world.credits = world.credits - 70
-        factories[selected_factory].health = clamp(factories[selected_factory].health + 20, 0, 100)
-        add_msg("factory repaired")
-      else
-        add_msg("need 70 credits")
-      end
+  if screen == "command" then
+    if hit("cmd_advance",mx,my) then daily_tick() end
+    if hit("cmd_world",mx,my) then screen = "world" end
+    if hit("cmd_issue",mx,my) and #issues > 0 then resolve_issue(selected_issue) end
+    if hit("cmd_speed_dn",mx,my) then time_rate = clamp(time_rate-1,1,#rates) end
+    if hit("cmd_speed_up",mx,my) then time_rate = clamp(time_rate+1,1,#rates) end
+    if hit("cmd_loot",mx,my) then game.parts = game.parts + 3 game.fuel = game.fuel + 2 game.threat = clamp(game.threat+2,0,100) push_story("salvage convoy returned") end
+    if hit("cmd_migrate",mx,my) then game.food = game.food - 3 game.legitimacy = clamp(game.legitimacy+4,0,100) game.migrants = game.migrants + 1 push_story("settlers accepted into frontier") end
+  elseif screen == "world" then
+    for i=1,#cells do if hit("cell_"..i,mx,my) then selected_cell = i end end
+    local c = cells[selected_cell]
+    if hit("world_patrol",mx,my) then c.danger = clamp(c.danger-7,0,100) game.fuel = clamp(game.fuel-2,0,999) push_story("patrol run in "..c.name) end
+    if hit("world_aid",mx,my) then if game.food >= 4 then game.food = game.food - 4 c.law = clamp(c.law+5,0,100) game.legitimacy = clamp(game.legitimacy+3,0,100) push_story("aid delivered to "..c.name) else push_story("need 4 food") end end
+    if hit("world_tax",mx,my) then c.wealth = clamp(c.wealth+2,0,100) c.law = clamp(c.law-3,0,100) game.treasury = game.treasury + 40 push_story("tax pressure increased in "..c.name) end
+  elseif screen == "squads" then
+    for i=1,#squads do if hit("squad_"..i,mx,my) then selected_squad = i end end
+    local s = squads[selected_squad]
+    if hit("squad_rest",mx,my) then s.fatigue = clamp(s.fatigue-8,0,100) s.ready = clamp(s.ready+6,0,100) push_story(s.name.." rested") end
+    if hit("squad_train",mx,my) then s.power = clamp(s.power+3,0,100) s.stealth = clamp(s.stealth+2,0,100) s.fatigue = clamp(s.fatigue+4,0,100) push_story(s.name.." training complete") end
+    if hit("squad_move",mx,my) then s.home = selected_cell push_story(s.name.." rebased to "..cells[selected_cell].name) end
+  elseif screen == "base" then
+    if hit("base_upgrade",mx,my) then
+      local cost = 160 + base.level*90
+      if game.treasury >= cost then
+        game.treasury = game.treasury - cost
+        base.level = base.level + 1
+        base.storage = clamp(base.storage + 8,0,100)
+        base.infirmary = clamp(base.infirmary + 5,0,100)
+        push_story("hq upgraded to lv"..base.level)
+      else push_story("need "..cost.." credits") end
     end
-  elseif view == "trade" then
-    for i,r in pairs(routes) do if hit("route_"..i,mx,my) then selected_route = i end end
-    if hit("boost_route",mx,my) then
-      local r = routes[selected_route]
-      if not r.unlocked then add_msg("route still locked") return end
-      if world.credits < 80 then add_msg("need 80 credits") return end
-      world.credits = world.credits - 80
-      r.volume = clamp(r.volume + 1, 1, 4)
-      r.risk = clamp(r.risk - 4, 6, 60)
-      add_msg("route upgraded: "..r.name)
+    if hit("base_staff",mx,my) then
+      base.salvagers = 1 + flr(rnd(3))
+      base.farmers = 1 + flr(rnd(3))
+      base.crafters = 1 + flr(rnd(3))
+      push_story("crew assignments rotated")
     end
-  elseif view == "missions" then
-    for i,m in pairs(missions) do if hit("mission_"..i,mx,my) then selected_mission = i end end
-    if hit("launch_mission",mx,my) then launch_mission(missions[selected_mission]) end
-  elseif view == "war room" then
-    if hit("deescalate",mx,my) then
-      if world.credits < 110 then add_msg("need 110 credits") return end
-      world.credits = world.credits - 110
-      world.war_meter = clamp(world.war_meter - 14, 0, 100)
-      world.pressure = clamp(world.pressure - 6, 0, 100)
-      add_msg("backchannel talks bought time")
+    if hit("base_resupply",mx,my) then
+      if game.treasury >= 90 then
+        game.treasury = game.treasury - 90
+        game.food = game.food + 6
+        game.fuel = game.fuel + 5
+        game.parts = game.parts + 4
+        push_story("resupply purchased")
+      else push_story("need 90 credits") end
     end
-  elseif view == "workshop" then
-    for i,u in pairs(upgrades) do if hit("upgrade_"..i,mx,my) then buy_upgrade(i) end end
+    for i=1,#projects do if hit("proj_"..i,mx,my) then start_project(i) end end
+  elseif screen == "court" then
+    for i=1,#prisoners do if hit("pris_"..i,mx,my) then selected_prisoner = i end end
+    if hit("court_recruit",mx,my) then run_prisoner_action("recruit") end
+    if hit("court_ransom",mx,my) then run_prisoner_action("ransom") end
+    if hit("court_release",mx,my) then run_prisoner_action("release") end
   end
+end
+
+function _init()
+  recalc_costs()
+  push_story("new campaign: stabilize the iron frontier")
 end
 
 function _update()
   tick = tick + 1
-  if tick % 180 == 0 then advance_day() end
-  if flash > 0 then flash = flash - 1 end
+  if msg_timer > 0 then msg_timer = msg_timer - 1 end
+
+  if tick % 90 == 0 then
+    local step = rates[time_rate]
+    if step > 0 then
+      for i=1,step do daily_tick() end
+    end
+  end
 
   local mx,my,mb,mbr = mouse()
   if (mbr & 1) ~= 0 then on_click(mx,my) end
 
-  if keyp("space") then advance_day() end
-  if keyp("1") then view = "overview" end
-  if keyp("2") then view = "industry" end
-  if keyp("3") then view = "trade" end
-  if keyp("4") then view = "missions" end
-  if keyp("5") then view = "war room" end
-  if keyp("6") then view = "workshop" end
+  if keyp("space") then daily_tick() end
+  if keyp("1") then screen = "command" end
+  if keyp("2") then screen = "world" end
+  if keyp("3") then screen = "squads" end
+  if keyp("4") then screen = "base" end
+  if keyp("5") then screen = "court" end
+  if keyp("6") then screen = "stories" end
 end
 
 function _draw()
   buttons = {}
-  cls(color(5, 9, 17))
+  cls(color(6, 9, 16))
   draw_tabs()
   draw_header()
-  if view == "overview" then draw_overview() end
-  if view == "industry" then draw_industry() end
-  if view == "trade" then draw_trade() end
-  if view == "missions" then draw_missions() end
-  if view == "war room" then draw_war_room() end
-  if view == "workshop" then draw_workshop() end
+  if screen == "command" then draw_command() end
+  if screen == "world" then draw_world() end
+  if screen == "squads" then draw_squads() end
+  if screen == "base" then draw_base() end
+  if screen == "court" then draw_court() end
+  if screen == "stories" then draw_stories() end
   draw_footer()
 end`}];
   finalizeExampleProjectLoad();
 }
+
 
 
 function loadOperationCorporationBlueprintExampleProject(){
@@ -4692,7 +4785,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Frontier Review',description:'Cohesive strategy campaign with connected factory management, manufacturing recipes, route economics, escalating conflict pressure, mission consequences, unlockable upgrades, and balanced spend-vs-growth decisions.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Iron Frontier',description:'Total-remake sandbox campaign inspired by emergent strategy sims: manage frontier cells, dispatch squads, resolve timed crises, run base projects, make prisoner-policy choices, and survive a harsh socio-economic warzone.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
