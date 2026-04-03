@@ -4002,69 +4002,88 @@ function loadOperationCorporationBlueprintExampleProject(){
   p.tileDefs={0:makeBlankTileDef()};
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
-  p.codeFiles=[{name:"main.lua",tabTheme:11,content:`screen = "dashboard"
-tick = 0
-message = "operation corporation online"
-flash = 120
-show_modal = false
-modal_title = ""
-modal_body = ""
-pending_action = ""
+  p.codeFiles=[{name:"main.lua",tabTheme:11,content:`tick = 0
+speed_steps = {0,1,2,4}
+speed_labels = {"pause","1x","2x","4x"}
+speed_index = 2
+screen = "dashboard"
+message = "operation corporation // command online"
+flash = 180
 buttons = {}
-
-world = {
-  date = "2084-04-03",
-  speed = "1x",
-  treasury = 4200,
-  resources = 188,
-  influence = 27,
-  heat = 14,
-  alerts = 3
-}
+show_modal = false
+modal = {title="", body="", action="", data=0}
+feed = {}
 
 screens = {
   "dashboard","world","teams","personnel","missions","research",
   "logistics","diplomacy","intelligence","finance","reports","settings"
 }
 
-summary = {
-  funds = "stable",
-  supply = "strained",
-  teams = "4 active",
-  missions = "3 active",
-  unstable = "2 regions",
-  research = "2 queued",
-  diplomacy = "high pressure",
-  blackops = "1 armed"
+world = {
+  day = 1,
+  month = 4,
+  year = 2088,
+  treasury = 5200,
+  metal = 44,
+  fuel = 36,
+  intel = 28,
+  influence = 23,
+  heat = 18,
+  alerts = 2,
+  domination = 14,
+  unrest = 21,
+  payroll = 0,
+  maintenance = 0,
+  contracts = 2,
+  policy = "balanced",
+  selected_map = 1,
+  map_filter = "control"
 }
 
 regions = {
-  {name="north corridor", stability=63, value="high", mood="tense", intel=72, threats="insurgents"},
-  {name="eastern littoral", stability=51, value="critical", mood="angry", intel=58, threats="cartel"},
-  {name="equatorial ring", stability=69, value="high", mood="cautious", intel=64, threats="militia"}
+  {name="north corridor", ctrl=62, unrest=26, value=84, intel=51, influence=57, route=1},
+  {name="eastern littoral", ctrl=44, unrest=41, value=92, intel=63, influence=39, route=1},
+  {name="equatorial ring", ctrl=57, unrest=22, value=71, intel=48, influence=42, route=0},
+  {name="western shield", ctrl=38, unrest=46, value=66, intel=35, influence=31, route=0}
 }
 
 teams = {
-  {name="atlas", doctrine="rapid", readiness=76, stealth=54, morale=70, upkeep=130},
-  {name="viper", doctrine="covert", readiness=82, stealth=88, morale=63, upkeep=170},
-  {name="bastion", doctrine="heavy", readiness=58, stealth=32, morale=75, upkeep=110}
+  {name="atlas", doctrine="rapid", ready=72, stealth=45, morale=68, cohesion=63, power=61, region=1, upkeep=120, vehicle="truck"},
+  {name="viper", doctrine="covert", ready=82, stealth=86, morale=59, cohesion=71, power=52, region=2, upkeep=170, vehicle="stealth van"},
+  {name="bastion", doctrine="heavy", ready=61, stealth=29, morale=77, cohesion=66, power=79, region=3, upkeep=140, vehicle="apc"}
+}
+
+personnel = {
+  {name="sara vale", role="commander", exp=84, loyalty=71, fatigue=18, salary=62, assigned=1},
+  {name="niko rade", role="recon", exp=66, loyalty=58, fatigue=24, salary=42, assigned=2},
+  {name="imani cruz", role="medic", exp=54, loyalty=81, fatigue=11, salary=38, assigned=1},
+  {name="jules marrow", role="engineer", exp=73, loyalty=63, fatigue=33, salary=49, assigned=3},
+  {name="tariq basim", role="analyst", exp=69, loyalty=76, fatigue=16, salary=44, assigned=0}
 }
 
 missions = {
-  {name="silent relay", type="intel", risk=34, reward=160, region="north corridor", status="available"},
-  {name="steel rain", type="strike", risk=58, reward=260, region="eastern littoral", status="planned"},
-  {name="civic shield", type="stability", risk=25, reward=140, region="equatorial ring", status="active"}
+  {name="silent relay", kind="intel", region=1, risk=28, reward=220, sensitivity=61, phase="available"},
+  {name="emerald pressure", kind="diplomacy", region=2, risk=39, reward=260, sensitivity=52, phase="available"},
+  {name="iron eclipse", kind="strike", region=4, risk=63, reward=410, sensitivity=79, phase="planned"},
+  {name="public shield", kind="stability", region=3, risk=24, reward=180, sensitivity=47, phase="active"}
 }
 
-feed = {
-  "new contract window opened in eastern littoral",
-  "warehouse gamma reports fuel shortages",
-  "viper intercepted diplomatic packet",
-  "research node sabotage tier i completed"
+research = {
+  queue = 0,
+  progress = 0,
+  projects = {
+    {name="comms matrix", cost=18, days=7, bonus="+intel gain", done=false},
+    {name="field hospitals", cost=16, days=6, bonus="-fatigue", done=false},
+    {name="autonomous routes", cost=22, days=9, bonus="+logistics", done=false},
+    {name="influence protocols", cost=20, days=8, bonus="+diplomacy", done=false}
+  }
 }
 
-selected_kind = "briefing"
-selected_index = 1
+logistics = {stock=73, maintenance=64, routes=2, transfer=0}
+intel_net = {coverage=48, depth=35, reliability=66, compromised=12}
+finance = {income=420, expense=296, debt=620, laundering=24}
+reports = {}
+selection = {kind="briefing", index=1}
 
 function clamp(v,a,b)
   if v < a then return a end
@@ -4072,243 +4091,620 @@ function clamp(v,a,b)
   return v
 end
 
-function set_message(txt)
+function chance(p)
+  return rnd(100) < p
+end
+
+function add_feed(txt)
+  add(feed, txt)
+  if #feed > 24 then deli(feed,1) end
   message = txt
-  flash = 180
+  flash = 160
+end
+
+function date_text()
+  local d = world.day
+  local m = world.month
+  local y = world.year
+  local mm = m < 10 and ("0"..m) or (""..m)
+  local dd = d < 10 and ("0"..d) or (""..d)
+  return y.."-"..mm.."-"..dd
+end
+
+function advance_calendar(days)
+  for i=1,days do
+    world.day = world.day + 1
+    if world.day > 30 then
+      world.day = 1
+      world.month = world.month + 1
+      if world.month > 12 then world.month = 1 world.year = world.year + 1 end
+    end
+  end
+end
+
+function recalc_budget()
+  local payroll = 0
+  for i,p in pairs(personnel) do payroll = payroll + p.salary end
+  local upkeep = 0
+  for i,t in pairs(teams) do upkeep = upkeep + t.upkeep end
+  world.payroll = payroll
+  world.maintenance = upkeep
+  finance.expense = payroll + upkeep + 34 + flr(rnd(26))
+  finance.income = 340 + world.contracts * 62 + flr(world.domination * 2.2) + flr(rnd(20))
+end
+
+function summary_status(v)
+  if v >= 70 then return "strong" end
+  if v >= 45 then return "stable" end
+  return "critical"
+end
+
+function score_urgency()
+  local u = world.unrest + world.heat + (100 - logistics.stock)
+  return clamp(flr(u / 3), 0, 100)
+end
+
+function selected_region()
+  return regions[world.selected_map]
+end
+
+function mission_success(m, team_idx)
+  local t = teams[team_idx]
+  local r = regions[m.region]
+  local base = 55 + flr((t.ready + t.stealth + t.cohesion) / 12)
+  base = base + flr(world.intel / 5) + flr(intel_net.coverage / 8)
+  base = base - flr(m.risk / 2) - flr(r.unrest / 4)
+  return clamp(base, 8, 95)
+end
+
+function mission_exposure(m)
+  local r = regions[m.region]
+  local e = 18 + flr(m.risk / 2) + flr(world.heat / 3) + flr(r.unrest / 5)
+  return clamp(e, 5, 94)
+end
+
+function execute_mission(index, team_idx)
+  local m = missions[index]
+  if m.phase == "completed" then add_feed("mission already completed") return end
+  local t = teams[team_idx]
+  local energy_cost = 8 + flr(m.risk / 6)
+  if world.fuel < energy_cost then add_feed("blocked: low fuel") return end
+  if t.ready < 35 then add_feed("blocked: team readiness too low") return end
+
+  world.fuel = world.fuel - energy_cost
+  local s = mission_success(m, team_idx)
+  local e = mission_exposure(m)
+  local roll = flr(rnd(100))
+  if roll < s then
+    local gain = m.reward + flr(world.influence * 1.5)
+    world.treasury = world.treasury + gain
+    world.domination = clamp(world.domination + (m.kind=="strike" and 4 or 2), 0, 100)
+    world.influence = clamp(world.influence + (m.kind=="diplomacy" and 3 or 1), 0, 100)
+    regions[m.region].ctrl = clamp(regions[m.region].ctrl + 4, 0, 100)
+    missions[index].phase = "completed"
+    add_feed("mission success: "..m.name.." +"..gain.." treasury")
+    add(reports, date_text().." // mission success // "..m.name)
+  else
+    world.unrest = clamp(world.unrest + 6, 0, 100)
+    world.heat = clamp(world.heat + 7, 0, 100)
+    teams[team_idx].morale = clamp(teams[team_idx].morale - 9, 0, 100)
+    regions[m.region].unrest = clamp(regions[m.region].unrest + 5, 0, 100)
+    missions[index].phase = "failed"
+    add_feed("mission failed: "..m.name.." ("..s.."%)")
+    add(reports, date_text().." // mission failed // "..m.name)
+  end
+  world.alerts = clamp(world.alerts + (e > 50 and 1 or 0), 0, 9)
+end
+
+function start_research(i)
+  local p = research.projects[i]
+  if p.done then add_feed("research already complete") return end
+  if research.queue ~= 0 then add_feed("lab occupied") return end
+  if world.intel < p.cost then add_feed("need more intel for "..p.name) return end
+  world.intel = world.intel - p.cost
+  research.queue = i
+  research.progress = 0
+  add_feed("research started: "..p.name)
+end
+
+function finish_research(i)
+  local p = research.projects[i]
+  p.done = true
+  research.queue = 0
+  research.progress = 0
+  if i == 1 then intel_net.coverage = clamp(intel_net.coverage + 12, 0, 100) end
+  if i == 2 then logistics.stock = clamp(logistics.stock + 10, 0, 100) end
+  if i == 3 then logistics.routes = logistics.routes + 1 end
+  if i == 4 then world.influence = clamp(world.influence + 8, 0, 100) end
+  add_feed("research complete: "..p.name)
+  add(reports, date_text().." // research complete // "..p.name)
+end
+
+function invest_logistics()
+  if world.treasury < 180 then add_feed("need 180 treasury") return end
+  world.treasury = world.treasury - 180
+  logistics.stock = clamp(logistics.stock + 12, 0, 100)
+  world.metal = world.metal + 3
+  world.fuel = world.fuel + 4
+  add_feed("logistics investment improved stock")
+end
+
+function diplomacy_push()
+  if world.influence < 4 then add_feed("need influence to negotiate") return end
+  world.influence = world.influence - 4
+  local r = selected_region()
+  r.unrest = clamp(r.unrest - 7, 0, 100)
+  r.ctrl = clamp(r.ctrl + 3, 0, 100)
+  world.heat = clamp(world.heat - 2, 0, 100)
+  add_feed("diplomatic pressure changed "..r.name)
+end
+
+function expand_network()
+  if world.treasury < 140 then add_feed("need 140 treasury") return end
+  world.treasury = world.treasury - 140
+  intel_net.coverage = clamp(intel_net.coverage + 8, 0, 100)
+  intel_net.depth = clamp(intel_net.depth + 6, 0, 100)
+  intel_net.compromised = clamp(intel_net.compromised - 3, 0, 100)
+  add_feed("intelligence network expanded")
+end
+
+function budget_shift(dir)
+  if dir > 0 then
+    finance.laundering = clamp(finance.laundering + 4, 0, 60)
+    world.heat = clamp(world.heat + 2, 0, 100)
+  else
+    finance.laundering = clamp(finance.laundering - 4, 0, 60)
+    world.heat = clamp(world.heat - 1, 0, 100)
+  end
+  add_feed("finance adjustment applied")
+end
+
+function run_sim_step(days)
+  advance_calendar(days)
+  for i=1,days do
+    recalc_budget()
+    world.treasury = world.treasury + finance.income - finance.expense
+    world.treasury = clamp(world.treasury, -9999, 99999)
+
+    world.fuel = clamp(world.fuel + logistics.routes - 1 + flr(rnd(3)), 0, 99)
+    world.metal = clamp(world.metal + flr(logistics.stock / 22) + flr(rnd(2)), 0, 99)
+    world.intel = clamp(world.intel + flr(intel_net.coverage / 14) + 1, 0, 99)
+    world.influence = clamp(world.influence + (world.policy=="diplomatic" and 2 or 1), 0, 99)
+
+    for r in all(regions) do
+      r.ctrl = clamp(r.ctrl + (world.domination > 55 and 1 or 0) - (r.unrest > 50 and 1 or 0), 0, 100)
+      r.unrest = clamp(r.unrest + flr(rnd(3)) - (world.policy=="stability" and 1 or 0), 0, 100)
+      r.intel = clamp(r.intel + flr(intel_net.coverage / 25) - flr(rnd(2)), 0, 100)
+      r.influence = clamp(r.influence + flr(world.influence / 35) - flr(rnd(2)), 0, 100)
+    end
+
+    for t in all(teams) do
+      t.ready = clamp(t.ready + 1 - flr(world.unrest / 55), 0, 100)
+      t.morale = clamp(t.morale + (world.treasury > 0 and 1 or -2), 0, 100)
+    end
+
+    if research.queue ~= 0 then
+      research.progress = research.progress + 100 / research.projects[research.queue].days
+      if research.progress >= 100 then finish_research(research.queue) end
+    end
+
+    world.unrest = clamp(world.unrest + flr(rnd(3)) - (world.policy=="stability" and 1 or 0), 0, 100)
+    world.heat = clamp(world.heat + flr(rnd(2)) - (intel_net.depth > 60 and 1 or 0), 0, 100)
+    world.domination = clamp(world.domination + (world.treasury > 3000 and 1 or 0), 0, 100)
+  end
 end
 
 function add_button(id,x,y,w,h)
   buttons[id] = {x=x,y=y,w=w,h=h}
 end
 
-function draw_button(id,label,x,y,w,h,c,txt)
+function draw_btn(id,label,x,y,w,h,c)
   rectfill(x,y,x+w,y+h,c)
   rect(x,y,x+w,y+h,7)
-  print(label,10,x+5,y+5,txt or 1)
+  print(label,9,x+4,y+4,1)
   add_button(id,x,y,w,h)
 end
 
-function draw_top_bar()
-  rectfill(0,0,479,20,2)
-  rect(0,0,479,20,7)
-  print("time "..world.speed.."  date "..world.date, 9, 6, 6, 7)
-  print("treasury "..world.treasury.."  resources "..world.resources.."  influence "..world.influence, 9, 156, 6, 7)
-  print("heat "..world.heat.."  alerts "..world.alerts, 9, 392, 6, 10)
+function hit(id,mx,my)
+  local b = buttons[id]
+  return b and mx>=b.x and mx<=b.x+b.w and my>=b.y and my<=b.y+b.h
 end
 
-function draw_left_nav()
+function draw_bar(x,y,w,v,col)
+  rectfill(x,y,x+w,y+8,1)
+  rectfill(x,y,x+flr(w * clamp(v,0,100)/100),y+8,col)
+  rect(x,y,x+w,y+8,7)
+end
+
+function draw_top()
+  rectfill(0,0,479,20,2)
+  rect(0,0,479,20,7)
+  print("op corp",9,6,6,10)
+  draw_btn("spd_down","-",62,2,14,15,5)
+  print(speed_labels[speed_index],9,80,6,7)
+  draw_btn("spd_up","+",116,2,14,15,5)
+  print(date_text(),9,136,6,7)
+  print("$"..world.treasury.."  m"..world.metal.." f"..world.fuel.." i"..world.intel,9,220,6,7)
+  print("inf "..world.influence.." heat "..world.heat.." alerts "..world.alerts,9,370,6,10)
+end
+
+function draw_nav()
   rectfill(0,21,92,264,3)
   rect(0,21,92,264,7)
   for i,name in pairs(screens) do
-    local y = 25 + (i-1)*19
-    if y < 246 then
-      draw_button("nav_"..name, name, 4, y, 84, 15, screen == name and 11 or 5)
+    local y = 24 + (i-1)*19
+    if y < 246 then draw_btn("nav_"..i,name,4,y,84,15,screen==name and 11 or 5) end
+  end
+end
+
+function draw_inspector()
+  rectfill(358,21,479,246,4)
+  rect(358,21,479,246,7)
+  print("inspector",10,364,28,10)
+  if selection.kind == "briefing" then
+    print("urgency "..score_urgency().."%",9,364,48,7)
+    print("funds "..summary_status(clamp(world.treasury/80,0,100)),9,364,60,7)
+    print("supply "..summary_status(logistics.stock),9,364,72,7)
+    print("domination "..world.domination.."%",9,364,84,7)
+    print("policy "..world.policy,9,364,96,7)
+  elseif selection.kind == "region" then
+    local r = regions[selection.index]
+    print(r.name,9,364,48,7)
+    print("control "..r.ctrl.."%",9,364,60,7)
+    print("unrest "..r.unrest.."%",9,364,72,7)
+    print("intel "..r.intel.."%",9,364,84,7)
+    print("influence "..r.influence.."%",9,364,96,7)
+  elseif selection.kind == "team" then
+    local t = teams[selection.index]
+    print(t.name.." ["..t.doctrine.."]",9,364,48,7)
+    print("ready "..t.ready.."% power "..t.power,9,364,60,7)
+    print("stealth "..t.stealth.." morale "..t.morale,9,364,72,7)
+    print("cohesion "..t.cohesion,9,364,84,7)
+    print("vehicle "..t.vehicle,9,364,96,7)
+  elseif selection.kind == "mission" then
+    local m = missions[selection.index]
+    print(m.name,9,364,48,7)
+    print(m.kind.." / "..m.phase,9,364,60,7)
+    print("risk "..m.risk.." reward "..m.reward,9,364,72,7)
+    print("success "..mission_success(m,1).."%",9,364,84,7)
+    print("exposure "..mission_exposure(m).."%",9,364,96,7)
+  end
+end
+
+function draw_feed()
+  rectfill(93,247,479,264,3)
+  rect(93,247,479,264,7)
+  if #feed == 0 then
+    print("live feed awaiting first report",9,98,253,7)
+  else
+    local idx = ((tick // 24) % #feed) + 1
+    print(feed[idx],9,98,253,12)
+  end
+end
+
+function draw_dashboard()
+  print("dashboard",11,100,30,10)
+  print("going well / going badly / needs action",9,100,44,7)
+  local cards = {
+    "funds "..summary_status(clamp(world.treasury/80,0,100)),
+    "supply "..summary_status(logistics.stock),
+    "teams "..#teams.." active",
+    "missions "..#missions,
+    "unstable regions "..world.unrest,
+    "research "..(research.queue==0 and "idle" or "active"),
+    "diplomacy pressure "..world.heat,
+    "black ops readiness "..intel_net.depth
+  }
+  for i,c in pairs(cards) do
+    local x = 100 + ((i-1)%2)*126
+    local y = 60 + flr((i-1)/2)*23
+    rectfill(x,y,x+120,y+18,1)
+    rect(x,y,x+120,y+18,7)
+    print(c,9,x+4,y+5,7)
+  end
+  draw_btn("dash_world","world",100,160,58,16,8)
+  draw_btn("dash_missions","missions",162,160,74,16,6)
+  draw_btn("dash_logistics","logistics",240,160,78,16,6)
+  draw_btn("dash_advance","advance day",100,182,102,16,14)
+end
+
+function draw_world()
+  print("world",11,100,30,10)
+  print("map filter "..world.map_filter,9,100,44,7)
+  for i,r in pairs(regions) do
+    local y = 60 + (i-1)*30
+    draw_btn("region_"..i,r.name,100,y,146,24,selection.kind=="region" and selection.index==i and 11 or 5)
+    draw_bar(252,y+4,74,r.ctrl,11)
+    draw_bar(252,y+14,74,r.unrest,8)
+    print("c/u",9,330,y+9,7)
+  end
+  draw_btn("world_proxy","fund proxy",100,184,78,16,6)
+  draw_btn("world_negotiate","negotiate",182,184,72,16,6)
+  draw_btn("world_filter","toggle filter",258,184,88,16,5)
+end
+
+function draw_teams()
+  print("teams",11,100,30,10)
+  for i,t in pairs(teams) do
+    local y = 60 + (i-1)*30
+    draw_btn("team_"..i,t.name,100,y,122,24,selection.kind=="team" and selection.index==i and 11 or 5)
+    print(t.doctrine.." r"..t.ready.." s"..t.stealth.." m"..t.morale,9,226,y+9,7)
+  end
+  draw_btn("team_train","train",100,184,54,16,8)
+  draw_btn("team_refit","refit",158,184,52,16,6)
+  draw_btn("team_rest","rest",214,184,50,16,6)
+end
+
+function draw_personnel()
+  print("personnel",11,100,30,10)
+  for i,p in pairs(personnel) do
+    local y = 56 + (i-1)*24
+    rectfill(100,y,346,y+20,1)
+    rect(100,y,346,y+20,7)
+    print(p.name.." / "..p.role,9,104,y+5,7)
+    print("exp"..p.exp.." loy"..p.loyalty.." fat"..p.fatigue,9,230,y+5,7)
+  end
+  draw_btn("staff_hire","hire",100,184,48,16,8)
+  draw_btn("staff_rest","rest ops",152,184,62,16,6)
+  draw_btn("staff_train","promote",218,184,62,16,6)
+end
+
+function draw_missions()
+  print("missions",11,100,30,10)
+  for i,m in pairs(missions) do
+    local y = 56 + (i-1)*30
+    draw_btn("mission_"..i,m.name,100,y,140,24,selection.kind=="mission" and selection.index==i and 11 or 5)
+    print(m.kind.." "..m.phase,9,244,y+4,7)
+    print("risk "..m.risk.." reward "..m.reward,9,244,y+14,7)
+  end
+  local idx = selection.kind=="mission" and selection.index or 1
+  local m = missions[idx]
+  print("launch planner: success "..mission_success(m,1).."% exposure "..mission_exposure(m).."%",9,100,178,7)
+  draw_btn("mission_launch","launch",100,192,62,16,14)
+  draw_btn("mission_team","team+",166,192,62,16,6)
+end
+
+function draw_research()
+  print("research",11,100,30,10)
+  print("queue "..(research.queue==0 and "none" or research.projects[research.queue].name),9,100,44,7)
+  draw_bar(100,56,180,research.progress,11)
+  for i,p in pairs(research.projects) do
+    local y = 70 + (i-1)*28
+    draw_btn("research_"..i,p.name,100,y,132,22,p.done and 3 or 6)
+    print("cost "..p.cost.." // "..p.bonus,9,236,y+8,7)
+  end
+end
+
+function draw_logistics()
+  print("logistics",11,100,30,10)
+  print("stock "..logistics.stock.." routes "..logistics.routes,9,100,46,7)
+  print("maintenance "..logistics.maintenance,9,100,58,7)
+  draw_bar(100,72,180,logistics.stock,11)
+  draw_bar(100,86,180,logistics.maintenance,8)
+  draw_btn("logi_invest","invest",100,108,62,16,8)
+  draw_btn("logi_transfer","transfer",166,108,62,16,6)
+  draw_btn("logi_vehicle","vehicle",232,108,62,16,6)
+  print("inventory: metal "..world.metal.." fuel "..world.fuel,9,100,136,7)
+end
+
+function draw_diplomacy()
+  print("diplomacy",11,100,30,10)
+  local r = selected_region()
+  print("target "..r.name,9,100,46,7)
+  print("stance unstable / leverage moderate",9,100,58,7)
+  draw_bar(100,72,180,100-r.unrest,11)
+  draw_btn("dip_offer","offer aid",100,92,66,16,6)
+  draw_btn("dip_pressure","pressure",170,92,62,16,6)
+  draw_btn("dip_treaty","treaty",236,92,56,16,8)
+end
+
+function draw_intelligence()
+  print("intelligence",11,100,30,10)
+  print("coverage "..intel_net.coverage.." depth "..intel_net.depth,9,100,46,7)
+  print("reliability "..intel_net.reliability.." compromised "..intel_net.compromised,9,100,58,7)
+  draw_bar(100,72,180,intel_net.coverage,11)
+  draw_bar(100,86,180,intel_net.reliability,6)
+  draw_btn("intel_expand","expand",100,108,66,16,8)
+  draw_btn("intel_extract","extract",170,108,62,16,6)
+  draw_btn("intel_disinfo","disinfo",236,108,56,16,6)
+end
+
+function draw_finance()
+  print("finance",11,100,30,10)
+  print("income "..finance.income.." expense "..finance.expense,9,100,46,7)
+  print("debt "..finance.debt.." laundering "..finance.laundering,9,100,58,7)
+  draw_btn("fin_plus","budget +",100,80,70,16,6)
+  draw_btn("fin_minus","budget -",174,80,70,16,6)
+  draw_btn("fin_loan","loan",248,80,52,16,8)
+  draw_btn("fin_assets","sell assets",100,100,90,16,6)
+end
+
+function draw_reports()
+  print("reports",11,100,30,10)
+  local n = #reports
+  if n == 0 then print("no reports yet",9,100,46,7) end
+  for i=0,5 do
+    local idx = n - i
+    if idx > 0 then
+      rectfill(100,52+i*24,346,70+i*24,1)
+      rect(100,52+i*24,346,70+i*24,7)
+      print(reports[idx],9,104,58+i*24,7)
     end
   end
 end
 
-function draw_right_inspector()
-  rectfill(358,21,479,246,4)
-  rect(358,21,479,246,7)
-  print("inspector", 11, 365, 28, 10)
-  if selected_kind == "briefing" then
-    print("priority briefing", 10, 365, 46, 7)
-    print("supply chain stress", 9, 365, 62, 7)
-    print("needs logistics action", 9, 365, 74, 7)
-    print("recommended: routes tab", 9, 365, 86, 7)
-  elseif selected_kind == "region" then
-    local r = regions[selected_index]
-    print("region "..r.name, 9, 365, 46, 7)
-    print("stability "..r.stability, 9, 365, 60, 7)
-    print("value "..r.value, 9, 365, 72, 7)
-    print("public "..r.mood, 9, 365, 84, 7)
-    print("intel "..r.intel.."%", 9, 365, 96, 7)
-    print("threat "..r.threats, 9, 365, 108, 7)
-  elseif selected_kind == "team" then
-    local t = teams[selected_index]
-    print("team "..t.name, 9, 365, 46, 7)
-    print("doctrine "..t.doctrine, 9, 365, 60, 7)
-    print("readiness "..t.readiness.."%", 9, 365, 72, 7)
-    print("stealth "..t.stealth.."%", 9, 365, 84, 7)
-    print("morale "..t.morale.."%", 9, 365, 96, 7)
-    print("upkeep "..t.upkeep, 9, 365, 108, 7)
-  elseif selected_kind == "mission" then
-    local m = missions[selected_index]
-    print("mission "..m.name, 9, 365, 46, 7)
-    print("type "..m.type, 9, 365, 60, 7)
-    print("risk "..m.risk.."%", 9, 365, 72, 7)
-    print("reward "..m.reward, 9, 365, 84, 7)
-    print("region "..m.region, 9, 365, 96, 7)
-    print("status "..m.status, 9, 365, 108, 7)
-  end
-end
-
-function draw_bottom_feed()
-  rectfill(93,247,479,264,3)
-  rect(93,247,479,264,7)
-  local idx = (tick % #feed) + 1
-  print("live feed: "..feed[idx], 9, 98, 253, 12)
-end
-
-function draw_dashboard()
-  print("dashboard // command center", 12, 100, 30, 10)
-  print("what is going well / badly / needs action", 9, 100, 44, 7)
-  local cards = {
-    "funds "..summary.funds, "supply "..summary.supply, "teams "..summary.teams, "missions "..summary.missions,
-    "unstable "..summary.unstable, "research "..summary.research, "diplomacy "..summary.diplomacy, "black ops "..summary.blackops
-  }
-  for i,c in pairs(cards) do
-    local x = 100 + ((i-1)%2)*126
-    local y = 60 + flr((i-1)/2)*26
-    rectfill(x,y,x+120,y+20,1)
-    rect(x,y,x+120,y+20,7)
-    print(c, 9, x+4, y+6, 7)
-  end
-  draw_button("open_missions","jump to missions", 100, 186, 120, 18, 8)
-  draw_button("open_logistics","jump to logistics", 226, 186, 120, 18, 6)
-end
-
-function draw_world()
-  print("world // overlays + map actions", 12, 100, 30, 10)
-  print("filters: control, unrest, alignment, value, strength, intel", 9, 100, 44, 7)
-  for i,r in pairs(regions) do
-    local y = 64 + (i-1)*36
-    draw_button("region_"..i, r.name, 100, y, 186, 28, selected_kind=="region" and selected_index==i and 11 or 5)
-    print("stability "..r.stability.."  mood "..r.mood, 9, 292, y+8, 7)
-  end
-  draw_button("act_proxy","fund proxy", 100, 178, 76, 18, 6)
-  draw_button("act_covert","covert op", 182, 178, 76, 18, 6)
-  draw_button("act_negotiate","negotiate", 264, 178, 82, 18, 6)
-end
-
-function draw_teams()
-  print("teams // assembly + readiness", 12, 100, 30, 10)
-  for i,t in pairs(teams) do
-    local y = 60 + (i-1)*36
-    draw_button("team_"..i, t.name.." ["..t.doctrine.."]", 100, y, 196, 28, selected_kind=="team" and selected_index==i and 11 or 5)
-    print("ready "..t.readiness.." stealth "..t.stealth.." morale "..t.morale, 9, 302, y+8, 7)
-  end
-  draw_button("team_create","create team", 100, 178, 84, 18, 8)
-  draw_button("team_assign","assign personnel", 190, 178, 102, 18, 6)
-  draw_button("team_deploy","deploy", 298, 178, 48, 18, 12)
-end
-
-function draw_missions()
-  print("missions // dispatch + layered launch planning", 12, 100, 30, 10)
-  print("tabs: available planned active completed failed special", 9, 100, 44, 7)
-  for i,m in pairs(missions) do
-    local y = 62 + (i-1)*36
-    draw_button("mission_"..i, m.name.." ("..m.type..")", 100, y, 206, 28, selected_kind=="mission" and selected_index==i and 11 or 5)
-    print("risk "..m.risk.." reward "..m.reward.." status "..m.status, 9, 312, y+8, 7)
-  end
-  draw_button("mission_plan","open launch planner", 100, 178, 130, 18, 14)
-  draw_button("mission_sort","filter/sort", 236, 178, 110, 18, 6)
-end
-
-function draw_generic()
-  print(screen.." // blueprint scaffold screen", 12, 100, 30, 10)
-  print("uses shared shell, reusable components, inspector updates,", 9, 100, 48, 7)
-  print("planner modals, and consequence previews.", 9, 100, 60, 7)
-  rectfill(100,76,346,196,1)
-  rect(100,76,346,196,7)
-  print("core runtime", 10, 110, 88, 10)
-  print("simulation layer", 10, 110, 104, 7)
-  print("data layer", 10, 110, 120, 7)
-  print("ui component layer", 10, 110, 136, 7)
-  print("screen assembly layer", 10, 110, 152, 7)
-end
-
-function open_modal(title, body, action_id)
-  show_modal = true
-  modal_title = title
-  modal_body = body
-  pending_action = action_id
+function draw_settings()
+  print("settings",11,100,30,10)
+  print("policy mode: "..world.policy,9,100,46,7)
+  draw_btn("set_balanced","balanced",100,64,70,16,6)
+  draw_btn("set_stability","stability",174,64,70,16,6)
+  draw_btn("set_diplomatic","diplomatic",248,64,80,16,6)
+  draw_btn("set_save","save snapshot",100,88,90,16,8)
+  draw_btn("set_load","load snapshot",194,88,90,16,6)
 end
 
 function draw_modal()
   if not show_modal then return end
-  rectfill(74,50,406,222,0)
-  rect(74,50,406,222,10)
-  print(modal_title, 12, 88, 66, 10)
-  print(modal_body, 9, 88, 88, 7)
-  print("confirm action?", 10, 88, 146, 12)
-  draw_button("modal_confirm", "confirm", 88, 172, 96, 24, 8)
-  draw_button("modal_cancel", "cancel", 190, 172, 96, 24, 6)
+  rectfill(68,46,412,220,0)
+  rect(68,46,412,220,10)
+  print(modal.title,10,82,60,10)
+  print(modal.body,9,82,80,7)
+  draw_btn("modal_ok","confirm",82,176,72,18,8)
+  draw_btn("modal_no","cancel",158,176,72,18,6)
 end
 
-function button_hit(id,mx,my)
-  local b = buttons[id]
-  return b and mx >= b.x and mx <= b.x + b.w and my >= b.y and my <= b.y + b.h
+function open_modal(title, body, action, data)
+  show_modal = true
+  modal.title = title
+  modal.body = body
+  modal.action = action
+  modal.data = data or 0
 end
 
-function run_action(id)
-  if id == "launch_planner" then
-    world.heat = clamp(world.heat + 2, 0, 100)
-    world.alerts = world.alerts + 1
-    set_message("launch plan committed; exposure risk increased")
-  elseif id == "policy" then
-    world.influence = clamp(world.influence + 2, 0, 100)
-    world.resources = world.resources - 8
-    set_message("policy enacted; influence up, resources spent")
-  else
-    set_message("action confirmed")
+function run_modal_action()
+  if modal.action == "launch" then execute_mission(modal.data, 1)
+  elseif modal.action == "proxy" then
+    local r = regions[modal.data]
+    if world.treasury < 130 then add_feed("need treasury for proxy") return end
+    world.treasury = world.treasury - 130
+    r.ctrl = clamp(r.ctrl + 5, 0, 100)
+    r.unrest = clamp(r.unrest + 4, 0, 100)
+    add_feed("proxy funded in "..r.name)
+  elseif modal.action == "treaty" then diplomacy_push()
+  elseif modal.action == "loan" then finance.debt = finance.debt + 200 world.treasury = world.treasury + 200 add_feed("emergency loan approved")
   end
+end
+
+function click_in_screen(mx,my)
+  if screen == "dashboard" then
+    if hit("dash_world",mx,my) then screen="world" end
+    if hit("dash_missions",mx,my) then screen="missions" end
+    if hit("dash_logistics",mx,my) then screen="logistics" end
+    if hit("dash_advance",mx,my) then run_sim_step(1) add_feed("manual day advance") end
+  elseif screen == "world" then
+    for i=1,#regions do if hit("region_"..i,mx,my) then world.selected_map=i selection.kind="region" selection.index=i end end
+    if hit("world_proxy",mx,my) then open_modal("fund proxy","increase control but raise unrest","proxy",world.selected_map) end
+    if hit("world_negotiate",mx,my) then diplomacy_push() end
+    if hit("world_filter",mx,my) then world.map_filter = (world.map_filter=="control" and "unrest" or "control") add_feed("map filter "..world.map_filter) end
+  elseif screen == "teams" then
+    for i=1,#teams do if hit("team_"..i,mx,my) then selection.kind="team" selection.index=i end end
+    local idx = selection.kind=="team" and selection.index or 1
+    if hit("team_train",mx,my) then teams[idx].ready = clamp(teams[idx].ready+6,0,100) teams[idx].morale = clamp(teams[idx].morale-2,0,100) add_feed("training complete for "..teams[idx].name) end
+    if hit("team_refit",mx,my) then if world.metal>=3 then world.metal=world.metal-3 teams[idx].power=clamp(teams[idx].power+5,0,100) add_feed("refit completed") else add_feed("need 3 metal") end end
+    if hit("team_rest",mx,my) then teams[idx].ready=clamp(teams[idx].ready+3,0,100) teams[idx].morale=clamp(teams[idx].morale+4,0,100) add_feed("team rested") end
+  elseif screen == "personnel" then
+    if hit("staff_hire",mx,my) then add(personnel,{name="new hire",role="support",exp=42,loyalty=52,fatigue=8,salary=33,assigned=0}) add_feed("new specialist hired") end
+    if hit("staff_rest",mx,my) then for p in all(personnel) do p.fatigue=clamp(p.fatigue-6,0,100) end add_feed("rest cycle issued") end
+    if hit("staff_train",mx,my) then for p in all(personnel) do p.exp=clamp(p.exp+2,0,99) end add_feed("training program completed") end
+  elseif screen == "missions" then
+    for i=1,#missions do if hit("mission_"..i,mx,my) then selection.kind="mission" selection.index=i end end
+    local idx = selection.kind=="mission" and selection.index or 1
+    if hit("mission_launch",mx,my) then
+      local m=missions[idx]
+      open_modal("launch review",m.name.." success "..mission_success(m,1).."% exposure "..mission_exposure(m).."%","launch",idx)
+    end
+    if hit("mission_team",mx,my) then add_feed("planner: team rotation stubbed to atlas in this build") end
+  elseif screen == "research" then
+    for i=1,#research.projects do if hit("research_"..i,mx,my) then start_research(i) end end
+  elseif screen == "logistics" then
+    if hit("logi_invest",mx,my) then invest_logistics() end
+    if hit("logi_transfer",mx,my) then logistics.transfer = logistics.transfer + 1 add_feed("transfer convoy launched") end
+    if hit("logi_vehicle",mx,my) then add_feed("vehicle assignment updated") end
+  elseif screen == "diplomacy" then
+    if hit("dip_offer",mx,my) then if world.treasury>=120 then world.treasury=world.treasury-120 world.influence=clamp(world.influence+4,0,100) add_feed("aid offered") else add_feed("need 120 treasury") end end
+    if hit("dip_pressure",mx,my) then diplomacy_push() end
+    if hit("dip_treaty",mx,my) then open_modal("treaty review","obligation: reduce unrest for 3 days","treaty",world.selected_map) end
+  elseif screen == "intelligence" then
+    if hit("intel_expand",mx,my) then expand_network() end
+    if hit("intel_extract",mx,my) then intel_net.compromised=clamp(intel_net.compromised-6,0,100) add_feed("asset extracted") end
+    if hit("intel_disinfo",mx,my) then world.heat=clamp(world.heat-2,0,100) add_feed("disinformation deployed") end
+  elseif screen == "finance" then
+    if hit("fin_plus",mx,my) then budget_shift(1) end
+    if hit("fin_minus",mx,my) then budget_shift(-1) end
+    if hit("fin_loan",mx,my) then open_modal("emergency funding","take +200 treasury and +200 debt?","loan",0) end
+    if hit("fin_assets",mx,my) then world.treasury = world.treasury + 140 logistics.stock = clamp(logistics.stock-8,0,100) add_feed("asset sale completed") end
+  elseif screen == "settings" then
+    if hit("set_balanced",mx,my) then world.policy="balanced" add_feed("policy set: balanced") end
+    if hit("set_stability",mx,my) then world.policy="stability" add_feed("policy set: stability") end
+    if hit("set_diplomatic",mx,my) then world.policy="diplomatic" add_feed("policy set: diplomatic") end
+    if hit("set_save",mx,my) then save_data("opcorp_snapshot",world.treasury.."|"..world.domination.."|"..world.unrest) add_feed("snapshot saved") end
+    if hit("set_load",mx,my) then
+      local raw = load_data("opcorp_snapshot")
+      if raw then
+        local a,b,c = string.match(raw,"([^|]+)|([^|]+)|([^|]+)")
+        world.treasury = tonumber(a) or world.treasury
+        world.domination = tonumber(b) or world.domination
+        world.unrest = tonumber(c) or world.unrest
+        add_feed("snapshot loaded")
+      else
+        add_feed("no snapshot found")
+      end
+    end
+  end
+end
+
+function draw_center()
+  rectfill(93,21,357,246,1)
+  rect(93,21,357,246,7)
+  if screen == "dashboard" then draw_dashboard()
+  elseif screen == "world" then draw_world()
+  elseif screen == "teams" then draw_teams()
+  elseif screen == "personnel" then draw_personnel()
+  elseif screen == "missions" then draw_missions()
+  elseif screen == "research" then draw_research()
+  elseif screen == "logistics" then draw_logistics()
+  elseif screen == "diplomacy" then draw_diplomacy()
+  elseif screen == "intelligence" then draw_intelligence()
+  elseif screen == "finance" then draw_finance()
+  elseif screen == "reports" then draw_reports()
+  elseif screen == "settings" then draw_settings()
+  end
+end
+
+function _init()
+  add_feed("priority briefing: stabilize eastern littoral")
+  add_feed("logistics forecast: fuel strain in 4 days")
+  recalc_budget()
 end
 
 function _update()
   tick = tick + 1
   if flash > 0 then flash = flash - 1 end
 
+  if tick % 90 == 0 then
+    local step = speed_steps[speed_index]
+    if step > 0 then run_sim_step(step) end
+  end
+
   local mx,my,mb,mbr = mouse()
   if (mbr & 1) ~= 0 then
     for i,name in pairs(screens) do
-      if button_hit("nav_"..name,mx,my) then
-        screen = name
-        selected_kind = "briefing"
-        return
-      end
+      if hit("nav_"..i,mx,my) then screen=name selection.kind="briefing" selection.index=1 end
     end
+
+    if hit("spd_down",mx,my) then speed_index = clamp(speed_index-1,1,#speed_steps) end
+    if hit("spd_up",mx,my) then speed_index = clamp(speed_index+1,1,#speed_steps) end
+
     if show_modal then
-      if button_hit("modal_confirm",mx,my) then run_action(pending_action) show_modal=false end
-      if button_hit("modal_cancel",mx,my) then show_modal=false set_message("action cancelled") end
+      if hit("modal_ok",mx,my) then run_modal_action() show_modal=false end
+      if hit("modal_no",mx,my) then show_modal=false add_feed("action cancelled") end
       return
     end
 
-    for i=1,#regions do if button_hit("region_"..i,mx,my) then selected_kind="region" selected_index=i end end
-    for i=1,#teams do if button_hit("team_"..i,mx,my) then selected_kind="team" selected_index=i end end
-    for i=1,#missions do if button_hit("mission_"..i,mx,my) then selected_kind="mission" selected_index=i end end
-
-    if button_hit("open_missions",mx,my) then screen="missions" set_message("dashboard route -> missions") end
-    if button_hit("open_logistics",mx,my) then screen="logistics" set_message("dashboard route -> logistics") end
-    if button_hit("mission_plan",mx,my) then open_modal("mission launch review","success 68%  exposure 39%  casualties 22%  escalation 31%","launch_planner") end
-    if button_hit("act_proxy",mx,my) or button_hit("act_covert",mx,my) or button_hit("act_negotiate",mx,my) then
-      open_modal("consequence preview","this regional action may shift stability, heat, and political standing.","policy")
-    end
+    click_in_screen(mx,my)
   end
 end
 
 function _draw()
   buttons = {}
-  cls(color(8, 12, 20))
-  draw_top_bar()
-  draw_left_nav()
-  draw_right_inspector()
-  draw_bottom_feed()
-
-  rectfill(93,21,357,246,1)
-  rect(93,21,357,246,7)
-
-  if screen == "dashboard" then draw_dashboard()
-  elseif screen == "world" then draw_world()
-  elseif screen == "teams" then draw_teams()
-  elseif screen == "missions" then draw_missions()
-  else draw_generic()
-  end
-
-  if flash > 0 then
-    print(message, 9, 100, 232, 10)
-  end
+  cls(color(7, 10, 18))
+  draw_top()
+  draw_nav()
+  draw_center()
+  draw_inspector()
+  draw_feed()
   draw_modal()
+  if flash > 0 then print(message,9,98,233,10) end
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -4323,7 +4719,7 @@ function getExampleProjects(){
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
     {id:'operation-corporation-idle',category:'ui-heavy games',name:'Operation Corporation Idle Command',description:'UI-only management sim with mission dispatch, team development, resource loops, research trees, policy decisions, and world domination/peace balancing across linked game sections.',loader:loadOperationCorporationIdleExampleProject},
-    {id:'operation-corporation-blueprint',category:'ui-heavy games',name:'Operation Corporation (Blueprint Shell)',description:'State-driven command-interface example with global top bar, left navigation, center workspace, right inspector, bottom live feed, modal consequence previews, and 12 strategic screens scaffolded from the Operation Corporation blueprint.',loader:loadOperationCorporationBlueprintExampleProject}
+    {id:'operation-corporation-blueprint',category:'ui-heavy games',name:'Operation Corporation: World Command',description:'State-driven command simulator with persistent tick-based world updates, 12 navigable strategy screens, interactive inspector, consequence-confirmation modals, and idle resource + domination mechanics.',loader:loadOperationCorporationBlueprintExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
