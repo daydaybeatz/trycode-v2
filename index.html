@@ -3993,6 +3993,326 @@ end`}];
   finalizeExampleProjectLoad();
 }
 
+function loadOperationCorporationBlueprintExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.project.tile_w=8;
+  p.project.tile_h=8;
+  p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
+  p.tileDefs={0:makeBlankTileDef()};
+  p.settings.movementInput='none';
+  p.settings.displayMode='normal';
+  p.codeFiles=[{name:"main.lua",tabTheme:11,content:`screen = "dashboard"
+tick = 0
+message = "operation corporation online"
+flash = 120
+show_modal = false
+modal_title = ""
+modal_body = ""
+pending_action = ""
+buttons = {}
+
+world = {
+  date = "2084-04-03",
+  speed = "1x",
+  treasury = 4200,
+  resources = 188,
+  influence = 27,
+  heat = 14,
+  alerts = 3
+}
+
+screens = {
+  "dashboard","world","teams","personnel","missions","research",
+  "logistics","diplomacy","intelligence","finance","reports","settings"
+}
+
+summary = {
+  funds = "stable",
+  supply = "strained",
+  teams = "4 active",
+  missions = "3 active",
+  unstable = "2 regions",
+  research = "2 queued",
+  diplomacy = "high pressure",
+  blackops = "1 armed"
+}
+
+regions = {
+  {name="north corridor", stability=63, value="high", mood="tense", intel=72, threats="insurgents"},
+  {name="eastern littoral", stability=51, value="critical", mood="angry", intel=58, threats="cartel"},
+  {name="equatorial ring", stability=69, value="high", mood="cautious", intel=64, threats="militia"}
+}
+
+teams = {
+  {name="atlas", doctrine="rapid", readiness=76, stealth=54, morale=70, upkeep=130},
+  {name="viper", doctrine="covert", readiness=82, stealth=88, morale=63, upkeep=170},
+  {name="bastion", doctrine="heavy", readiness=58, stealth=32, morale=75, upkeep=110}
+}
+
+missions = {
+  {name="silent relay", type="intel", risk=34, reward=160, region="north corridor", status="available"},
+  {name="steel rain", type="strike", risk=58, reward=260, region="eastern littoral", status="planned"},
+  {name="civic shield", type="stability", risk=25, reward=140, region="equatorial ring", status="active"}
+}
+
+feed = {
+  "new contract window opened in eastern littoral",
+  "warehouse gamma reports fuel shortages",
+  "viper intercepted diplomatic packet",
+  "research node sabotage tier i completed"
+}
+
+selected_kind = "briefing"
+selected_index = 1
+
+function clamp(v,a,b)
+  if v < a then return a end
+  if v > b then return b end
+  return v
+end
+
+function set_message(txt)
+  message = txt
+  flash = 180
+end
+
+function add_button(id,x,y,w,h)
+  buttons[id] = {x=x,y=y,w=w,h=h}
+end
+
+function draw_button(id,label,x,y,w,h,c,txt)
+  rectfill(x,y,x+w,y+h,c)
+  rect(x,y,x+w,y+h,7)
+  print(label,10,x+5,y+5,txt or 1)
+  add_button(id,x,y,w,h)
+end
+
+function draw_top_bar()
+  rectfill(0,0,479,20,2)
+  rect(0,0,479,20,7)
+  print("time "..world.speed.."  date "..world.date, 9, 6, 6, 7)
+  print("treasury "..world.treasury.."  resources "..world.resources.."  influence "..world.influence, 9, 156, 6, 7)
+  print("heat "..world.heat.."  alerts "..world.alerts, 9, 392, 6, 10)
+end
+
+function draw_left_nav()
+  rectfill(0,21,92,264,3)
+  rect(0,21,92,264,7)
+  for i,name in pairs(screens) do
+    local y = 25 + (i-1)*19
+    if y < 246 then
+      draw_button("nav_"..name, name, 4, y, 84, 15, screen == name and 11 or 5)
+    end
+  end
+end
+
+function draw_right_inspector()
+  rectfill(358,21,479,246,4)
+  rect(358,21,479,246,7)
+  print("inspector", 11, 365, 28, 10)
+  if selected_kind == "briefing" then
+    print("priority briefing", 10, 365, 46, 7)
+    print("supply chain stress", 9, 365, 62, 7)
+    print("needs logistics action", 9, 365, 74, 7)
+    print("recommended: routes tab", 9, 365, 86, 7)
+  elseif selected_kind == "region" then
+    local r = regions[selected_index]
+    print("region "..r.name, 9, 365, 46, 7)
+    print("stability "..r.stability, 9, 365, 60, 7)
+    print("value "..r.value, 9, 365, 72, 7)
+    print("public "..r.mood, 9, 365, 84, 7)
+    print("intel "..r.intel.."%", 9, 365, 96, 7)
+    print("threat "..r.threats, 9, 365, 108, 7)
+  elseif selected_kind == "team" then
+    local t = teams[selected_index]
+    print("team "..t.name, 9, 365, 46, 7)
+    print("doctrine "..t.doctrine, 9, 365, 60, 7)
+    print("readiness "..t.readiness.."%", 9, 365, 72, 7)
+    print("stealth "..t.stealth.."%", 9, 365, 84, 7)
+    print("morale "..t.morale.."%", 9, 365, 96, 7)
+    print("upkeep "..t.upkeep, 9, 365, 108, 7)
+  elseif selected_kind == "mission" then
+    local m = missions[selected_index]
+    print("mission "..m.name, 9, 365, 46, 7)
+    print("type "..m.type, 9, 365, 60, 7)
+    print("risk "..m.risk.."%", 9, 365, 72, 7)
+    print("reward "..m.reward, 9, 365, 84, 7)
+    print("region "..m.region, 9, 365, 96, 7)
+    print("status "..m.status, 9, 365, 108, 7)
+  end
+end
+
+function draw_bottom_feed()
+  rectfill(93,247,479,264,3)
+  rect(93,247,479,264,7)
+  local idx = (tick % #feed) + 1
+  print("live feed: "..feed[idx], 9, 98, 253, 12)
+end
+
+function draw_dashboard()
+  print("dashboard // command center", 12, 100, 30, 10)
+  print("what is going well / badly / needs action", 9, 100, 44, 7)
+  local cards = {
+    "funds "..summary.funds, "supply "..summary.supply, "teams "..summary.teams, "missions "..summary.missions,
+    "unstable "..summary.unstable, "research "..summary.research, "diplomacy "..summary.diplomacy, "black ops "..summary.blackops
+  }
+  for i,c in pairs(cards) do
+    local x = 100 + ((i-1)%2)*126
+    local y = 60 + flr((i-1)/2)*26
+    rectfill(x,y,x+120,y+20,1)
+    rect(x,y,x+120,y+20,7)
+    print(c, 9, x+4, y+6, 7)
+  end
+  draw_button("open_missions","jump to missions", 100, 186, 120, 18, 8)
+  draw_button("open_logistics","jump to logistics", 226, 186, 120, 18, 6)
+end
+
+function draw_world()
+  print("world // overlays + map actions", 12, 100, 30, 10)
+  print("filters: control, unrest, alignment, value, strength, intel", 9, 100, 44, 7)
+  for i,r in pairs(regions) do
+    local y = 64 + (i-1)*36
+    draw_button("region_"..i, r.name, 100, y, 186, 28, selected_kind=="region" and selected_index==i and 11 or 5)
+    print("stability "..r.stability.."  mood "..r.mood, 9, 292, y+8, 7)
+  end
+  draw_button("act_proxy","fund proxy", 100, 178, 76, 18, 6)
+  draw_button("act_covert","covert op", 182, 178, 76, 18, 6)
+  draw_button("act_negotiate","negotiate", 264, 178, 82, 18, 6)
+end
+
+function draw_teams()
+  print("teams // assembly + readiness", 12, 100, 30, 10)
+  for i,t in pairs(teams) do
+    local y = 60 + (i-1)*36
+    draw_button("team_"..i, t.name.." ["..t.doctrine.."]", 100, y, 196, 28, selected_kind=="team" and selected_index==i and 11 or 5)
+    print("ready "..t.readiness.." stealth "..t.stealth.." morale "..t.morale, 9, 302, y+8, 7)
+  end
+  draw_button("team_create","create team", 100, 178, 84, 18, 8)
+  draw_button("team_assign","assign personnel", 190, 178, 102, 18, 6)
+  draw_button("team_deploy","deploy", 298, 178, 48, 18, 12)
+end
+
+function draw_missions()
+  print("missions // dispatch + layered launch planning", 12, 100, 30, 10)
+  print("tabs: available planned active completed failed special", 9, 100, 44, 7)
+  for i,m in pairs(missions) do
+    local y = 62 + (i-1)*36
+    draw_button("mission_"..i, m.name.." ("..m.type..")", 100, y, 206, 28, selected_kind=="mission" and selected_index==i and 11 or 5)
+    print("risk "..m.risk.." reward "..m.reward.." status "..m.status, 9, 312, y+8, 7)
+  end
+  draw_button("mission_plan","open launch planner", 100, 178, 130, 18, 14)
+  draw_button("mission_sort","filter/sort", 236, 178, 110, 18, 6)
+end
+
+function draw_generic()
+  print(screen.." // blueprint scaffold screen", 12, 100, 30, 10)
+  print("uses shared shell, reusable components, inspector updates,", 9, 100, 48, 7)
+  print("planner modals, and consequence previews.", 9, 100, 60, 7)
+  rectfill(100,76,346,196,1)
+  rect(100,76,346,196,7)
+  print("core runtime", 10, 110, 88, 10)
+  print("simulation layer", 10, 110, 104, 7)
+  print("data layer", 10, 110, 120, 7)
+  print("ui component layer", 10, 110, 136, 7)
+  print("screen assembly layer", 10, 110, 152, 7)
+end
+
+function open_modal(title, body, action_id)
+  show_modal = true
+  modal_title = title
+  modal_body = body
+  pending_action = action_id
+end
+
+function draw_modal()
+  if not show_modal then return end
+  rectfill(74,50,406,222,0)
+  rect(74,50,406,222,10)
+  print(modal_title, 12, 88, 66, 10)
+  print(modal_body, 9, 88, 88, 7)
+  print("confirm action?", 10, 88, 146, 12)
+  draw_button("modal_confirm", "confirm", 88, 172, 96, 24, 8)
+  draw_button("modal_cancel", "cancel", 190, 172, 96, 24, 6)
+end
+
+function button_hit(id,mx,my)
+  local b = buttons[id]
+  return b and mx >= b.x and mx <= b.x + b.w and my >= b.y and my <= b.y + b.h
+end
+
+function run_action(id)
+  if id == "launch_planner" then
+    world.heat = clamp(world.heat + 2, 0, 100)
+    world.alerts = world.alerts + 1
+    set_message("launch plan committed; exposure risk increased")
+  elseif id == "policy" then
+    world.influence = clamp(world.influence + 2, 0, 100)
+    world.resources = world.resources - 8
+    set_message("policy enacted; influence up, resources spent")
+  else
+    set_message("action confirmed")
+  end
+end
+
+function _update()
+  tick = tick + 1
+  if flash > 0 then flash = flash - 1 end
+
+  local mx,my,mb,mbr = mouse()
+  if (mbr & 1) ~= 0 then
+    for i,name in pairs(screens) do
+      if button_hit("nav_"..name,mx,my) then
+        screen = name
+        selected_kind = "briefing"
+        return
+      end
+    end
+    if show_modal then
+      if button_hit("modal_confirm",mx,my) then run_action(pending_action) show_modal=false end
+      if button_hit("modal_cancel",mx,my) then show_modal=false set_message("action cancelled") end
+      return
+    end
+
+    for i=1,#regions do if button_hit("region_"..i,mx,my) then selected_kind="region" selected_index=i end end
+    for i=1,#teams do if button_hit("team_"..i,mx,my) then selected_kind="team" selected_index=i end end
+    for i=1,#missions do if button_hit("mission_"..i,mx,my) then selected_kind="mission" selected_index=i end end
+
+    if button_hit("open_missions",mx,my) then screen="missions" set_message("dashboard route -> missions") end
+    if button_hit("open_logistics",mx,my) then screen="logistics" set_message("dashboard route -> logistics") end
+    if button_hit("mission_plan",mx,my) then open_modal("mission launch review","success 68%  exposure 39%  casualties 22%  escalation 31%","launch_planner") end
+    if button_hit("act_proxy",mx,my) or button_hit("act_covert",mx,my) or button_hit("act_negotiate",mx,my) then
+      open_modal("consequence preview","this regional action may shift stability, heat, and political standing.","policy")
+    end
+  end
+end
+
+function _draw()
+  buttons = {}
+  cls(color(8, 12, 20))
+  draw_top_bar()
+  draw_left_nav()
+  draw_right_inspector()
+  draw_bottom_feed()
+
+  rectfill(93,21,357,246,1)
+  rect(93,21,357,246,7)
+
+  if screen == "dashboard" then draw_dashboard()
+  elseif screen == "world" then draw_world()
+  elseif screen == "teams" then draw_teams()
+  elseif screen == "missions" then draw_missions()
+  else draw_generic()
+  end
+
+  if flash > 0 then
+    print(message, 9, 100, 232, 10)
+  end
+  draw_modal()
+end`}];
+  finalizeExampleProjectLoad();
+}
+
 function getExampleProjects(){
   return [
     {id:'collision',category:'games',name:'Scrolling Wall Collision',description:'Separate button + joystick movement, wall checks, map scrolling with camera(), and btnp() zoom controls.',loader:loadExampleProject},
@@ -4002,7 +4322,8 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation-idle',category:'ui-heavy games',name:'Operation Corporation Idle Command',description:'UI-only management sim with mission dispatch, team development, resource loops, research trees, policy decisions, and world domination/peace balancing across linked game sections.',loader:loadOperationCorporationIdleExampleProject}
+    {id:'operation-corporation-idle',category:'ui-heavy games',name:'Operation Corporation Idle Command',description:'UI-only management sim with mission dispatch, team development, resource loops, research trees, policy decisions, and world domination/peace balancing across linked game sections.',loader:loadOperationCorporationIdleExampleProject},
+    {id:'operation-corporation-blueprint',category:'ui-heavy games',name:'Operation Corporation (Blueprint Shell)',description:'State-driven command-interface example with global top bar, left navigation, center workspace, right inspector, bottom live feed, modal consequence previews, and 12 strategic screens scaffolded from the Operation Corporation blueprint.',loader:loadOperationCorporationBlueprintExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
