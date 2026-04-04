@@ -3519,6 +3519,38 @@ function loadOperationCorporationExampleProject(){
     blueprints = 2,
     recruits = 4
   },
+  manufacturing = {
+    blueprints = {
+      {id="BP-01", name="modular rifle frame", stage="approved", unlock_from="T3"},
+      {id="BP-02", name="field med drone", stage="prototype", unlock_from="T3"}
+    },
+    prototypes = {
+      {name="field med drone", ticks_left=2, success_chance=78, status="active"}
+    },
+    recipes = {
+      {name="modular rifle", materials_cost=32, time_cost=2, output=1},
+      {name="field med drone", materials_cost=58, time_cost=3, output=1},
+      {name="sensor beacon", materials_cost=24, time_cost=1, output=2}
+    },
+    production_lines = {
+      {name="line alpha", speed=1.0, efficiency=0.94, busy=false},
+      {name="line beta", speed=0.85, efficiency=1.08, busy=true}
+    },
+    production_queue = {
+      {recipe="modular rifle", qty=2, ticks_left=3, line=2},
+      {recipe="sensor beacon", qty=1, ticks_left=1, line=1}
+    },
+    inventory = {
+      {item="modular rifle", qty=4, tag="weapon"},
+      {item="field med drone", qty=1, tag="support"},
+      {item="sensor beacon", qty=6, tag="intel"}
+    },
+    decision_flow = {
+      {item="modular rifle", action="equip", target="vanguard"},
+      {item="sensor beacon", action="stockpile", target="strategic reserve"},
+      {item="legacy armor plates", action="sell", target="gray market"}
+    }
+  },
   teams = {
     {name="vanguard", power=17, readiness=86, mission_tags={"combat","assault","secure"}, status="idle"},
     {name="specter", power=15, readiness=92, mission_tags={"covert","intel","extract"}, status="idle"},
@@ -3570,7 +3602,7 @@ function loadOperationCorporationExampleProject(){
   target_total_missions = 120,
   max_open_missions = 7,
   message = "command network online",
-  version = "1.0",
+  version = "1.1",
   roadmap_status = {
     ["0.1"]="implemented",
     ["0.2"]="implemented",
@@ -3581,7 +3613,8 @@ function loadOperationCorporationExampleProject(){
     ["0.7"]="implemented",
     ["0.8"]="implemented",
     ["0.9"]="implemented",
-    ["1.0"]="implemented"
+    ["1.0"]="implemented",
+    ["1.1"]="implemented"
   },
   research = {
     categories = {"military","intelligence","research","logistics","manufacturing","finance","diplomacy"},
@@ -3936,6 +3969,34 @@ function advance_tick()
   end
   process_research_tick()
 
+  for proto in all(campaign.manufacturing.prototypes) do
+    if proto.status == "active" and proto.ticks_left > 0 then
+      proto.ticks_left = proto.ticks_left - 1
+      if proto.ticks_left <= 0 then
+        proto.status = "validated"
+        campaign.message = "prototype validated: "..proto.name
+      end
+    end
+  end
+
+  for job in all(campaign.manufacturing.production_queue) do
+    if job.ticks_left > 0 then
+      job.ticks_left = job.ticks_left - 1
+      if job.ticks_left <= 0 then
+        local found = false
+        for item in all(campaign.manufacturing.inventory) do
+          if item.item == job.recipe then
+            item.qty = item.qty + job.qty
+            found = true
+          end
+        end
+        if not found then
+          add(campaign.manufacturing.inventory, {item=job.recipe, qty=job.qty, tag="manufactured"})
+        end
+      end
+    end
+  end
+
   for mission in all(campaign.missions) do
     if mission.state == "active" then
       mission.time_left = mission.time_left - 1
@@ -4098,17 +4159,18 @@ function draw_rd_screen()
 
   draw_btn("rd_start", "start queued", 14, 206, 78, 16, 8)
 
-  rectfill(250,96,462,222,6)
-  rect(250,96,462,222,7)
+  rectfill(250,96,462,232,6)
+  rect(250,96,462,232,7)
   print("version checklist",8,258,104,10)
   local vy = 116
-  for i=1,10 do
+  for i=1,11 do
     local key = "0."..i
     if i == 10 then key = "1.0" end
+    if i == 11 then key = "1.1" end
     print(key..": "..campaign.roadmap_status[key],7,258,vy,11)
     vy = vy + 10
   end
-  print("v1.1+ : not implemented yet",7,258,vy+4,8)
+  print("v1.2+ : not implemented yet",7,258,vy+4,8)
   vy = vy + 16
   print("mission pipeline",8,258,vy,10)
   vy = vy + 12
@@ -4121,6 +4183,23 @@ function draw_rd_screen()
   print("catalog target: "..campaign.target_total_missions.."+",7,258,vy,11)
   vy = vy + 12
   print("active pool: "..#campaign.missions,7,258,vy,11)
+
+  local my = 172
+  print("v1.1 manufacturing",8,14,my,10)
+  my = my + 12
+  print("blueprints: "..#campaign.manufacturing.blueprints,7,16,my,11)
+  my = my + 10
+  local proto = campaign.manufacturing.prototypes[1]
+  print("prototype: "..proto.name.." ("..proto.status..")",7,16,my,11)
+  my = my + 10
+  local job = campaign.manufacturing.production_queue[1]
+  print("queue: "..job.recipe.." x"..job.qty.." ("..job.ticks_left.."t)",7,16,my,11)
+  my = my + 10
+  local item = campaign.manufacturing.inventory[1]
+  print("inventory: "..item.item.." x"..item.qty,7,16,my,11)
+  my = my + 10
+  local decision = campaign.manufacturing.decision_flow[1]
+  print("decision: "..decision.action.." -> "..decision.target,7,16,my,12)
 end
 
 function on_click(mx,my)
@@ -4913,7 +4992,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Strategic campaign command sim now documented at Version 1.0: foundation through 0.9 plus research categories, tech nodes, requirements, queue, and staff assignment. Roadmap panel marks v1.1+ as not implemented yet.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Strategic campaign command sim now documented at Version 1.1: foundation through 1.0 plus blueprint/prototype/manufacturing flow, production queues, finished inventory, and equip-vs-stockpile-vs-sell decisions.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
