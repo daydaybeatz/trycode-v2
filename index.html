@@ -3507,12 +3507,12 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
-  version = "0.7",
+  version = "0.8",
   tick = 0,
   screen = "missions",
-  message = "operation corporation: ultimate // v0.7 mission depth implementation complete",
+  message = "operation corporation: ultimate // v0.8 world map + territory implementation complete",
   save_slot = "operation_corporation_ultimate",
-  next_version = "0.8",
+  next_version = "0.9",
   resources = {
     money = 1520,
     materials = 468,
@@ -3520,7 +3520,7 @@ function loadOperationCorporationExampleProject(){
     intel = 27,
     blueprints = 2,
     recruits = 3,
-    territory_control = 16
+    territory_control = 24
   },
   teams = {
     {name="vanguard", power=17, readiness=88, mission_tags={"combat","assault","secure"}, status="idle"},
@@ -3534,6 +3534,7 @@ function loadOperationCorporationExampleProject(){
       name="port blackout interception",
       type="covert",
       location="north port",
+      region="north port",
       duration=3,
       risk=32,
       risk_outputs={injury=18,detection=42,morale_loss=8,equipment_loss=6,backlash=9},
@@ -3552,6 +3553,7 @@ function loadOperationCorporationExampleProject(){
       name="frontline depot seizure",
       type="combat",
       location="iron valley",
+      region="iron valley",
       duration=4,
       risk=46,
       risk_outputs={injury=31,detection=35,morale_loss=12,equipment_loss=14,backlash=16},
@@ -3570,6 +3572,7 @@ function loadOperationCorporationExampleProject(){
       name="trade corridor stabilization",
       type="economic",
       location="amber coast",
+      region="amber coast",
       duration=2,
       risk=22,
       risk_outputs={injury=8,detection=14,morale_loss=5,equipment_loss=3,backlash=4},
@@ -3588,6 +3591,7 @@ function loadOperationCorporationExampleProject(){
       name="embassy leverage drive",
       type="diplomatic",
       location="capitol ring",
+      region="capitol ring",
       duration=3,
       risk=28,
       risk_outputs={injury=4,detection=20,morale_loss=6,equipment_loss=1,backlash=14},
@@ -3606,11 +3610,12 @@ function loadOperationCorporationExampleProject(){
   selected_support_team = 2,
   selected_mission = 1,
   checklist = {
-    {label="1) mission categories: combat/covert/economic/diplomatic/sabotage/recruitment/extraction", done=true},
-    {label="2) risk outputs: injury/detection/morale/equipment/backlash", done=true},
-    {label="3) expanded rewards: cash/materials/blueprints/recruits/influence/territory gain", done=true},
-    {label="4) optional requirements + recommended gear", done=true},
-    {label="5) support team slots for missions", done=true}
+    {label="1) global map with territories/regions", done=true},
+    {label="2) per-region control percentages", done=true},
+    {label="3) region properties: economy/hostility/stability/resources", done=true},
+    {label="4) missions linked directly to regions", done=true},
+    {label="5) mission results update regional + global control", done=true},
+    {label="6) passive regional benefits from control", done=true}
   },
   roadmap_0_to_6 = {
     "v0.1 core foundation",
@@ -3625,8 +3630,17 @@ function loadOperationCorporationExampleProject(){
     {label="v0.2: employee records + role logic + readiness/power scaffolding", done=true},
     {label="v0.3: departments/levels/passive bonuses/requirement gates", done=true},
     {label="v0.4: training queue + progression/perk placeholders", done=true},
-    {label="v0.5: equipment definitions + loadout/compatibility scaffolding", done=true}
+    {label="v0.5: equipment definitions + loadout/compatibility scaffolding", done=true},
+    {label="v0.6: mission board + assignment/eligibility/resolution baseline", done=true},
+    {label="v0.7: mission categories/risk-reward/support slot depth", done=true}
   },
+  regions = {
+    {id="north port", control=18, economy=62, hostility=71, stability=44, resources=58, passive_bonus={money=5,materials=0,intel=2}},
+    {id="iron valley", control=29, economy=48, hostility=66, stability=52, resources=74, passive_bonus={money=3,materials=4,intel=0}},
+    {id="amber coast", control=24, economy=77, hostility=33, stability=69, resources=46, passive_bonus={money=6,materials=1,intel=1}},
+    {id="capitol ring", control=25, economy=81, hostility=40, stability=63, resources=39, passive_bonus={money=4,materials=0,intel=3}}
+  },
+  selected_region = 1,
   employees = {
     {name="ava stroud", stats={combat=7,intel=6,leadership=5}, traits={"disciplined"}, morale=82, fatigue=16, salary=140, assignment="vanguard", role="leader", certification="assault i", specialization="breach"},
     {name="riven park", stats={combat=5,intel=8,leadership=4}, traits={"stealth"}, morale=88, fatigue=9, salary=132, assignment="specter", role="operator", certification="covert ii", specialization="infiltration"},
@@ -3686,6 +3700,15 @@ function get_mission(idx)
   return campaign.missions[idx or campaign.selected_mission]
 end
 
+function get_region_by_id(region_id)
+  for region in all(campaign.regions) do
+    if region.id == region_id then
+      return region
+    end
+  end
+  return nil
+end
+
 function has_value(list, value)
   for v in all(list) do
     if v == value then return true end
@@ -3740,6 +3763,7 @@ end
 
 function resolve_mission(mission)
   local team = get_team(mission.assigned_team)
+  local region = get_region_by_id(mission.region)
   local score = team.power + math.floor(team.readiness/10) + flr(rnd(8)) - math.floor(mission.risk/12)
 
   local outcome = "failure"
@@ -3757,7 +3781,11 @@ function resolve_mission(mission)
   campaign.resources.blueprints = campaign.resources.blueprints + math.floor(mission.rewards.blueprints * payout)
   campaign.resources.recruits = campaign.resources.recruits + math.floor(mission.rewards.recruits * payout)
   campaign.resources.influence = campaign.resources.influence + math.floor(mission.rewards.influence * payout)
-  campaign.resources.territory_control = campaign.resources.territory_control + math.floor(mission.rewards.territory_gain * payout)
+  local control_gain = math.floor(mission.rewards.territory_gain * payout)
+  campaign.resources.territory_control = clamp(campaign.resources.territory_control + control_gain, 0, 100)
+  if region then
+    region.control = clamp(region.control + control_gain, 0, 100)
+  end
 
   team.status = "idle"
   if mission.support_team > 0 then
@@ -3768,16 +3796,25 @@ function resolve_mission(mission)
   campaign.message = mission.name.." -> "..outcome
 end
 
-function apply_v07_update()
-  campaign.phase = "v0.7 mission depth"
-  campaign.v07_ready = true
+function apply_regional_passive_benefits()
+  for region in all(campaign.regions) do
+    local control_factor = region.control / 100
+    campaign.resources.money = campaign.resources.money + math.floor(region.passive_bonus.money * control_factor)
+    campaign.resources.materials = campaign.resources.materials + math.floor(region.passive_bonus.materials * control_factor)
+    campaign.resources.intel = campaign.resources.intel + math.floor(region.passive_bonus.intel * control_factor)
+  end
 end
 
-function draw_v07_status()
+function apply_v08_update()
+  campaign.phase = "v0.8 world map and territory"
+  campaign.v08_ready = true
+end
+
+function draw_v08_status()
   local y = 88
   rectfill(332,86,470,182,6)
   rect(332,86,470,182,7)
-  print("v0.7 mission depth",8,338,y,10)
+  print("v0.8 world map",8,338,y,10)
   y = y + 12
   for i,item in pairs(campaign.mission_depth_updates) do
     local flag = item.done and "[x] " or "[ ] "
@@ -3788,6 +3825,7 @@ end
 
 function advance_tick()
   campaign.tick = campaign.tick + 1
+  apply_regional_passive_benefits()
   for mission in all(campaign.missions) do
     if mission.state == "active" then
       mission.time_left = mission.time_left - 1
@@ -3802,7 +3840,7 @@ function draw_topbar()
   rectfill(8,8,470,32,2)
   rect(8,8,470,32,7)
   print("operation corporation: ultimate",11,14,14,10)
-  print("v"..campaign.version.." mission depth",9,268,14,7)
+  print("v"..campaign.version.." world map + territory",9,220,14,7)
 end
 
 function draw_nav()
@@ -3852,7 +3890,7 @@ function draw_mission_board()
     local marker = i == campaign.selected_mission and "> " or "  "
     local team_name = m.assigned_team > 0 and campaign.teams[m.assigned_team].name or "none"
     print(marker..m.name,8,178,y,7)
-    print(m.type.." | "..m.location.." | risk "..m.risk.." | t"..m.duration,7,190,y+8,12)
+    print(m.type.." | "..m.region.." | risk "..m.risk.." | t"..m.duration,7,190,y+8,12)
     print("risk i"..m.risk_outputs.injury.." d"..m.risk_outputs.detection.." ml"..m.risk_outputs.morale_loss.." eq"..m.risk_outputs.equipment_loss,7,190,y+16,11)
     print("req p"..m.requirements.min_power.." r"..m.requirements.min_readiness.." | support "..m.support_slots.." | "..m.state.." | team "..team_name,7,190,y+24,11)
     y = y + 44
@@ -3860,6 +3898,16 @@ function draw_mission_board()
 
   draw_btn("mission_prev","mission-",178,212,54,16,6)
   draw_btn("mission_next","mission+",236,212,58,16,6)
+end
+
+function draw_world_map_panel()
+  rectfill(332,186,470,232,5)
+  rect(332,186,470,232,7)
+  print("region control map",8,338,192,10)
+  for i,region in pairs(campaign.regions) do
+    local marker = i == campaign.selected_region and ">" or " "
+    print(marker.." "..region.id.." "..region.control.."%",7,338,198+i*8,11)
+  end
 end
 
 function draw_assignment_panel()
@@ -3920,8 +3968,8 @@ function on_click(mx,my)
 end
 
 function _init()
-  apply_v07_update()
-  campaign.message = "operation corporation: ultimate // v0.7 mission depth implementation complete"
+  apply_v08_update()
+  campaign.message = "operation corporation: ultimate // v0.8 world map + territory implementation complete"
 end
 
 function _update()
@@ -3942,11 +3990,12 @@ function _draw()
 
   draw_teams_panel()
   draw_mission_board()
-  draw_v07_status()
+  draw_v08_status()
+  draw_world_map_panel()
   draw_assignment_panel()
 
-  print("current version: v"..campaign.version.." (mission depth implemented)",9,14,216,12)
-  print("next milestone: v"..campaign.next_version.." world map + territory",9,14,224,12)
+  print("current version: v"..campaign.version.." (world map + territory implemented)",9,14,216,12)
+  print("next milestone: v"..campaign.next_version.." dynamic mission generation",9,14,224,12)
   print(campaign.message,9,14,242,7)
 end`}];
   finalizeExampleProjectLoad();
@@ -4679,7 +4728,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Updated to v0.7 mission depth with expanded mission categories, risk/reward outputs, optional requirements + recommended gear, and support team slots. UI shows current version and next milestone.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Updated to v0.8 world map + territory with region control percentages, economy/hostility/stability/resources properties, missions linked to regions, mission-driven control changes, and passive regional benefits. UI shows current version and next milestone.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
