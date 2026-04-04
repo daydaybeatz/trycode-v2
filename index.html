@@ -3507,46 +3507,53 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
-  version = "0.4",
+  version = "0.5",
   tick = 0,
-  screen = "training",
-  message = "operation corporation: ultimate // v0.4 training and progression",
+  screen = "loadouts",
+  message = "operation corporation: ultimate // v0.5 equipment and loadouts",
   save_slot = "operation_corporation_ultimate",
-  next_version = "0.5",
+  next_version = "0.6",
   resources = {
-    money = 1680,
-    materials = 430,
-    influence = 31,
-    intel = 22,
-    territory_control = 13
+    money = 1520,
+    materials = 468,
+    influence = 35,
+    intel = 27,
+    territory_control = 16
   },
   employees = {
-    {name="amira", role="captain", stats={power=66, tactics=61, resilience=57}, morale=72, fatigue=14, injury=0, recovery=0, level=3, certs={"field command"}, spec="assault", perk_slots=2, perks={"battle rhythm"}},
-    {name="joel", role="analyst", stats={power=43, tactics=74, resilience=48}, morale=68, fatigue=21, injury=0, recovery=0, level=2, certs={"signal intercept"}, spec="intel", perk_slots=2, perks={"signal ghost"}},
-    {name="nina", role="specialist", stats={power=47, tactics=63, resilience=51}, morale=76, fatigue=9, injury=0, recovery=0, level=2, certs={"prototype safety"}, spec="research", perk_slots=1, perks={"rapid notes"}},
-    {name="dax", role="operator", stats={power=58, tactics=55, resilience=62}, morale=65, fatigue=26, injury=6, recovery=2, level=2, certs={"loadmaster"}, spec="logistics", perk_slots=1, perks={"spare parts"}}
+    {name="amira", role="captain", certs={"field command","rifle certified"}, spec="assault"},
+    {name="joel", role="analyst", certs={"signal intercept","drone pilot"}, spec="intel"},
+    {name="nina", role="specialist", certs={"prototype safety","medical response"}, spec="research"},
+    {name="dax", role="operator", certs={"loadmaster","vehicle driver"}, spec="logistics"}
   },
   teams = {
-    {name="vanguard", leader=1, members={1,3,4}, power=0, readiness=0, certs={"rapid deployment"}, spec_unlocks={"breakthrough drill"}, perk_slots=1, perks={"frontline tempo"}},
-    {name="specter", leader=2, members={2}, power=0, readiness=0, certs={"silent network"}, spec_unlocks={"ghost relay"}, perk_slots=1, perks={"intel web"}}
+    {name="vanguard", members={1,3,4}, mission_tags={"combat","assault","secure"},
+      loadout={weapon=0,armor=0,tool=0,transport=0,support=0}},
+    {name="specter", members={2}, mission_tags={"covert","intel","extract"},
+      loadout={weapon=0,armor=0,tool=0,transport=0,support=0}}
   },
-  training_queue = {},
-  selected_employee = 1,
+  items = {
+    {id=1,name="vx carbine", kind="weapon", power=8, defense=0, speed=0, stealth=-1, tags={"combat","assault"}, requires={"rifle certified"}},
+    {id=2,name="ghost smg", kind="weapon", power=6, defense=0, speed=1, stealth=2, tags={"covert","extract"}, requires={"rifle certified"}},
+    {id=3,name="bastion vest", kind="armor", power=0, defense=8, speed=-1, stealth=-1, tags={"combat","secure"}, requires={}},
+    {id=4,name="shadow weave", kind="armor", power=0, defense=4, speed=1, stealth=3, tags={"covert","intel"}, requires={}},
+    {id=5,name="breach kit", kind="tool", power=2, defense=0, speed=0, stealth=-1, tags={"assault","sabotage"}, requires={"loadmaster"}},
+    {id=6,name="signal drone", kind="tool", power=0, defense=0, speed=1, stealth=2, tags={"intel","covert"}, requires={"drone pilot"}},
+    {id=7,name="apc convoy", kind="transport", power=3, defense=4, speed=-1, stealth=-2, tags={"combat","secure"}, requires={"vehicle driver"}},
+    {id=8,name="stealth van", kind="transport", power=0, defense=1, speed=2, stealth=3, tags={"covert","extract"}, requires={"vehicle driver"}},
+    {id=9,name="field medic crate", kind="support", power=0, defense=3, speed=0, stealth=0, tags={"secure","extract"}, requires={"medical response"}},
+    {id=10,name="influence pack", kind="support", power=0, defense=0, speed=1, stealth=1, tags={"intel","diplomatic"}, requires={"field command"}}
+  },
   selected_team = 1,
-  selected_training = 1,
-  selected_perk_target = "employee",
+  selected_slot = 1,
+  selected_item = 1,
+  slots = {"weapon","armor","tool","transport","support"},
   checklist = {
-    {label="1) training queue for employees and teams", done=true},
-    {label="2) stat growth, certifications, specialization unlocks", done=true},
-    {label="3) promotions and leadership bonuses", done=true},
-    {label="4) morale, fatigue, injury, and recovery systems", done=true},
-    {label="5) employee and team perk slots", done=true}
-  },
-  training_options = {
-    {name="combat drill", target="employee", duration=2, growth={power=2,resilience=1}, fatigue=8, cert=nil, spec=nil},
-    {name="intel workshop", target="employee", duration=2, growth={tactics=3}, fatigue=6, cert="data rig cert", spec="intel"},
-    {name="leadership course", target="employee", duration=3, growth={tactics=2,resilience=2}, fatigue=7, cert="field leadership", spec=nil},
-    {name="team war game", target="team", duration=3, team_power=6, team_readiness=7, cert="combined arms", spec="cohesion protocol"}
+    {label="1) item definitions for weapons, armor, tools, transport, support gear", done=true},
+    {label="2) team loadout slots", done=true},
+    {label="3) item stat bonuses and mission tags", done=true},
+    {label="4) equipment compatibility rules", done=true},
+    {label="5) compare/equip/unequip UI flow", done=true}
   }
 }
 
@@ -3570,48 +3577,8 @@ function hit(id,mx,my)
   return b and mx>=b.x and mx<=b.x+b.w and my>=b.y and my<=b.y+b.h
 end
 
-function get_employee()
-  return campaign.employees[campaign.selected_employee]
-end
-
 function get_team()
   return campaign.teams[campaign.selected_team]
-end
-
-function calc_employee_power(e)
-  return e.stats.power + flr(e.stats.tactics/2) + flr(e.stats.resilience/2) + e.level*3
-end
-
-function calc_employee_readiness(e)
-  local base = e.morale - e.fatigue - e.injury + e.recovery
-  return clamp(base, 0, 100)
-end
-
-function recalc_teams()
-  for t in all(campaign.teams) do
-    local total_power = 0
-    local total_readiness = 0
-    for idx in all(t.members) do
-      local e = campaign.employees[idx]
-      if e then
-        total_power = total_power + calc_employee_power(e)
-        total_readiness = total_readiness + calc_employee_readiness(e)
-      end
-    end
-    local size = #t.members
-    if size > 0 then
-      t.power = flr(total_power / size)
-      t.readiness = flr(total_readiness / size)
-    else
-      t.power = 0
-      t.readiness = 0
-    end
-    local leader = campaign.employees[t.leader]
-    if leader then
-      t.power = t.power + leader.level * 2
-      t.readiness = clamp(t.readiness + flr(leader.stats.tactics/15),0,100)
-    end
-  end
 end
 
 function has_value(list, value)
@@ -3621,139 +3588,103 @@ function has_value(list, value)
   return false
 end
 
-function add_training_job()
-  local option = campaign.training_options[campaign.selected_training]
-  local base_cost = 45 + option.duration * 10
-  if campaign.resources.money < base_cost then
-    campaign.message = "blocked: need "..base_cost.." money"
-    return
+function team_has_cert(team, cert)
+  for idx in all(team.members) do
+    local e = campaign.employees[idx]
+    if e and has_value(e.certs, cert) then return true end
   end
-
-  local target_id = campaign.selected_employee
-  if option.target == "team" then target_id = campaign.selected_team end
-
-  add(campaign.training_queue, {
-    option_index = campaign.selected_training,
-    target = option.target,
-    target_id = target_id,
-    remaining = option.duration
-  })
-  campaign.resources.money = campaign.resources.money - base_cost
-  campaign.message = "queued: "..option.name
+  return false
 end
 
-function apply_employee_training(e, option)
-  for key,val in pairs(option.growth) do
-    e.stats[key] = e.stats[key] + val
-  end
-  e.fatigue = clamp(e.fatigue + option.fatigue, 0, 100)
-  e.morale = clamp(e.morale + 2 - flr(option.fatigue/3), 0, 100)
-  if option.cert and not has_value(e.certs, option.cert) then add(e.certs, option.cert) end
-  if option.spec then e.spec = option.spec end
-
-  local total_stats = e.stats.power + e.stats.tactics + e.stats.resilience
-  local new_level = clamp(flr(total_stats / 65), 1, 8)
-  if new_level > e.level then
-    e.level = new_level
-    e.role = "promoted"
-    e.perk_slots = clamp(e.perk_slots + 1, 1, 4)
-    campaign.message = e.name.." promoted to level "..e.level
-  else
-    campaign.message = e.name.." completed "..option.name
-  end
-end
-
-function apply_team_training(t, option)
-  t.power = t.power + option.team_power
-  t.readiness = clamp(t.readiness + option.team_readiness, 0, 100)
-  if option.cert and not has_value(t.certs, option.cert) then add(t.certs, option.cert) end
-  if option.spec and not has_value(t.spec_unlocks, option.spec) then add(t.spec_unlocks, option.spec) end
-  t.perk_slots = clamp(t.perk_slots + 1, 1, 4)
-  campaign.message = t.name.." unlocked "..option.spec
-end
-
-function progress_training()
-  local keep = {}
-  for job in all(campaign.training_queue) do
-    job.remaining = job.remaining - 1
-    if job.remaining <= 0 then
-      local option = campaign.training_options[job.option_index]
-      if option.target == "employee" then
-        local e = campaign.employees[job.target_id]
-        if e then apply_employee_training(e, option) end
-      else
-        local t = campaign.teams[job.target_id]
-        if t then apply_team_training(t, option) end
+function calc_loadout_stats(team)
+  local stats = {power=0, defense=0, speed=0, stealth=0}
+  for _,slot in pairs(campaign.slots) do
+    local item_id = team.loadout[slot]
+    if item_id and item_id > 0 then
+      local item = campaign.items[item_id]
+      if item then
+        stats.power = stats.power + item.power
+        stats.defense = stats.defense + item.defense
+        stats.speed = stats.speed + item.speed
+        stats.stealth = stats.stealth + item.stealth
       end
-    else
-      add(keep, job)
     end
   end
-  campaign.training_queue = keep
+  return stats
 end
 
-function recover_employee(e)
-  if e.recovery > 0 then
-    e.injury = clamp(e.injury - e.recovery, 0, 100)
-  elseif e.injury > 0 then
-    e.injury = clamp(e.injury - 1, 0, 100)
+function item_matches_team(item, team)
+  for tag in all(item.tags) do
+    if has_value(team.mission_tags, tag) then return true end
   end
-  e.fatigue = clamp(e.fatigue - 4, 0, 100)
-  e.morale = clamp(e.morale + 2, 0, 100)
+  return false
+end
+
+function can_equip(team, slot, item)
+  if item.kind ~= slot then return false, "wrong slot" end
+  for cert in all(item.requires) do
+    if not team_has_cert(team, cert) then
+      return false, "missing cert: "..cert
+    end
+  end
+  if not item_matches_team(item, team) then
+    return false, "weak tag match"
+  end
+  return true, "compatible"
+end
+
+function current_slot()
+  return campaign.slots[campaign.selected_slot]
+end
+
+function selected_item()
+  return campaign.items[campaign.selected_item]
+end
+
+function equip_selected()
+  local team = get_team()
+  local slot = current_slot()
+  local item = selected_item()
+  local ok,reason = can_equip(team, slot, item)
+  if not ok then
+    campaign.message = "blocked: "..reason
+    return
+  end
+  team.loadout[slot] = campaign.selected_item
+  campaign.message = "equipped "..item.name.." -> "..team.name
+end
+
+function unequip_selected()
+  local team = get_team()
+  local slot = current_slot()
+  if team.loadout[slot] == 0 then
+    campaign.message = "nothing equipped in "..slot
+    return
+  end
+  team.loadout[slot] = 0
+  campaign.message = "unequipped "..slot.." slot"
 end
 
 function advance_tick()
   campaign.tick = campaign.tick + 1
-  progress_training()
-  for e in all(campaign.employees) do recover_employee(e) end
-  recalc_teams()
   campaign.resources.intel = campaign.resources.intel + 1
   campaign.resources.influence = campaign.resources.influence + 1
-  campaign.message = "tick "..campaign.tick.." complete // training + recovery resolved"
-end
-
-function cycle_perk_target()
-  if campaign.selected_perk_target == "employee" then
-    campaign.selected_perk_target = "team"
-  else
-    campaign.selected_perk_target = "employee"
-  end
-end
-
-function add_perk()
-  if campaign.selected_perk_target == "employee" then
-    local e = get_employee()
-    if #e.perks >= e.perk_slots then
-      campaign.message = "employee perk slots full"
-      return
-    end
-    add(e.perks, "perk "..(#e.perks + 1))
-    campaign.message = e.name.." perk equipped"
-  else
-    local t = get_team()
-    if #t.perks >= t.perk_slots then
-      campaign.message = "team perk slots full"
-      return
-    end
-    add(t.perks, "team perk "..(#t.perks + 1))
-    campaign.message = t.name.." team perk equipped"
-  end
+  campaign.message = "tick "..campaign.tick.." complete // loadouts synced"
 end
 
 function draw_topbar()
   rectfill(8,8,470,32,2)
   rect(8,8,470,32,7)
   print("operation corporation: ultimate",11,14,14,10)
-  print("v"..campaign.version.." training and progression",9,238,14,7)
+  print("v"..campaign.version.." equipment + loadouts",9,238,14,7)
 end
 
 function draw_nav()
-  draw_btn("nav_training", "training", 8, 38, 88, 18, campaign.screen=="training" and 11 or 5)
-  draw_btn("nav_roster", "roster", 100, 38, 72, 18, campaign.screen=="roster" and 11 or 5)
-  draw_btn("nav_perks", "perks", 176, 38, 66, 18, campaign.screen=="perks" and 11 or 5)
-  draw_btn("btn_tick", "advance tick", 246, 38, 84, 18, 8)
-  draw_btn("btn_save", "save", 334, 38, 32, 18, 6)
-  draw_btn("btn_load", "load", 370, 38, 30, 18, 12)
+  draw_btn("nav_loadouts", "loadouts", 8, 38, 72, 18, campaign.screen=="loadouts" and 11 or 5)
+  draw_btn("nav_compare", "compare", 84, 38, 66, 18, campaign.screen=="compare" and 11 or 5)
+  draw_btn("btn_tick", "advance tick", 154, 38, 84, 18, 8)
+  draw_btn("btn_save", "save", 242, 38, 32, 18, 6)
+  draw_btn("btn_load", "load", 278, 38, 30, 18, 12)
 end
 
 function draw_resources()
@@ -3766,82 +3697,77 @@ function draw_resources()
   print("territory "..campaign.resources.territory_control.."%",9,382,66,7)
 end
 
-function draw_training_screen()
-  rectfill(8,86,308,232,3)
-  rect(8,86,308,232,7)
-  print("training plans",10,14,94,10)
-  for i,opt in pairs(campaign.training_options) do
-    local y = 108 + (i-1)*16
-    local marker = (i == campaign.selected_training) and "> " or "  "
-    print(marker..opt.name.." ("..opt.duration.."t)",8,14,y,7)
+function draw_loadouts_screen()
+  local team = get_team()
+  rectfill(8,86,202,232,3)
+  rect(8,86,202,232,7)
+  print("teams",10,14,94,10)
+  for i,t in pairs(campaign.teams) do
+    local marker = i == campaign.selected_team and "> " or "  "
+    print(marker..t.name,8,14,108+(i-1)*14,7)
   end
-  draw_btn("train_prev","opt-",14,212,42,16,6)
-  draw_btn("train_next","opt+",60,212,42,16,6)
-  draw_btn("queue_train","queue",106,212,48,16,8)
+  draw_btn("team_prev","team-",14,212,42,16,6)
+  draw_btn("team_next","team+",60,212,42,16,6)
 
-  rectfill(312,86,470,232,4)
-  rect(312,86,470,232,7)
-  print("queue",10,318,94,10)
-  if #campaign.training_queue == 0 then
-    print("no active training",8,318,110,12)
-  else
-    for i,job in pairs(campaign.training_queue) do
-      local opt = campaign.training_options[job.option_index]
-      local target_name = "team"
-      if job.target == "employee" then target_name = campaign.employees[job.target_id].name else target_name = campaign.teams[job.target_id].name end
-      print(i..") "..opt.name,8,318,108+(i-1)*16,7)
-      print(target_name.." // "..job.remaining.."t",8,318,116+(i-1)*16,12)
-    end
+  rectfill(206,86,336,232,4)
+  rect(206,86,336,232,7)
+  print("slots",10,212,94,10)
+  for i,slot in pairs(campaign.slots) do
+    local marker = i == campaign.selected_slot and "> " or "  "
+    local item_id = team.loadout[slot]
+    local label = item_id > 0 and campaign.items[item_id].name or "empty"
+    print(marker..slot..": "..label,8,212,108+(i-1)*14,7)
   end
+  draw_btn("slot_prev","slot-",212,212,42,16,6)
+  draw_btn("slot_next","slot+",258,212,42,16,6)
+
+  rectfill(340,86,470,232,3)
+  rect(340,86,470,232,7)
+  print("item browser",10,346,94,10)
+  local item = selected_item()
+  print(item.name,8,346,108,7)
+  print(item.kind.." // tags "..#item.tags,8,346,122,12)
+  print("pow "..item.power.." def "..item.defense,8,346,136,7)
+  print("spd "..item.speed.." stl "..item.stealth,8,346,150,7)
+  draw_btn("item_prev","item-",346,212,42,16,6)
+  draw_btn("item_next","item+",392,212,42,16,6)
 end
 
-function draw_roster_screen()
-  local e = get_employee()
-  local t = get_team()
-  rectfill(8,86,308,232,3)
-  rect(8,86,308,232,7)
-  print("employees",10,14,94,10)
-  for i,emp in pairs(campaign.employees) do
-    local y = 108 + (i-1)*14
-    local marker = (i == campaign.selected_employee) and "> " or "  "
-    print(marker..emp.name.." lv"..emp.level.." "..emp.spec,8,14,y,7)
-  end
-  draw_btn("emp_prev","emp-",14,212,42,16,6)
-  draw_btn("emp_next","emp+",60,212,42,16,6)
+function draw_compare_screen()
+  local team = get_team()
+  local slot = current_slot()
+  local item = selected_item()
+  local current_id = team.loadout[slot]
+  local current = current_id > 0 and campaign.items[current_id] or nil
+  local before = calc_loadout_stats(team)
 
-  rectfill(312,86,470,232,4)
-  rect(312,86,470,232,7)
-  print("status",10,318,94,10)
-  print(e.name.." // "..e.role,9,318,108,7)
-  print("pow "..e.stats.power.." tac "..e.stats.tactics.." res "..e.stats.resilience,9,318,122,7)
-  print("morale "..e.morale.." fatigue "..e.fatigue,9,318,136,7)
-  print("injury "..e.injury.." recovery "..e.recovery,9,318,150,7)
-  print("certs "..#e.certs.." perks "..#e.perks.."/"..e.perk_slots,9,318,164,7)
-  print("team "..t.name.." p"..t.power.." r"..t.readiness,9,318,178,12)
-  draw_btn("team_prev","team-",318,212,48,16,6)
-  draw_btn("team_next","team+",370,212,48,16,6)
-end
+  local fake = {name=team.name, members=team.members, mission_tags=team.mission_tags, loadout={
+    weapon=team.loadout.weapon, armor=team.loadout.armor, tool=team.loadout.tool, transport=team.loadout.transport, support=team.loadout.support
+  }}
+  fake.loadout[slot] = campaign.selected_item
+  local after = calc_loadout_stats(fake)
+  local ok,reason = can_equip(team, slot, item)
 
-function draw_perk_screen()
-  local e = get_employee()
-  local t = get_team()
   rectfill(8,86,470,232,3)
   rect(8,86,470,232,7)
-  print("perk slots and unlocks",10,14,94,10)
-  print("employee "..e.name.." perks "..#e.perks.."/"..e.perk_slots,9,14,112,7)
-  for i,p in pairs(e.perks) do print("- "..p,8,24,124+(i-1)*12,11) end
-  print("team "..t.name.." perks "..#t.perks.."/"..t.perk_slots,9,240,112,7)
-  for i,p in pairs(t.perks) do print("- "..p,8,250,124+(i-1)*12,12) end
-  print("team certs: "..#t.certs.." // specs: "..#t.spec_unlocks,9,14,198,7)
-  print("target: "..campaign.selected_perk_target,9,14,212,10)
-  draw_btn("perk_target","switch target",130,208,78,16,6)
-  draw_btn("perk_add","equip perk",212,208,62,16,8)
+  print("compare / equip flow",10,14,94,10)
+  print("team: "..team.name.." // slot: "..slot,9,14,110,7)
+  print("equipped: "..(current and current.name or "empty"),8,14,124,12)
+  print("candidate: "..item.name,8,14,138,7)
+  print("compatibility: "..reason,8,14,152,ok and 11 or 8)
+  print("power "..before.power.." -> "..after.power,8,14,168,7)
+  print("def "..before.defense.." -> "..after.defense,8,14,180,7)
+  print("speed "..before.speed.." -> "..after.speed,8,14,192,7)
+  print("stealth "..before.stealth.." -> "..after.stealth,8,14,204,7)
+
+  draw_btn("equip","equip",280,208,54,16,ok and 8 or 5)
+  draw_btn("unequip","unequip",338,208,62,16,6)
 end
 
 function draw_status()
   rectfill(8,236,470,264,4)
   rect(8,236,470,264,7)
-  print("v0.4 complete. next milestone: v"..campaign.next_version.." equipment and loadouts",9,14,242,12)
+  print("v0.5 complete. next milestone: v"..campaign.next_version.." missions base",9,14,242,12)
   print(campaign.message,9,14,252,7)
 end
 
@@ -3873,37 +3799,32 @@ function load_campaign()
 end
 
 function on_click(mx,my)
-  if hit("nav_training",mx,my) then campaign.screen = "training" end
-  if hit("nav_roster",mx,my) then campaign.screen = "roster" end
-  if hit("nav_perks",mx,my) then campaign.screen = "perks" end
+  if hit("nav_loadouts",mx,my) then campaign.screen = "loadouts" end
+  if hit("nav_compare",mx,my) then campaign.screen = "compare" end
   if hit("btn_tick",mx,my) then advance_tick() end
   if hit("btn_save",mx,my) then save_campaign() end
   if hit("btn_load",mx,my) then load_campaign() end
 
-  if hit("train_prev",mx,my) then campaign.selected_training = clamp(campaign.selected_training-1,1,#campaign.training_options) end
-  if hit("train_next",mx,my) then campaign.selected_training = clamp(campaign.selected_training+1,1,#campaign.training_options) end
-  if hit("queue_train",mx,my) then add_training_job() end
-
-  if hit("emp_prev",mx,my) then campaign.selected_employee = clamp(campaign.selected_employee-1,1,#campaign.employees) end
-  if hit("emp_next",mx,my) then campaign.selected_employee = clamp(campaign.selected_employee+1,1,#campaign.employees) end
   if hit("team_prev",mx,my) then campaign.selected_team = clamp(campaign.selected_team-1,1,#campaign.teams) end
   if hit("team_next",mx,my) then campaign.selected_team = clamp(campaign.selected_team+1,1,#campaign.teams) end
+  if hit("slot_prev",mx,my) then campaign.selected_slot = clamp(campaign.selected_slot-1,1,#campaign.slots) end
+  if hit("slot_next",mx,my) then campaign.selected_slot = clamp(campaign.selected_slot+1,1,#campaign.slots) end
+  if hit("item_prev",mx,my) then campaign.selected_item = clamp(campaign.selected_item-1,1,#campaign.items) end
+  if hit("item_next",mx,my) then campaign.selected_item = clamp(campaign.selected_item+1,1,#campaign.items) end
 
-  if hit("perk_target",mx,my) then cycle_perk_target() end
-  if hit("perk_add",mx,my) then add_perk() end
+  if hit("equip",mx,my) then equip_selected() end
+  if hit("unequip",mx,my) then unequip_selected() end
 end
 
 function _init()
-  recalc_teams()
-  campaign.message = "operation corporation: ultimate // v0.4 training and progression complete"
+  campaign.message = "operation corporation: ultimate // v0.5 equipment and loadouts complete"
 end
 
 function _update()
   local mx,my,mb,mbr = mouse()
   if (mbr & 1) ~= 0 then on_click(mx,my) end
-  if keyp("1") then campaign.screen = "training" end
-  if keyp("2") then campaign.screen = "roster" end
-  if keyp("3") then campaign.screen = "perks" end
+  if keyp("1") then campaign.screen = "loadouts" end
+  if keyp("2") then campaign.screen = "compare" end
   if keyp("space") then advance_tick() end
 end
 
@@ -3914,9 +3835,8 @@ function _draw()
   draw_nav()
   draw_resources()
 
-  if campaign.screen == "training" then draw_training_screen() end
-  if campaign.screen == "roster" then draw_roster_screen() end
-  if campaign.screen == "perks" then draw_perk_screen() end
+  if campaign.screen == "loadouts" then draw_loadouts_screen() end
+  if campaign.screen == "compare" then draw_compare_screen() end
 
   draw_status()
 end`}];
@@ -4650,7 +4570,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.4 training and progression systems with employee/team training queues, stat growth, certifications, specialization unlocks, promotions with leadership bonuses, morale/fatigue/injury/recovery loops, and perk slot management. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.5 equipment and loadouts systems with item definitions (weapons/armor/tools/transport/support), team loadout slots, item stat bonuses + mission tags, compatibility checks, and compare/equip/unequip UI flow. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
