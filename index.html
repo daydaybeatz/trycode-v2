@@ -3507,47 +3507,46 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
-  version = "0.3",
+  version = "0.4",
   tick = 0,
-  screen = "departments",
-  message = "operation corporation: ultimate // v0.3 department system",
+  screen = "training",
+  message = "operation corporation: ultimate // v0.4 training and progression",
   save_slot = "operation_corporation_ultimate",
-  next_version = "0.4",
+  next_version = "0.5",
   resources = {
-    money = 1720,
-    materials = 460,
-    influence = 26,
-    intel = 19,
-    territory_control = 11
+    money = 1680,
+    materials = 430,
+    influence = 31,
+    intel = 22,
+    territory_control = 13
   },
   employees = {
-    {name="amira", assignment="military"},
-    {name="joel", assignment="intelligence"},
-    {name="nina", assignment="research"},
-    {name="dax", assignment="logistics"},
-    {name="irene", assignment="manufacturing"},
-    {name="omar", assignment="finance"},
-    {name="luca", assignment="diplomacy"},
-    {name="skye", assignment="military"}
+    {name="amira", role="captain", stats={power=66, tactics=61, resilience=57}, morale=72, fatigue=14, injury=0, recovery=0, level=3, certs={"field command"}, spec="assault", perk_slots=2, perks={"battle rhythm"}},
+    {name="joel", role="analyst", stats={power=43, tactics=74, resilience=48}, morale=68, fatigue=21, injury=0, recovery=0, level=2, certs={"signal intercept"}, spec="intel", perk_slots=2, perks={"signal ghost"}},
+    {name="nina", role="specialist", stats={power=47, tactics=63, resilience=51}, morale=76, fatigue=9, injury=0, recovery=0, level=2, certs={"prototype safety"}, spec="research", perk_slots=1, perks={"rapid notes"}},
+    {name="dax", role="operator", stats={power=58, tactics=55, resilience=62}, morale=65, fatigue=26, injury=6, recovery=2, level=2, certs={"loadmaster"}, spec="logistics", perk_slots=1, perks={"spare parts"}}
   },
-  departments = {
-    military = {name="Military", level=1, progress=42, staff=0, upgrades=1, bonus="+8 team combat power", requirement="combat missions lv2"},
-    intelligence = {name="Intelligence", level=1, progress=38, staff=0, upgrades=0, bonus="+7 intel gain", requirement="covert ops lv2"},
-    research = {name="Research", level=1, progress=55, staff=0, upgrades=1, bonus="+6 research speed", requirement="advanced prototypes lv2"},
-    logistics = {name="Logistics", level=1, progress=33, staff=0, upgrades=0, bonus="-5% mission duration", requirement="long-range deployments lv2"},
-    manufacturing = {name="Manufacturing", level=1, progress=46, staff=0, upgrades=1, bonus="+8 item output", requirement="tier-2 production lv2"},
-    finance = {name="Finance", level=1, progress=29, staff=0, upgrades=0, bonus="+10 passive money", requirement="enterprise contracts lv2"},
-    diplomacy = {name="Diplomacy", level=1, progress=35, staff=0, upgrades=0, bonus="+6 influence gain", requirement="regional treaties lv2"}
+  teams = {
+    {name="vanguard", leader=1, members={1,3,4}, power=0, readiness=0, certs={"rapid deployment"}, spec_unlocks={"breakthrough drill"}, perk_slots=1, perks={"frontline tempo"}},
+    {name="specter", leader=2, members={2}, power=0, readiness=0, certs={"silent network"}, spec_unlocks={"ghost relay"}, perk_slots=1, perks={"intel web"}}
   },
-  department_order = {"military","intelligence","research","logistics","manufacturing","finance","diplomacy"},
-  selected_department = 1,
+  training_queue = {},
   selected_employee = 1,
+  selected_team = 1,
+  selected_training = 1,
+  selected_perk_target = "employee",
   checklist = {
-    {label="1) departments: military, intelligence, research, logistics, manufacturing, finance, diplomacy", done=true},
-    {label="2) department levels and progress", done=true},
-    {label="3) passive department bonuses", done=true},
-    {label="4) requirement gates tied to department levels", done=true},
-    {label="5) level depends on assigned staff and upgrades", done=true}
+    {label="1) training queue for employees and teams", done=true},
+    {label="2) stat growth, certifications, specialization unlocks", done=true},
+    {label="3) promotions and leadership bonuses", done=true},
+    {label="4) morale, fatigue, injury, and recovery systems", done=true},
+    {label="5) employee and team perk slots", done=true}
+  },
+  training_options = {
+    {name="combat drill", target="employee", duration=2, growth={power=2,resilience=1}, fatigue=8, cert=nil, spec=nil},
+    {name="intel workshop", target="employee", duration=2, growth={tactics=3}, fatigue=6, cert="data rig cert", spec="intel"},
+    {name="leadership course", target="employee", duration=3, growth={tactics=2,resilience=2}, fatigue=7, cert="field leadership", spec=nil},
+    {name="team war game", target="team", duration=3, team_power=6, team_readiness=7, cert="combined arms", spec="cohesion protocol"}
   }
 }
 
@@ -3571,111 +3570,190 @@ function hit(id,mx,my)
   return b and mx>=b.x and mx<=b.x+b.w and my>=b.y and my<=b.y+b.h
 end
 
-function get_department_key()
-  return campaign.department_order[campaign.selected_department]
+function get_employee()
+  return campaign.employees[campaign.selected_employee]
 end
 
-function get_department()
-  return campaign.departments[get_department_key()]
+function get_team()
+  return campaign.teams[campaign.selected_team]
 end
 
-function recalc_department_staff()
-  for k,d in pairs(campaign.departments) do
-    d.staff = 0
-    for e in all(campaign.employees) do
-      if e.assignment == k then d.staff = d.staff + 1 end
+function calc_employee_power(e)
+  return e.stats.power + flr(e.stats.tactics/2) + flr(e.stats.resilience/2) + e.level*3
+end
+
+function calc_employee_readiness(e)
+  local base = e.morale - e.fatigue - e.injury + e.recovery
+  return clamp(base, 0, 100)
+end
+
+function recalc_teams()
+  for t in all(campaign.teams) do
+    local total_power = 0
+    local total_readiness = 0
+    for idx in all(t.members) do
+      local e = campaign.employees[idx]
+      if e then
+        total_power = total_power + calc_employee_power(e)
+        total_readiness = total_readiness + calc_employee_readiness(e)
+      end
+    end
+    local size = #t.members
+    if size > 0 then
+      t.power = flr(total_power / size)
+      t.readiness = flr(total_readiness / size)
+    else
+      t.power = 0
+      t.readiness = 0
+    end
+    local leader = campaign.employees[t.leader]
+    if leader then
+      t.power = t.power + leader.level * 2
+      t.readiness = clamp(t.readiness + flr(leader.stats.tactics/15),0,100)
     end
   end
 end
 
-function recalc_department_level(d)
-  local points = d.staff * 24 + d.upgrades * 30 + d.progress
-  d.level = clamp(flr(points / 100) + 1, 1, 6)
-end
-
-function recalc_departments()
-  recalc_department_staff()
-  for key in all(campaign.department_order) do
-    recalc_department_level(campaign.departments[key])
+function has_value(list, value)
+  for v in all(list) do
+    if v == value then return true end
   end
+  return false
 end
 
-function department_gate_text(d)
-  if d.level >= 2 then
-    return "unlocked: "..d.requirement
-  end
-  return "locked until level 2: "..d.requirement
-end
-
-function assign_employee(step)
-  local e = campaign.employees[campaign.selected_employee]
-  if e == nil then return end
-  local pos = 1
-  for i,key in pairs(campaign.department_order) do
-    if e.assignment == key then pos = i end
-  end
-  pos = pos + step
-  if pos < 1 then pos = #campaign.department_order end
-  if pos > #campaign.department_order then pos = 1 end
-  e.assignment = campaign.department_order[pos]
-  campaign.message = e.name.." reassigned -> "..campaign.departments[e.assignment].name
-  recalc_departments()
-end
-
-function invest_progress()
-  local d = get_department()
-  local spend = 30
-  if campaign.resources.money < spend then
-    campaign.message = "blocked: need "..spend.." money"
+function add_training_job()
+  local option = campaign.training_options[campaign.selected_training]
+  local base_cost = 45 + option.duration * 10
+  if campaign.resources.money < base_cost then
+    campaign.message = "blocked: need "..base_cost.." money"
     return
   end
-  campaign.resources.money = campaign.resources.money - spend
-  d.progress = clamp(d.progress + 18 + d.staff*2 + d.upgrades*4, 0, 300)
-  recalc_department_level(d)
-  campaign.message = d.name.." progress +"..(18 + d.staff*2 + d.upgrades*4)
+
+  local target_id = campaign.selected_employee
+  if option.target == "team" then target_id = campaign.selected_team end
+
+  add(campaign.training_queue, {
+    option_index = campaign.selected_training,
+    target = option.target,
+    target_id = target_id,
+    remaining = option.duration
+  })
+  campaign.resources.money = campaign.resources.money - base_cost
+  campaign.message = "queued: "..option.name
 end
 
-function buy_upgrade()
-  local d = get_department()
-  local cost = 120 + d.upgrades * 60
-  if campaign.resources.materials < cost then
-    campaign.message = "blocked: need "..cost.." materials"
-    return
+function apply_employee_training(e, option)
+  for key,val in pairs(option.growth) do
+    e.stats[key] = e.stats[key] + val
   end
-  campaign.resources.materials = campaign.resources.materials - cost
-  d.upgrades = d.upgrades + 1
-  d.progress = d.progress + 12
-  recalc_department_level(d)
-  campaign.message = d.name.." upgrade purchased"
+  e.fatigue = clamp(e.fatigue + option.fatigue, 0, 100)
+  e.morale = clamp(e.morale + 2 - flr(option.fatigue/3), 0, 100)
+  if option.cert and not has_value(e.certs, option.cert) then add(e.certs, option.cert) end
+  if option.spec then e.spec = option.spec end
+
+  local total_stats = e.stats.power + e.stats.tactics + e.stats.resilience
+  local new_level = clamp(flr(total_stats / 65), 1, 8)
+  if new_level > e.level then
+    e.level = new_level
+    e.role = "promoted"
+    e.perk_slots = clamp(e.perk_slots + 1, 1, 4)
+    campaign.message = e.name.." promoted to level "..e.level
+  else
+    campaign.message = e.name.." completed "..option.name
+  end
+end
+
+function apply_team_training(t, option)
+  t.power = t.power + option.team_power
+  t.readiness = clamp(t.readiness + option.team_readiness, 0, 100)
+  if option.cert and not has_value(t.certs, option.cert) then add(t.certs, option.cert) end
+  if option.spec and not has_value(t.spec_unlocks, option.spec) then add(t.spec_unlocks, option.spec) end
+  t.perk_slots = clamp(t.perk_slots + 1, 1, 4)
+  campaign.message = t.name.." unlocked "..option.spec
+end
+
+function progress_training()
+  local keep = {}
+  for job in all(campaign.training_queue) do
+    job.remaining = job.remaining - 1
+    if job.remaining <= 0 then
+      local option = campaign.training_options[job.option_index]
+      if option.target == "employee" then
+        local e = campaign.employees[job.target_id]
+        if e then apply_employee_training(e, option) end
+      else
+        local t = campaign.teams[job.target_id]
+        if t then apply_team_training(t, option) end
+      end
+    else
+      add(keep, job)
+    end
+  end
+  campaign.training_queue = keep
+end
+
+function recover_employee(e)
+  if e.recovery > 0 then
+    e.injury = clamp(e.injury - e.recovery, 0, 100)
+  elseif e.injury > 0 then
+    e.injury = clamp(e.injury - 1, 0, 100)
+  end
+  e.fatigue = clamp(e.fatigue - 4, 0, 100)
+  e.morale = clamp(e.morale + 2, 0, 100)
 end
 
 function advance_tick()
   campaign.tick = campaign.tick + 1
-  for key in all(campaign.department_order) do
-    local d = campaign.departments[key]
-    d.progress = clamp(d.progress + 2 + d.staff + d.upgrades*2, 0, 300)
-    recalc_department_level(d)
+  progress_training()
+  for e in all(campaign.employees) do recover_employee(e) end
+  recalc_teams()
+  campaign.resources.intel = campaign.resources.intel + 1
+  campaign.resources.influence = campaign.resources.influence + 1
+  campaign.message = "tick "..campaign.tick.." complete // training + recovery resolved"
+end
+
+function cycle_perk_target()
+  if campaign.selected_perk_target == "employee" then
+    campaign.selected_perk_target = "team"
+  else
+    campaign.selected_perk_target = "employee"
   end
-  campaign.resources.money = campaign.resources.money + campaign.departments.finance.level * 10
-  campaign.resources.intel = campaign.resources.intel + campaign.departments.intelligence.level
-  campaign.resources.influence = campaign.resources.influence + campaign.departments.diplomacy.level
-  campaign.message = "tick "..campaign.tick.." complete // passive bonuses applied"
+end
+
+function add_perk()
+  if campaign.selected_perk_target == "employee" then
+    local e = get_employee()
+    if #e.perks >= e.perk_slots then
+      campaign.message = "employee perk slots full"
+      return
+    end
+    add(e.perks, "perk "..(#e.perks + 1))
+    campaign.message = e.name.." perk equipped"
+  else
+    local t = get_team()
+    if #t.perks >= t.perk_slots then
+      campaign.message = "team perk slots full"
+      return
+    end
+    add(t.perks, "team perk "..(#t.perks + 1))
+    campaign.message = t.name.." team perk equipped"
+  end
 end
 
 function draw_topbar()
   rectfill(8,8,470,32,2)
   rect(8,8,470,32,7)
   print("operation corporation: ultimate",11,14,14,10)
-  print("v"..campaign.version.." department system",9,288,14,7)
+  print("v"..campaign.version.." training and progression",9,238,14,7)
 end
 
 function draw_nav()
-  draw_btn("nav_departments", "departments", 8, 38, 106, 18, campaign.screen=="departments" and 11 or 5)
-  draw_btn("nav_staff", "staffing", 118, 38, 86, 18, campaign.screen=="staff" and 11 or 5)
-  draw_btn("nav_gates", "requirements", 208, 38, 104, 18, campaign.screen=="gates" and 11 or 5)
-  draw_btn("btn_tick", "advance tick", 316, 38, 84, 18, 8)
-  draw_btn("btn_save", "save", 404, 38, 32, 18, 6)
-  draw_btn("btn_load", "load", 440, 38, 30, 18, 12)
+  draw_btn("nav_training", "training", 8, 38, 88, 18, campaign.screen=="training" and 11 or 5)
+  draw_btn("nav_roster", "roster", 100, 38, 72, 18, campaign.screen=="roster" and 11 or 5)
+  draw_btn("nav_perks", "perks", 176, 38, 66, 18, campaign.screen=="perks" and 11 or 5)
+  draw_btn("btn_tick", "advance tick", 246, 38, 84, 18, 8)
+  draw_btn("btn_save", "save", 334, 38, 32, 18, 6)
+  draw_btn("btn_load", "load", 370, 38, 30, 18, 12)
 end
 
 function draw_resources()
@@ -3688,70 +3766,82 @@ function draw_resources()
   print("territory "..campaign.resources.territory_control.."%",9,382,66,7)
 end
 
-function draw_departments_screen()
-  rectfill(8,86,312,232,3)
-  rect(8,86,312,232,7)
-  print("department ladder",10,14,94,10)
-  for i,key in pairs(campaign.department_order) do
-    local d = campaign.departments[key]
+function draw_training_screen()
+  rectfill(8,86,308,232,3)
+  rect(8,86,308,232,7)
+  print("training plans",10,14,94,10)
+  for i,opt in pairs(campaign.training_options) do
     local y = 108 + (i-1)*16
-    local marker = (i == campaign.selected_department) and "> " or "  "
-    print(marker..d.name.." lv"..d.level.." p"..d.progress.." st"..d.staff.." up"..d.upgrades,8,14,y,7)
+    local marker = (i == campaign.selected_training) and "> " or "  "
+    print(marker..opt.name.." ("..opt.duration.."t)",8,14,y,7)
   end
+  draw_btn("train_prev","opt-",14,212,42,16,6)
+  draw_btn("train_next","opt+",60,212,42,16,6)
+  draw_btn("queue_train","queue",106,212,48,16,8)
 
-  local d = get_department()
-  rectfill(316,86,470,232,4)
-  rect(316,86,470,232,7)
-  print(d.name,10,322,94,10)
-  print("level "..d.level.."  progress "..d.progress,9,322,108,7)
-  print("staff "..d.staff.."  upgrades "..d.upgrades,9,322,120,7)
-  print("bonus: ",9,322,136,7)
-  print(d.bonus,8,322,147,7)
-  print(department_gate_text(d),8,322,163,12)
-  draw_btn("dept_prev","dept-",322,196,48,16,6)
-  draw_btn("dept_next","dept+",374,196,48,16,6)
-  draw_btn("invest","invest",322,216,48,16,8)
-  draw_btn("upgrade","upgrade",374,216,66,16,9)
+  rectfill(312,86,470,232,4)
+  rect(312,86,470,232,7)
+  print("queue",10,318,94,10)
+  if #campaign.training_queue == 0 then
+    print("no active training",8,318,110,12)
+  else
+    for i,job in pairs(campaign.training_queue) do
+      local opt = campaign.training_options[job.option_index]
+      local target_name = "team"
+      if job.target == "employee" then target_name = campaign.employees[job.target_id].name else target_name = campaign.teams[job.target_id].name end
+      print(i..") "..opt.name,8,318,108+(i-1)*16,7)
+      print(target_name.." // "..job.remaining.."t",8,318,116+(i-1)*16,12)
+    end
+  end
 end
 
-function draw_staff_screen()
-  rectfill(8,86,470,232,3)
-  rect(8,86,470,232,7)
-  print("staff assignment",10,14,94,10)
-  for i,e in pairs(campaign.employees) do
+function draw_roster_screen()
+  local e = get_employee()
+  local t = get_team()
+  rectfill(8,86,308,232,3)
+  rect(8,86,308,232,7)
+  print("employees",10,14,94,10)
+  for i,emp in pairs(campaign.employees) do
     local y = 108 + (i-1)*14
     local marker = (i == campaign.selected_employee) and "> " or "  "
-    print(marker..e.name.." -> "..campaign.departments[e.assignment].name,8,14,y,7)
+    print(marker..emp.name.." lv"..emp.level.." "..emp.spec,8,14,y,7)
   end
-  local e = campaign.employees[campaign.selected_employee]
-  if e then
-    print("selected: "..e.name,9,14,214,7)
-    print("dept: "..campaign.departments[e.assignment].name,9,14,226,7)
-  end
-  draw_btn("emp_prev","emp-",274,212,42,16,6)
-  draw_btn("emp_next","emp+",320,212,42,16,6)
-  draw_btn("emp_dept_prev","dept-",366,212,48,16,6)
-  draw_btn("emp_dept_next","dept+",418,212,48,16,6)
+  draw_btn("emp_prev","emp-",14,212,42,16,6)
+  draw_btn("emp_next","emp+",60,212,42,16,6)
+
+  rectfill(312,86,470,232,4)
+  rect(312,86,470,232,7)
+  print("status",10,318,94,10)
+  print(e.name.." // "..e.role,9,318,108,7)
+  print("pow "..e.stats.power.." tac "..e.stats.tactics.." res "..e.stats.resilience,9,318,122,7)
+  print("morale "..e.morale.." fatigue "..e.fatigue,9,318,136,7)
+  print("injury "..e.injury.." recovery "..e.recovery,9,318,150,7)
+  print("certs "..#e.certs.." perks "..#e.perks.."/"..e.perk_slots,9,318,164,7)
+  print("team "..t.name.." p"..t.power.." r"..t.readiness,9,318,178,12)
+  draw_btn("team_prev","team-",318,212,48,16,6)
+  draw_btn("team_next","team+",370,212,48,16,6)
 end
 
-function draw_gates_screen()
+function draw_perk_screen()
+  local e = get_employee()
+  local t = get_team()
   rectfill(8,86,470,232,3)
   rect(8,86,470,232,7)
-  print("requirement gates",10,14,94,10)
-  for i,key in pairs(campaign.department_order) do
-    local d = campaign.departments[key]
-    local y = 110 + (i-1)*17
-    local gate = department_gate_text(d)
-    local gate_col = d.level >= 2 and 11 or 8
-    print(d.name.." lv"..d.level,9,14,y,7)
-    print(gate,8,150,y,gate_col)
-  end
+  print("perk slots and unlocks",10,14,94,10)
+  print("employee "..e.name.." perks "..#e.perks.."/"..e.perk_slots,9,14,112,7)
+  for i,p in pairs(e.perks) do print("- "..p,8,24,124+(i-1)*12,11) end
+  print("team "..t.name.." perks "..#t.perks.."/"..t.perk_slots,9,240,112,7)
+  for i,p in pairs(t.perks) do print("- "..p,8,250,124+(i-1)*12,12) end
+  print("team certs: "..#t.certs.." // specs: "..#t.spec_unlocks,9,14,198,7)
+  print("target: "..campaign.selected_perk_target,9,14,212,10)
+  draw_btn("perk_target","switch target",130,208,78,16,6)
+  draw_btn("perk_add","equip perk",212,208,62,16,8)
 end
 
 function draw_status()
   rectfill(8,236,470,264,4)
   rect(8,236,470,264,7)
-  print("v0.3 complete. next milestone: v"..campaign.next_version.." training and progression",9,14,242,12)
+  print("v0.4 complete. next milestone: v"..campaign.next_version.." equipment and loadouts",9,14,242,12)
   print(campaign.message,9,14,252,7)
 end
 
@@ -3783,35 +3873,37 @@ function load_campaign()
 end
 
 function on_click(mx,my)
-  if hit("nav_departments",mx,my) then campaign.screen = "departments" end
-  if hit("nav_staff",mx,my) then campaign.screen = "staff" end
-  if hit("nav_gates",mx,my) then campaign.screen = "gates" end
+  if hit("nav_training",mx,my) then campaign.screen = "training" end
+  if hit("nav_roster",mx,my) then campaign.screen = "roster" end
+  if hit("nav_perks",mx,my) then campaign.screen = "perks" end
   if hit("btn_tick",mx,my) then advance_tick() end
   if hit("btn_save",mx,my) then save_campaign() end
   if hit("btn_load",mx,my) then load_campaign() end
 
-  if hit("dept_prev",mx,my) then campaign.selected_department = clamp(campaign.selected_department-1,1,#campaign.department_order) end
-  if hit("dept_next",mx,my) then campaign.selected_department = clamp(campaign.selected_department+1,1,#campaign.department_order) end
-  if hit("invest",mx,my) then invest_progress() end
-  if hit("upgrade",mx,my) then buy_upgrade() end
+  if hit("train_prev",mx,my) then campaign.selected_training = clamp(campaign.selected_training-1,1,#campaign.training_options) end
+  if hit("train_next",mx,my) then campaign.selected_training = clamp(campaign.selected_training+1,1,#campaign.training_options) end
+  if hit("queue_train",mx,my) then add_training_job() end
 
   if hit("emp_prev",mx,my) then campaign.selected_employee = clamp(campaign.selected_employee-1,1,#campaign.employees) end
   if hit("emp_next",mx,my) then campaign.selected_employee = clamp(campaign.selected_employee+1,1,#campaign.employees) end
-  if hit("emp_dept_prev",mx,my) then assign_employee(-1) end
-  if hit("emp_dept_next",mx,my) then assign_employee(1) end
+  if hit("team_prev",mx,my) then campaign.selected_team = clamp(campaign.selected_team-1,1,#campaign.teams) end
+  if hit("team_next",mx,my) then campaign.selected_team = clamp(campaign.selected_team+1,1,#campaign.teams) end
+
+  if hit("perk_target",mx,my) then cycle_perk_target() end
+  if hit("perk_add",mx,my) then add_perk() end
 end
 
 function _init()
-  recalc_departments()
-  campaign.message = "operation corporation: ultimate // v0.3 department system complete"
+  recalc_teams()
+  campaign.message = "operation corporation: ultimate // v0.4 training and progression complete"
 end
 
 function _update()
   local mx,my,mb,mbr = mouse()
   if (mbr & 1) ~= 0 then on_click(mx,my) end
-  if keyp("1") then campaign.screen = "departments" end
-  if keyp("2") then campaign.screen = "staff" end
-  if keyp("3") then campaign.screen = "gates" end
+  if keyp("1") then campaign.screen = "training" end
+  if keyp("2") then campaign.screen = "roster" end
+  if keyp("3") then campaign.screen = "perks" end
   if keyp("space") then advance_tick() end
 end
 
@@ -3822,9 +3914,9 @@ function _draw()
   draw_nav()
   draw_resources()
 
-  if campaign.screen == "departments" then draw_departments_screen() end
-  if campaign.screen == "staff" then draw_staff_screen() end
-  if campaign.screen == "gates" then draw_gates_screen() end
+  if campaign.screen == "training" then draw_training_screen() end
+  if campaign.screen == "roster" then draw_roster_screen() end
+  if campaign.screen == "perks" then draw_perk_screen() end
 
   draw_status()
 end`}];
@@ -4558,7 +4650,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.3 department system with Military, Intelligence, Research, Logistics, Manufacturing, Finance, and Diplomacy departments, level/progress tracking, passive bonuses, level-gated requirements, and staff + upgrade driven progression. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.4 training and progression systems with employee/team training queues, stat growth, certifications, specialization unlocks, promotions with leadership bonuses, morale/fatigue/injury/recovery loops, and perk slot management. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
