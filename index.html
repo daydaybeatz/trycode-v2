@@ -3569,7 +3569,33 @@ function loadOperationCorporationExampleProject(){
   repeatable_count = 0,
   target_total_missions = 120,
   max_open_missions = 7,
-  message = "command network online"
+  message = "command network online",
+  version = "1.0",
+  roadmap_status = {
+    ["0.1"]="implemented",
+    ["0.2"]="implemented",
+    ["0.3"]="implemented",
+    ["0.4"]="implemented",
+    ["0.5"]="implemented",
+    ["0.6"]="implemented",
+    ["0.7"]="implemented",
+    ["0.8"]="implemented",
+    ["0.9"]="implemented",
+    ["1.0"]="implemented"
+  },
+  research = {
+    categories = {"military","intelligence","research","logistics","manufacturing","finance","diplomacy"},
+    nodes = {
+      {id="T1",name="precision logistics",category="logistics",tier=1,cost=40,ticks=3,staff_type="analyst",requirements={department="logistics",level=2,materials=40,prior=""},reward="team recovery +3",unlock="upgrade"},
+      {id="T2",name="shadow relay",category="intelligence",tier=1,cost=55,ticks=4,staff_type="operative",requirements={department="intelligence",level=2,materials=55,prior=""},reward="covert risk -4",unlock="ability"},
+      {id="T3",name="rapid prototype lab",category="research",tier=2,cost=80,ticks=5,staff_type="scientist",requirements={department="research",level=2,materials=80,prior="T1"},reward="unlock prototype blueprints",unlock="blueprint"},
+      {id="T4",name="diplomatic influence web",category="diplomacy",tier=2,cost=65,ticks=4,staff_type="analyst",requirements={department="diplomacy",level=2,materials=65,prior="T2"},reward="new diplomatic mission access",unlock="mission_access"}
+    },
+    completed = {},
+    active = {node_id="",ticks_left=0,staff=0},
+    queue = {"T1","T2","T3"},
+    assigned_staff = {scientist=2,analyst=2,operative=1}
+  }
 }
 
 buttons = {}
@@ -3631,6 +3657,93 @@ function mission_eligibility(team, mission)
   end
   if not matches then return false, "missing mission tags" end
   return true, "eligible"
+end
+
+function research_node_by_id(node_id)
+  for node in all(campaign.research.nodes) do
+    if node.id == node_id then return node end
+  end
+  return nil
+end
+
+function research_completed(node_id)
+  return campaign.research.completed[node_id] == true
+end
+
+function research_requirements(node)
+  local req = node.requirements
+  if campaign.departments[req.department].level < req.level then
+    return false, "needs "..req.department.." lv"..req.level
+  end
+  if campaign.resources.materials < req.materials then
+    return false, "needs "..req.materials.." materials"
+  end
+  if req.prior ~= "" and not research_completed(req.prior) then
+    return false, "requires "..req.prior
+  end
+  if (campaign.research.assigned_staff[node.staff_type] or 0) <= 0 then
+    return false, "needs "..node.staff_type.." staff"
+  end
+  return true, "research ready"
+end
+
+function start_research(node_id)
+  local active = campaign.research.active
+  if active.node_id ~= "" then
+    campaign.message = "research busy"
+    return
+  end
+  local node = research_node_by_id(node_id)
+  if node == nil then
+    campaign.message = "unknown node"
+    return
+  end
+  if research_completed(node.id) then
+    campaign.message = node.id.." already complete"
+    return
+  end
+  local ok, reason = research_requirements(node)
+  if not ok then
+    campaign.message = "research blocked: "..reason
+    return
+  end
+  campaign.resources.materials = campaign.resources.materials - node.requirements.materials
+  active.node_id = node.id
+  active.ticks_left = node.ticks
+  active.staff = campaign.research.assigned_staff[node.staff_type] or 0
+  campaign.message = "research started: "..node.name
+end
+
+function finish_research(node)
+  campaign.research.completed[node.id] = true
+  campaign.research.active = {node_id="",ticks_left=0,staff=0}
+  campaign.resources.intel = campaign.resources.intel + 2
+  if node.unlock == "blueprint" then
+    campaign.resources.blueprints = campaign.resources.blueprints + 1
+  elseif node.unlock == "mission_access" then
+    campaign.max_open_missions = campaign.max_open_missions + 1
+  elseif node.unlock == "upgrade" then
+    for t in all(campaign.teams) do t.readiness = clamp(t.readiness + 3, 0, 100) end
+  elseif node.unlock == "ability" then
+    campaign.resources.influence = campaign.resources.influence + 3
+  end
+  campaign.message = "research complete: "..node.name
+end
+
+function process_research_tick()
+  local active = campaign.research.active
+  if active.node_id == "" then
+    if #campaign.research.queue > 0 then
+      start_research(campaign.research.queue[1])
+      deli(campaign.research.queue, 1)
+    end
+    return
+  end
+  active.ticks_left = active.ticks_left - 1
+  if active.ticks_left <= 0 then
+    local node = research_node_by_id(active.node_id)
+    if node ~= nil then finish_research(node) end
+  end
 end
 
 function make_repeatable_mission(template, region)
@@ -3821,6 +3934,7 @@ function advance_tick()
   for research in all(campaign.research_queue) do
     if research.ticks_left > 0 then research.ticks_left = research.ticks_left - 1 end
   end
+  process_research_tick()
 
   for mission in all(campaign.missions) do
     if mission.state == "active" then
@@ -3945,32 +4059,68 @@ end
 function draw_rd_screen()
   rectfill(8,86,470,232,5)
   rect(8,86,470,232,7)
-  print("r&d + strategic feed",10,14,94,10)
+  print("r&d core v"..campaign.version,10,14,94,10)
 
   local y = 108
-  print("active research",8,14,y,10)
+  print("active research projects",8,14,y,10)
   y = y + 12
-  for i,item in pairs(campaign.research_queue) do
-    print(item.name.." ("..item.ticks_left.."t)",7,16,y,11)
+  local active = campaign.research.active
+  if active.node_id ~= "" then
+    local node = research_node_by_id(active.node_id)
+    if node then
+      print(node.id.." "..node.name.." ("..active.ticks_left.."t)",7,16,y,11)
+      y = y + 10
+      print("staff assigned: "..active.staff,7,16,y,11)
+      y = y + 10
+      print("unlock: "..node.reward,7,16,y,12)
+    end
+  else
+    print("none (auto-start from queue)",7,16,y,8)
     y = y + 10
   end
 
   y = y + 8
-  print("training",8,14,y,10)
+  print("research queue",8,14,y,10)
   y = y + 12
-  for i,item in pairs(campaign.training_queue) do
-    print(item.target..": "..item.focus.." ("..item.ticks_left.."t)",7,16,y,11)
+  for i,node_id in pairs(campaign.research.queue) do
+    local node = research_node_by_id(node_id)
+    if node ~= nil then
+      local ok, reason = research_requirements(node)
+      print(node.id.." "..node.name.." ["..(ok and "ready" or reason).."]",7,16,y,11)
+      y = y + 10
+    end
+    if i >= 3 then break end
+  end
+  if #campaign.research.queue == 0 then
+    print("queue empty",7,16,y,8)
     y = y + 10
   end
 
+  draw_btn("rd_start", "start queued", 14, 206, 78, 16, 8)
+
   rectfill(250,96,462,222,6)
   rect(250,96,462,222,7)
-  print("mission pipeline",8,258,104,10)
-  print("authored: "..campaign.authored_count,7,258,118,11)
-  print("repeatable: "..campaign.repeatable_count,7,258,130,11)
-  print("regional: "..campaign.generated_count,7,258,142,11)
-  print("catalog target: "..campaign.target_total_missions.."+",7,258,154,11)
-  print("active pool: "..#campaign.missions,7,258,166,11)
+  print("version checklist",8,258,104,10)
+  local vy = 116
+  for i=1,10 do
+    local key = "0."..i
+    if i == 10 then key = "1.0" end
+    print(key..": "..campaign.roadmap_status[key],7,258,vy,11)
+    vy = vy + 10
+  end
+  print("v1.1+ : not implemented yet",7,258,vy+4,8)
+  vy = vy + 16
+  print("mission pipeline",8,258,vy,10)
+  vy = vy + 12
+  print("authored: "..campaign.authored_count,7,258,vy,11)
+  vy = vy + 12
+  print("repeatable: "..campaign.repeatable_count,7,258,vy,11)
+  vy = vy + 12
+  print("regional: "..campaign.generated_count,7,258,vy,11)
+  vy = vy + 12
+  print("catalog target: "..campaign.target_total_missions.."+",7,258,vy,11)
+  vy = vy + 12
+  print("active pool: "..#campaign.missions,7,258,vy,11)
 end
 
 function on_click(mx,my)
@@ -3981,6 +4131,10 @@ function on_click(mx,my)
   if hit("btn_tick",mx,my) then advance_tick() end
   if hit("btn_save",mx,my) then save_campaign() end
   if hit("btn_load",mx,my) then load_campaign() end
+  if hit("rd_start",mx,my) and #campaign.research.queue > 0 then
+    start_research(campaign.research.queue[1])
+    deli(campaign.research.queue, 1)
+  end
 
   if hit("team_prev",mx,my) then campaign.selected_team = clamp(campaign.selected_team-1,1,#campaign.teams) end
   if hit("team_next",mx,my) then campaign.selected_team = clamp(campaign.selected_team+1,1,#campaign.teams) end
@@ -4759,7 +4913,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Strategic campaign command sim with shared state across Teams, Missions, and R&D. Includes dynamic mission generation with authored progression, repeatable templates, region-driven contracts, mission chains, and a large scalable mission catalog.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Strategic campaign command sim now documented at Version 1.0: foundation through 0.9 plus research categories, tech nodes, requirements, queue, and staff assignment. Roadmap panel marks v1.1+ as not implemented yet.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
