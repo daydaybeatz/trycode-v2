@@ -3507,17 +3507,19 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
-  version = "0.69",
+  version = "0.7",
   tick = 0,
   screen = "missions",
-  message = "operation corporation: ultimate // v0.69 pre6 implementation complete",
+  message = "operation corporation: ultimate // v0.7 mission depth implementation complete",
   save_slot = "operation_corporation_ultimate",
-  next_version = "0.7",
+  next_version = "0.8",
   resources = {
     money = 1520,
     materials = 468,
     influence = 35,
     intel = 27,
+    blueprints = 2,
+    recruits = 3,
     territory_control = 16
   },
   teams = {
@@ -3525,6 +3527,7 @@ function loadOperationCorporationExampleProject(){
     {name="specter", power=14, readiness=93, mission_tags={"covert","intel","extract"}, status="idle"},
     {name="atlas", power=11, readiness=79, mission_tags={"economic","logistics","secure"}, status="idle"}
   },
+  mission_categories = {"combat","covert","economic","diplomatic","sabotage","recruitment","extraction"},
   missions = {
     {
       id=1,
@@ -3533,9 +3536,14 @@ function loadOperationCorporationExampleProject(){
       location="north port",
       duration=3,
       risk=32,
-      rewards={money=180,materials=20,influence=2,intel=5,territory_control=1},
+      risk_outputs={injury=18,detection=42,morale_loss=8,equipment_loss=6,backlash=9},
+      rewards={cash=180,materials=20,blueprints=1,recruits=0,influence=2,territory_gain=1},
       requirements={min_power=12,min_readiness=85,tags={"covert","intel"}},
+      optional_requirements={intel_floor=24,night_op=true},
+      recommended_gear={"s_drone_support","w_knife_mk2"},
+      support_slots=1,
       assigned_team=0,
+      support_team=0,
       state="open",
       time_left=0
     },
@@ -3546,9 +3554,14 @@ function loadOperationCorporationExampleProject(){
       location="iron valley",
       duration=4,
       risk=46,
-      rewards={money=260,materials=55,influence=3,intel=1,territory_control=3},
+      risk_outputs={injury=31,detection=35,morale_loss=12,equipment_loss=14,backlash=16},
+      rewards={cash=260,materials=55,blueprints=0,recruits=1,influence=3,territory_gain=3},
       requirements={min_power=15,min_readiness=80,tags={"combat","assault"}},
+      optional_requirements={armor_tier=2,heavy_support=true},
+      recommended_gear={"a_plate_light","t_field_kit"},
+      support_slots=1,
       assigned_team=0,
+      support_team=0,
       state="open",
       time_left=0
     },
@@ -3559,21 +3572,45 @@ function loadOperationCorporationExampleProject(){
       location="amber coast",
       duration=2,
       risk=22,
-      rewards={money=140,materials=25,influence=4,intel=1,territory_control=2},
+      risk_outputs={injury=8,detection=14,morale_loss=5,equipment_loss=3,backlash=4},
+      rewards={cash=140,materials=25,blueprints=0,recruits=1,influence=4,territory_gain=2},
       requirements={min_power=10,min_readiness=75,tags={"economic","logistics","secure"}},
+      optional_requirements={market_reputation=40,local_contacts=true},
+      recommended_gear={"t_field_kit"},
+      support_slots=1,
       assigned_team=0,
+      support_team=0,
+      state="open",
+      time_left=0
+    },
+    {
+      id=4,
+      name="embassy leverage drive",
+      type="diplomatic",
+      location="capitol ring",
+      duration=3,
+      risk=28,
+      risk_outputs={injury=4,detection=20,morale_loss=6,equipment_loss=1,backlash=14},
+      rewards={cash=110,materials=12,blueprints=0,recruits=0,influence=7,territory_gain=1},
+      requirements={min_power=11,min_readiness=78,tags={"intel","secure"}},
+      optional_requirements={diplomacy_level=2,intel_floor=20},
+      recommended_gear={"s_drone_support"},
+      support_slots=2,
+      assigned_team=0,
+      support_team=0,
       state="open",
       time_left=0
     }
   },
   selected_team = 1,
+  selected_support_team = 2,
   selected_mission = 1,
   checklist = {
-    {label="1) mission data structure: type, location, duration, risk, rewards, requirements", done=true},
-    {label="2) mission board UI", done=true},
-    {label="3) team assignment to missions", done=true},
-    {label="4) mission eligibility checks", done=true},
-    {label="5) basic mission resolution with success, partial success, failure", done=true}
+    {label="1) mission categories: combat/covert/economic/diplomatic/sabotage/recruitment/extraction", done=true},
+    {label="2) risk outputs: injury/detection/morale/equipment/backlash", done=true},
+    {label="3) expanded rewards: cash/materials/blueprints/recruits/influence/territory gain", done=true},
+    {label="4) optional requirements + recommended gear", done=true},
+    {label="5) support team slots for missions", done=true}
   },
   roadmap_0_to_6 = {
     "v0.1 core foundation",
@@ -3583,7 +3620,7 @@ function loadOperationCorporationExampleProject(){
     "v0.5 equipment and loadouts",
     "v0.6 missions base"
   },
-  pre6_updates = {
+  mission_depth_updates = {
     {label="v0.1: persistent state + nav/resources/save-load/tick coverage", done=true},
     {label="v0.2: employee records + role logic + readiness/power scaffolding", done=true},
     {label="v0.3: departments/levels/passive bonuses/requirement gates", done=true},
@@ -3691,9 +3728,13 @@ function assign_selected_team_to_selected_mission()
     return
   end
   mission.assigned_team = campaign.selected_team
+  mission.support_team = campaign.selected_support_team
   mission.state = "active"
   mission.time_left = mission.duration
   team.status = "deployed"
+  if mission.support_slots > 0 and campaign.selected_support_team ~= campaign.selected_team then
+    campaign.teams[campaign.selected_support_team].status = "support"
+  end
   campaign.message = team.name.." assigned -> "..mission.name
 end
 
@@ -3711,30 +3752,34 @@ function resolve_mission(mission)
     payout = 0.62
   end
 
-  campaign.resources.money = campaign.resources.money + math.floor(mission.rewards.money * payout)
+  campaign.resources.money = campaign.resources.money + math.floor(mission.rewards.cash * payout)
   campaign.resources.materials = campaign.resources.materials + math.floor(mission.rewards.materials * payout)
+  campaign.resources.blueprints = campaign.resources.blueprints + math.floor(mission.rewards.blueprints * payout)
+  campaign.resources.recruits = campaign.resources.recruits + math.floor(mission.rewards.recruits * payout)
   campaign.resources.influence = campaign.resources.influence + math.floor(mission.rewards.influence * payout)
-  campaign.resources.intel = campaign.resources.intel + math.floor(mission.rewards.intel * payout)
-  campaign.resources.territory_control = campaign.resources.territory_control + math.floor(mission.rewards.territory_control * payout)
+  campaign.resources.territory_control = campaign.resources.territory_control + math.floor(mission.rewards.territory_gain * payout)
 
   team.status = "idle"
+  if mission.support_team > 0 then
+    campaign.teams[mission.support_team].status = "idle"
+  end
   team.readiness = clamp(team.readiness - math.floor(mission.risk/6) + 3, 45, 100)
   mission.state = "resolved"
   campaign.message = mission.name.." -> "..outcome
 end
 
-function apply_pre6_update()
-  campaign.phase = "v0.69 pre6 implementation"
-  campaign.pre6_ready = true
+function apply_v07_update()
+  campaign.phase = "v0.7 mission depth"
+  campaign.v07_ready = true
 end
 
-function draw_pre6_status()
+function draw_v07_status()
   local y = 88
   rectfill(332,86,470,182,6)
   rect(332,86,470,182,7)
-  print("pre6 update",8,338,y,10)
+  print("v0.7 mission depth",8,338,y,10)
   y = y + 12
-  for i,item in pairs(campaign.pre6_updates) do
+  for i,item in pairs(campaign.mission_depth_updates) do
     local flag = item.done and "[x] " or "[ ] "
     print(flag..i,7,338,y,11)
     y = y + 12
@@ -3757,7 +3802,7 @@ function draw_topbar()
   rectfill(8,8,470,32,2)
   rect(8,8,470,32,7)
   print("operation corporation: ultimate",11,14,14,10)
-  print("v"..campaign.version.." pre6 + missions base",9,246,14,7)
+  print("v"..campaign.version.." mission depth",9,268,14,7)
 end
 
 function draw_nav()
@@ -3773,11 +3818,13 @@ end
 function draw_resources()
   rectfill(8,58,470,82,1)
   rect(8,58,470,82,7)
-  print("money "..campaign.resources.money,9,14,66,7)
-  print("materials "..campaign.resources.materials,9,108,66,7)
-  print("influence "..campaign.resources.influence,9,210,66,7)
-  print("intel "..campaign.resources.intel,9,312,66,7)
-  print("territory "..campaign.resources.territory_control.."%",9,382,66,7)
+  print("cash "..campaign.resources.money,9,14,66,7)
+  print("materials "..campaign.resources.materials,9,96,66,7)
+  print("influence "..campaign.resources.influence,9,190,66,7)
+  print("intel "..campaign.resources.intel,9,274,66,7)
+  print("blueprints "..campaign.resources.blueprints,9,332,66,7)
+  print("recruits "..campaign.resources.recruits,9,14,74,7)
+  print("territory "..campaign.resources.territory_control.."%",9,110,74,7)
 end
 
 function draw_teams_panel()
@@ -3791,6 +3838,8 @@ function draw_teams_panel()
   end
   draw_btn("team_prev","team-",14,212,42,16,6)
   draw_btn("team_next","team+",60,212,42,16,6)
+  draw_btn("support_prev","sup-",106,212,34,16,6)
+  draw_btn("support_next","sup+",144,212,34,16,6)
 end
 
 function draw_mission_board()
@@ -3804,8 +3853,9 @@ function draw_mission_board()
     local team_name = m.assigned_team > 0 and campaign.teams[m.assigned_team].name or "none"
     print(marker..m.name,8,178,y,7)
     print(m.type.." | "..m.location.." | risk "..m.risk.." | t"..m.duration,7,190,y+8,12)
-    print("req p"..m.requirements.min_power.." r"..m.requirements.min_readiness.." | "..m.state.." | team "..team_name,7,190,y+16,11)
-    y = y + 36
+    print("risk i"..m.risk_outputs.injury.." d"..m.risk_outputs.detection.." ml"..m.risk_outputs.morale_loss.." eq"..m.risk_outputs.equipment_loss,7,190,y+16,11)
+    print("req p"..m.requirements.min_power.." r"..m.requirements.min_readiness.." | support "..m.support_slots.." | "..m.state.." | team "..team_name,7,190,y+24,11)
+    y = y + 44
   end
 
   draw_btn("mission_prev","mission-",178,212,54,16,6)
@@ -3819,8 +3869,10 @@ function draw_assignment_panel()
 
   rectfill(8,236,470,264,4)
   rect(8,236,470,264,7)
-  print("selected team: "..team.name.." -> selected mission: "..mission.name,9,14,242,12)
-  print("eligibility: "..reason,9,14,252,ok and 11 or 8)
+  local support = campaign.teams[campaign.selected_support_team]
+  print("selected team: "..team.name.." + support: "..support.name,9,14,242,12)
+  print("mission: "..mission.name.." | optional req + gear shown on board",9,14,252,7)
+  print("eligibility: "..reason,9,14,260,ok and 11 or 8)
 end
 
 function save_campaign()
@@ -3861,13 +3913,15 @@ function on_click(mx,my)
 
   if hit("team_prev",mx,my) then campaign.selected_team = clamp(campaign.selected_team-1,1,#campaign.teams) end
   if hit("team_next",mx,my) then campaign.selected_team = clamp(campaign.selected_team+1,1,#campaign.teams) end
+  if hit("support_prev",mx,my) then campaign.selected_support_team = clamp(campaign.selected_support_team-1,1,#campaign.teams) end
+  if hit("support_next",mx,my) then campaign.selected_support_team = clamp(campaign.selected_support_team+1,1,#campaign.teams) end
   if hit("mission_prev",mx,my) then campaign.selected_mission = clamp(campaign.selected_mission-1,1,#campaign.missions) end
   if hit("mission_next",mx,my) then campaign.selected_mission = clamp(campaign.selected_mission+1,1,#campaign.missions) end
 end
 
 function _init()
-  apply_pre6_update()
-  campaign.message = "operation corporation: ultimate // v0.69 pre6 implementation complete"
+  apply_v07_update()
+  campaign.message = "operation corporation: ultimate // v0.7 mission depth implementation complete"
 end
 
 function _update()
@@ -3888,11 +3942,11 @@ function _draw()
 
   draw_teams_panel()
   draw_mission_board()
-  draw_pre6_status()
+  draw_v07_status()
   draw_assignment_panel()
 
-  print("current version: v"..campaign.version.." (pre6 implemented)",9,14,224,12)
-  print("next milestone: v"..campaign.next_version.." mission depth",9,14,232,12)
+  print("current version: v"..campaign.version.." (mission depth implemented)",9,14,216,12)
+  print("next milestone: v"..campaign.next_version.." world map + territory",9,14,224,12)
   print(campaign.message,9,14,242,7)
 end`}];
   finalizeExampleProjectLoad();
@@ -4625,7 +4679,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Updated to v0.69 with a pre6 implementation pass covering missing v0.1-v0.5 systems (campaign foundation, teams/personnel scaffolding, departments, training/progression, equipment/loadouts) plus the full v0.6 missions base flow. UI shows current version and next milestone.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Updated to v0.7 mission depth with expanded mission categories, risk/reward outputs, optional requirements + recommended gear, and support team slots. UI shows current version and next milestone.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
