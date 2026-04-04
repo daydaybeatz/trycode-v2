@@ -3507,12 +3507,12 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
-  version = "0.5",
+  version = "0.6",
   tick = 0,
-  screen = "loadouts",
-  message = "operation corporation: ultimate // v0.5 equipment and loadouts",
+  screen = "missions",
+  message = "operation corporation: ultimate // v0.6 missions base",
   save_slot = "operation_corporation_ultimate",
-  next_version = "0.6",
+  next_version = "0.7",
   resources = {
     money = 1520,
     materials = 468,
@@ -3520,40 +3520,60 @@ function loadOperationCorporationExampleProject(){
     intel = 27,
     territory_control = 16
   },
-  employees = {
-    {name="amira", role="captain", certs={"field command","rifle certified"}, spec="assault"},
-    {name="joel", role="analyst", certs={"signal intercept","drone pilot"}, spec="intel"},
-    {name="nina", role="specialist", certs={"prototype safety","medical response"}, spec="research"},
-    {name="dax", role="operator", certs={"loadmaster","vehicle driver"}, spec="logistics"}
-  },
   teams = {
-    {name="vanguard", members={1,3,4}, mission_tags={"combat","assault","secure"},
-      loadout={weapon=0,armor=0,tool=0,transport=0,support=0}},
-    {name="specter", members={2}, mission_tags={"covert","intel","extract"},
-      loadout={weapon=0,armor=0,tool=0,transport=0,support=0}}
+    {name="vanguard", power=17, readiness=88, mission_tags={"combat","assault","secure"}, status="idle"},
+    {name="specter", power=14, readiness=93, mission_tags={"covert","intel","extract"}, status="idle"},
+    {name="atlas", power=11, readiness=79, mission_tags={"economic","logistics","secure"}, status="idle"}
   },
-  items = {
-    {id=1,name="vx carbine", kind="weapon", power=8, defense=0, speed=0, stealth=-1, tags={"combat","assault"}, requires={"rifle certified"}},
-    {id=2,name="ghost smg", kind="weapon", power=6, defense=0, speed=1, stealth=2, tags={"covert","extract"}, requires={"rifle certified"}},
-    {id=3,name="bastion vest", kind="armor", power=0, defense=8, speed=-1, stealth=-1, tags={"combat","secure"}, requires={}},
-    {id=4,name="shadow weave", kind="armor", power=0, defense=4, speed=1, stealth=3, tags={"covert","intel"}, requires={}},
-    {id=5,name="breach kit", kind="tool", power=2, defense=0, speed=0, stealth=-1, tags={"assault","sabotage"}, requires={"loadmaster"}},
-    {id=6,name="signal drone", kind="tool", power=0, defense=0, speed=1, stealth=2, tags={"intel","covert"}, requires={"drone pilot"}},
-    {id=7,name="apc convoy", kind="transport", power=3, defense=4, speed=-1, stealth=-2, tags={"combat","secure"}, requires={"vehicle driver"}},
-    {id=8,name="stealth van", kind="transport", power=0, defense=1, speed=2, stealth=3, tags={"covert","extract"}, requires={"vehicle driver"}},
-    {id=9,name="field medic crate", kind="support", power=0, defense=3, speed=0, stealth=0, tags={"secure","extract"}, requires={"medical response"}},
-    {id=10,name="influence pack", kind="support", power=0, defense=0, speed=1, stealth=1, tags={"intel","diplomatic"}, requires={"field command"}}
+  missions = {
+    {
+      id=1,
+      name="port blackout interception",
+      type="covert",
+      location="north port",
+      duration=3,
+      risk=32,
+      rewards={money=180,materials=20,influence=2,intel=5,territory_control=1},
+      requirements={min_power=12,min_readiness=85,tags={"covert","intel"}},
+      assigned_team=0,
+      state="open",
+      time_left=0
+    },
+    {
+      id=2,
+      name="frontline depot seizure",
+      type="combat",
+      location="iron valley",
+      duration=4,
+      risk=46,
+      rewards={money=260,materials=55,influence=3,intel=1,territory_control=3},
+      requirements={min_power=15,min_readiness=80,tags={"combat","assault"}},
+      assigned_team=0,
+      state="open",
+      time_left=0
+    },
+    {
+      id=3,
+      name="trade corridor stabilization",
+      type="economic",
+      location="amber coast",
+      duration=2,
+      risk=22,
+      rewards={money=140,materials=25,influence=4,intel=1,territory_control=2},
+      requirements={min_power=10,min_readiness=75,tags={"economic","logistics","secure"}},
+      assigned_team=0,
+      state="open",
+      time_left=0
+    }
   },
   selected_team = 1,
-  selected_slot = 1,
-  selected_item = 1,
-  slots = {"weapon","armor","tool","transport","support"},
+  selected_mission = 1,
   checklist = {
-    {label="1) item definitions for weapons, armor, tools, transport, support gear", done=true},
-    {label="2) team loadout slots", done=true},
-    {label="3) item stat bonuses and mission tags", done=true},
-    {label="4) equipment compatibility rules", done=true},
-    {label="5) compare/equip/unequip UI flow", done=true}
+    {label="1) mission data structure: type, location, duration, risk, rewards, requirements", done=true},
+    {label="2) mission board UI", done=true},
+    {label="3) team assignment to missions", done=true},
+    {label="4) mission eligibility checks", done=true},
+    {label="5) basic mission resolution with success, partial success, failure", done=true}
   }
 }
 
@@ -3577,8 +3597,12 @@ function hit(id,mx,my)
   return b and mx>=b.x and mx<=b.x+b.w and my>=b.y and my<=b.y+b.h
 end
 
-function get_team()
-  return campaign.teams[campaign.selected_team]
+function get_team(idx)
+  return campaign.teams[idx or campaign.selected_team]
+end
+
+function get_mission(idx)
+  return campaign.missions[idx or campaign.selected_mission]
 end
 
 function has_value(list, value)
@@ -3588,103 +3612,100 @@ function has_value(list, value)
   return false
 end
 
-function team_has_cert(team, cert)
-  for idx in all(team.members) do
-    local e = campaign.employees[idx]
-    if e and has_value(e.certs, cert) then return true end
-  end
-  return false
-end
-
-function calc_loadout_stats(team)
-  local stats = {power=0, defense=0, speed=0, stealth=0}
-  for _,slot in pairs(campaign.slots) do
-    local item_id = team.loadout[slot]
-    if item_id and item_id > 0 then
-      local item = campaign.items[item_id]
-      if item then
-        stats.power = stats.power + item.power
-        stats.defense = stats.defense + item.defense
-        stats.speed = stats.speed + item.speed
-        stats.stealth = stats.stealth + item.stealth
-      end
-    end
-  end
-  return stats
-end
-
-function item_matches_team(item, team)
-  for tag in all(item.tags) do
+function team_matches_required_tags(team, mission)
+  for tag in all(mission.requirements.tags) do
     if has_value(team.mission_tags, tag) then return true end
   end
   return false
 end
 
-function can_equip(team, slot, item)
-  if item.kind ~= slot then return false, "wrong slot" end
-  for cert in all(item.requires) do
-    if not team_has_cert(team, cert) then
-      return false, "missing cert: "..cert
-    end
+function mission_eligibility(team, mission)
+  if mission.state ~= "open" then
+    return false, "mission unavailable"
   end
-  if not item_matches_team(item, team) then
-    return false, "weak tag match"
+  if team.status ~= "idle" then
+    return false, "team busy"
   end
-  return true, "compatible"
+  if team.power < mission.requirements.min_power then
+    return false, "power too low"
+  end
+  if team.readiness < mission.requirements.min_readiness then
+    return false, "readiness too low"
+  end
+  if not team_matches_required_tags(team, mission) then
+    return false, "missing mission tags"
+  end
+  return true, "eligible"
 end
 
-function current_slot()
-  return campaign.slots[campaign.selected_slot]
-end
-
-function selected_item()
-  return campaign.items[campaign.selected_item]
-end
-
-function equip_selected()
+function assign_selected_team_to_selected_mission()
   local team = get_team()
-  local slot = current_slot()
-  local item = selected_item()
-  local ok,reason = can_equip(team, slot, item)
+  local mission = get_mission()
+  local ok, reason = mission_eligibility(team, mission)
   if not ok then
-    campaign.message = "blocked: "..reason
+    campaign.message = "assignment blocked: "..reason
     return
   end
-  team.loadout[slot] = campaign.selected_item
-  campaign.message = "equipped "..item.name.." -> "..team.name
+  mission.assigned_team = campaign.selected_team
+  mission.state = "active"
+  mission.time_left = mission.duration
+  team.status = "deployed"
+  campaign.message = team.name.." assigned -> "..mission.name
 end
 
-function unequip_selected()
-  local team = get_team()
-  local slot = current_slot()
-  if team.loadout[slot] == 0 then
-    campaign.message = "nothing equipped in "..slot
-    return
+function resolve_mission(mission)
+  local team = get_team(mission.assigned_team)
+  local score = team.power + math.floor(team.readiness/10) + flr(rnd(8)) - math.floor(mission.risk/12)
+
+  local outcome = "failure"
+  local payout = 0.45
+  if score >= 22 then
+    outcome = "success"
+    payout = 1
+  elseif score >= 16 then
+    outcome = "partial success"
+    payout = 0.62
   end
-  team.loadout[slot] = 0
-  campaign.message = "unequipped "..slot.." slot"
+
+  campaign.resources.money = campaign.resources.money + math.floor(mission.rewards.money * payout)
+  campaign.resources.materials = campaign.resources.materials + math.floor(mission.rewards.materials * payout)
+  campaign.resources.influence = campaign.resources.influence + math.floor(mission.rewards.influence * payout)
+  campaign.resources.intel = campaign.resources.intel + math.floor(mission.rewards.intel * payout)
+  campaign.resources.territory_control = campaign.resources.territory_control + math.floor(mission.rewards.territory_control * payout)
+
+  team.status = "idle"
+  team.readiness = clamp(team.readiness - math.floor(mission.risk/6) + 3, 45, 100)
+  mission.state = "resolved"
+  campaign.message = mission.name.." -> "..outcome
 end
 
 function advance_tick()
   campaign.tick = campaign.tick + 1
-  campaign.resources.intel = campaign.resources.intel + 1
-  campaign.resources.influence = campaign.resources.influence + 1
-  campaign.message = "tick "..campaign.tick.." complete // loadouts synced"
+  for mission in all(campaign.missions) do
+    if mission.state == "active" then
+      mission.time_left = mission.time_left - 1
+      if mission.time_left <= 0 then
+        resolve_mission(mission)
+      end
+    end
+  end
 end
 
 function draw_topbar()
   rectfill(8,8,470,32,2)
   rect(8,8,470,32,7)
   print("operation corporation: ultimate",11,14,14,10)
-  print("v"..campaign.version.." equipment + loadouts",9,238,14,7)
+  print("v"..campaign.version.." missions base",9,290,14,7)
 end
 
 function draw_nav()
-  draw_btn("nav_loadouts", "loadouts", 8, 38, 72, 18, campaign.screen=="loadouts" and 11 or 5)
-  draw_btn("nav_compare", "compare", 84, 38, 66, 18, campaign.screen=="compare" and 11 or 5)
-  draw_btn("btn_tick", "advance tick", 154, 38, 84, 18, 8)
-  draw_btn("btn_save", "save", 242, 38, 32, 18, 6)
-  draw_btn("btn_load", "load", 278, 38, 30, 18, 12)
+  draw_btn("nav_teams", "teams", 8, 38, 56, 18, campaign.screen=="teams" and 11 or 5)
+  draw_btn("nav_missions", "missions", 68, 38, 72, 18, campaign.screen=="missions" and 11 or 5)
+  draw_btn("nav_rd", "r&d", 144, 38, 46, 18, campaign.screen=="rd" and 11 or 5)
+  draw_btn("btn_assign", "assign", 194, 38, 54, 18, 8)
+  draw_btn("btn_tick", "advance tick", 252, 38, 84, 18, 8)
+  draw_btn("btn_save", "save", 340, 38, 32, 18, 6)
+  draw_btn("btn_load", "load", 376, 38, 30, 18, 12)
 end
 
 function draw_resources()
@@ -3697,78 +3718,47 @@ function draw_resources()
   print("territory "..campaign.resources.territory_control.."%",9,382,66,7)
 end
 
-function draw_loadouts_screen()
-  local team = get_team()
-  rectfill(8,86,202,232,3)
-  rect(8,86,202,232,7)
+function draw_teams_panel()
+  rectfill(8,86,168,232,3)
+  rect(8,86,168,232,7)
   print("teams",10,14,94,10)
   for i,t in pairs(campaign.teams) do
     local marker = i == campaign.selected_team and "> " or "  "
     print(marker..t.name,8,14,108+(i-1)*14,7)
+    print("p"..t.power.." r"..t.readiness.." "..t.status,7,26,114+(i-1)*14,12)
   end
   draw_btn("team_prev","team-",14,212,42,16,6)
   draw_btn("team_next","team+",60,212,42,16,6)
+end
 
-  rectfill(206,86,336,232,4)
-  rect(206,86,336,232,7)
-  print("slots",10,212,94,10)
-  for i,slot in pairs(campaign.slots) do
-    local marker = i == campaign.selected_slot and "> " or "  "
-    local item_id = team.loadout[slot]
-    local label = item_id > 0 and campaign.items[item_id].name or "empty"
-    print(marker..slot..": "..label,8,212,108+(i-1)*14,7)
+function draw_mission_board()
+  rectfill(172,86,470,232,4)
+  rect(172,86,470,232,7)
+  print("mission board",10,178,94,10)
+
+  local y = 108
+  for i,m in pairs(campaign.missions) do
+    local marker = i == campaign.selected_mission and "> " or "  "
+    local team_name = m.assigned_team > 0 and campaign.teams[m.assigned_team].name or "none"
+    print(marker..m.name,8,178,y,7)
+    print(m.type.." | "..m.location.." | risk "..m.risk.." | t"..m.duration,7,190,y+8,12)
+    print("req p"..m.requirements.min_power.." r"..m.requirements.min_readiness.." | "..m.state.." | team "..team_name,7,190,y+16,11)
+    y = y + 36
   end
-  draw_btn("slot_prev","slot-",212,212,42,16,6)
-  draw_btn("slot_next","slot+",258,212,42,16,6)
 
-  rectfill(340,86,470,232,3)
-  rect(340,86,470,232,7)
-  print("item browser",10,346,94,10)
-  local item = selected_item()
-  print(item.name,8,346,108,7)
-  print(item.kind.." // tags "..#item.tags,8,346,122,12)
-  print("pow "..item.power.." def "..item.defense,8,346,136,7)
-  print("spd "..item.speed.." stl "..item.stealth,8,346,150,7)
-  draw_btn("item_prev","item-",346,212,42,16,6)
-  draw_btn("item_next","item+",392,212,42,16,6)
+  draw_btn("mission_prev","mission-",178,212,54,16,6)
+  draw_btn("mission_next","mission+",236,212,58,16,6)
 end
 
-function draw_compare_screen()
+function draw_assignment_panel()
   local team = get_team()
-  local slot = current_slot()
-  local item = selected_item()
-  local current_id = team.loadout[slot]
-  local current = current_id > 0 and campaign.items[current_id] or nil
-  local before = calc_loadout_stats(team)
+  local mission = get_mission()
+  local ok,reason = mission_eligibility(team, mission)
 
-  local fake = {name=team.name, members=team.members, mission_tags=team.mission_tags, loadout={
-    weapon=team.loadout.weapon, armor=team.loadout.armor, tool=team.loadout.tool, transport=team.loadout.transport, support=team.loadout.support
-  }}
-  fake.loadout[slot] = campaign.selected_item
-  local after = calc_loadout_stats(fake)
-  local ok,reason = can_equip(team, slot, item)
-
-  rectfill(8,86,470,232,3)
-  rect(8,86,470,232,7)
-  print("compare / equip flow",10,14,94,10)
-  print("team: "..team.name.." // slot: "..slot,9,14,110,7)
-  print("equipped: "..(current and current.name or "empty"),8,14,124,12)
-  print("candidate: "..item.name,8,14,138,7)
-  print("compatibility: "..reason,8,14,152,ok and 11 or 8)
-  print("power "..before.power.." -> "..after.power,8,14,168,7)
-  print("def "..before.defense.." -> "..after.defense,8,14,180,7)
-  print("speed "..before.speed.." -> "..after.speed,8,14,192,7)
-  print("stealth "..before.stealth.." -> "..after.stealth,8,14,204,7)
-
-  draw_btn("equip","equip",280,208,54,16,ok and 8 or 5)
-  draw_btn("unequip","unequip",338,208,62,16,6)
-end
-
-function draw_status()
   rectfill(8,236,470,264,4)
   rect(8,236,470,264,7)
-  print("v0.5 complete. next milestone: v"..campaign.next_version.." missions base",9,14,242,12)
-  print(campaign.message,9,14,252,7)
+  print("selected team: "..team.name.." -> selected mission: "..mission.name,9,14,242,12)
+  print("eligibility: "..reason,9,14,252,ok and 11 or 8)
 end
 
 function save_campaign()
@@ -3799,32 +3789,30 @@ function load_campaign()
 end
 
 function on_click(mx,my)
-  if hit("nav_loadouts",mx,my) then campaign.screen = "loadouts" end
-  if hit("nav_compare",mx,my) then campaign.screen = "compare" end
+  if hit("nav_teams",mx,my) then campaign.screen = "teams" end
+  if hit("nav_missions",mx,my) then campaign.screen = "missions" end
+  if hit("nav_rd",mx,my) then campaign.screen = "rd" end
+  if hit("btn_assign",mx,my) then assign_selected_team_to_selected_mission() end
   if hit("btn_tick",mx,my) then advance_tick() end
   if hit("btn_save",mx,my) then save_campaign() end
   if hit("btn_load",mx,my) then load_campaign() end
 
   if hit("team_prev",mx,my) then campaign.selected_team = clamp(campaign.selected_team-1,1,#campaign.teams) end
   if hit("team_next",mx,my) then campaign.selected_team = clamp(campaign.selected_team+1,1,#campaign.teams) end
-  if hit("slot_prev",mx,my) then campaign.selected_slot = clamp(campaign.selected_slot-1,1,#campaign.slots) end
-  if hit("slot_next",mx,my) then campaign.selected_slot = clamp(campaign.selected_slot+1,1,#campaign.slots) end
-  if hit("item_prev",mx,my) then campaign.selected_item = clamp(campaign.selected_item-1,1,#campaign.items) end
-  if hit("item_next",mx,my) then campaign.selected_item = clamp(campaign.selected_item+1,1,#campaign.items) end
-
-  if hit("equip",mx,my) then equip_selected() end
-  if hit("unequip",mx,my) then unequip_selected() end
+  if hit("mission_prev",mx,my) then campaign.selected_mission = clamp(campaign.selected_mission-1,1,#campaign.missions) end
+  if hit("mission_next",mx,my) then campaign.selected_mission = clamp(campaign.selected_mission+1,1,#campaign.missions) end
 end
 
 function _init()
-  campaign.message = "operation corporation: ultimate // v0.5 equipment and loadouts complete"
+  campaign.message = "operation corporation: ultimate // v0.6 missions base complete"
 end
 
 function _update()
   local mx,my,mb,mbr = mouse()
   if (mbr & 1) ~= 0 then on_click(mx,my) end
-  if keyp("1") then campaign.screen = "loadouts" end
-  if keyp("2") then campaign.screen = "compare" end
+  if keyp("1") then campaign.screen = "teams" end
+  if keyp("2") then campaign.screen = "missions" end
+  if keyp("3") then campaign.screen = "rd" end
   if keyp("space") then advance_tick() end
 end
 
@@ -3835,10 +3823,12 @@ function _draw()
   draw_nav()
   draw_resources()
 
-  if campaign.screen == "loadouts" then draw_loadouts_screen() end
-  if campaign.screen == "compare" then draw_compare_screen() end
+  draw_teams_panel()
+  draw_mission_board()
+  draw_assignment_panel()
 
-  draw_status()
+  print("v0.6 complete. next milestone: v"..campaign.next_version.." mission depth",9,14,224,12)
+  print(campaign.message,9,14,232,7)
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -4570,7 +4560,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.5 equipment and loadouts systems with item definitions (weapons/armor/tools/transport/support), team loadout slots, item stat bonuses + mission tags, compatibility checks, and compare/equip/unequip UI flow. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.6 missions base systems with mission data structure (type/location/duration/risk/rewards/requirements), mission board UI, team assignment, eligibility checks, and basic success/partial/failure mission resolution. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
