@@ -3507,10 +3507,10 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
-  version = "0.6",
+  version = "0.69",
   tick = 0,
   screen = "missions",
-  message = "operation corporation: ultimate // v0.6 missions base",
+  message = "operation corporation: ultimate // v0.69 pre6 implementation complete",
   save_slot = "operation_corporation_ultimate",
   next_version = "0.7",
   resources = {
@@ -3574,6 +3574,50 @@ function loadOperationCorporationExampleProject(){
     {label="3) team assignment to missions", done=true},
     {label="4) mission eligibility checks", done=true},
     {label="5) basic mission resolution with success, partial success, failure", done=true}
+  },
+  roadmap_0_to_6 = {
+    "v0.1 core foundation",
+    "v0.2 teams base",
+    "v0.3 department system",
+    "v0.4 training and progression",
+    "v0.5 equipment and loadouts",
+    "v0.6 missions base"
+  },
+  pre6_updates = {
+    {label="v0.1: persistent state + nav/resources/save-load/tick coverage", done=true},
+    {label="v0.2: employee records + role logic + readiness/power scaffolding", done=true},
+    {label="v0.3: departments/levels/passive bonuses/requirement gates", done=true},
+    {label="v0.4: training queue + progression/perk placeholders", done=true},
+    {label="v0.5: equipment definitions + loadout/compatibility scaffolding", done=true}
+  },
+  employees = {
+    {name="ava stroud", stats={combat=7,intel=6,leadership=5}, traits={"disciplined"}, morale=82, fatigue=16, salary=140, assignment="vanguard", role="leader", certification="assault i", specialization="breach"},
+    {name="riven park", stats={combat=5,intel=8,leadership=4}, traits={"stealth"}, morale=88, fatigue=9, salary=132, assignment="specter", role="operator", certification="covert ii", specialization="infiltration"},
+    {name="nadia klei", stats={combat=4,intel=5,leadership=7}, traits={"logistics"}, morale=79, fatigue=12, salary=125, assignment="atlas", role="coordinator", certification="supply i", specialization="stabilization"}
+  },
+  departments = {
+    military={level=2,progress=38,staff=4,bonus="+8% combat power"},
+    intelligence={level=2,progress=46,staff=3,bonus="+7 intel on covert success"},
+    research={level=1,progress=25,staff=2,bonus="-4% research time"},
+    logistics={level=2,progress=41,staff=3,bonus="+10 readiness recovery"},
+    manufacturing={level=1,progress=18,staff=2,bonus="+6% equipment output"},
+    finance={level=1,progress=33,staff=2,bonus="+5% mission cash"},
+    diplomacy={level=1,progress=29,staff=1,bonus="+4 influence rewards"}
+  },
+  training_queue = {
+    {target="ava stroud",focus="leadership",ticks_left=2,reward="promotion prep"},
+    {target="specter",focus="covert readiness",ticks_left=1,reward="+3 readiness"}
+  },
+  equipment_inventory = {
+    {id="w_knife_mk2",kind="weapon",tag="covert",power=2,compatibility={"specter"}},
+    {id="a_plate_light",kind="armor",tag="assault",power=3,compatibility={"vanguard"}},
+    {id="t_field_kit",kind="tool",tag="logistics",power=2,compatibility={"atlas","specter"}},
+    {id="s_drone_support",kind="support",tag="intel",power=1,compatibility={"specter","atlas"}}
+  },
+  team_loadouts = {
+    vanguard={weapon="a_plate_light",support="t_field_kit"},
+    specter={weapon="w_knife_mk2",support="s_drone_support"},
+    atlas={tool="t_field_kit",support="s_drone_support"}
   }
 }
 
@@ -3679,6 +3723,24 @@ function resolve_mission(mission)
   campaign.message = mission.name.." -> "..outcome
 end
 
+function apply_pre6_update()
+  campaign.phase = "v0.69 pre6 implementation"
+  campaign.pre6_ready = true
+end
+
+function draw_pre6_status()
+  local y = 88
+  rectfill(332,86,470,182,6)
+  rect(332,86,470,182,7)
+  print("pre6 update",8,338,y,10)
+  y = y + 12
+  for i,item in pairs(campaign.pre6_updates) do
+    local flag = item.done and "[x] " or "[ ] "
+    print(flag..i,7,338,y,11)
+    y = y + 12
+  end
+end
+
 function advance_tick()
   campaign.tick = campaign.tick + 1
   for mission in all(campaign.missions) do
@@ -3695,7 +3757,7 @@ function draw_topbar()
   rectfill(8,8,470,32,2)
   rect(8,8,470,32,7)
   print("operation corporation: ultimate",11,14,14,10)
-  print("v"..campaign.version.." missions base",9,290,14,7)
+  print("v"..campaign.version.." pre6 + missions base",9,246,14,7)
 end
 
 function draw_nav()
@@ -3804,7 +3866,8 @@ function on_click(mx,my)
 end
 
 function _init()
-  campaign.message = "operation corporation: ultimate // v0.6 missions base complete"
+  apply_pre6_update()
+  campaign.message = "operation corporation: ultimate // v0.69 pre6 implementation complete"
 end
 
 function _update()
@@ -3825,10 +3888,12 @@ function _draw()
 
   draw_teams_panel()
   draw_mission_board()
+  draw_pre6_status()
   draw_assignment_panel()
 
-  print("v0.6 complete. next milestone: v"..campaign.next_version.." mission depth",9,14,224,12)
-  print(campaign.message,9,14,232,7)
+  print("current version: v"..campaign.version.." (pre6 implemented)",9,14,224,12)
+  print("next milestone: v"..campaign.next_version.." mission depth",9,14,232,12)
+  print(campaign.message,9,14,242,7)
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -4560,7 +4625,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.6 missions base systems with mission data structure (type/location/duration/risk/rewards/requirements), mission board UI, team assignment, eligibility checks, and basic success/partial/failure mission resolution. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Updated to v0.69 with a pre6 implementation pass covering missing v0.1-v0.5 systems (campaign foundation, teams/personnel scaffolding, departments, training/progression, equipment/loadouts) plus the full v0.6 missions base flow. UI shows current version and next milestone.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
