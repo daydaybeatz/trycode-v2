@@ -3507,172 +3507,74 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
-  version = "0.8",
   tick = 0,
   screen = "missions",
-  message = "operation corporation: ultimate // v0.8 world map + territory implementation complete",
   save_slot = "operation_corporation_ultimate",
-  next_version = "0.9",
   resources = {
-    money = 1520,
-    materials = 468,
-    influence = 35,
-    intel = 27,
+    money = 1800,
+    materials = 520,
+    influence = 38,
+    intel = 31,
+    territory_control = 29,
     blueprints = 2,
-    recruits = 3,
-    territory_control = 24
+    recruits = 4
   },
   teams = {
-    {name="vanguard", power=17, readiness=88, mission_tags={"combat","assault","secure"}, status="idle"},
-    {name="specter", power=14, readiness=93, mission_tags={"covert","intel","extract"}, status="idle"},
-    {name="atlas", power=11, readiness=79, mission_tags={"economic","logistics","secure"}, status="idle"}
-  },
-  mission_categories = {"combat","covert","economic","diplomatic","sabotage","recruitment","extraction"},
-  missions = {
-    {
-      id=1,
-      name="port blackout interception",
-      type="covert",
-      location="north port",
-      region="north port",
-      duration=3,
-      risk=32,
-      risk_outputs={injury=18,detection=42,morale_loss=8,equipment_loss=6,backlash=9},
-      rewards={cash=180,materials=20,blueprints=1,recruits=0,influence=2,territory_gain=1},
-      requirements={min_power=12,min_readiness=85,tags={"covert","intel"}},
-      optional_requirements={intel_floor=24,night_op=true},
-      recommended_gear={"s_drone_support","w_knife_mk2"},
-      support_slots=1,
-      assigned_team=0,
-      support_team=0,
-      state="open",
-      time_left=0
-    },
-    {
-      id=2,
-      name="frontline depot seizure",
-      type="combat",
-      location="iron valley",
-      region="iron valley",
-      duration=4,
-      risk=46,
-      risk_outputs={injury=31,detection=35,morale_loss=12,equipment_loss=14,backlash=16},
-      rewards={cash=260,materials=55,blueprints=0,recruits=1,influence=3,territory_gain=3},
-      requirements={min_power=15,min_readiness=80,tags={"combat","assault"}},
-      optional_requirements={armor_tier=2,heavy_support=true},
-      recommended_gear={"a_plate_light","t_field_kit"},
-      support_slots=1,
-      assigned_team=0,
-      support_team=0,
-      state="open",
-      time_left=0
-    },
-    {
-      id=3,
-      name="trade corridor stabilization",
-      type="economic",
-      location="amber coast",
-      region="amber coast",
-      duration=2,
-      risk=22,
-      risk_outputs={injury=8,detection=14,morale_loss=5,equipment_loss=3,backlash=4},
-      rewards={cash=140,materials=25,blueprints=0,recruits=1,influence=4,territory_gain=2},
-      requirements={min_power=10,min_readiness=75,tags={"economic","logistics","secure"}},
-      optional_requirements={market_reputation=40,local_contacts=true},
-      recommended_gear={"t_field_kit"},
-      support_slots=1,
-      assigned_team=0,
-      support_team=0,
-      state="open",
-      time_left=0
-    },
-    {
-      id=4,
-      name="embassy leverage drive",
-      type="diplomatic",
-      location="capitol ring",
-      region="capitol ring",
-      duration=3,
-      risk=28,
-      risk_outputs={injury=4,detection=20,morale_loss=6,equipment_loss=1,backlash=14},
-      rewards={cash=110,materials=12,blueprints=0,recruits=0,influence=7,territory_gain=1},
-      requirements={min_power=11,min_readiness=78,tags={"intel","secure"}},
-      optional_requirements={diplomacy_level=2,intel_floor=20},
-      recommended_gear={"s_drone_support"},
-      support_slots=2,
-      assigned_team=0,
-      support_team=0,
-      state="open",
-      time_left=0
-    }
+    {name="vanguard", power=17, readiness=86, mission_tags={"combat","assault","secure"}, status="idle"},
+    {name="specter", power=15, readiness=92, mission_tags={"covert","intel","extract"}, status="idle"},
+    {name="atlas", power=12, readiness=81, mission_tags={"economic","logistics","secure"}, status="idle"}
   },
   selected_team = 1,
   selected_support_team = 2,
   selected_mission = 1,
-  checklist = {
-    {label="1) global map with territories/regions", done=true},
-    {label="2) per-region control percentages", done=true},
-    {label="3) region properties: economy/hostility/stability/resources", done=true},
-    {label="4) missions linked directly to regions", done=true},
-    {label="5) mission results update regional + global control", done=true},
-    {label="6) passive regional benefits from control", done=true}
-  },
-  roadmap_0_to_6 = {
-    "v0.1 core foundation",
-    "v0.2 teams base",
-    "v0.3 department system",
-    "v0.4 training and progression",
-    "v0.5 equipment and loadouts",
-    "v0.6 missions base"
-  },
-  mission_depth_updates = {
-    {label="v0.1: persistent state + nav/resources/save-load/tick coverage", done=true},
-    {label="v0.2: employee records + role logic + readiness/power scaffolding", done=true},
-    {label="v0.3: departments/levels/passive bonuses/requirement gates", done=true},
-    {label="v0.4: training queue + progression/perk placeholders", done=true},
-    {label="v0.5: equipment definitions + loadout/compatibility scaffolding", done=true},
-    {label="v0.6: mission board + assignment/eligibility/resolution baseline", done=true},
-    {label="v0.7: mission categories/risk-reward/support slot depth", done=true}
-  },
-  regions = {
-    {id="north port", control=18, economy=62, hostility=71, stability=44, resources=58, passive_bonus={money=5,materials=0,intel=2}},
-    {id="iron valley", control=29, economy=48, hostility=66, stability=52, resources=74, passive_bonus={money=3,materials=4,intel=0}},
-    {id="amber coast", control=24, economy=77, hostility=33, stability=69, resources=46, passive_bonus={money=6,materials=1,intel=1}},
-    {id="capitol ring", control=25, economy=81, hostility=40, stability=63, resources=39, passive_bonus={money=4,materials=0,intel=3}}
-  },
   selected_region = 1,
-  employees = {
-    {name="ava stroud", stats={combat=7,intel=6,leadership=5}, traits={"disciplined"}, morale=82, fatigue=16, salary=140, assignment="vanguard", role="leader", certification="assault i", specialization="breach"},
-    {name="riven park", stats={combat=5,intel=8,leadership=4}, traits={"stealth"}, morale=88, fatigue=9, salary=132, assignment="specter", role="operator", certification="covert ii", specialization="infiltration"},
-    {name="nadia klei", stats={combat=4,intel=5,leadership=7}, traits={"logistics"}, morale=79, fatigue=12, salary=125, assignment="atlas", role="coordinator", certification="supply i", specialization="stabilization"}
-  },
   departments = {
-    military={level=2,progress=38,staff=4,bonus="+8% combat power"},
-    intelligence={level=2,progress=46,staff=3,bonus="+7 intel on covert success"},
-    research={level=1,progress=25,staff=2,bonus="-4% research time"},
-    logistics={level=2,progress=41,staff=3,bonus="+10 readiness recovery"},
-    manufacturing={level=1,progress=18,staff=2,bonus="+6% equipment output"},
-    finance={level=1,progress=33,staff=2,bonus="+5% mission cash"},
-    diplomacy={level=1,progress=29,staff=1,bonus="+4 influence rewards"}
+    military={level=2,progress=42,staff=4,bonus="+8% combat power"},
+    intelligence={level=2,progress=47,staff=3,bonus="+7 intel on covert missions"},
+    research={level=1,progress=34,staff=2,bonus="-4% research time"},
+    logistics={level=2,progress=45,staff=3,bonus="+10 readiness recovery"},
+    manufacturing={level=1,progress=22,staff=2,bonus="+6% equipment output"},
+    finance={level=1,progress=36,staff=2,bonus="+5% mission cash"},
+    diplomacy={level=1,progress=31,staff=1,bonus="+4 influence rewards"}
+  },
+  research_queue = {
+    {name="adaptive logistics", ticks_left=4, reward="team recovery +2"},
+    {name="signal spoofing", ticks_left=3, reward="covert mission risk -3"}
   },
   training_queue = {
-    {target="ava stroud",focus="leadership",ticks_left=2,reward="promotion prep"},
-    {target="specter",focus="covert readiness",ticks_left=1,reward="+3 readiness"}
+    {target="ava stroud", focus="leadership", ticks_left=2, reward="readiness cap +2"},
+    {target="specter", focus="covert drills", ticks_left=1, reward="power +1"}
   },
-  equipment_inventory = {
-    {id="w_knife_mk2",kind="weapon",tag="covert",power=2,compatibility={"specter"}},
-    {id="a_plate_light",kind="armor",tag="assault",power=3,compatibility={"vanguard"}},
-    {id="t_field_kit",kind="tool",tag="logistics",power=2,compatibility={"atlas","specter"}},
-    {id="s_drone_support",kind="support",tag="intel",power=1,compatibility={"specter","atlas"}}
+  regions = {
+    {id="north port", control=20, economy=62, hostility=71, stability=44, resources=58, passive_bonus={money=6,materials=0,intel=2}},
+    {id="iron valley", control=31, economy=48, hostility=66, stability=52, resources=74, passive_bonus={money=4,materials=4,intel=0}},
+    {id="amber coast", control=26, economy=77, hostility=33, stability=69, resources=46, passive_bonus={money=7,materials=1,intel=1}},
+    {id="capitol ring", control=25, economy=81, hostility=40, stability=63, resources=39, passive_bonus={money=5,materials=0,intel=3}}
   },
-  team_loadouts = {
-    vanguard={weapon="a_plate_light",support="t_field_kit"},
-    specter={weapon="w_knife_mk2",support="s_drone_support"},
-    atlas={tool="t_field_kit",support="s_drone_support"}
-  }
+  authored_missions = {
+    {id="A1", name="glass harbor dossier", chain="harbor", step=1, branch_on="success", type="covert", location="north port", region="north port", duration=3, risk=32, rewards={cash=220,materials=20,influence=3,intel=4,territory_gain=2}, requirements={min_power=12,min_readiness=82,tags={"covert","intel"}}, mission_tags={"story"}, state="open", assigned_team=0, support_team=0, time_left=0},
+    {id="A2", name="harbor command breach", chain="harbor", step=2, branch_on="partial success", type="combat", location="north port", region="north port", duration=4, risk=45, rewards={cash=300,materials=46,influence=4,intel=1,territory_gain=3}, requirements={min_power=15,min_readiness=80,tags={"combat","assault"}}, mission_tags={"story"}, state="locked", assigned_team=0, support_team=0, time_left=0}
+  },
+  repeatable_templates = {
+    {name="supply lane security", type="combat", base_duration=3, base_risk=34, reward_scale=1.0, tag_pool={"combat","secure"}},
+    {name="signal intercept", type="covert", base_duration=2, base_risk=28, reward_scale=0.9, tag_pool={"covert","intel"}},
+    {name="market stabilization", type="economic", base_duration=2, base_risk=22, reward_scale=0.8, tag_pool={"economic","logistics"}},
+    {name="delegate pressure", type="diplomatic", base_duration=3, base_risk=30, reward_scale=0.85, tag_pool={"intel","secure"}},
+    {name="asset extraction", type="extraction", base_duration=3, base_risk=36, reward_scale=0.95, tag_pool={"extract","covert"}}
+  },
+  missions = {},
+  chain_state = {harbor=1},
+  generated_count = 0,
+  authored_count = 0,
+  repeatable_count = 0,
+  target_total_missions = 120,
+  max_open_missions = 7,
+  message = "command network online"
 }
 
 buttons = {}
+
+authored_pool_cache = {}
 
 function clamp(v,a,b)
   if v < a then return a end
@@ -3692,6 +3594,13 @@ function hit(id,mx,my)
   return b and mx>=b.x and mx<=b.x+b.w and my>=b.y and my<=b.y+b.h
 end
 
+function has_value(list, value)
+  for v in all(list) do
+    if v == value then return true end
+  end
+  return false
+end
+
 function get_team(idx)
   return campaign.teams[idx or campaign.selected_team]
 end
@@ -3702,44 +3611,135 @@ end
 
 function get_region_by_id(region_id)
   for region in all(campaign.regions) do
-    if region.id == region_id then
-      return region
-    end
+    if region.id == region_id then return region end
   end
   return nil
 end
 
-function has_value(list, value)
-  for v in all(list) do
-    if v == value then return true end
-  end
-  return false
-end
-
-function team_matches_required_tags(team, mission)
-  for tag in all(mission.requirements.tags) do
-    if has_value(team.mission_tags, tag) then return true end
-  end
-  return false
+function make_mission_id(prefix)
+  return prefix.."_"..campaign.tick.."_"..(campaign.generated_count+campaign.authored_count+campaign.repeatable_count+1)
 end
 
 function mission_eligibility(team, mission)
-  if mission.state ~= "open" then
-    return false, "mission unavailable"
+  if mission.state ~= "open" then return false, "mission unavailable" end
+  if team.status ~= "idle" then return false, "team busy" end
+  if team.power < mission.requirements.min_power then return false, "power too low" end
+  if team.readiness < mission.requirements.min_readiness then return false, "readiness too low" end
+  local matches = false
+  for tag in all(mission.requirements.tags) do
+    if has_value(team.mission_tags, tag) then matches = true end
   end
-  if team.status ~= "idle" then
-    return false, "team busy"
-  end
-  if team.power < mission.requirements.min_power then
-    return false, "power too low"
-  end
-  if team.readiness < mission.requirements.min_readiness then
-    return false, "readiness too low"
-  end
-  if not team_matches_required_tags(team, mission) then
-    return false, "missing mission tags"
-  end
+  if not matches then return false, "missing mission tags" end
   return true, "eligible"
+end
+
+function make_repeatable_mission(template, region)
+  local control_pressure = math.floor((100 - region.control) / 8)
+  local hostility_pressure = math.floor(region.hostility / 20)
+  local risk = clamp(template.base_risk + control_pressure + hostility_pressure, 16, 72)
+  return {
+    id=make_mission_id("R"),
+    name=template.name.." - "..region.id,
+    type=template.type,
+    location=region.id,
+    region=region.id,
+    duration=clamp(template.base_duration + math.floor(region.hostility/40),2,6),
+    risk=risk,
+    rewards={
+      cash=math.floor((120 + region.economy*2) * template.reward_scale),
+      materials=math.floor((18 + region.resources*0.7) * template.reward_scale),
+      influence=math.floor((2 + region.stability/25) * template.reward_scale),
+      intel=math.floor((2 + region.hostility/30) * template.reward_scale),
+      territory_gain=clamp(math.floor((8 + (100-region.control))/25),1,4)
+    },
+    requirements={
+      min_power=clamp(10 + math.floor(risk/8),10,19),
+      min_readiness=clamp(74 + math.floor(risk/5),74,95),
+      tags=template.tag_pool
+    },
+    mission_tags={"repeatable"},
+    state="open",
+    assigned_team=0,
+    support_team=0,
+    time_left=0,
+    chain=nil,
+    step=0,
+    branch_on=nil
+  }
+end
+
+function make_region_generated_mission(region)
+  local mission_type = "covert"
+  local tags = {"covert","intel"}
+  if region.hostility > 60 then
+    mission_type = "combat"
+    tags = {"combat","assault"}
+  elseif region.economy > 70 then
+    mission_type = "economic"
+    tags = {"economic","logistics"}
+  end
+  return {
+    id=make_mission_id("G"),
+    name="regional response - "..region.id,
+    type=mission_type,
+    location=region.id,
+    region=region.id,
+    duration=clamp(2 + math.floor(region.hostility/45),2,5),
+    risk=clamp(24 + math.floor(region.hostility/4) - math.floor(region.stability/8),18,76),
+    rewards={
+      cash=140 + math.floor(region.economy*1.6),
+      materials=22 + math.floor(region.resources*0.5),
+      influence=2 + math.floor(region.stability/18),
+      intel=2 + math.floor(region.hostility/22),
+      territory_gain=clamp(math.floor((100-region.control)/18),1,5)
+    },
+    requirements={
+      min_power=11 + math.floor(region.hostility/16),
+      min_readiness=76 + math.floor(region.hostility/8),
+      tags=tags
+    },
+    mission_tags={"generated"},
+    state="open",
+    assigned_team=0,
+    support_team=0,
+    time_left=0,
+    chain=nil,
+    step=0,
+    branch_on=nil
+  }
+end
+
+function unlock_chain_mission(chain_name, outcome)
+  for mission in all(campaign.authored_missions) do
+    if mission.chain == chain_name and mission.state == "locked" then
+      if mission.branch_on == outcome or mission.branch_on == "partial success" then
+        mission.state = "open"
+        add(campaign.missions, mission)
+        campaign.authored_count = campaign.authored_count + 1
+        campaign.message = "new chain mission unlocked"
+        return
+      end
+    end
+  end
+end
+
+function spawn_dynamic_missions()
+  local open_count = 0
+  for mission in all(campaign.missions) do
+    if mission.state == "open" then open_count = open_count + 1 end
+  end
+  if open_count >= campaign.max_open_missions then return end
+
+  local region = campaign.regions[(campaign.tick % #campaign.regions) + 1]
+  local template = campaign.repeatable_templates[(campaign.tick % #campaign.repeatable_templates) + 1]
+
+  if (campaign.tick % 2) == 0 then
+    add(campaign.missions, make_repeatable_mission(template, region))
+    campaign.repeatable_count = campaign.repeatable_count + 1
+  else
+    add(campaign.missions, make_region_generated_mission(region))
+    campaign.generated_count = campaign.generated_count + 1
+  end
 end
 
 function assign_selected_team_to_selected_mission()
@@ -3755,10 +3755,19 @@ function assign_selected_team_to_selected_mission()
   mission.state = "active"
   mission.time_left = mission.duration
   team.status = "deployed"
-  if mission.support_slots > 0 and campaign.selected_support_team ~= campaign.selected_team then
-    campaign.teams[campaign.selected_support_team].status = "support"
+  if mission.support_team > 0 and mission.support_team ~= mission.assigned_team then
+    campaign.teams[mission.support_team].status = "support"
   end
-  campaign.message = team.name.." assigned -> "..mission.name
+  campaign.message = team.name.." assigned"
+end
+
+function apply_regional_passive_benefits()
+  for region in all(campaign.regions) do
+    local cf = region.control / 100
+    campaign.resources.money = campaign.resources.money + math.floor(region.passive_bonus.money * cf)
+    campaign.resources.materials = campaign.resources.materials + math.floor(region.passive_bonus.materials * cf)
+    campaign.resources.intel = campaign.resources.intel + math.floor(region.passive_bonus.intel * cf)
+  end
 end
 
 function resolve_mission(mission)
@@ -3778,61 +3787,75 @@ function resolve_mission(mission)
 
   campaign.resources.money = campaign.resources.money + math.floor(mission.rewards.cash * payout)
   campaign.resources.materials = campaign.resources.materials + math.floor(mission.rewards.materials * payout)
-  campaign.resources.blueprints = campaign.resources.blueprints + math.floor(mission.rewards.blueprints * payout)
-  campaign.resources.recruits = campaign.resources.recruits + math.floor(mission.rewards.recruits * payout)
   campaign.resources.influence = campaign.resources.influence + math.floor(mission.rewards.influence * payout)
+  campaign.resources.intel = campaign.resources.intel + math.floor(mission.rewards.intel * payout)
   local control_gain = math.floor(mission.rewards.territory_gain * payout)
   campaign.resources.territory_control = clamp(campaign.resources.territory_control + control_gain, 0, 100)
+
   if region then
     region.control = clamp(region.control + control_gain, 0, 100)
+    region.hostility = clamp(region.hostility - math.floor(control_gain*1.5), 0, 100)
+    region.stability = clamp(region.stability + control_gain, 0, 100)
   end
 
   team.status = "idle"
-  if mission.support_team > 0 then
-    campaign.teams[mission.support_team].status = "idle"
-  end
-  team.readiness = clamp(team.readiness - math.floor(mission.risk/6) + 3, 45, 100)
+  if mission.support_team > 0 then campaign.teams[mission.support_team].status = "idle" end
+  team.readiness = clamp(team.readiness - math.floor(mission.risk/6) + 3, 42, 100)
   mission.state = "resolved"
+
+  if has_value(mission.mission_tags, "story") and mission.chain then
+    unlock_chain_mission(mission.chain, outcome)
+  end
+
   campaign.message = mission.name.." -> "..outcome
-end
-
-function apply_regional_passive_benefits()
-  for region in all(campaign.regions) do
-    local control_factor = region.control / 100
-    campaign.resources.money = campaign.resources.money + math.floor(region.passive_bonus.money * control_factor)
-    campaign.resources.materials = campaign.resources.materials + math.floor(region.passive_bonus.materials * control_factor)
-    campaign.resources.intel = campaign.resources.intel + math.floor(region.passive_bonus.intel * control_factor)
-  end
-end
-
-function apply_v08_update()
-  campaign.phase = "v0.8 world map and territory"
-  campaign.v08_ready = true
-end
-
-function draw_v08_status()
-  local y = 88
-  rectfill(332,86,470,182,6)
-  rect(332,86,470,182,7)
-  print("v0.8 world map",8,338,y,10)
-  y = y + 12
-  for i,item in pairs(campaign.mission_depth_updates) do
-    local flag = item.done and "[x] " or "[ ] "
-    print(flag..i,7,338,y,11)
-    y = y + 12
-  end
 end
 
 function advance_tick()
   campaign.tick = campaign.tick + 1
   apply_regional_passive_benefits()
+
+  for train in all(campaign.training_queue) do
+    if train.ticks_left > 0 then train.ticks_left = train.ticks_left - 1 end
+  end
+
+  for research in all(campaign.research_queue) do
+    if research.ticks_left > 0 then research.ticks_left = research.ticks_left - 1 end
+  end
+
   for mission in all(campaign.missions) do
     if mission.state == "active" then
       mission.time_left = mission.time_left - 1
-      if mission.time_left <= 0 then
-        resolve_mission(mission)
-      end
+      if mission.time_left <= 0 then resolve_mission(mission) end
     end
+  end
+
+  if (campaign.tick % 2) == 0 then spawn_dynamic_missions() end
+end
+
+function save_campaign()
+  local payload = campaign.tick.."|"..campaign.resources.money.."|"..campaign.resources.materials.."|"..campaign.resources.influence.."|"..campaign.resources.intel.."|"..campaign.resources.territory_control
+  save_data(campaign.save_slot, payload)
+  campaign.message = "save complete"
+end
+
+function load_campaign()
+  local payload = load_data(campaign.save_slot)
+  if payload == nil then
+    campaign.message = "load failed"
+    return
+  end
+  local parts = {}
+  for part in string.gmatch(payload, "[^|]+") do add(parts, part) end
+  if #parts >= 6 then
+    campaign.tick = tonumber(parts[1]) or campaign.tick
+    campaign.resources.money = tonumber(parts[2]) or campaign.resources.money
+    campaign.resources.materials = tonumber(parts[3]) or campaign.resources.materials
+    campaign.resources.influence = tonumber(parts[4]) or campaign.resources.influence
+    campaign.resources.intel = tonumber(parts[5]) or campaign.resources.intel
+    campaign.resources.territory_control = tonumber(parts[6]) or campaign.resources.territory_control
+    campaign.message = "load complete"
+  else
+    campaign.message = "load failed"
   end
 end
 
@@ -3840,7 +3863,7 @@ function draw_topbar()
   rectfill(8,8,470,32,2)
   rect(8,8,470,32,7)
   print("operation corporation: ultimate",11,14,14,10)
-  print("v"..campaign.version.." world map + territory",9,220,14,7)
+  print("tick "..campaign.tick,9,300,14,7)
 end
 
 function draw_nav()
@@ -3857,97 +3880,97 @@ function draw_resources()
   rectfill(8,58,470,82,1)
   rect(8,58,470,82,7)
   print("cash "..campaign.resources.money,9,14,66,7)
-  print("materials "..campaign.resources.materials,9,96,66,7)
-  print("influence "..campaign.resources.influence,9,190,66,7)
-  print("intel "..campaign.resources.intel,9,274,66,7)
-  print("blueprints "..campaign.resources.blueprints,9,332,66,7)
-  print("recruits "..campaign.resources.recruits,9,14,74,7)
-  print("territory "..campaign.resources.territory_control.."%",9,110,74,7)
+  print("materials "..campaign.resources.materials,9,100,66,7)
+  print("influence "..campaign.resources.influence,9,200,66,7)
+  print("intel "..campaign.resources.intel,9,292,66,7)
+  print("territory "..campaign.resources.territory_control.."%",9,372,66,7)
 end
 
-function draw_teams_panel()
-  rectfill(8,86,168,232,3)
-  rect(8,86,168,232,7)
+function draw_teams_screen()
+  rectfill(8,86,470,232,3)
+  rect(8,86,470,232,7)
   print("teams",10,14,94,10)
   for i,t in pairs(campaign.teams) do
     local marker = i == campaign.selected_team and "> " or "  "
-    print(marker..t.name,8,14,108+(i-1)*14,7)
-    print("p"..t.power.." r"..t.readiness.." "..t.status,7,26,114+(i-1)*14,12)
+    print(marker..t.name.." p"..t.power.." r"..t.readiness.." "..t.status,8,16,108+(i-1)*16,7)
   end
-  draw_btn("team_prev","team-",14,212,42,16,6)
-  draw_btn("team_next","team+",60,212,42,16,6)
-  draw_btn("support_prev","sup-",106,212,34,16,6)
-  draw_btn("support_next","sup+",144,212,34,16,6)
+
+  draw_btn("team_prev","team-",14,206,42,16,6)
+  draw_btn("team_next","team+",60,206,42,16,6)
+  draw_btn("support_prev","sup-",106,206,34,16,6)
+  draw_btn("support_next","sup+",144,206,34,16,6)
+
+  local y = 116
+  rectfill(186,96,462,222,5)
+  rect(186,96,462,222,7)
+  print("departments",8,194,y,10)
+  y = y + 10
+  for name,data in pairs(campaign.departments) do
+    print(name.." lv"..data.level.." p"..data.progress.."%",7,194,y,11)
+    y = y + 10
+  end
 end
 
-function draw_mission_board()
-  rectfill(172,86,470,232,4)
-  rect(172,86,470,232,7)
-  print("mission board",10,178,94,10)
+function draw_missions_screen()
+  rectfill(8,86,470,208,4)
+  rect(8,86,470,208,7)
+  print("mission board",10,14,94,10)
 
   local y = 108
+  local row = 0
   for i,m in pairs(campaign.missions) do
+    if row >= 3 then break end
     local marker = i == campaign.selected_mission and "> " or "  "
     local team_name = m.assigned_team > 0 and campaign.teams[m.assigned_team].name or "none"
-    print(marker..m.name,8,178,y,7)
-    print(m.type.." | "..m.region.." | risk "..m.risk.." | t"..m.duration,7,190,y+8,12)
-    print("risk i"..m.risk_outputs.injury.." d"..m.risk_outputs.detection.." ml"..m.risk_outputs.morale_loss.." eq"..m.risk_outputs.equipment_loss,7,190,y+16,11)
-    print("req p"..m.requirements.min_power.." r"..m.requirements.min_readiness.." | support "..m.support_slots.." | "..m.state.." | team "..team_name,7,190,y+24,11)
-    y = y + 44
+    print(marker..m.name,8,16,y,7)
+    print(m.type.." | "..m.region.." | risk "..m.risk.." | t"..m.duration,7,24,y+8,12)
+    print("req p"..m.requirements.min_power.." r"..m.requirements.min_readiness.." | "..m.state.." | "..team_name,7,24,y+16,11)
+    y = y + 34
+    row = row + 1
   end
 
-  draw_btn("mission_prev","mission-",178,212,54,16,6)
-  draw_btn("mission_next","mission+",236,212,58,16,6)
-end
+  draw_btn("mission_prev","mission-",14,212,54,16,6)
+  draw_btn("mission_next","mission+",72,212,58,16,6)
 
-function draw_world_map_panel()
-  rectfill(332,186,470,232,5)
-  rect(332,186,470,232,7)
-  print("region control map",8,338,192,10)
-  for i,region in pairs(campaign.regions) do
-    local marker = i == campaign.selected_region and ">" or " "
-    print(marker.." "..region.id.." "..region.control.."%",7,338,198+i*8,11)
-  end
-end
-
-function draw_assignment_panel()
   local team = get_team()
   local mission = get_mission()
   local ok,reason = mission_eligibility(team, mission)
-
   rectfill(8,236,470,264,4)
   rect(8,236,470,264,7)
-  local support = campaign.teams[campaign.selected_support_team]
-  print("selected team: "..team.name.." + support: "..support.name,9,14,242,12)
-  print("mission: "..mission.name.." | optional req + gear shown on board",9,14,252,7)
+  print("team: "..team.name.." + support: "..campaign.teams[campaign.selected_support_team].name,9,14,242,12)
+  print("mission: "..mission.name,9,14,252,7)
   print("eligibility: "..reason,9,14,260,ok and 11 or 8)
 end
 
-function save_campaign()
-  local payload = campaign.version.."|"..campaign.tick.."|"..campaign.resources.money.."|"..campaign.resources.materials
-  save_data(campaign.save_slot, payload)
-  campaign.message = "saved: "..campaign.save_slot
-end
+function draw_rd_screen()
+  rectfill(8,86,470,232,5)
+  rect(8,86,470,232,7)
+  print("r&d + strategic feed",10,14,94,10)
 
-function load_campaign()
-  local payload = load_data(campaign.save_slot)
-  if payload == nil then
-    campaign.message = "load failed: no save slot"
-    return
+  local y = 108
+  print("active research",8,14,y,10)
+  y = y + 12
+  for i,item in pairs(campaign.research_queue) do
+    print(item.name.." ("..item.ticks_left.."t)",7,16,y,11)
+    y = y + 10
   end
-  local parts = {}
-  for part in string.gmatch(payload, "[^|]+") do
-    add(parts, part)
+
+  y = y + 8
+  print("training",8,14,y,10)
+  y = y + 12
+  for i,item in pairs(campaign.training_queue) do
+    print(item.target..": "..item.focus.." ("..item.ticks_left.."t)",7,16,y,11)
+    y = y + 10
   end
-  if #parts >= 4 then
-    campaign.version = parts[1]
-    campaign.tick = tonumber(parts[2]) or campaign.tick
-    campaign.resources.money = tonumber(parts[3]) or campaign.resources.money
-    campaign.resources.materials = tonumber(parts[4]) or campaign.resources.materials
-    campaign.message = "loaded campaign shell"
-  else
-    campaign.message = "load failed: corrupted data"
-  end
+
+  rectfill(250,96,462,222,6)
+  rect(250,96,462,222,7)
+  print("mission pipeline",8,258,104,10)
+  print("authored: "..campaign.authored_count,7,258,118,11)
+  print("repeatable: "..campaign.repeatable_count,7,258,130,11)
+  print("regional: "..campaign.generated_count,7,258,142,11)
+  print("catalog target: "..campaign.target_total_missions.."+",7,258,154,11)
+  print("active pool: "..#campaign.missions,7,258,166,11)
 end
 
 function on_click(mx,my)
@@ -3967,9 +3990,17 @@ function on_click(mx,my)
   if hit("mission_next",mx,my) then campaign.selected_mission = clamp(campaign.selected_mission+1,1,#campaign.missions) end
 end
 
+function bootstrap_missions()
+  add(campaign.missions, campaign.authored_missions[1])
+  campaign.authored_count = 1
+  spawn_dynamic_missions()
+  spawn_dynamic_missions()
+  spawn_dynamic_missions()
+end
+
 function _init()
-  apply_v08_update()
-  campaign.message = "operation corporation: ultimate // v0.8 world map + territory implementation complete"
+  bootstrap_missions()
+  campaign.message = "operations synchronized"
 end
 
 function _update()
@@ -3988,14 +4019,14 @@ function _draw()
   draw_nav()
   draw_resources()
 
-  draw_teams_panel()
-  draw_mission_board()
-  draw_v08_status()
-  draw_world_map_panel()
-  draw_assignment_panel()
+  if campaign.screen == "teams" then
+    draw_teams_screen()
+  elseif campaign.screen == "missions" then
+    draw_missions_screen()
+  else
+    draw_rd_screen()
+  end
 
-  print("current version: v"..campaign.version.." (world map + territory implemented)",9,14,216,12)
-  print("next milestone: v"..campaign.next_version.." dynamic mission generation",9,14,224,12)
   print(campaign.message,9,14,242,7)
 end`}];
   finalizeExampleProjectLoad();
@@ -4728,7 +4759,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Updated to v0.8 world map + territory with region control percentages, economy/hostility/stability/resources properties, missions linked to regions, mission-driven control changes, and passive regional benefits. UI shows current version and next milestone.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Strategic campaign command sim with shared state across Teams, Missions, and R&D. Includes dynamic mission generation with authored progression, repeatable templates, region-driven contracts, mission chains, and a large scalable mission catalog.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
