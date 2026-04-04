@@ -3507,47 +3507,47 @@ function loadOperationCorporationExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
-  version = "0.2",
+  version = "0.3",
   tick = 0,
-  screen = "teams",
-  message = "operation corporation: ultimate // v0.2 teams base",
+  screen = "departments",
+  message = "operation corporation: ultimate // v0.3 department system",
   save_slot = "operation_corporation_ultimate",
-  next_version = "0.3",
+  next_version = "0.4",
   resources = {
-    money = 1500,
-    materials = 410,
-    influence = 21,
-    intel = 13,
-    territory_control = 8
-  },
-  departments = {
-    military = {name="military", staff=0},
-    intelligence = {name="intelligence", staff=0},
-    research = {name="research", staff=0},
-    logistics = {name="logistics", staff=0},
-    finance = {name="finance", staff=0}
+    money = 1720,
+    materials = 460,
+    influence = 26,
+    intel = 19,
+    territory_control = 11
   },
   employees = {
-    {name="amira", leadership=79, combat=68, analysis=51, logistics=42, trait="steady", morale=74, fatigue=16, salary=52, assignment="military", role="leader", team=1},
-    {name="joel", leadership=44, combat=62, analysis=58, logistics=45, trait="aggressive", morale=63, fatigue=27, salary=41, assignment="intelligence", role="member", team=1},
-    {name="nina", leadership=57, combat=38, analysis=84, logistics=66, trait="focused", morale=81, fatigue=12, salary=49, assignment="research", role="leader", team=2},
-    {name="dax", leadership=49, combat=71, analysis=39, logistics=55, trait="disciplined", morale=69, fatigue=19, salary=45, assignment="logistics", role="member", team=2}
+    {name="amira", assignment="military"},
+    {name="joel", assignment="intelligence"},
+    {name="nina", assignment="research"},
+    {name="dax", assignment="logistics"},
+    {name="irene", assignment="manufacturing"},
+    {name="omar", assignment="finance"},
+    {name="luca", assignment="diplomacy"},
+    {name="skye", assignment="military"}
   },
-  teams = {
-    {name="vanguard", dept="military", leader=1, members={2}, doctrine="assault", readiness=0, power=0},
-    {name="oracle", dept="research", leader=3, members={4}, doctrine="support", readiness=0, power=0}
+  departments = {
+    military = {name="Military", level=1, progress=42, staff=0, upgrades=1, bonus="+8 team combat power", requirement="combat missions lv2"},
+    intelligence = {name="Intelligence", level=1, progress=38, staff=0, upgrades=0, bonus="+7 intel gain", requirement="covert ops lv2"},
+    research = {name="Research", level=1, progress=55, staff=0, upgrades=1, bonus="+6 research speed", requirement="advanced prototypes lv2"},
+    logistics = {name="Logistics", level=1, progress=33, staff=0, upgrades=0, bonus="-5% mission duration", requirement="long-range deployments lv2"},
+    manufacturing = {name="Manufacturing", level=1, progress=46, staff=0, upgrades=1, bonus="+8 item output", requirement="tier-2 production lv2"},
+    finance = {name="Finance", level=1, progress=29, staff=0, upgrades=0, bonus="+10 passive money", requirement="enterprise contracts lv2"},
+    diplomacy = {name="Diplomacy", level=1, progress=35, staff=0, upgrades=0, bonus="+6 influence gain", requirement="regional treaties lv2"}
   },
-  edit_team_index = 1,
+  department_order = {"military","intelligence","research","logistics","manufacturing","finance","diplomacy"},
+  selected_department = 1,
   selected_employee = 1,
-  team_name_seed = 3,
-  team_name_bank = {"vanguard", "oracle", "sentinel", "phoenix", "atlas", "helix"},
-  team_checklist = {
-    {label="1) employee data: stats, traits, morale, fatigue, salary, assignment", done=true},
-    {label="2) hiring and firing", done=true},
-    {label="3) department assignments", done=true},
-    {label="4) team creation and editing", done=true},
-    {label="5) team leader and member role logic", done=true},
-    {label="6) basic team readiness and power calculation", done=true}
+  checklist = {
+    {label="1) departments: military, intelligence, research, logistics, manufacturing, finance, diplomacy", done=true},
+    {label="2) department levels and progress", done=true},
+    {label="3) passive department bonuses", done=true},
+    {label="4) requirement gates tied to department levels", done=true},
+    {label="5) level depends on assigned staff and upgrades", done=true}
   }
 }
 
@@ -3571,70 +3571,192 @@ function hit(id,mx,my)
   return b and mx>=b.x and mx<=b.x+b.w and my>=b.y and my<=b.y+b.h
 end
 
-function employee_name(i)
-  if i == nil or campaign.employees[i] == nil then return "-" end
-  return campaign.employees[i].name
+function get_department_key()
+  return campaign.department_order[campaign.selected_department]
 end
 
-function count_department_staff(dept)
-  local n = 0
-  for e in all(campaign.employees) do
-    if e.assignment == dept then n = n + 1 end
-  end
-  return n
+function get_department()
+  return campaign.departments[get_department_key()]
 end
 
-function compute_team_stats(team)
-  local score = 0
-  local morale_sum = 0
-  local fatigue_sum = 0
-  local count = 0
-
-  local leader = campaign.employees[team.leader]
-  if leader then
-    count = count + 1
-    local base = leader.combat + leader.analysis + leader.logistics + leader.leadership
-    score = score + base + 20
-    morale_sum = morale_sum + leader.morale
-    fatigue_sum = fatigue_sum + leader.fatigue
-  end
-
-  for idx in all(team.members) do
-    local e = campaign.employees[idx]
-    if e then
-      count = count + 1
-      local base = e.combat + e.analysis + e.logistics + e.leadership
-      score = score + base
-      morale_sum = morale_sum + e.morale
-      fatigue_sum = fatigue_sum + e.fatigue
+function recalc_department_staff()
+  for k,d in pairs(campaign.departments) do
+    d.staff = 0
+    for e in all(campaign.employees) do
+      if e.assignment == k then d.staff = d.staff + 1 end
     end
   end
+end
 
-  if count == 0 then
-    return 0,0
-  end
-
-  local avg_morale = morale_sum / count
-  local avg_fatigue = fatigue_sum / count
-  local readiness = clamp(flr(avg_morale - avg_fatigue*0.4), 0, 100)
-  local power = clamp(flr((score / count) * (0.45 + readiness/100)), 0, 999)
-  return readiness, power
+function recalc_department_level(d)
+  local points = d.staff * 24 + d.upgrades * 30 + d.progress
+  d.level = clamp(flr(points / 100) + 1, 1, 6)
 end
 
 function recalc_departments()
-  for key,d in pairs(campaign.departments) do
-    d.staff = count_department_staff(key)
+  recalc_department_staff()
+  for key in all(campaign.department_order) do
+    recalc_department_level(campaign.departments[key])
   end
 end
 
-function recalc_teams()
-  for t in all(campaign.teams) do
-    t.readiness, t.power = compute_team_stats(t)
+function department_gate_text(d)
+  if d.level >= 2 then
+    return "unlocked: "..d.requirement
   end
+  return "locked until level 2: "..d.requirement
+end
+
+function assign_employee(step)
+  local e = campaign.employees[campaign.selected_employee]
+  if e == nil then return end
+  local pos = 1
+  for i,key in pairs(campaign.department_order) do
+    if e.assignment == key then pos = i end
+  end
+  pos = pos + step
+  if pos < 1 then pos = #campaign.department_order end
+  if pos > #campaign.department_order then pos = 1 end
+  e.assignment = campaign.department_order[pos]
+  campaign.message = e.name.." reassigned -> "..campaign.departments[e.assignment].name
+  recalc_departments()
+end
+
+function invest_progress()
+  local d = get_department()
+  local spend = 30
+  if campaign.resources.money < spend then
+    campaign.message = "blocked: need "..spend.." money"
+    return
+  end
+  campaign.resources.money = campaign.resources.money - spend
+  d.progress = clamp(d.progress + 18 + d.staff*2 + d.upgrades*4, 0, 300)
+  recalc_department_level(d)
+  campaign.message = d.name.." progress +"..(18 + d.staff*2 + d.upgrades*4)
+end
+
+function buy_upgrade()
+  local d = get_department()
+  local cost = 120 + d.upgrades * 60
+  if campaign.resources.materials < cost then
+    campaign.message = "blocked: need "..cost.." materials"
+    return
+  end
+  campaign.resources.materials = campaign.resources.materials - cost
+  d.upgrades = d.upgrades + 1
+  d.progress = d.progress + 12
+  recalc_department_level(d)
+  campaign.message = d.name.." upgrade purchased"
+end
+
+function advance_tick()
+  campaign.tick = campaign.tick + 1
+  for key in all(campaign.department_order) do
+    local d = campaign.departments[key]
+    d.progress = clamp(d.progress + 2 + d.staff + d.upgrades*2, 0, 300)
+    recalc_department_level(d)
+  end
+  campaign.resources.money = campaign.resources.money + campaign.departments.finance.level * 10
+  campaign.resources.intel = campaign.resources.intel + campaign.departments.intelligence.level
+  campaign.resources.influence = campaign.resources.influence + campaign.departments.diplomacy.level
+  campaign.message = "tick "..campaign.tick.." complete // passive bonuses applied"
+end
+
+function draw_topbar()
+  rectfill(8,8,470,32,2)
+  rect(8,8,470,32,7)
+  print("operation corporation: ultimate",11,14,14,10)
+  print("v"..campaign.version.." department system",9,288,14,7)
+end
+
+function draw_nav()
+  draw_btn("nav_departments", "departments", 8, 38, 106, 18, campaign.screen=="departments" and 11 or 5)
+  draw_btn("nav_staff", "staffing", 118, 38, 86, 18, campaign.screen=="staff" and 11 or 5)
+  draw_btn("nav_gates", "requirements", 208, 38, 104, 18, campaign.screen=="gates" and 11 or 5)
+  draw_btn("btn_tick", "advance tick", 316, 38, 84, 18, 8)
+  draw_btn("btn_save", "save", 404, 38, 32, 18, 6)
+  draw_btn("btn_load", "load", 440, 38, 30, 18, 12)
+end
+
+function draw_resources()
+  rectfill(8,58,470,82,1)
+  rect(8,58,470,82,7)
+  print("money "..campaign.resources.money,9,14,66,7)
+  print("materials "..campaign.resources.materials,9,108,66,7)
+  print("influence "..campaign.resources.influence,9,210,66,7)
+  print("intel "..campaign.resources.intel,9,312,66,7)
+  print("territory "..campaign.resources.territory_control.."%",9,382,66,7)
+end
+
+function draw_departments_screen()
+  rectfill(8,86,312,232,3)
+  rect(8,86,312,232,7)
+  print("department ladder",10,14,94,10)
+  for i,key in pairs(campaign.department_order) do
+    local d = campaign.departments[key]
+    local y = 108 + (i-1)*16
+    local marker = (i == campaign.selected_department) and "> " or "  "
+    print(marker..d.name.." lv"..d.level.." p"..d.progress.." st"..d.staff.." up"..d.upgrades,8,14,y,7)
+  end
+
+  local d = get_department()
+  rectfill(316,86,470,232,4)
+  rect(316,86,470,232,7)
+  print(d.name,10,322,94,10)
+  print("level "..d.level.."  progress "..d.progress,9,322,108,7)
+  print("staff "..d.staff.."  upgrades "..d.upgrades,9,322,120,7)
+  print("bonus: ",9,322,136,7)
+  print(d.bonus,8,322,147,7)
+  print(department_gate_text(d),8,322,163,12)
+  draw_btn("dept_prev","dept-",322,196,48,16,6)
+  draw_btn("dept_next","dept+",374,196,48,16,6)
+  draw_btn("invest","invest",322,216,48,16,8)
+  draw_btn("upgrade","upgrade",374,216,66,16,9)
+end
+
+function draw_staff_screen()
+  rectfill(8,86,470,232,3)
+  rect(8,86,470,232,7)
+  print("staff assignment",10,14,94,10)
+  for i,e in pairs(campaign.employees) do
+    local y = 108 + (i-1)*14
+    local marker = (i == campaign.selected_employee) and "> " or "  "
+    print(marker..e.name.." -> "..campaign.departments[e.assignment].name,8,14,y,7)
+  end
+  local e = campaign.employees[campaign.selected_employee]
+  if e then
+    print("selected: "..e.name,9,14,214,7)
+    print("dept: "..campaign.departments[e.assignment].name,9,14,226,7)
+  end
+  draw_btn("emp_prev","emp-",274,212,42,16,6)
+  draw_btn("emp_next","emp+",320,212,42,16,6)
+  draw_btn("emp_dept_prev","dept-",366,212,48,16,6)
+  draw_btn("emp_dept_next","dept+",418,212,48,16,6)
+end
+
+function draw_gates_screen()
+  rectfill(8,86,470,232,3)
+  rect(8,86,470,232,7)
+  print("requirement gates",10,14,94,10)
+  for i,key in pairs(campaign.department_order) do
+    local d = campaign.departments[key]
+    local y = 110 + (i-1)*17
+    local gate = department_gate_text(d)
+    local gate_col = d.level >= 2 and 11 or 8
+    print(d.name.." lv"..d.level,9,14,y,7)
+    print(gate,8,150,y,gate_col)
+  end
+end
+
+function draw_status()
+  rectfill(8,236,470,264,4)
+  rect(8,236,470,264,7)
+  print("v0.3 complete. next milestone: v"..campaign.next_version.." training and progression",9,14,242,12)
+  print(campaign.message,9,14,252,7)
 end
 
 function save_campaign()
-  local payload = campaign.version.."|"..campaign.tick.."|"..#campaign.employees.."|"..#campaign.teams.."|"..campaign.resources.money
+  local payload = campaign.version.."|"..campaign.tick.."|"..campaign.resources.money.."|"..campaign.resources.materials
   save_data(campaign.save_slot, payload)
   campaign.message = "saved: "..campaign.save_slot
 end
@@ -3649,360 +3771,47 @@ function load_campaign()
   for part in string.gmatch(payload, "[^|]+") do
     add(parts, part)
   end
-  if #parts >= 5 then
+  if #parts >= 4 then
     campaign.version = parts[1]
     campaign.tick = tonumber(parts[2]) or campaign.tick
-    campaign.resources.money = tonumber(parts[5]) or campaign.resources.money
-    campaign.message = "loaded campaign shell (employees "..parts[3]..", teams "..parts[4]..")"
+    campaign.resources.money = tonumber(parts[3]) or campaign.resources.money
+    campaign.resources.materials = tonumber(parts[4]) or campaign.resources.materials
+    campaign.message = "loaded campaign shell"
   else
     campaign.message = "load failed: corrupted data"
   end
 end
 
-function hire_employee()
-  local id = #campaign.employees + 1
-  local dept_cycle = {"military","intelligence","research","logistics","finance"}
-  local dept = dept_cycle[((id - 1) % #dept_cycle) + 1]
-  add(campaign.employees, {
-    name = "hire-"..id,
-    leadership = 40 + (id % 8) * 3,
-    combat = 38 + (id % 6) * 4,
-    analysis = 36 + (id % 5) * 5,
-    logistics = 34 + (id % 7) * 4,
-    trait = (id % 2 == 0) and "adaptive" or "resilient",
-    morale = 62,
-    fatigue = 14,
-    salary = 28 + id,
-    assignment = dept,
-    role = "reserve",
-    team = 0
-  })
-  campaign.selected_employee = #campaign.employees
-  campaign.message = "hired employee #"..id
-  recalc_departments()
-end
-
-function fire_selected_employee()
-  local idx = campaign.selected_employee
-  if #campaign.employees <= 1 then
-    campaign.message = "blocked: keep at least one employee"
-    return
-  end
-  if idx < 1 or idx > #campaign.employees then
-    idx = #campaign.employees
-  end
-
-  local removed = campaign.employees[idx]
-  deli(campaign.employees, idx)
-
-  for t in all(campaign.teams) do
-    if t.leader == idx then
-      if #t.members > 0 then
-        t.leader = t.members[1]
-        deli(t.members, 1)
-      else
-        t.leader = 0
-      end
-    elseif t.leader > idx then
-      t.leader = t.leader - 1
-    end
-
-    local m = 1
-    while m <= #t.members do
-      local entry = t.members[m]
-      if entry == idx then
-        deli(t.members, m)
-      else
-        if entry > idx then t.members[m] = entry - 1 end
-        m = m + 1
-      end
-    end
-  end
-
-  for e in all(campaign.employees) do
-    if e.team == idx then e.team = 0 end
-    if e.team > idx then e.team = e.team - 1 end
-  end
-
-  campaign.selected_employee = clamp(idx, 1, #campaign.employees)
-  campaign.message = "fired "..removed.name
-  recalc_departments()
-  recalc_teams()
-end
-
-function cycle_employee_department(step)
-  local idx = campaign.selected_employee
-  local e = campaign.employees[idx]
-  if e == nil then return end
-  local order = {"military","intelligence","research","logistics","finance"}
-  local pos = 1
-  for i,name in pairs(order) do
-    if e.assignment == name then pos = i end
-  end
-  pos = pos + step
-  if pos < 1 then pos = #order end
-  if pos > #order then pos = 1 end
-  e.assignment = order[pos]
-  campaign.message = e.name.." -> "..e.assignment
-  recalc_departments()
-  recalc_teams()
-end
-
-function create_team()
-  local next_name = campaign.team_name_bank[campaign.team_name_seed] or ("team-"..campaign.team_name_seed)
-  add(campaign.teams, {name=next_name, dept="military", leader=campaign.selected_employee, members={}, doctrine="flex", readiness=0, power=0})
-  campaign.edit_team_index = #campaign.teams
-  campaign.team_name_seed = campaign.team_name_seed + 1
-  campaign.message = "team created: "..next_name
-  recalc_teams()
-end
-
-function edit_team_doctrine()
-  local t = campaign.teams[campaign.edit_team_index]
-  if t == nil then return end
-  if t.doctrine == "assault" then t.doctrine = "covert"
-  elseif t.doctrine == "covert" then t.doctrine = "support"
-  elseif t.doctrine == "support" then t.doctrine = "logistics"
-  else t.doctrine = "assault" end
-  campaign.message = t.name.." doctrine -> "..t.doctrine
-end
-
-function assign_selected_to_team(as_leader)
-  local t = campaign.teams[campaign.edit_team_index]
-  local idx = campaign.selected_employee
-  local e = campaign.employees[idx]
-  if t == nil or e == nil then return end
-
-  for ot in all(campaign.teams) do
-    if ot.leader == idx then ot.leader = 0 end
-    local m = 1
-    while m <= #ot.members do
-      if ot.members[m] == idx then deli(ot.members,m) else m = m + 1 end
-    end
-  end
-
-  if as_leader then
-    if t.leader ~= 0 and t.leader ~= idx then
-      add(t.members, t.leader)
-      campaign.employees[t.leader].role = "member"
-      campaign.employees[t.leader].team = campaign.edit_team_index
-    end
-    t.leader = idx
-    e.role = "leader"
-  else
-    if t.leader == idx then
-      campaign.message = "selected employee already team leader"
-      return
-    end
-    add(t.members, idx)
-    e.role = "member"
-  end
-
-  e.team = campaign.edit_team_index
-  campaign.message = e.name.." assigned to "..t.name
-  recalc_teams()
-end
-
-function advance_tick()
-  campaign.tick = campaign.tick + 1
-  campaign.resources.money = campaign.resources.money - #campaign.employees
-  for e in all(campaign.employees) do
-    e.fatigue = clamp(e.fatigue + 1, 0, 100)
-    if e.fatigue > 60 then e.morale = clamp(e.morale - 1, 0, 100) end
-  end
-  recalc_teams()
-  campaign.message = "tick "..campaign.tick.." processed (salary + fatigue)"
-end
-
-function draw_topbar()
-  rectfill(8,8,470,32,2)
-  rect(8,8,470,32,7)
-  print("operation corporation: ultimate",11,14,14,10)
-  print("v"..campaign.version.." teams base",9,328,14,7)
-end
-
-function draw_nav()
-  draw_btn("nav_teams", "teams", 8, 38, 80, 18, campaign.screen=="teams" and 11 or 5)
-  draw_btn("nav_org", "organization", 92, 38, 104, 18, campaign.screen=="organization" and 11 or 5)
-  draw_btn("nav_roster", "roster", 200, 38, 80, 18, campaign.screen=="roster" and 11 or 5)
-  draw_btn("nav_teams_edit", "team editor", 284, 38, 98, 18, campaign.screen=="editor" and 11 or 5)
-  draw_btn("btn_tick", "advance tick", 386, 38, 84, 18, 8)
-  draw_btn("btn_save", "save", 386, 58, 40, 18, 6)
-  draw_btn("btn_load", "load", 430, 58, 40, 18, 12)
-end
-
-function draw_resources()
-  rectfill(8,58,470,86,1)
-  rect(8,58,470,86,7)
-  print("money "..campaign.resources.money,9,14,66,7)
-  print("materials "..campaign.resources.materials,9,108,66,7)
-  print("influence "..campaign.resources.influence,9,210,66,7)
-  print("intel "..campaign.resources.intel,9,312,66,7)
-  print("territory "..campaign.resources.territory_control.."%",9,382,66,7)
-end
-
-function draw_department_panel()
-  rectfill(8,90,224,172,3)
-  rect(8,90,224,172,7)
-  print("department staffing",10,14,98,10)
-  print("military "..campaign.departments.military.staff,9,14,112,7)
-  print("intelligence "..campaign.departments.intelligence.staff,9,14,123,7)
-  print("research "..campaign.departments.research.staff,9,14,134,7)
-  print("logistics "..campaign.departments.logistics.staff,9,14,145,7)
-  print("finance "..campaign.departments.finance.staff,9,14,156,7)
-end
-
-function draw_roster_panel()
-  rectfill(228,90,470,172,3)
-  rect(228,90,470,172,7)
-  print("employee roster",10,234,98,10)
-  for i,e in pairs(campaign.employees) do
-    local y = 112 + (i-1)*11
-    if y > 162 then break end
-    local mark = (i == campaign.selected_employee) and "> " or "  "
-    print(mark..e.name.." ["..e.role.."] "..e.assignment,8,234,y,7)
-  end
-end
-
-function draw_teams_screen()
-  draw_department_panel()
-  draw_roster_panel()
-  draw_btn("emp_prev","emp-",8,176,48,16,6)
-  draw_btn("emp_next","emp+",60,176,48,16,6)
-  draw_btn("emp_hire","hire",112,176,48,16,8)
-  draw_btn("emp_fire","fire",164,176,48,16,12)
-
-  local e = campaign.employees[campaign.selected_employee]
-  rectfill(8,194,470,234,4)
-  rect(8,194,470,234,7)
-  print("selected employee",10,14,202,10)
-  if e then
-    print(e.name.." | trait "..e.trait.." | role "..e.role,9,14,214,7)
-    print("stats l"..e.leadership.." c"..e.combat.." a"..e.analysis.." g"..e.logistics,9,14,224,7)
-    print("morale "..e.morale.." fatigue "..e.fatigue.." salary "..e.salary.." dept "..e.assignment,9,220,214,7)
-    draw_btn("dept_prev","dept-",340,220,52,12,6)
-    draw_btn("dept_next","dept+",396,220,52,12,6)
-  end
-end
-
-function draw_organization_screen()
-  rectfill(8,90,470,172,3)
-  rect(8,90,470,172,7)
-  print("teams and readiness",10,14,98,10)
-  for i,t in pairs(campaign.teams) do
-    local y = 112 + (i-1)*16
-    local lead = employee_name(t.leader)
-    print(i..") "..t.name.." ["..t.doctrine.."] dept "..t.dept,9,14,y,7)
-    print("leader "..lead.." | members "..#t.members.." | ready "..t.readiness.." | power "..t.power,8,22,y+8,7)
-  end
-  draw_btn("team_prev","team-",8,176,54,16,6)
-  draw_btn("team_next","team+",66,176,54,16,6)
-  draw_btn("team_new","new team",124,176,74,16,8)
-  draw_btn("team_doctrine","doctrine",202,176,74,16,6)
-end
-
-function draw_roster_screen()
-  rectfill(8,90,470,172,3)
-  rect(8,90,470,172,7)
-  local e = campaign.employees[campaign.selected_employee]
-  print("role assignment logic",10,14,98,10)
-  if e then
-    print("selected: "..e.name.."  role "..e.role.."  current team "..e.team,9,14,112,7)
-  end
-  local t = campaign.teams[campaign.edit_team_index]
-  if t then
-    print("target team: "..t.name.."  leader "..employee_name(t.leader),9,14,126,7)
-    print("members: "..#t.members.."  readiness "..t.readiness.."  power "..t.power,9,14,138,7)
-  end
-  draw_btn("assign_lead","set leader",8,176,84,16,8)
-  draw_btn("assign_member","add member",96,176,84,16,6)
-  draw_btn("unassign","remove",184,176,64,16,12)
-end
-
-function draw_editor_screen()
-  rectfill(8,90,470,172,3)
-  rect(8,90,470,172,7)
-  print("team editor",10,14,98,10)
-  local t = campaign.teams[campaign.edit_team_index]
-  if t then
-    print("editing: "..t.name,9,14,112,7)
-    print("dept "..t.dept.." doctrine "..t.doctrine,9,14,124,7)
-    print("leader "..employee_name(t.leader).." members "..#t.members,9,14,136,7)
-    print("readiness "..t.readiness.." power "..t.power,9,14,148,7)
-  end
-  draw_btn("edit_prev","edit-",8,176,58,16,6)
-  draw_btn("edit_next","edit+",70,176,58,16,6)
-  draw_btn("edit_new","create",132,176,58,16,8)
-  draw_btn("edit_doctrine","cycle doctrine",194,176,94,16,6)
-end
-
-function draw_status()
-  rectfill(8,236,470,264,4)
-  rect(8,236,470,264,7)
-  print("v0.2 complete. next milestone: v"..campaign.next_version.." department system",9,14,242,12)
-  print(campaign.message,9,14,252,7)
-end
-
 function on_click(mx,my)
-  if hit("nav_teams",mx,my) then campaign.screen = "teams" end
-  if hit("nav_org",mx,my) then campaign.screen = "organization" end
-  if hit("nav_roster",mx,my) then campaign.screen = "roster" end
-  if hit("nav_teams_edit",mx,my) then campaign.screen = "editor" end
+  if hit("nav_departments",mx,my) then campaign.screen = "departments" end
+  if hit("nav_staff",mx,my) then campaign.screen = "staff" end
+  if hit("nav_gates",mx,my) then campaign.screen = "gates" end
   if hit("btn_tick",mx,my) then advance_tick() end
   if hit("btn_save",mx,my) then save_campaign() end
   if hit("btn_load",mx,my) then load_campaign() end
 
+  if hit("dept_prev",mx,my) then campaign.selected_department = clamp(campaign.selected_department-1,1,#campaign.department_order) end
+  if hit("dept_next",mx,my) then campaign.selected_department = clamp(campaign.selected_department+1,1,#campaign.department_order) end
+  if hit("invest",mx,my) then invest_progress() end
+  if hit("upgrade",mx,my) then buy_upgrade() end
+
   if hit("emp_prev",mx,my) then campaign.selected_employee = clamp(campaign.selected_employee-1,1,#campaign.employees) end
   if hit("emp_next",mx,my) then campaign.selected_employee = clamp(campaign.selected_employee+1,1,#campaign.employees) end
-  if hit("emp_hire",mx,my) then hire_employee() end
-  if hit("emp_fire",mx,my) then fire_selected_employee() end
-  if hit("dept_prev",mx,my) then cycle_employee_department(-1) end
-  if hit("dept_next",mx,my) then cycle_employee_department(1) end
-
-  if hit("team_prev",mx,my) then campaign.edit_team_index = clamp(campaign.edit_team_index-1,1,#campaign.teams) end
-  if hit("team_next",mx,my) then campaign.edit_team_index = clamp(campaign.edit_team_index+1,1,#campaign.teams) end
-  if hit("team_new",mx,my) then create_team() end
-  if hit("team_doctrine",mx,my) then edit_team_doctrine() end
-
-  if hit("assign_lead",mx,my) then assign_selected_to_team(true) end
-  if hit("assign_member",mx,my) then assign_selected_to_team(false) end
-  if hit("unassign",mx,my) then
-    local idx = campaign.selected_employee
-    local e = campaign.employees[idx]
-    if e then
-      for t in all(campaign.teams) do
-        if t.leader == idx then t.leader = 0 end
-        local m = 1
-        while m <= #t.members do
-          if t.members[m] == idx then deli(t.members,m) else m = m + 1 end
-        end
-      end
-      e.team = 0
-      e.role = "reserve"
-      campaign.message = e.name.." removed from team"
-      recalc_teams()
-    end
-  end
-
-  if hit("edit_prev",mx,my) then campaign.edit_team_index = clamp(campaign.edit_team_index-1,1,#campaign.teams) end
-  if hit("edit_next",mx,my) then campaign.edit_team_index = clamp(campaign.edit_team_index+1,1,#campaign.teams) end
-  if hit("edit_new",mx,my) then create_team() end
-  if hit("edit_doctrine",mx,my) then edit_team_doctrine() end
+  if hit("emp_dept_prev",mx,my) then assign_employee(-1) end
+  if hit("emp_dept_next",mx,my) then assign_employee(1) end
 end
 
 function _init()
   recalc_departments()
-  recalc_teams()
-  campaign.message = "operation corporation: ultimate // v0.2 teams base complete"
+  campaign.message = "operation corporation: ultimate // v0.3 department system complete"
 end
 
 function _update()
   local mx,my,mb,mbr = mouse()
   if (mbr & 1) ~= 0 then on_click(mx,my) end
-  if keyp("1") then campaign.screen = "teams" end
-  if keyp("2") then campaign.screen = "organization" end
-  if keyp("3") then campaign.screen = "roster" end
-  if keyp("4") then campaign.screen = "editor" end
+  if keyp("1") then campaign.screen = "departments" end
+  if keyp("2") then campaign.screen = "staff" end
+  if keyp("3") then campaign.screen = "gates" end
   if keyp("space") then advance_tick() end
 end
 
@@ -4013,10 +3822,9 @@ function _draw()
   draw_nav()
   draw_resources()
 
-  if campaign.screen == "teams" then draw_teams_screen() end
-  if campaign.screen == "organization" then draw_organization_screen() end
-  if campaign.screen == "roster" then draw_roster_screen() end
-  if campaign.screen == "editor" then draw_editor_screen() end
+  if campaign.screen == "departments" then draw_departments_screen() end
+  if campaign.screen == "staff" then draw_staff_screen() end
+  if campaign.screen == "gates" then draw_gates_screen() end
 
   draw_status()
 end`}];
@@ -4750,7 +4558,7 @@ function getExampleProjects(){
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.2 teams base with rich employee data, hiring/firing, department assignment, team creation/editing, leader/member role logic, and readiness/power calculations. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Versioned strategic campaign roadmap project. Includes v0.3 department system with Military, Intelligence, Research, Logistics, Manufacturing, Finance, and Diplomacy departments, level/progress tracking, passive bonuses, level-gated requirements, and staff + upgrade driven progression. UI calls out the completed version and next milestone.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
