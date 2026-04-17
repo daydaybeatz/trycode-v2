@@ -675,6 +675,26 @@ local function __tc_point_in(mx, my, x, y, w, h)
   return mx >= x and mx <= x + w and my >= y and my <= y + h
 end
 
+local function __tc_ui_draw_label(text, x, y, w, h, color)
+  local label = tostring(text or "")
+  local width = tonumber(w) or 84
+  local height = tonumber(h) or 18
+  local font_size = math.max(8, math.floor(height * 0.55))
+  local char_w = math.max(1, font_size - 1)
+  local max_chars = math.max(1, math.floor((width - 8) / char_w))
+  if #label > max_chars then
+    if max_chars <= 3 then
+      label = string.sub(label, 1, max_chars)
+    else
+      label = string.sub(label, 1, max_chars - 3) .. "..."
+    end
+  end
+  local text_w = #label * char_w
+  local tx = (tonumber(x) or 0) + math.floor((width - text_w) / 2)
+  local ty = (tonumber(y) or 0) + math.floor((height - font_size) / 2)
+  print(label, font_size, tx, ty, color)
+end
+
 function default_button(opts)
   local btn = {}
   __tc_uicopy(btn, __tc_button_theme)
@@ -711,7 +731,7 @@ function ui_button(btn)
   local bg = (hover and btn.hover_bg ~= nil) and btn.hover_bg or btn.bg
   rectfill(btn.x, btn.y, btn.x + btn.w - 1, btn.y + btn.h - 1, bg)
   rect(btn.x, btn.y, btn.x + btn.w - 1, btn.y + btn.h - 1, btn.border)
-  print(btn.label or "button", (btn.x or 0) + 4, (btn.y or 0) + 4, btn.text)
+  __tc_ui_draw_label(btn.label or "button", btn.x, btn.y, btn.w, btn.h, btn.text)
   if clicked and hover and btn.enabled ~= false then
     if type(btn.func) == "function" then btn.func(btn) end
     return true
@@ -749,8 +769,9 @@ function ui_dropdown(dd)
   rect(x, y, x + w - 1, y + h - 1, dd.border)
   local selected_item = dd.items[math.max(1, math.floor(tonumber(dd.selected) or 1))]
   local shown = dd.label or __tc_dropdown_label(selected_item)
-  print(shown, x + 4, y + 4, dd.text)
-  print(dd.open and "^" or "v", x + w - 10, y + 4, dd.text)
+  local arrow_w = math.max(10, math.floor(h * 0.8))
+  __tc_ui_draw_label(shown, x + 2, y, w - arrow_w - 4, h, dd.text)
+  __tc_ui_draw_label(dd.open and "^" or "v", x + w - arrow_w - 2, y, arrow_w, h, dd.text)
 
   if clicked and hover and dd.enabled ~= false then
     dd.open = not dd.open
@@ -766,7 +787,7 @@ function ui_dropdown(dd)
       local ihover = __tc_point_in(mx, my, x, iy, w, item_h)
       rectfill(x, iy, x + w - 1, iy + item_h - 1, ihover and (dd.hover_bg or dd.bg) or dd.bg)
       rect(x, iy, x + w - 1, iy + item_h - 1, dd.border)
-      print(__tc_dropdown_label(item), x + 4, iy + 4, dd.text)
+      __tc_ui_draw_label(__tc_dropdown_label(item), x + 2, iy, w - 4, item_h, dd.text)
       if clicked and ihover and dd.enabled ~= false then
         dd.selected = i
         dd.open = false
