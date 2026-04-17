@@ -648,7 +648,145 @@ function get_value(t, key)
   local field = tostring(key or "")
   if field == "" then return nil end
   return t[field]
-end`;
+end
+
+local __tc_ui_state = {
+  open_dropdown = nil,
+  mouse_armed = false
+}
+
+local __tc_button_theme = {
+  x = 0, y = 0, w = 84, h = 18, label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, visible = true, enabled = true
+}
+
+local __tc_dropdown_theme = {
+  x = 0, y = 0, w = 112, h = 18, label = "dropdown", bg = 1, border = 7, text = 7, hover_bg = 13, open = false, selected = 1, items = {}, visible = true, enabled = true
+}
+
+local function __tc_uicopy(dst, src)
+  if type(src) ~= "table" then return dst end
+  for k, v in __tc_builtin_pairs(src) do
+    dst[k] = v
+  end
+  return dst
+end
+
+local function __tc_point_in(mx, my, x, y, w, h)
+  return mx >= x and mx <= x + w and my >= y and my <= y + h
+end
+
+function default_button(opts)
+  local btn = {}
+  __tc_uicopy(btn, __tc_button_theme)
+  btn.func = nil
+  if type(opts) == "table" then __tc_uicopy(btn, opts) end
+  return btn
+end
+
+function default_dropdown(opts)
+  local dd = {}
+  __tc_uicopy(dd, __tc_dropdown_theme)
+  dd.items = {}
+  dd.func = nil
+  if type(opts) == "table" then __tc_uicopy(dd, opts) end
+  if type(dd.items) ~= "table" then dd.items = {} end
+  return dd
+end
+
+function default_ui_theme(kind, patch)
+  if type(patch) ~= "table" then return end
+  local normalized = tostring(kind or ""):lower()
+  if normalized == "button" then
+    __tc_uicopy(__tc_button_theme, patch)
+  elseif normalized == "dropdown" then
+    __tc_uicopy(__tc_dropdown_theme, patch)
+  end
+end
+
+function ui_button(btn)
+  if type(btn) ~= "table" or btn.visible == false then return false end
+  local mx, my, mbtn, mpress = mouse()
+  local clicked = (mpress & 1) == 1
+  local hover = __tc_point_in(mx, my, btn.x or 0, btn.y or 0, btn.w or 84, btn.h or 18)
+  local bg = (hover and btn.hover_bg ~= nil) and btn.hover_bg or btn.bg
+  rectfill(btn.x, btn.y, btn.x + btn.w - 1, btn.y + btn.h - 1, bg)
+  rect(btn.x, btn.y, btn.x + btn.w - 1, btn.y + btn.h - 1, btn.border)
+  print(btn.label or "button", (btn.x or 0) + 4, (btn.y or 0) + 4, btn.text)
+  if clicked and hover and btn.enabled ~= false then
+    if type(btn.func) == "function" then btn.func(btn) end
+    return true
+  end
+  return false
+end
+
+function ui_buttons(list)
+  if type(list) ~= "table" then return false end
+  local any = false
+  for i, btn in ipairs(list) do
+    if ui_button(btn) then any = true end
+  end
+  return any
+end
+
+local function __tc_dropdown_label(item)
+  if type(item) == "table" then
+    if item.label ~= nil then return tostring(item.label) end
+    if item.text ~= nil then return tostring(item.text) end
+    if item.value ~= nil then return tostring(item.value) end
+  end
+  return tostring(item or "item")
+end
+
+function ui_dropdown(dd)
+  if type(dd) ~= "table" or dd.visible == false then return false end
+  if type(dd.items) ~= "table" then dd.items = {} end
+  local mx, my, mbtn, mpress = mouse()
+  local clicked = (mpress & 1) == 1
+  local x, y, w, h = dd.x or 0, dd.y or 0, dd.w or 112, dd.h or 18
+  local hover = __tc_point_in(mx, my, x, y, w, h)
+  local bg = hover and (dd.hover_bg ~= nil) and dd.hover_bg or dd.bg
+  rectfill(x, y, x + w - 1, y + h - 1, bg)
+  rect(x, y, x + w - 1, y + h - 1, dd.border)
+  local selected_item = dd.items[math.max(1, math.floor(tonumber(dd.selected) or 1))]
+  local shown = dd.label or __tc_dropdown_label(selected_item)
+  print(shown, x + 4, y + 4, dd.text)
+  print(dd.open and "^" or "v", x + w - 10, y + 4, dd.text)
+
+  if clicked and hover and dd.enabled ~= false then
+    dd.open = not dd.open
+    __tc_ui_state.open_dropdown = dd.open and dd or nil
+    return true
+  end
+
+  local changed = false
+  if dd.open then
+    local item_h = h
+    for i, item in ipairs(dd.items) do
+      local iy = y + (i * item_h)
+      local ihover = __tc_point_in(mx, my, x, iy, w, item_h)
+      rectfill(x, iy, x + w - 1, iy + item_h - 1, ihover and (dd.hover_bg or dd.bg) or dd.bg)
+      rect(x, iy, x + w - 1, iy + item_h - 1, dd.border)
+      print(__tc_dropdown_label(item), x + 4, iy + 4, dd.text)
+      if clicked and ihover and dd.enabled ~= false then
+        dd.selected = i
+        dd.open = false
+        __tc_ui_state.open_dropdown = nil
+        if type(dd.func) == "function" then dd.func(item, i, dd) end
+        if type(item) == "table" and type(item.func) == "function" then item.func(item, i, dd) end
+        changed = true
+      end
+    end
+    if clicked and not hover then
+      local total_h = h + (#dd.items * h)
+      if not __tc_point_in(mx, my, x, y, w, total_h) then
+        dd.open = false
+        __tc_ui_state.open_dropdown = nil
+      end
+    end
+  end
+  return changed
+end
+`;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
 const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteGridVisible:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
@@ -928,6 +1066,9 @@ const CODE_API_DOCS = [
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
   makeDoc("default_font(font, size, color)", "Sets default print font settings used when print() leaves those values nil.", [["font", "Font family string, nil, or \"nil\". nil keeps the File menu font."],["size", "Default font size in pixels, nil, or \"nil\". nil resets to 12."],["color", "Default fill color string, palette index, color() result, nil, or \"nil\". nil follows current color()."]], ["default_font(\"Orbitron\", 14, color(255,247,232))","default_font(nil, nil, nil) -- reset all print defaults","print(\"score\", nil, 8, 8) -- now uses default_font settings"], "Use this once in _init() when you want a global text style without repeating font arguments."),
   makeDoc("default_controls(mode)", "Sets the movement control scheme to joystick or d-pad.", [["mode", "Use \"joystick\"/\"left_joystick\" for joystick controls, or \"dpad\"/\"d-pad\" for directional pad controls."]], ["default_controls(\"dpad\")","default_controls(\"joystick\")"], "Returns the current mode string after applying the setting."),
+  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Creates themed button/dropdown tables and lets you set global defaults.", [["opts", "Optional table fields: x, y, w, h, label, bg, border, text, hover_bg, enabled, func."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_ui_theme(\"button\", {bg=10,text=1,border=7})","local b = default_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button(b)"], "Assign callbacks directly with b.func=function() ... end and call ui_button()/ui_buttons() each _draw."),
+  makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons using rect/rectfill/print and runs callbacks on click.", [["button", "Button table from default_button()."],["list", "Array of button tables."]], ["if ui_button(shop_button) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Each button can mutate variables (money/health/level) in its own func."),
+  makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Builds and draws a dropdown with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, label, items, selected, func, colors."],["items", "List entries can be strings or tables with label/value/func."]], ["mode_dd = default_dropdown({x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}})","ui_dropdown(mode_dd)"], "ui_dropdown handles opening, selection, and callback execution. Add item.func for per-choice behavior."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, 8, 8) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("save_data(key, value)", "Stores a persistent string value in browser local storage for this project name.", [["key", "Save slot key."],["value", "String or number to store."]], ["save_data(\"save_slot\", \"hq=2;funds=140\")"], "Call this after meaningful progress. Values remain after reload."),
   makeDoc("load_data(key)", "Loads a previously stored string value, or nil when missing.", [["key", "Save slot key."]], ["local blob = load_data(\"save_slot\")"], "Use this in _init() to restore campaign progress and settings."),
@@ -1097,7 +1238,7 @@ function codeTokenHtml(cls,value){ return `<span class="${cls}">${escapeHtml(val
 function highlightLuaLine(line){
   const {code, comment}=splitLuaLineComment(line);
   const keywords=new Set(["function","local","if","then","elseif","else","end","for","in","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
-  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","abs","flr","sin","cosin","tan","rnd","add","del","deli","all","foreach","pairs"]);
+  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","abs","flr","sin","cosin","tan","rnd","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","pairs"]);
   let html="";
   const regex=/(\b\d+(?:\.\d+)?\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*|==|~=|<=|>=|\.\.\.|\.\.|[+\-*\/%#=<>]+)/g;
   let last=0, match;
@@ -3497,6 +3638,79 @@ end`}];
 }
 
 
+function loadUiFunctionsExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.project.tile_w=8;
+  p.project.tile_h=8;
+  p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
+  p.tileDefs={0:makeBlankTileDef()};
+  p.settings.movementInput='none';
+  p.settings.displayMode='normal';
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`player = {money=100, health=100, level=1}
+buttons = {}
+drop = nil
+status = "use buttons/dropdown"
+
+function _init()
+  default_controls("none")
+
+  local add_money = default_button({x=18,y=58,w=134,label="+25 money",func=function()
+    mod_value(player, "money", 25)
+    status = "money up"
+  end})
+
+  local take_damage = default_button({x=18,y=82,w=134,label="-10 health",bg=8,func=function()
+    mod_value(player, "health", -10)
+    if player.health < 0 then player.health = 0 end
+    status = "health down"
+  end})
+
+  local level_up = default_button({x=18,y=106,w=134,label="level +1",bg=11,func=function()
+    mod_value(player, "level", 1)
+    status = "level up"
+  end})
+
+  buttons = {add_money, take_damage, level_up}
+
+  drop = default_dropdown({
+    x=18,
+    y=148,
+    w=180,
+    label="select loadout",
+    items={
+      {label="balanced", func=function() set_value(player, "money", 100) set_value(player, "health", 100) status="balanced" end},
+      {label="rich", func=function() set_value(player, "money", 250) status="rich loadout" end},
+      {label="tank", func=function() set_value(player, "health", 180) status="tank loadout" end}
+    },
+    func=function(item, idx)
+      status = "picked "..item.label
+    end
+  })
+end
+
+function _update()
+end
+
+function _draw()
+  cls(1)
+  rectfill(10,10,470,258,2)
+  rect(10,10,470,258,7)
+  print("UI functions example", 14, 20, 20, 7)
+  print("money: "..player.money, 12, 232, 64, 10)
+  print("health: "..player.health, 12, 232, 84, 8)
+  print("level: "..player.level, 12, 232, 104, 11)
+  print("status: "..status, 11, 232, 132, 6)
+
+  ui_buttons(buttons)
+  ui_dropdown(drop)
+
+  print("each button/dropdown item has its own func callback", 10, 20, 232, 12)
+end`}];
+  finalizeExampleProjectLoad();
+}
+
+
 function loadOperationCorporationExampleProject(){
   finishNewProject();
   const p=state.appProject;
@@ -4990,6 +5204,7 @@ function getExampleProjects(){
     {id:'menu-screen-swap',category:'ui examples',name:'Basic Menu + Screen Swap',description:'Simple readable menu/game/pause screen flow with r_spr(), spr flip, joystick direction aiming, sin/cosin motion, and add()/del() notes.',loader:loadMenuScreenSwapExampleProject},
     {id:'ui-mouse',category:'ui examples',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing with higher-contrast readability colors.',loader:loadUiMouseExampleProject},
     {id:'ui-dropdowns',category:'ui examples',name:'UI Dropdown + Layout Camp',description:'Polished dropdown/menu layout, table-driven UI text, pset()/line()/circfill()/r_spr() drawing, and menu/game state flow with controls hidden in menu and toggled in-game.',loader:loadUiDropdownExampleProject},
+    {id:'ui-functions',category:'ui examples',name:'UI Buttons + Dropdown Functions',description:'Uses default_button(), ui_button(), ui_buttons(), default_dropdown(), and ui_dropdown() to modify player money/health/level with per-button and per-item callbacks.',loader:loadUiFunctionsExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
     {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Strategic campaign command sim now documented at Version 1.1: foundation through 1.0 plus blueprint/prototype/manufacturing flow, production queues, finished inventory, and equip-vs-stockpile-vs-sell decisions.',loader:loadOperationCorporationExampleProject}
@@ -5532,8 +5747,7 @@ function makeRuntime(){
   const uiBoxDefaultStyle={x:null,y:null,w:260,h:null,bg:'#fff7e8',border:'#6f3d20',text:'#352012',title:'#8a1c1c',button:'#f0d7a2',buttonText:'#352012',inputBg:'#fffaf1',inputText:'#352012'};
   const makeUiBoxStyles=()=>Object.fromEntries(UI_BOX_KINDS.map(kind=>[kind,{...uiBoxDefaultStyle}]));
   let uiBoxStyles=makeUiBoxStyles();
-  const dialogEls={layer:$("runtimeDialogLayer"),scrim:$("runtimeDialogScrim"),card:$("runtimeDialogCard"),title:$("runtimeDialogTitle"),message:$("runtimeDialogMessage"),input:$("runtimeDialogInput"),actions:$("runtimeDialogActions")};
-  const dialogState={active:null,results:new Map()};
+  const dialogState={active:null,results:new Map(),caretBlinkAt:0};
   const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7,leftshoulder:8,lb:8,l1:8,rightshoulder:9,rb:9,r1:9,select:10,back:10,start:11};
   const persistPrefix=()=>`trycode_runtime_save:${state.currentProjectName||'project'}:`;
   const saveData=(key,value)=>{ const k=String(key??'').trim(); if(!k) return false; try{ localStorage.setItem(persistPrefix()+k, String(value??'')); return true; }catch(_){ return false; } };
@@ -5552,18 +5766,23 @@ function makeRuntime(){
   const coerceUiColor=value=>{ if(value==null) return null; const s=String(value).trim(); return s||null; };
   const normalizeUiBoxKind=value=>{ const s=String(value??'').trim().toLowerCase(); return UI_BOX_KINDS.includes(s)?s:null; };
   const stylePatchFromLuaTable=index=>{ const fieldNumber=name=>{ lua.lua_getfield(L,index,to_luastring(name)); const value=lua.lua_isnumber(L,-1)?lua.lua_tonumber(L,-1):null; lua.lua_pop(L,1); return value; }; const fieldString=name=>{ lua.lua_getfield(L,index,to_luastring(name)); const value=lua.lua_isstring(L,-1)?to_jsstring(lua.lua_tolstring(L,-1)):null; lua.lua_pop(L,1); return value; }; return {x:fieldNumber('x'),y:fieldNumber('y'),w:fieldNumber('w'),h:fieldNumber('h'),bg:fieldString('bg'),border:fieldString('border'),text:fieldString('text'),title:fieldString('title'),button:fieldString('button'),buttonText:fieldString('button_text'),inputBg:fieldString('input_bg'),inputText:fieldString('input_text')}; };
-  const applyDialogStyles=kind=>{ const {card,input:inputEl}=dialogEls; if(!card||!inputEl) return; const activeKind=normalizeUiBoxKind(kind)||'message'; const uiBoxStyle=uiBoxStyles[activeKind]||uiBoxDefaultStyle; card.style.left=uiBoxStyle.x!=null?`${uiBoxStyle.x}px`:'50%'; card.style.top=uiBoxStyle.y!=null?`${uiBoxStyle.y}px`:'50%'; card.style.transform=(uiBoxStyle.x!=null||uiBoxStyle.y!=null)?'none':'translate(-50%,-50%)'; card.style.width=uiBoxStyle.w!=null?`${Math.max(180,uiBoxStyle.w)}px`:'min(88vw,420px)'; card.style.minHeight=uiBoxStyle.h!=null?`${Math.max(90,uiBoxStyle.h)}px`:'';
-    card.style.background=`linear-gradient(180deg, ${uiBoxStyle.bg}, ${uiBoxStyle.button})`; card.style.borderColor=uiBoxStyle.border; card.style.color=uiBoxStyle.text; dialogEls.title.style.color=uiBoxStyle.title; inputEl.style.background=uiBoxStyle.inputBg; inputEl.style.color=uiBoxStyle.inputText; inputEl.style.borderColor=uiBoxStyle.border; };
-  const resetUiBoxStyle=kind=>{ if(kind==null){ uiBoxStyles=makeUiBoxStyles(); applyDialogStyles(dialogState.active?.kind); return; } const normalizedKind=normalizeUiBoxKind(kind); if(!normalizedKind) return; uiBoxStyles[normalizedKind]={...uiBoxDefaultStyle}; applyDialogStyles(dialogState.active?.kind||normalizedKind); };
-  const applyUiBoxStyle=(kind,patch)=>{ const normalizedKind=normalizeUiBoxKind(kind); if(!normalizedKind||!patch) return; const next={...uiBoxStyles[normalizedKind]}; ['x','y','w','h'].forEach(key=>{ const value=coerceUiNumber(patch[key]); if(value!=null) next[key]=value; }); [['bg','bg'],['border','border'],['text','text'],['title','title'],['button','button'],['buttonText','buttonText'],['inputBg','inputBg'],['inputText','inputText']].forEach(([src,dst])=>{ const value=coerceUiColor(patch[src]); if(value!=null) next[dst]=value; }); uiBoxStyles[normalizedKind]=next; applyDialogStyles(dialogState.active?.kind||normalizedKind); };
+  const dialogTextLines=text=>String(text??'').split(/\r?\n/);
+  const dialogComputeLayout=active=>{ const style=uiBoxStyles[active.kind]||uiBoxDefaultStyle; const width=Math.max(180, Math.min(GAME_W-28, style.w!=null?Number(style.w)||260:260)); const messageLines=dialogTextLines(active.message); const contentH=Math.max(20, messageLines.length*13); const inputH=active.kind==='entry'?18:0; const buttonH=18; const totalH=Math.max(90, style.h!=null?Number(style.h)||0:(42+contentH+inputH+buttonH)); const x=style.x!=null?Math.round(style.x):Math.round((GAME_W-width)/2); const y=style.y!=null?Math.round(style.y):Math.round((GAME_H-totalH)/2); return {x,y,w:width,h:totalH,style,messageLines}; };
+  const pointInRect=(mx,my,r)=>mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h;
+  const closeDialog=result=>{ if(!dialogState.active) return; dialogState.results.set(dialogState.active.signature,result); dialogState.active=null; };
+  const drawRuntimeDialog=()=>{ const active=dialogState.active; if(!active) return; const {x,y,w,h,style,messageLines}=dialogComputeLayout(active); ctx.save(); ctx.fillStyle='rgba(20,12,7,0.58)'; ctx.fillRect(0,0,GAME_W,GAME_H); ctx.fillStyle=style.bg; ctx.fillRect(x,y,w,h); ctx.strokeStyle=style.border; ctx.lineWidth=2; ctx.strokeRect(x,y,w,h); ctx.fillStyle=style.title; ctx.font='11px '+DEFAULT_PRINT_FONT; ctx.textBaseline='top'; ctx.fillText(String(active.title||active.kind||'dialog').toUpperCase(),x+10,y+8); ctx.fillStyle=style.text; ctx.font='12px '+DEFAULT_PRINT_FONT; let textY=y+26; messageLines.forEach(line=>{ ctx.fillText(line,x+10,textY); textY+=13; }); if(active.kind==='entry'){ const inputRect={x:x+10,y:y+h-52,w:w-20,h:16}; active.inputRect=inputRect; ctx.fillStyle=style.inputBg; ctx.fillRect(inputRect.x,inputRect.y,inputRect.w,inputRect.h); ctx.strokeStyle=style.border; ctx.strokeRect(inputRect.x,inputRect.y,inputRect.w,inputRect.h); const caretVisible=((performance.now()-dialogState.caretBlinkAt)%800)<400; const shown=String(active.value||''); ctx.fillStyle=style.inputText; ctx.font='11px '+DEFAULT_PRINT_FONT; ctx.fillText(shown+(caretVisible?'_':''),inputRect.x+4,inputRect.y+3); }
+    const buttons=[]; const mkBtn=(label,kind,index,total)=>{ const btnW=active.kind==='message'?74:70; const gap=8; const rowW=btnW*total+gap*(total-1); const bx=x+Math.max(10,w-rowW-10)+index*(btnW+gap); const by=y+h-24; const rect={x:bx,y:by,w:btnW,h:16,label,kind}; buttons.push(rect); ctx.fillStyle=style.button; ctx.fillRect(rect.x,rect.y,rect.w,rect.h); ctx.strokeStyle=style.border; ctx.strokeRect(rect.x,rect.y,rect.w,rect.h); ctx.fillStyle=style.buttonText; ctx.font='11px '+DEFAULT_PRINT_FONT; ctx.fillText(label,rect.x+6,rect.y+3); };
+    if(active.kind==='message'){ mkBtn('OK','ok',0,1); }
+    if(active.kind==='confirm'){ mkBtn('Cancel','cancel',0,2); mkBtn('OK','ok',1,2); }
+    if(active.kind==='entry'){ mkBtn('Cancel','cancel',0,2); mkBtn('OK','ok',1,2); }
+    active.buttons=buttons;
+    const click=(input.mouse.pressed&1)!==0;
+    if(click){ const mx=input.mouse.x,my=input.mouse.y; const hit=buttons.find(btn=>pointInRect(mx,my,btn)); if(hit){ if(active.kind==='message') closeDialog(true); else if(active.kind==='confirm') closeDialog(hit.kind==='ok'); else if(active.kind==='entry') closeDialog(hit.kind==='ok'?String(active.value||''):false); } }
+    ctx.restore(); };
   const dialogSignature=(kind,message,title,initial='')=>JSON.stringify([kind,String(title??''),String(message??''),String(initial??'')]);
-  const closeDialog=result=>{ if(!dialogState.active) return; dialogState.results.set(dialogState.active.signature,result); dialogState.active=null; renderDialog(); };
-  const renderDialog=()=>{ const active=dialogState.active; if(!dialogEls.layer||!dialogEls.card) return; dialogEls.layer.classList.toggle('hidden', !active); if(!active) return; applyDialogStyles(active.kind); const uiBoxStyle=uiBoxStyles[active.kind]||uiBoxDefaultStyle; dialogEls.title.textContent=active.title||({message:'message',confirm:'confirm',entry:'entry'}[active.kind]||'dialog'); dialogEls.message.textContent=active.message; dialogEls.input.classList.toggle('hidden', active.kind!=='entry'); dialogEls.input.value=active.kind==='entry' ? active.value : ''; dialogEls.actions.innerHTML=''; const makeAction=(label,isPrimary,handler)=>{ const btn=document.createElement('button'); btn.className=`uiBtn${isPrimary?' primary':''}`; btn.type='button'; btn.textContent=label; btn.style.background=`linear-gradient(180deg, ${isPrimary?uiBoxStyle.button:uiBoxStyle.bg}, ${uiBoxStyle.button})`; btn.style.color=uiBoxStyle.buttonText; btn.style.borderColor=isPrimary?uiBoxStyle.title:uiBoxStyle.border; btn.onclick=handler; dialogEls.actions.appendChild(btn); return btn; };
-    if(active.kind==='message'){ makeAction('OK', true, ()=>closeDialog(true)); }
-    if(active.kind==='confirm'){ makeAction('Cancel', false, ()=>closeDialog(false)); makeAction('OK', true, ()=>closeDialog(true)); }
-    if(active.kind==='entry'){ makeAction('Cancel', false, ()=>closeDialog(false)); makeAction('OK', true, ()=>closeDialog(String(dialogEls.input.value||''))); setTimeout(()=>{ try{ dialogEls.input.focus({preventScroll:true}); dialogEls.input.select(); }catch{} }, 0); }
-  };
-  const openDialog=(kind,message,title,initial='')=>{ dialogState.active={kind,message:String(message??''),title:String(title??''),value:String(initial??''),signature:dialogSignature(kind,message,title,initial)}; renderDialog(); };
+  const resetUiBoxStyle=kind=>{ if(kind==null){ uiBoxStyles=makeUiBoxStyles(); return; } const normalizedKind=normalizeUiBoxKind(kind); if(!normalizedKind) return; uiBoxStyles[normalizedKind]={...uiBoxDefaultStyle}; };
+  const applyUiBoxStyle=(kind,patch)=>{ const normalizedKind=normalizeUiBoxKind(kind); if(!normalizedKind||!patch) return; const next={...uiBoxStyles[normalizedKind]}; ['x','y','w','h'].forEach(key=>{ const value=coerceUiNumber(patch[key]); if(value!=null) next[key]=value; }); [['bg','bg'],['border','border'],['text','text'],['title','title'],['button','button'],['buttonText','buttonText'],['inputBg','inputBg'],['inputText','inputText']].forEach(([src,dst])=>{ const value=coerceUiColor(patch[src]); if(value!=null) next[dst]=value; }); uiBoxStyles[normalizedKind]=next; };
+  const openDialog=(kind,message,title,initial='')=>{ dialogState.active={kind,message:String(message??''),title:String(title??''),value:String(initial??''),signature:dialogSignature(kind,message,title,initial),buttons:[],inputRect:null}; dialogState.caretBlinkAt=performance.now(); };
   const runDialog=(kind,message,title,initial='')=>{ const signature=dialogSignature(kind,message,title,initial); if(dialogState.results.has(signature)){ const result=dialogState.results.get(signature); dialogState.results.delete(signature); return {done:true,result}; } if(dialogState.active&&dialogState.active.signature===signature) return {done:false}; if(!dialogState.active) openDialog(kind,message,title,initial); return {done:false}; };
   const clientToMouse=(clientX,clientY)=>{ const rect=canvas.getBoundingClientRect(); const scaleX=rect.width>0?GAME_W/rect.width:1, scaleY=rect.height>0?GAME_H/rect.height:1; return {x:clamp(Math.floor((clientX-rect.left)*scaleX),0,GAME_W-1),y:clamp(Math.floor((clientY-rect.top)*scaleY),0,GAME_H-1)}; };
   const pointerButtonsToMask=(e,isUp=false)=>{ const buttons=Number(isUp?0:e.buttons)||0; let mask=0; if(buttons&1) mask|=1; if(buttons&4) mask|=2; if(buttons&2) mask|=4; if(!mask && !isUp && (e.pointerType==='touch'||e.pointerType==='pen')) mask|=1; return mask; };
@@ -5601,12 +5820,10 @@ function makeRuntime(){
   ['pointerdown','pointermove'].forEach(type=>canvas.addEventListener(type,e=>{ updateMouseFromPointer(e,false); if(type==='pointerdown'){ try{ canvas.setPointerCapture(e.pointerId); }catch{} } if(type==='pointerdown' || e.pointerType==='touch') e.preventDefault(); },{passive:false}));
   ['pointerup','pointercancel','lostpointercapture'].forEach(type=>canvas.addEventListener(type,e=>{ updateMouseFromPointer(e,true); e.preventDefault(); },{passive:false}));
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
-  dialogEls.scrim?.addEventListener('click',()=>{ if(dialogState.active?.kind==='message') closeDialog(true); });
-  dialogEls.input?.addEventListener('keydown',e=>{ if(e.key==='Enter'&&dialogState.active?.kind==='entry'){ e.preventDefault(); closeDialog(String(dialogEls.input.value||'')); } if(e.key==='Escape'&&dialogState.active?.kind==='entry'){ e.preventDefault(); closeDialog(false); } });
-  window.addEventListener('keydown',e=>{ if(!dialogState.active) return; if(e.key==='Escape'){ if(dialogState.active.kind==='message') closeDialog(true); else closeDialog(false); e.preventDefault(); } if(e.key==='Enter'&&dialogState.active.kind==='confirm'){ closeDialog(true); e.preventDefault(); } },{passive:false});
+  window.addEventListener('keydown',e=>{ if(!dialogState.active) return; if(e.key==='Escape'){ if(dialogState.active.kind==='message') closeDialog(true); else closeDialog(false); e.preventDefault(); return; } if(e.key==='Enter'){ if(dialogState.active.kind==='confirm') closeDialog(true); else if(dialogState.active.kind==='entry') closeDialog(String(dialogState.active.value||'')); e.preventDefault(); return; } if(dialogState.active.kind!=='entry') return; if(e.key==='Backspace'){ dialogState.active.value=String(dialogState.active.value||'').slice(0,-1); dialogState.caretBlinkAt=performance.now(); e.preventDefault(); return; } if(e.key==='Tab') return; if(e.key.length===1 && !e.ctrlKey && !e.metaKey){ dialogState.active.value=String(dialogState.active.value||'')+e.key; dialogState.caretBlinkAt=performance.now(); e.preventDefault(); } },{passive:false});
   const pollGamepads=()=>{ input.btnGamepad.fill(0); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); const pads=navigator.getGamepads?navigator.getGamepads():[]; for(const pad of pads){ if(!pad) continue; const buttons=pad.buttons||[]; const axes=pad.axes||[]; input.btnGamepad[0]=input.btnGamepad[0]||(buttons[12]?.pressed?1:0); input.btnGamepad[1]=input.btnGamepad[1]||(buttons[13]?.pressed?1:0); input.btnGamepad[2]=input.btnGamepad[2]||(buttons[14]?.pressed?1:0); input.btnGamepad[3]=input.btnGamepad[3]||(buttons[15]?.pressed?1:0); input.btnGamepad[4]=input.btnGamepad[4]||(buttons[0]?.pressed?1:0); input.btnGamepad[5]=input.btnGamepad[5]||(buttons[1]?.pressed?1:0); input.btnGamepad[6]=input.btnGamepad[6]||(buttons[2]?.pressed?1:0); input.btnGamepad[7]=input.btnGamepad[7]||(buttons[3]?.pressed?1:0); input.btnGamepad[8]=input.btnGamepad[8]||(buttons[4]?.pressed?1:0); input.btnGamepad[9]=input.btnGamepad[9]||(buttons[5]?.pressed?1:0); input.btnGamepad[10]=input.btnGamepad[10]||((buttons[8]?.pressed||buttons[16]?.pressed)?1:0); input.btnGamepad[11]=input.btnGamepad[11]||((buttons[9]?.pressed||buttons[17]?.pressed)?1:0); const lx=clamp(Number(axes[0])||0,-1,1), ly=clamp(Number(axes[1])||0,-1,1), rx=clamp(Number(axes[2])||0,-1,1), ry=clamp(Number(axes[3])||0,-1,1); if(Math.abs(lx)>Math.abs(input.gamepadJoy[0].x)) input.gamepadJoy[0].x=lx; if(Math.abs(ly)>Math.abs(input.gamepadJoy[0].y)) input.gamepadJoy[0].y=ly; if(Math.abs(rx)>Math.abs(input.gamepadJoy[1].x)) input.gamepadJoy[1].x=rx; if(Math.abs(ry)>Math.abs(input.gamepadJoy[1].y)) input.gamepadJoy[1].y=ry; }
     input.gamepadJoy.forEach(joy=>{ if(Math.abs(joy.x)<0.14) joy.x=0; if(Math.abs(joy.y)<0.14) joy.y=0; joy.down=!!(joy.x||joy.y); }); recomputeVirtualInput(); };
-  window.addEventListener('blur',()=>{ input.btnDpad.fill(0); input.btnFace.fill(0); input.btnSystem.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); keyDown.clear(); keyPressed.clear(); leftJoy.reset(); rightJoy.reset(); recomputeVirtualInput(); }); applyInputModeUI(); applyDialogStyles('message'); renderDialog();
+  window.addEventListener('blur',()=>{ input.btnDpad.fill(0); input.btnFace.fill(0); input.btnSystem.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); keyDown.clear(); keyPressed.clear(); leftJoy.reset(); rightJoy.reset(); recomputeVirtualInput(); }); applyInputModeUI();
   let col={r:255,g:255,b:255}, lastColorCall=null, camx=0, camy=0, viewZoom=1, zoomOffX=0, zoomOffY=0, clipRect=null;
   const defaultPrintState={font:null,size:null,color:null};
   function resetRuntimeDefaults(){
@@ -5908,8 +6125,8 @@ function makeRuntime(){
   function rerun(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function reset(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); toast(`<b>${escapeHtml(name)} error:</b> ${escapeHtml(err)}`); builtOk=false; L=null; } } else lua.lua_pop(L,1); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } callMaybe('_update'); callMaybe('_draw'); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); renderDialog(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } callMaybe('_update'); callMaybe('_draw'); drawRuntimeDialog(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
