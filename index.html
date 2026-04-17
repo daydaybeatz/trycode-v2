@@ -822,9 +822,13 @@ function ui_dropdown(dd)
     return true
   end
 
-  local changed = false
-  changed = __tc_ui_render_open_dropdown_overlay(mx, my, clicked) or changed
-  return changed
+  return false
+end
+
+function __tc_ui_flush_overlay()
+  local mx, my, mbtn, mpress = mouse()
+  local clicked = (mpress & 1) == 1
+  return __tc_ui_render_open_dropdown_overlay(mx, my, clicked)
 end
 `;
 const SPRITE_FRAMES_PER_PAGE = 9;
@@ -1638,7 +1642,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
 	    "if(lauxlib.luaL_dostring(L,to_luastring("+JSON.stringify(LUA_RUNTIME_HELPERS)+"))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
 	    "if(lauxlib.luaL_dostring(L,to_luastring(code))!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}",
     "lua.lua_getglobal(L,to_luastring('_init'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}}else lua.lua_pop(L,1);",
-    "function tick(){for(let i=0;i<input.btn.length;i++){input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0;input.btnPrev[i]=input.btn[i]}lua.lua_getglobal(L,to_luastring('_update'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);lua.lua_getglobal(L,to_luastring('_draw'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);input.mouse.pressed=0;requestAnimationFrame(tick)}tick();",
+    "function tick(){for(let i=0;i<input.btn.length;i++){input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0;input.btnPrev[i]=input.btn[i]}lua.lua_getglobal(L,to_luastring('_update'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);lua.lua_getglobal(L,to_luastring('_draw'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);lua.lua_getglobal(L,to_luastring('__tc_ui_flush_overlay'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return;}}else lua.lua_pop(L,1);input.mouse.pressed=0;requestAnimationFrame(tick)}tick();",
     "})();",
   ].join('\n');
 }
@@ -6221,7 +6225,7 @@ function makeRuntime(){
   function rerun(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function reset(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); toast(`<b>${escapeHtml(name)} error:</b> ${escapeHtml(err)}`); builtOk=false; L=null; } } else lua.lua_pop(L,1); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } callMaybe('_update'); callMaybe('_draw'); drawRuntimeDialog(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } callMaybe('_update'); callMaybe('_draw'); callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
   requestAnimationFrame(tick); resizeDisplay(); return {setLua,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
