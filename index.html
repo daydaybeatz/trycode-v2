@@ -4846,14 +4846,14 @@ function compress_row(row)
   while i <= #next do
     if i < #next and next[i] == next[i+1] then
       out[oi] = next[i] * 2
-      score += out[oi]
+      score = score + out[oi]
       burst_particles(oi, 1, out[oi])
-      i += 2
+      i = i + 2
     else
       out[oi] = next[i]
-      i += 1
+      i = i + 1
     end
-    oi += 1
+    oi = oi + 1
   end
   return out
 end
@@ -4928,11 +4928,11 @@ function update_particles()
   local i = 1
   while i <= #particles do
     local p = particles[i]
-    p.x += p.vx
-    p.y += p.vy
-    p.vy += 0.03
-    p.t -= 1
-    if p.t <= 0 then deli(particles, i) else i += 1 end
+    p.x = p.x + p.vx
+    p.y = p.y + p.vy
+    p.vy = p.vy + 0.03
+    p.t = p.t - 1
+    if p.t <= 0 then deli(particles, i) else i = i + 1 end
   end
 end
 
@@ -4951,7 +4951,7 @@ function _update()
     save_high_score()
   end
   if btnp("a") then reset_board() end
-  if spawn_flash > 0 then spawn_flash -= 1 end
+  if spawn_flash > 0 then spawn_flash = spawn_flash - 1 end
   update_particles()
 end
 
@@ -5005,12 +5005,25 @@ function loadNotesSaveLoadExampleProject(){
   p.settings.movementInput='none';
   p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`notes = {}
 selected = 1
-status = "press A to add, Y to save, X to load"
+status = "tap add to open onscreen keyboard"
+pending_add = false
+entry_default = ""
+
+buttons = {
+  add = {x=10,y=32,w=78,h=22,label="add"},
+  save = {x=94,y=32,w=78,h=22,label="save"},
+  load = {x=178,y=32,w=78,h=22,label="load"},
+  del = {x=262,y=32,w=78,h=22,label="delete"}
+}
 
 function _init()
   default_controls("none")
   add(notes, "buy milk")
   add(notes, "finish homework")
+end
+
+function in_rect(mx, my, r)
+  return mx >= r.x and mx <= r.x + r.w and my >= r.y and my <= r.y + r.h
 end
 
 function save_notes()
@@ -5045,39 +5058,97 @@ function load_notes()
   status = "loaded " .. #notes .. " notes"
 end
 
-function add_note()
-  local input = entry_box("new note text", "", "note app")
+function begin_add_note()
+  pending_add = true
+  entry_default = ""
+  status = "keyboard open..."
+end
+
+function delete_selected()
+  if #notes < 1 then return end
+  deli(notes, selected)
+  if #notes < 1 then
+    add(notes, "(empty)")
+    selected = 1
+  else
+    selected = clamp(selected, 1, #notes)
+  end
+  status = "deleted selected note"
+end
+
+function handle_add_note_dialog()
+  if not pending_add then return end
+  local input = entry_box("new note text", entry_default, "note app keyboard")
+  if input == nil then
+    return
+  end
+  pending_add = false
   if input == false then
     status = "add canceled"
     return
   end
-  if input ~= nil then
-    if input == "" then input = "(empty note)" end
-    add(notes, input)
-    selected = #notes
-    status = "added note #" .. selected
-  end
+  if input == "" then input = "(empty note)" end
+  add(notes, input)
+  selected = #notes
+  status = "added note #" .. selected
 end
 
 function _update()
+  handle_add_note_dialog()
+
+  if pending_add then return end
+
   if btnp("down") then selected = clamp(selected + 1, 1, #notes) end
   if btnp("up") then selected = clamp(selected - 1, 1, #notes) end
-  if btnp("a") then add_note() end
+  if btnp("a") then begin_add_note() end
   if btnp("y") then save_notes() end
   if btnp("x") then load_notes() end
+  if btnp("b") then delete_selected() end
+
+  local mx, my, mb, mbr = mouse()
+  if (mbr & 1) ~= 0 then
+    if in_rect(mx, my, buttons.add) then begin_add_note() end
+    if in_rect(mx, my, buttons.save) then save_notes() end
+    if in_rect(mx, my, buttons.load) then load_notes() end
+    if in_rect(mx, my, buttons.del) then delete_selected() end
+
+    local y = 62
+    for i=1,#notes do
+      if my >= y-2 and my <= y+15 then
+        selected = i
+      end
+      y = y + 18
+      if y > 238 then break end
+    end
+  end
+end
+
+function draw_button(btn, active)
+  local bg = active and color(87, 131, 196) or color(61, 72, 101)
+  rectfill(btn.x, btn.y, btn.x + btn.w, btn.y + btn.h, bg)
+  rect(btn.x, btn.y, btn.x + btn.w, btn.y + btn.h, color(255,255,255))
+  print(btn.label, 10, btn.x + 20, btn.y + 6, color(255, 247, 233))
 end
 
 function _draw()
   cls(color(29, 32, 47))
-  print("note app", 14, 8, 8, color(255, 246, 223))
-  print("up/down select  A add  Y save  X load", 9, 8, 24, color(181, 215, 255))
-  print(status, 9, 8, 252, color(255, 207, 150))
-  local y = 42
+  print("note app - touch + mouse", 14, 8, 8, color(255, 246, 223))
+  print("tap add to call in-engine keyboard", 9, 8, 22, color(181, 215, 255))
+
+  draw_button(buttons.add, false)
+  draw_button(buttons.save, false)
+  draw_button(buttons.load, false)
+  draw_button(buttons.del, false)
+
+  print("pad: up/down select, A add, Y save, X load, B delete", 8, 8, 248, color(190, 206, 236))
+  print(status, 9, 8, 260, color(255, 207, 150))
+
+  local y = 62
   for i=1,#notes do
     local bg = (i == selected) and color(78, 124, 190) or color(55, 63, 86)
     rectfill(8, y-2, 470, y+15, bg)
     print(i .. ". " .. notes[i], 10, 12, y, color(255, 247, 233))
-    y += 18
+    y = y + 18
     if y > 238 then break end
   end
 end`}];
@@ -5148,27 +5219,27 @@ function _update()
   end
 
   if alive then
-    spawn_timer -= 1
+    spawn_timer = spawn_timer - 1
     if spawn_timer <= 0 then
       spawn_pipe()
       spawn_timer = 70
     end
-    bird.vy += gravity
-    bird.y += bird.vy
+    bird.vy = bird.vy + gravity
+    bird.y = bird.y + bird.vy
     local i = 1
     while i <= #pipes do
       local pipe = pipes[i]
-      pipe.x -= speed
+      pipe.x = pipe.x - speed
       if not pipe.passed and pipe.x + pipe.w < bird.x then
         pipe.passed = true
-        score += 1
+        score = score + 1
         if score > high_score then
           high_score = score
           save_data("flappy_high_score", tostring(high_score))
         end
       end
       if hit_pipe(pipe) then alive = false end
-      if pipe.x + pipe.w < -4 then deli(pipes, i) else i += 1 end
+      if pipe.x + pipe.w < -4 then deli(pipes, i) else i = i + 1 end
     end
     if bird.y < 0 or bird.y > 258 then alive = false end
   end
