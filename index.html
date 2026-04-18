@@ -3469,37 +3469,34 @@ function loadUiFunctionsExampleProject(){
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
   p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`player = {money=100, health=100, level=1}
-buttons = {}
-drop = nil
+ui = {buttons = {}, drop = nil}
 status = "use buttons/dropdown"
 
-function _init()
-  default_controls("none")
-
+function setup_ui_defaults()
   default_button({w=134,h=20,bg=5,border=7,text=0,hover_bg=6})
+  default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})
+end
 
-  local add_money = {x=18,y=58,label="+25 money",func=function()
-    mod_value(player, "money", 25)
-    status = "money up"
-  end}
+function build_ui()
+  ui.buttons = {
+    default_button({x=18,y=58,label="+25 money",func=function()
+      mod_value(player, "money", 25)
+      status = "money up"
+    end}),
+    default_button({x=18,y=82,label="-10 health",bg=8,func=function()
+      mod_value(player, "health", -10)
+      if player.health < 0 then player.health = 0 end
+      status = "health down"
+    end}),
+    default_button({x=18,y=106,label="level +1",bg=11,func=function()
+      mod_value(player, "level", 1)
+      status = "level up"
+    end})
+  }
 
-  local take_damage = {x=18,y=82,label="-10 health",bg=8,func=function()
-    mod_value(player, "health", -10)
-    if player.health < 0 then player.health = 0 end
-    status = "health down"
-  end}
-
-  local level_up = {x=18,y=106,label="level +1",bg=11,func=function()
-    mod_value(player, "level", 1)
-    status = "level up"
-  end}
-
-  buttons = {add_money, take_damage, level_up}
-
-  drop = default_dropdown({
+  ui.drop = default_dropdown({
     x=18,
     y=148,
-    w=180,
     label="select loadout",
     items={
       {label="balanced", func=function() set_value(player, "money", 100) set_value(player, "health", 100) status="balanced" end},
@@ -3510,6 +3507,12 @@ function _init()
       status = "picked "..item.label
     end
   })
+end
+
+function _init()
+  default_controls("none")
+  setup_ui_defaults()
+  build_ui()
 end
 
 function _update()
@@ -3525,10 +3528,10 @@ function _draw()
   print("level: "..player.level, 12, 232, 104, 11)
   print("status: "..status, 11, 232, 132, 6)
 
-  ui_buttons(buttons)
-  ui_dropdown(drop)
+  ui_buttons(ui.buttons)
+  ui_dropdown(ui.drop)
 
-  print("each button/dropdown item has its own func callback", 10, 20, 232, 12)
+  print("defaults set once in _init, reused every frame", 9, 20, 232, 12)
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -3588,7 +3591,7 @@ function loadOperationCorporationExampleProject(){
   }
 }
 
-ui = {top = {}, nav = {}, screen = {}}
+ui = {buttons = {top = {}, teams = {}, missions = {}, rnd = {}}, dropdowns = {teams = nil, missions = nil, rnd = nil}}
 
 function clamp(v,a,b)
   if v < a then return a end
@@ -3664,6 +3667,80 @@ function set_screen(name)
   game.message = "screen: "..name
 end
 
+function set_team_by_name(item)
+  for i=1,#game.teams do
+    if game.teams[i].name == item.value then game.selected_team = i return end
+  end
+end
+
+function set_mission_by_name(item)
+  for i=1,#game.missions do
+    if game.missions[i].name == item.value then game.selected_mission = i return end
+  end
+end
+
+function set_project_by_name(item)
+  for i=1,#game.research.projects do
+    if game.research.projects[i].name == item.value then game.selected_research = i return end
+  end
+end
+
+function set_factory_by_name(item)
+  for i=1,#game.research.factory do
+    if game.research.factory[i].name == item.value then game.selected_factory = i return end
+  end
+end
+
+function build_team_items()
+  local items = {}
+  for i=1,#game.teams do
+    local t = game.teams[i]
+    add(items, {label=t.name.." ["..t.dept.."]", value=t.name, func=set_team_by_name})
+  end
+  return items
+end
+
+function build_mission_items()
+  local items = {}
+  for i=1,#game.missions do
+    local m = game.missions[i]
+    add(items, {label=m.name.." (risk "..m.risk..")", value=m.name, func=set_mission_by_name})
+  end
+  return items
+end
+
+function build_project_items()
+  local items = {}
+  for i=1,#game.research.projects do
+    local p = game.research.projects[i]
+    add(items, {label=p.name, value=p.name, func=set_project_by_name})
+  end
+  return items
+end
+
+function build_factory_items()
+  local items = {}
+  for i=1,#game.research.factory do
+    local f = game.research.factory[i]
+    add(items, {label=f.name.." x"..f.qty, value=f.name, func=set_factory_by_name})
+  end
+  return items
+end
+
+function refresh_dropdowns()
+  ui.dropdowns.teams.items = build_team_items()
+  ui.dropdowns.teams.selected = game.selected_team
+
+  ui.dropdowns.missions.items = build_mission_items()
+  ui.dropdowns.missions.selected = clamp(game.selected_mission, 1, #ui.dropdowns.missions.items)
+
+  ui.dropdowns.rnd.items = build_project_items()
+  ui.dropdowns.rnd.selected = game.selected_research
+
+  ui.dropdowns.rnd_factory.items = build_factory_items()
+  ui.dropdowns.rnd_factory.selected = game.selected_factory
+end
+
 function train_team()
   local t = active_team()
   if game.resources.credits < 90 then
@@ -3680,6 +3757,7 @@ function train_team()
   t.readiness = clamp(t.readiness + 4, 0, 100)
   add_department_xp(t.dept, 4)
   game.message = t.name.." training complete"
+  refresh_dropdowns()
 end
 
 function assign_team_department()
@@ -3694,6 +3772,7 @@ function assign_team_department()
   if idx > #dept_order then idx = 1 end
   t.dept = dept_order[idx]
   game.message = t.name.." assigned to "..t.dept
+  refresh_dropdowns()
 end
 
 function cycle_team_gear()
@@ -3753,14 +3832,8 @@ function dispatch_mission()
   t.readiness = clamp(t.readiness - flr(m.risk/6) + 5, 38, 100)
   deli(game.missions, game.selected_mission)
   rebuild_missions()
-end
-
-function next_mission()
-  game.selected_mission = clamp(game.selected_mission + 1, 1, #game.missions)
-end
-
-function prev_mission()
-  game.selected_mission = clamp(game.selected_mission - 1, 1, #game.missions)
+  game.selected_mission = clamp(game.selected_mission, 1, #game.missions)
+  refresh_dropdowns()
 end
 
 function advance_research()
@@ -3802,6 +3875,7 @@ function manufacture_item()
   game.resources.credits = game.resources.credits - item.recipe_c
   item.qty = item.qty + 1
   game.message = "manufactured "..item.name
+  refresh_dropdowns()
 end
 
 function sell_item()
@@ -3814,6 +3888,7 @@ function sell_item()
   game.resources.credits = game.resources.credits + item.sell
   game.resources.influence = clamp(game.resources.influence + 1, 0, 100)
   game.message = "sold "..item.name.." for "..item.sell
+  refresh_dropdowns()
 end
 
 function next_day()
@@ -3824,47 +3899,50 @@ function next_day()
   game.resources.influence = clamp(game.resources.influence + flr(game.resources.territory/20), 0, 100)
   rebuild_missions()
   game.message = "day "..game.day.." briefing updated"
+  refresh_dropdowns()
+end
+
+function setup_ui_defaults()
+  default_ui_theme("button", {bg=4, border=7, text=7, hover_bg=11})
+  default_ui_theme("dropdown", {w=170, h=18, bg=1, border=7, text=7, hover_bg=13})
 end
 
 function setup_ui()
-  default_ui_theme("button", {bg=4, border=7, text=7, hover_bg=11})
-
-  ui.top = {
+  ui.buttons.top = {
     default_button({x=16,y=14,w=92,label="teams",func=function() set_screen("teams") end}),
     default_button({x=112,y=14,w=92,label="missions",func=function() set_screen("missions") end}),
     default_button({x=208,y=14,w=150,label="research + dev",func=function() set_screen("rnd") end}),
     default_button({x=362,y=14,w=104,label="next day",bg=8,func=next_day})
   }
 
-  ui.screen.teams = {
-    default_button({x=16,y=206,w=98,label="team <",func=function() game.selected_team=clamp(game.selected_team-1,1,#game.teams) end}),
-    default_button({x=118,y=206,w=98,label="team >",func=function() game.selected_team=clamp(game.selected_team+1,1,#game.teams) end}),
-    default_button({x=220,y=206,w=88,label="train",bg=11,func=train_team}),
-    default_button({x=312,y=206,w=90,label="assign",bg=10,func=assign_team_department}),
-    default_button({x=406,y=206,w=58,label="gear",bg=6,func=cycle_team_gear})
+  ui.buttons.teams = {
+    default_button({x=198,y=206,w=88,label="train",bg=11,func=train_team}),
+    default_button({x=290,y=206,w=90,label="assign",bg=10,func=assign_team_department}),
+    default_button({x=384,y=206,w=84,label="gear",bg=6,func=cycle_team_gear})
   }
 
-  ui.screen.missions = {
-    default_button({x=16,y=206,w=72,label="prev",func=prev_mission}),
-    default_button({x=92,y=206,w=72,label="next",func=next_mission}),
-    default_button({x=168,y=206,w=136,label="dispatch team",bg=11,func=dispatch_mission})
+  ui.buttons.missions = {
+    default_button({x=290,y=206,w=178,label="dispatch team",bg=11,func=dispatch_mission})
   }
 
-  ui.screen.rnd = {
-    default_button({x=16,y=206,w=98,label="proj <",func=function() game.selected_research=clamp(game.selected_research-1,1,#game.research.projects) end}),
-    default_button({x=118,y=206,w=98,label="proj >",func=function() game.selected_research=clamp(game.selected_research+1,1,#game.research.projects) end}),
-    default_button({x=220,y=206,w=124,label="assign + progress",bg=11,func=advance_research}),
-    default_button({x=348,y=206,w=58,label="item<",func=function() game.selected_factory=clamp(game.selected_factory-1,1,#game.research.factory) end}),
-    default_button({x=410,y=206,w=58,label="item>",func=function() game.selected_factory=clamp(game.selected_factory+1,1,#game.research.factory) end}),
-    default_button({x=16,y=236,w=112,label="manufacture",bg=10,func=manufacture_item}),
-    default_button({x=132,y=236,w=88,label="sell",bg=6,func=sell_item})
+  ui.buttons.rnd = {
+    default_button({x=198,y=206,w=124,label="assign + progress",bg=11,func=advance_research}),
+    default_button({x=326,y=206,w=142,label="manufacture",bg=10,func=manufacture_item}),
+    default_button({x=198,y=236,w=88,label="sell",bg=6,func=sell_item})
   }
+
+  ui.dropdowns.teams = default_dropdown({x=16,y=206,w=176,label="team",items={}})
+  ui.dropdowns.missions = default_dropdown({x=16,y=206,w=268,label="mission",items={}})
+  ui.dropdowns.rnd = default_dropdown({x=16,y=206,w=176,label="project",items={}})
+  ui.dropdowns.rnd_factory = default_dropdown({x=16,y=236,w=176,label="factory item",items={}})
+
+  refresh_dropdowns()
 end
 
 function draw_header()
   rectfill(10,10,470,46,2)
   rect(10,10,470,46,7)
-  print("operation corporation // demo remake", 10, 18, 50, 10)
+  print("operation corporation // ui workflow remake", 10, 18, 50, 10)
   print("day "..game.day.." | screen: "..game.screen, 8, 18, 62, 7)
   print("territory "..game.resources.territory.."% | influence "..game.resources.influence, 8, 18, 72, 11)
 end
@@ -3894,6 +3972,8 @@ function draw_teams_screen()
   print("security L"..game.departments.security.level.."   intelligence L"..game.departments.intelligence.level, 8, 18, y, 7)
   y = y + 12
   print("logistics L"..game.departments.logistics.level.."   engineering L"..game.departments.engineering.level, 8, 18, y, 7)
+
+  ui_dropdown(ui.dropdowns.teams)
 end
 
 function draw_missions_screen()
@@ -3903,14 +3983,15 @@ function draw_missions_screen()
   print("2) missions // dispatch teams, risk vs reward, global control", 8, 18, 92, 10)
   if m == nil then
     print("no missions available", 9, 18, 110, 8)
-    return
+  else
+    print("mission "..game.selected_mission.." / "..#game.missions..": "..m.name, 8, 18, 108, 7)
+    print("requires "..m.dept.." level "..m.req.." | uses "..m.attr, 8, 18, 120, 11)
+    print("risk "..m.risk.." | reward "..m.reward.." credits | territory +"..m.territory, 8, 18, 132, 12)
+    print("recommended gear: "..m.equip, 8, 18, 144, 7)
+    print("assign your selected team and dispatch for economic/political gains", 8, 18, 162, 10)
   end
 
-  print("mission "..game.selected_mission.." / "..#game.missions..": "..m.name, 8, 18, 108, 7)
-  print("requires "..m.dept.." level "..m.req.." | uses "..m.attr, 8, 18, 120, 11)
-  print("risk "..m.risk.." | reward "..m.reward.." credits | territory +"..m.territory, 8, 18, 132, 12)
-  print("recommended gear: "..m.equip, 8, 18, 144, 7)
-  print("assign your selected team and dispatch for economic/political gains", 8, 18, 162, 10)
+  ui_dropdown(ui.dropdowns.missions)
 end
 
 function draw_rnd_screen()
@@ -3928,7 +4009,10 @@ function draw_rnd_screen()
 
   print("factory item: "..item.name.." | qty "..item.qty, 8, 18, 150, 7)
   print("recipe "..item.recipe_c.."c + "..item.recipe_m.."m | sell "..item.sell, 8, 18, 162, 11)
-  print("manufacture for team gear or sell for market influence", 8, 18, 176, 10)
+  print("defaults are configured once; controls are reused each frame", 8, 18, 176, 10)
+
+  ui_dropdown(ui.dropdowns.rnd)
+  ui_dropdown(ui.dropdowns.rnd_factory)
 end
 
 function draw_footer()
@@ -3940,6 +4024,7 @@ end
 function _init()
   default_controls("none")
   rebuild_missions()
+  setup_ui_defaults()
   setup_ui()
 end
 
@@ -3953,24 +4038,23 @@ function _draw()
   cls(color(8, 11, 18))
   draw_header()
   draw_resources()
-  ui_buttons(ui.top)
+  ui_buttons(ui.buttons.top)
 
   if game.screen == "teams" then
     draw_teams_screen()
-    ui_buttons(ui.screen.teams)
+    ui_buttons(ui.buttons.teams)
   elseif game.screen == "missions" then
     draw_missions_screen()
-    ui_buttons(ui.screen.missions)
+    ui_buttons(ui.buttons.missions)
   else
     draw_rnd_screen()
-    ui_buttons(ui.screen.rnd)
+    ui_buttons(ui.buttons.rnd)
   end
 
   draw_footer()
 end`}];
   finalizeExampleProjectLoad();
 }
-
 
 
 function loadOperationCorporationBlueprintExampleProject(){
