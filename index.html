@@ -790,15 +790,22 @@ local function __tc_dropdown_label(item)
 end
 
 local function __tc_ui_draw_dropdown_panel(dd, mx, my, clicked, process_input)
-  local x, y, w, h = dd.x or 0, dd.y or 0, dd.w or 112, dd.h or 18
+  local x = dd.x or __tc_dropdown_theme.x or 0
+  local y = dd.y or __tc_dropdown_theme.y or 0
+  local w = dd.w or __tc_dropdown_theme.w or 112
+  local h = dd.h or __tc_dropdown_theme.h or 18
+  local bg = dd.bg or __tc_dropdown_theme.bg
+  local border = dd.border or __tc_dropdown_theme.border
+  local text = dd.text or __tc_dropdown_theme.text
+  local hover_bg = (dd.hover_bg ~= nil) and dd.hover_bg or __tc_dropdown_theme.hover_bg
   local item_h = h
   local changed = false
   for i, item in ipairs(dd.items) do
     local iy = y + (i * item_h)
     local ihover = __tc_point_in(mx, my, x, iy, w, item_h)
-    rectfill(x, iy, x + w - 1, iy + item_h - 1, ihover and (dd.hover_bg or dd.bg) or dd.bg)
-    rect(x, iy, x + w - 1, iy + item_h - 1, dd.border)
-    __tc_ui_draw_label(__tc_dropdown_label(item), x + 2, iy, w - 4, item_h, dd.text)
+    rectfill(x, iy, x + w - 1, iy + item_h - 1, ihover and (hover_bg or bg) or bg)
+    rect(x, iy, x + w - 1, iy + item_h - 1, border)
+    __tc_ui_draw_label(__tc_dropdown_label(item), x + 2, iy, w - 4, item_h, text)
     if process_input and clicked and ihover and dd.enabled ~= false then
       dd.selected = i
       dd.open = false
@@ -818,7 +825,10 @@ local function __tc_ui_render_open_dropdown_overlay(mx, my, clicked)
     return false
   end
   if type(open_dd.items) ~= "table" then open_dd.items = {} end
-  local x, y, w, h = open_dd.x or 0, open_dd.y or 0, open_dd.w or 112, open_dd.h or 18
+  local x = open_dd.x or __tc_dropdown_theme.x or 0
+  local y = open_dd.y or __tc_dropdown_theme.y or 0
+  local w = open_dd.w or __tc_dropdown_theme.w or 112
+  local h = open_dd.h or __tc_dropdown_theme.h or 18
   local hover = __tc_point_in(mx, my, x, y, w, h)
   local changed = __tc_ui_draw_dropdown_panel(open_dd, mx, my, clicked, true)
   if clicked and not hover then
@@ -837,16 +847,23 @@ function ui_dropdown(dd)
   if dd.open and __tc_ui_state.open_dropdown == nil then __tc_ui_state.open_dropdown = dd end
   local mx, my, mbtn, mpress = mouse()
   local clicked = (mpress & 1) == 1
-  local x, y, w, h = dd.x or 0, dd.y or 0, dd.w or 112, dd.h or 18
+  local x = dd.x or __tc_dropdown_theme.x or 0
+  local y = dd.y or __tc_dropdown_theme.y or 0
+  local w = dd.w or __tc_dropdown_theme.w or 112
+  local h = dd.h or __tc_dropdown_theme.h or 18
+  local border = dd.border or __tc_dropdown_theme.border
+  local text = dd.text or __tc_dropdown_theme.text
+  local base_bg = dd.bg or __tc_dropdown_theme.bg
+  local hover_bg = (dd.hover_bg ~= nil) and dd.hover_bg or __tc_dropdown_theme.hover_bg
   local hover = __tc_point_in(mx, my, x, y, w, h)
-  local bg = hover and (dd.hover_bg ~= nil) and dd.hover_bg or dd.bg
+  local bg = hover and hover_bg or base_bg
   rectfill(x, y, x + w - 1, y + h - 1, bg)
-  rect(x, y, x + w - 1, y + h - 1, dd.border)
+  rect(x, y, x + w - 1, y + h - 1, border)
   local selected_item = dd.items[math.max(1, math.floor(tonumber(dd.selected) or 1))]
   local shown = dd.label or __tc_dropdown_label(selected_item)
   local arrow_w = math.max(10, math.floor(h * 0.8))
-  __tc_ui_draw_label(shown, x + 2, y, w - arrow_w - 4, h, dd.text)
-  __tc_ui_draw_label(dd.open and "^" or "v", x + w - arrow_w - 2, y, arrow_w, h, dd.text)
+  __tc_ui_draw_label(shown, x + 2, y, w - arrow_w - 4, h, text)
+  __tc_ui_draw_label(dd.open and "^" or "v", x + w - arrow_w - 2, y, arrow_w, h, text)
 
   if clicked and hover and dd.enabled ~= false then
     dd.open = not dd.open
