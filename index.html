@@ -695,7 +695,21 @@ local function __tc_ui_draw_label(text, x, y, w, h, color)
   print(label, font_size, tx, ty, color)
 end
 
+local function __tc_button_theme_patch(opts)
+  if type(opts) ~= "table" then return false end
+  if opts.theme == true then return true end
+  local has_layout = opts.x ~= nil or opts.y ~= nil or opts.label ~= nil or opts.func ~= nil
+  local has_style = opts.w ~= nil or opts.h ~= nil or opts.bg ~= nil or opts.border ~= nil or opts.text ~= nil or opts.hover_bg ~= nil or opts.visible ~= nil or opts.enabled ~= nil
+  return (not has_layout) and has_style
+end
+
 function default_button(opts)
+  if __tc_button_theme_patch(opts) then
+    local patch = {}
+    __tc_uicopy(patch, opts)
+    patch.theme = nil
+    __tc_uicopy(__tc_button_theme, patch)
+  end
   local btn = {}
   __tc_uicopy(btn, __tc_button_theme)
   btn.func = nil
@@ -724,16 +738,20 @@ function default_ui_theme(kind, patch)
 end
 
 function ui_button(btn)
-  if type(btn) ~= "table" or btn.visible == false then return false end
+  if type(btn) ~= "table" then return false end
+  local resolved = {}
+  __tc_uicopy(resolved, __tc_button_theme)
+  __tc_uicopy(resolved, btn)
+  if resolved.visible == false then return false end
   local mx, my, mbtn, mpress = mouse()
   local clicked = (mpress & 1) == 1
-  local hover = __tc_point_in(mx, my, btn.x or 0, btn.y or 0, btn.w or 84, btn.h or 18)
-  local bg = (hover and btn.hover_bg ~= nil) and btn.hover_bg or btn.bg
-  rectfill(btn.x, btn.y, btn.x + btn.w - 1, btn.y + btn.h - 1, bg)
-  rect(btn.x, btn.y, btn.x + btn.w - 1, btn.y + btn.h - 1, btn.border)
-  __tc_ui_draw_label(btn.label or "button", btn.x, btn.y, btn.w, btn.h, btn.text)
-  if clicked and hover and btn.enabled ~= false then
-    if type(btn.func) == "function" then btn.func(btn) end
+  local hover = __tc_point_in(mx, my, resolved.x or 0, resolved.y or 0, resolved.w or 84, resolved.h or 18)
+  local bg = (hover and resolved.hover_bg ~= nil) and resolved.hover_bg or resolved.bg
+  rectfill(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, bg)
+  rect(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, resolved.border)
+  __tc_ui_draw_label(resolved.label or "button", resolved.x, resolved.y, resolved.w, resolved.h, resolved.text)
+  if clicked and hover and resolved.enabled ~= false then
+    if type(resolved.func) == "function" then resolved.func(resolved) end
     return true
   end
   return false
@@ -1110,7 +1128,7 @@ const CODE_API_DOCS = [
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
   makeDoc("default_font(font, size, color)", "Sets default print font settings used when print() leaves those values nil.", [["font", "Font family string, nil, or \"nil\". nil keeps the File menu font."],["size", "Default font size in pixels, nil, or \"nil\". nil resets to 12."],["color", "Default fill color string, palette index, color() result, nil, or \"nil\". nil follows current color()."]], ["default_font(\"Orbitron\", 14, color(255,247,232))","default_font(nil, nil, nil) -- reset all print defaults","print(\"score\", nil, 8, 8) -- now uses default_font settings"], "Use this once in _init() when you want a global text style without repeating font arguments."),
   makeDoc("default_controls(mode)", "Sets the movement control scheme to joystick or d-pad.", [["mode", "Use \"joystick\"/\"left_joystick\" for joystick controls, or \"dpad\"/\"d-pad\" for directional pad controls."]], ["default_controls(\"dpad\")","default_controls(\"joystick\")"], "Returns the current mode string after applying the setting."),
-  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Creates themed button/dropdown tables and lets you set global defaults.", [["opts", "Optional table fields: x, y, w, h, label, bg, border, text, hover_bg, enabled, func."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_ui_theme(\"button\", {bg=10,text=1,border=7})","local b = default_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button(b)"], "Assign callbacks directly with b.func=function() ... end and call ui_button()/ui_buttons() each _draw."),
+  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Creates themed button/dropdown tables and lets you set global defaults.", [["opts", "Optional table fields: x, y, w, h, label, bg, border, text, hover_bg, enabled, func. If opts only includes style fields, default_button(opts) updates the global button theme."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7}) -- set default button style","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button(default_button({x=12,y=48,label=\"-5\"}))"], "Set shared theme once, then place buttons with x/y/label/func in _draw."),
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons using rect/rectfill/print and runs callbacks on click.", [["button", "Button table from default_button()."],["list", "Array of button tables."]], ["if ui_button(shop_button) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Each button can mutate variables (money/health/level) in its own func."),
   makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Builds and draws a dropdown with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, label, items, selected, func, colors."],["items", "List entries can be strings or tables with label/value/func."]], ["mode_dd = default_dropdown({x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}})","ui_dropdown(mode_dd)"], "ui_dropdown handles opening, selection, and callback execution. Add item.func for per-choice behavior."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, 8, 8) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
@@ -3458,21 +3476,23 @@ status = "use buttons/dropdown"
 function _init()
   default_controls("none")
 
-  local add_money = default_button({x=18,y=58,w=134,label="+25 money",func=function()
+  default_button({w=134,h=20,bg=5,border=7,text=0,hover_bg=6})
+
+  local add_money = {x=18,y=58,label="+25 money",func=function()
     mod_value(player, "money", 25)
     status = "money up"
-  end})
+  end}
 
-  local take_damage = default_button({x=18,y=82,w=134,label="-10 health",bg=8,func=function()
+  local take_damage = {x=18,y=82,label="-10 health",bg=8,func=function()
     mod_value(player, "health", -10)
     if player.health < 0 then player.health = 0 end
     status = "health down"
-  end})
+  end}
 
-  local level_up = default_button({x=18,y=106,w=134,label="level +1",bg=11,func=function()
+  local level_up = {x=18,y=106,label="level +1",bg=11,func=function()
     mod_value(player, "level", 1)
     status = "level up"
-  end})
+  end}
 
   buttons = {add_money, take_damage, level_up}
 
