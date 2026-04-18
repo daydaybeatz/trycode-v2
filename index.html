@@ -3523,52 +3523,52 @@ function loadOperationCorporationExampleProject(){
   p.tileDefs={0:makeBlankTileDef()};
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
-  p.codeFiles=[{name:"main.lua",tabTheme:11,content:`campaign = {
+  p.codeFiles=[{name:"main.lua",tabTheme:11,content:`game = {
   day = 1,
-  mode = "arcade",
-  speed = "normal",
-  message = "welcome, director",
-  last_result = "stand by",
-  save_slot = "operation_corporation_arcade",
+  screen = "teams",
+  message = "operation corporation // command online",
   selected_team = 1,
-  selected_region = 1,
   selected_mission = 1,
-  score_streak = 0,
-  best_streak = 0,
-  action_points = 3,
+  selected_research = 1,
+  selected_factory = 1,
   resources = {
-    money = 1200,
-    materials = 180,
-    intel = 22,
-    influence = 14,
-    territory = 24,
-    morale = 76,
-    fan_hype = 10
+    credits = 1800,
+    materials = 260,
+    intel = 34,
+    influence = 22,
+    territory = 18,
+    prototypes = 0
+  },
+  departments = {
+    security = {level = 2, xp = 0, bonus = "combat + risk control"},
+    intelligence = {level = 2, xp = 0, bonus = "stealth + mission scouting"},
+    logistics = {level = 1, xp = 0, bonus = "supply + deployment speed"},
+    engineering = {level = 1, xp = 0, bonus = "research + manufacturing"}
   },
   teams = {
-    {name="vanguard", power=16, stealth=8, logistics=8, readiness=88, specialty="combat", status="idle"},
-    {name="specter", power=12, stealth=16, logistics=7, readiness=92, specialty="covert", status="idle"},
-    {name="atlas", power=11, stealth=7, logistics=16, readiness=90, specialty="economic", status="idle"}
+    {name="vanguard", dept="security", level=2, ability="breach tactics", power=15, stealth=7, logistics=8, research=6, readiness=84, gear="standard armor"},
+    {name="specter", dept="intelligence", level=2, ability="ghost relay", power=9, stealth=16, logistics=7, research=10, readiness=88, gear="signal veil"},
+    {name="atlas", dept="logistics", level=1, ability="rapid convoy", power=11, stealth=8, logistics=15, research=7, readiness=82, gear="heavy truck"},
+    {name="helix", dept="engineering", level=1, ability="field forge", power=8, stealth=9, logistics=9, research=15, readiness=80, gear="prototype rig"}
   },
-  regions = {
-    {id="north port", control=24, heat=58, wealth=48, supply=60, style="industrial"},
-    {id="amber coast", control=32, heat=36, wealth=78, supply=44, style="coastal"},
-    {id="capitol ring", control=18, heat=62, wealth=88, supply=36, style="urban"},
-    {id="iron valley", control=28, heat=44, wealth=52, supply=74, style="frontier"}
-  },
-  missions = {}
+  missions = {},
+  research = {
+    projects = {
+      {name="adaptive armor", dept="engineering", req=1, cost=90, mat=40, days=3, progress=0, done=false, unlock="mk-ii armor"},
+      {name="drone recon suite", dept="intelligence", req=2, cost=120, mat=26, days=4, progress=0, done=false, unlock="recon drone"},
+      {name="combat stimulant", dept="security", req=2, cost=130, mat=20, days=4, progress=0, done=false, unlock="rush booster"},
+      {name="autonomous freight", dept="logistics", req=2, cost=150, mat=55, days=5, progress=0, done=false, unlock="cargo ai"}
+    },
+    factory = {
+      {name="mk-ii armor", recipe_m=32, recipe_c=80, qty=0, sell=140},
+      {name="recon drone", recipe_m=24, recipe_c=95, qty=0, sell=170},
+      {name="rush booster", recipe_m=18, recipe_c=70, qty=0, sell=120},
+      {name="cargo ai", recipe_m=38, recipe_c=120, qty=0, sell=210}
+    }
+  }
 }
 
-ui = {
-  nav_buttons = {},
-  action_buttons = {},
-  mission_buttons = {},
-  utility_buttons = {},
-  region_dd = nil,
-  team_dd = nil,
-  speed_dd = nil,
-  mode_dd = nil
-}
+ui = {top = {}, nav = {}, screen = {}}
 
 function clamp(v,a,b)
   if v < a then return a end
@@ -3580,466 +3580,373 @@ function pick(list)
   return list[flr(rnd(#list))+1]
 end
 
-function title_case(text)
-  local out = string.gsub(text, "^%l", string.upper)
-  return out
-end
-
-function active_region()
-  return campaign.regions[campaign.selected_region]
-end
-
 function active_team()
-  return campaign.teams[campaign.selected_team]
+  return game.teams[game.selected_team]
 end
 
 function active_mission()
-  return campaign.missions[campaign.selected_mission]
+  return game.missions[game.selected_mission]
 end
 
-function mission_reward_scale()
-  if campaign.mode == "story" then return 0.92 end
-  if campaign.mode == "blitz" then return 1.25 end
-  return 1
+function active_project()
+  return game.research.projects[game.selected_research]
 end
 
-function action_cost()
-  if campaign.speed == "fast" then return 1 end
-  if campaign.speed == "slow" then return 3 end
-  return 2
+function active_factory_item()
+  return game.research.factory[game.selected_factory]
 end
 
-function can_act()
-  return campaign.action_points >= action_cost()
+function department_level(name)
+  return game.departments[name].level
 end
 
-function award_combo_bonus(base)
-  local extra = flr(campaign.score_streak * 3)
-  return base + extra
+function add_department_xp(name, amt)
+  local d = game.departments[name]
+  d.xp = d.xp + amt
+  local needed = d.level * 10
+  if d.xp >= needed then
+    d.xp = d.xp - needed
+    d.level = clamp(d.level + 1, 1, 6)
+    game.message = name.." department leveled up"
+  end
 end
 
-function build_mission_for_region(region)
+function rebuild_missions()
+  if #game.missions >= 5 then return end
+
   local templates = {
-    {name="supply lane sweep", kind="combat", need="power", base_risk=26, base_cash=190, base_materials=22, base_intel=2, base_territory=2},
-    {name="silent wiretap", kind="covert", need="stealth", base_risk=22, base_cash=170, base_materials=12, base_intel=5, base_territory=1},
-    {name="trade corridor boost", kind="economic", need="logistics", base_risk=20, base_cash=210, base_materials=26, base_intel=1, base_territory=2},
-    {name="civic hearts drive", kind="diplomatic", need="logistics", base_risk=18, base_cash=140, base_materials=8, base_intel=3, base_territory=3}
+    {name="harbor strike", dept="security", attr="power", risk=30, reward=200, terr=2, req=2, eq="mk-ii armor"},
+    {name="silent extraction", dept="intelligence", attr="stealth", risk=26, reward=180, terr=2, req=2, eq="recon drone"},
+    {name="supply corridor", dept="logistics", attr="logistics", risk=24, reward=210, terr=3, req=1, eq="cargo ai"},
+    {name="prototype theft", dept="engineering", attr="research", risk=34, reward=230, terr=2, req=1, eq="rush booster"}
   }
 
-  local t = pick(templates)
-  local pressure = flr(region.heat / 7) + flr((100-region.control)/9)
-  local risk = clamp(t.base_risk + pressure, 16, 78)
-  local scale = mission_reward_scale()
-
-  return {
-    name = t.name.." @ "..region.id,
-    kind = t.kind,
-    need = t.need,
-    risk = risk,
-    turns = clamp(2 + flr(region.heat/40), 2, 5),
-    reward = {
-      cash = flr((t.base_cash + region.wealth) * scale),
-      materials = flr((t.base_materials + region.supply/2) * scale),
-      intel = flr((t.base_intel + region.heat/18) * scale),
-      territory = clamp(flr((t.base_territory + (100-region.control)/30) * scale), 1, 5),
-      hype = clamp(flr((4 + region.wealth/30) * scale), 2, 8)
-    },
-    state = "open"
-  }
-end
-
-function refill_missions()
-  while #campaign.missions < 5 do
-    local idx = (#campaign.missions + campaign.day) % #campaign.regions + 1
-    add(campaign.missions, build_mission_for_region(campaign.regions[idx]))
-  end
-  campaign.selected_mission = clamp(campaign.selected_mission, 1, #campaign.missions)
-end
-
-function apply_passive_income()
-  for region in all(campaign.regions) do
-    local control_factor = region.control / 100
-    campaign.resources.money = campaign.resources.money + flr((4 + region.wealth/22) * control_factor)
-    campaign.resources.materials = campaign.resources.materials + flr((2 + region.supply/26) * control_factor)
-    campaign.resources.intel = campaign.resources.intel + flr((1 + region.heat/40) * control_factor)
-  end
-end
-
-function roll_event()
-  local events = {
-    {name="sponsor bonus", msg="fans fund your momentum", money=80, morale=4, hype=3},
-    {name="black market leak", msg="intel for cheap, trust for less", money=-40, intel=5, morale=-4, hype=2},
-    {name="citizen rally", msg="public cheers your crews", influence=3, morale=6, hype=4},
-    {name="supply snag", msg="a convoy misses the window", materials=-20, morale=-2, hype=-1}
-  }
-  local e = pick(events)
-  campaign.resources.money = campaign.resources.money + (e.money or 0)
-  campaign.resources.materials = campaign.resources.materials + (e.materials or 0)
-  campaign.resources.intel = campaign.resources.intel + (e.intel or 0)
-  campaign.resources.influence = campaign.resources.influence + (e.influence or 0)
-  campaign.resources.morale = clamp(campaign.resources.morale + (e.morale or 0), 0, 100)
-  campaign.resources.fan_hype = clamp(campaign.resources.fan_hype + (e.hype or 0), 0, 100)
-  campaign.message = e.msg
-  campaign.last_result = "event: "..e.name
-end
-
-function spend_action_points()
-  campaign.action_points = clamp(campaign.action_points - action_cost(), 0, 9)
-end
-
-function mission_success_score(team, mission)
-  local role_value = team.power
-  if mission.need == "stealth" then role_value = team.stealth end
-  if mission.need == "logistics" then role_value = team.logistics end
-
-  local vibe = flr(campaign.resources.morale / 10) + flr(campaign.resources.fan_hype / 16)
-  local rng = flr(rnd(10))
-  return role_value + flr(team.readiness/12) + vibe + rng - flr(mission.risk/10)
-end
-
-function resolve_selected_mission()
-  local mission = active_mission()
-  if mission == nil then
-    campaign.message = "no mission selected"
-    return
-  end
-  if not can_act() then
-    campaign.message = "not enough action points"
-    return
+  while #game.missions < 5 do
+    local t = pick(templates)
+    local risk = clamp(t.risk + flr(rnd(18)) - 5, 18, 82)
+    add(game.missions, {
+      name = t.name,
+      dept = t.dept,
+      attr = t.attr,
+      req = t.req,
+      risk = risk,
+      reward = t.reward + flr(rnd(80)),
+      territory = t.terr + flr(rnd(2)),
+      equip = t.eq
+    })
   end
 
-  local team = active_team()
-  local region = active_region()
-  spend_action_points()
-
-  local score = mission_success_score(team, mission)
-  local outcome = "failure"
-  local payout = 0.55
-  if score >= 20 then
-    outcome = "success"
-    payout = 1
-  elseif score >= 15 then
-    outcome = "partial"
-    payout = 0.72
-  end
-
-  local cash_gain = award_combo_bonus(flr(mission.reward.cash * payout))
-  local material_gain = award_combo_bonus(flr(mission.reward.materials * payout))
-  campaign.resources.money = campaign.resources.money + cash_gain
-  campaign.resources.materials = campaign.resources.materials + material_gain
-  campaign.resources.intel = campaign.resources.intel + flr(mission.reward.intel * payout)
-  campaign.resources.territory = clamp(campaign.resources.territory + flr(mission.reward.territory * payout), 0, 100)
-  campaign.resources.fan_hype = clamp(campaign.resources.fan_hype + flr(mission.reward.hype * payout), 0, 100)
-
-  region.control = clamp(region.control + flr(mission.reward.territory * payout), 0, 100)
-  region.heat = clamp(region.heat - flr(4 * payout) + 1, 0, 100)
-
-  if outcome == "success" then
-    campaign.score_streak = campaign.score_streak + 1
-  else
-    campaign.score_streak = 0
-  end
-  if campaign.score_streak > campaign.best_streak then campaign.best_streak = campaign.score_streak end
-
-  team.readiness = clamp(team.readiness - flr(mission.risk/7) + 6, 35, 100)
-  team.status = "idle"
-
-  campaign.last_result = mission.name.." -> "..outcome
-  campaign.message = "+$"..cash_gain.." +mat "..material_gain.." | streak "..campaign.score_streak
-
-  deli(campaign.missions, campaign.selected_mission)
-  refill_missions()
+  game.selected_mission = clamp(game.selected_mission, 1, #game.missions)
 end
 
-function train_selected_team()
-  if not can_act() then
-    campaign.message = "not enough action points"
-    return
-  end
-  spend_action_points()
+function set_screen(name)
+  game.screen = name
+  game.message = "screen: "..name
+end
+
+function train_team()
   local t = active_team()
-  t.power = clamp(t.power + 1, 1, 25)
-  t.stealth = clamp(t.stealth + 1, 1, 25)
-  t.logistics = clamp(t.logistics + 1, 1, 25)
-  t.readiness = clamp(t.readiness + 6, 0, 100)
-  campaign.resources.morale = clamp(campaign.resources.morale + 2, 0, 100)
-  campaign.message = t.name.." ran a hype bootcamp"
-  campaign.last_result = "training complete"
-end
-
-function launch_promo()
-  if campaign.resources.money < 120 then
-    campaign.message = "need 120 cash"
+  if game.resources.credits < 90 then
+    game.message = "need 90 credits"
     return
   end
-  campaign.resources.money = campaign.resources.money - 120
-  campaign.resources.fan_hype = clamp(campaign.resources.fan_hype + 9, 0, 100)
-  campaign.resources.morale = clamp(campaign.resources.morale + 4, 0, 100)
-  campaign.message = "promo blast launched"
-  campaign.last_result = "crowd energy rising"
+
+  game.resources.credits = game.resources.credits - 90
+  t.level = clamp(t.level + 1, 1, 8)
+  t.power = clamp(t.power + 1, 1, 30)
+  t.stealth = clamp(t.stealth + 1, 1, 30)
+  t.logistics = clamp(t.logistics + 1, 1, 30)
+  t.research = clamp(t.research + 1, 1, 30)
+  t.readiness = clamp(t.readiness + 4, 0, 100)
+  add_department_xp(t.dept, 4)
+  game.message = t.name.." training complete"
 end
 
-function boost_readiness()
-  if campaign.resources.materials < 30 then
-    campaign.message = "need 30 materials"
+function assign_team_department()
+  local t = active_team()
+  local dept_order = {"security","intelligence","logistics","engineering"}
+  local idx = 1
+  while idx <= #dept_order do
+    if dept_order[idx] == t.dept then break end
+    idx = idx + 1
+  end
+  idx = idx + 1
+  if idx > #dept_order then idx = 1 end
+  t.dept = dept_order[idx]
+  game.message = t.name.." assigned to "..t.dept
+end
+
+function cycle_team_gear()
+  local t = active_team()
+  local gear = {"standard armor","signal veil","heavy truck","prototype rig","mk-ii armor","recon drone"}
+  local idx = 1
+  while idx <= #gear do
+    if gear[idx] == t.gear then break end
+    idx = idx + 1
+  end
+  idx = idx + 1
+  if idx > #gear then idx = 1 end
+  t.gear = gear[idx]
+  t.readiness = clamp(t.readiness + 2, 0, 100)
+  game.message = t.name.." equipped with "..t.gear
+end
+
+function dispatch_mission()
+  local m = active_mission()
+  if m == nil then
+    game.message = "no missions"
     return
   end
-  campaign.resources.materials = campaign.resources.materials - 30
-  for t in all(campaign.teams) do
-    t.readiness = clamp(t.readiness + 8, 0, 100)
+
+  local t = active_team()
+  if department_level(m.dept) < m.req then
+    game.message = m.dept.." level "..m.req.." required"
+    return
   end
-  campaign.message = "all teams resupplied"
-  campaign.last_result = "readiness spike"
+
+  local stat = t.power
+  if m.attr == "stealth" then stat = t.stealth end
+  if m.attr == "logistics" then stat = t.logistics end
+  if m.attr == "research" then stat = t.research end
+
+  local req_bonus = department_level(m.dept) * 2
+  local gear_bonus = (t.gear == m.equip) and 6 or 0
+  local roll = stat + req_bonus + gear_bonus + flr(t.readiness/12) + flr(rnd(16))
+  local diff = m.risk + 12
+
+  local success = roll >= diff
+  if success then
+    local cash = m.reward + flr(game.resources.influence * 1.2)
+    game.resources.credits = game.resources.credits + cash
+    game.resources.materials = game.resources.materials + flr(m.reward / 6)
+    game.resources.intel = game.resources.intel + 3
+    game.resources.territory = clamp(game.resources.territory + m.territory, 0, 100)
+    game.resources.influence = clamp(game.resources.influence + 2, 0, 100)
+    add_department_xp(m.dept, 3)
+    game.message = "mission success: +"..cash.." credits"
+  else
+    game.resources.influence = clamp(game.resources.influence - 2, 0, 100)
+    game.resources.intel = clamp(game.resources.intel - 1, 0, 100)
+    game.message = "mission failed, regroup"
+  end
+
+  t.readiness = clamp(t.readiness - flr(m.risk/6) + 5, 38, 100)
+  deli(game.missions, game.selected_mission)
+  rebuild_missions()
+end
+
+function next_mission()
+  game.selected_mission = clamp(game.selected_mission + 1, 1, #game.missions)
+end
+
+function prev_mission()
+  game.selected_mission = clamp(game.selected_mission - 1, 1, #game.missions)
+end
+
+function advance_research()
+  local p = active_project()
+  if p.done then
+    game.message = "project already complete"
+    return
+  end
+  if department_level(p.dept) < p.req then
+    game.message = p.dept.." needs level "..p.req
+    return
+  end
+  if game.resources.credits < p.cost or game.resources.materials < p.mat then
+    game.message = "need "..p.cost.." credits + "..p.mat.." materials"
+    return
+  end
+
+  game.resources.credits = game.resources.credits - p.cost
+  game.resources.materials = game.resources.materials - p.mat
+  p.progress = p.progress + 1
+  game.resources.prototypes = game.resources.prototypes + 1
+
+  if p.progress >= p.days then
+    p.done = true
+    add_department_xp(p.dept, 5)
+    game.message = "research complete: "..p.unlock
+  else
+    game.message = p.name.." progress "..p.progress.."/"..p.days
+  end
+end
+
+function manufacture_item()
+  local item = active_factory_item()
+  if game.resources.materials < item.recipe_m or game.resources.credits < item.recipe_c then
+    game.message = "insufficient manufacturing resources"
+    return
+  end
+  game.resources.materials = game.resources.materials - item.recipe_m
+  game.resources.credits = game.resources.credits - item.recipe_c
+  item.qty = item.qty + 1
+  game.message = "manufactured "..item.name
+end
+
+function sell_item()
+  local item = active_factory_item()
+  if item.qty <= 0 then
+    game.message = "no inventory to sell"
+    return
+  end
+  item.qty = item.qty - 1
+  game.resources.credits = game.resources.credits + item.sell
+  game.resources.influence = clamp(game.resources.influence + 1, 0, 100)
+  game.message = "sold "..item.name.." for "..item.sell
 end
 
 function next_day()
-  campaign.day = campaign.day + 1
-  campaign.action_points = clamp(campaign.action_points + 3, 0, 9)
-  apply_passive_income()
-
-  local mood_shift = flr(rnd(7)) - 3
-  campaign.resources.morale = clamp(campaign.resources.morale + mood_shift, 0, 100)
-  if campaign.resources.fan_hype > 70 then
-    campaign.resources.influence = campaign.resources.influence + 1
-  end
-
-  if (campaign.day % 2) == 0 then
-    roll_event()
-  else
-    campaign.message = "new day, new opportunities"
-    campaign.last_result = "day advanced"
-  end
-
-  refill_missions()
-end
-
-function reset_campaign()
-  campaign.day = 1
-  campaign.action_points = 3
-  campaign.resources.money = 1200
-  campaign.resources.materials = 180
-  campaign.resources.intel = 22
-  campaign.resources.influence = 14
-  campaign.resources.territory = 24
-  campaign.resources.morale = 76
-  campaign.resources.fan_hype = 10
-  campaign.score_streak = 0
-  for t in all(campaign.teams) do
-    t.status = "idle"
-    t.readiness = 90
-  end
-  campaign.missions = {}
-  refill_missions()
-  campaign.message = "new campaign booted"
-  campaign.last_result = "fresh run"
-end
-
-function save_campaign()
-  local payload = campaign.day.."|"..campaign.resources.money.."|"..campaign.resources.materials.."|"..campaign.resources.intel.."|"..campaign.resources.influence.."|"..campaign.resources.territory.."|"..campaign.resources.morale.."|"..campaign.resources.fan_hype.."|"..campaign.best_streak
-  save_data(campaign.save_slot, payload)
-  campaign.message = "save complete"
-end
-
-function load_campaign()
-  local payload = load_data(campaign.save_slot)
-  if payload == nil then
-    campaign.message = "no save found"
-    return
-  end
-  local parts = {}
-  for part in string.gmatch(payload, "[^|]+") do add(parts, part) end
-  if #parts < 9 then
-    campaign.message = "save corrupt"
-    return
-  end
-
-  campaign.day = tonumber(parts[1]) or campaign.day
-  campaign.resources.money = tonumber(parts[2]) or campaign.resources.money
-  campaign.resources.materials = tonumber(parts[3]) or campaign.resources.materials
-  campaign.resources.intel = tonumber(parts[4]) or campaign.resources.intel
-  campaign.resources.influence = tonumber(parts[5]) or campaign.resources.influence
-  campaign.resources.territory = tonumber(parts[6]) or campaign.resources.territory
-  campaign.resources.morale = tonumber(parts[7]) or campaign.resources.morale
-  campaign.resources.fan_hype = tonumber(parts[8]) or campaign.resources.fan_hype
-  campaign.best_streak = tonumber(parts[9]) or campaign.best_streak
-  campaign.message = "save loaded"
-  campaign.last_result = "resume successful"
+  game.day = game.day + 1
+  game.resources.credits = game.resources.credits + 60 + flr(game.resources.territory * 1.4)
+  game.resources.materials = game.resources.materials + 8 + department_level("logistics")
+  game.resources.intel = game.resources.intel + department_level("intelligence")
+  game.resources.influence = clamp(game.resources.influence + flr(game.resources.territory/20), 0, 100)
+  rebuild_missions()
+  game.message = "day "..game.day.." briefing updated"
 end
 
 function setup_ui()
   default_ui_theme("button", {bg=4, border=7, text=7, hover_bg=11})
-  default_ui_theme("dropdown", {bg=2, border=7, text=7, hover_bg=12})
 
-  ui.nav_buttons = {
-    default_button({x=16,y=38,w=90,label="run mission",func=resolve_selected_mission}),
-    default_button({x=110,y=38,w=80,label="train",bg=11,func=train_selected_team}),
-    default_button({x=194,y=38,w=80,label="promo",bg=10,func=launch_promo}),
-    default_button({x=278,y=38,w=92,label="resupply",bg=6,func=boost_readiness}),
-    default_button({x=374,y=38,w=90,label="next day",bg=8,func=next_day})
+  ui.top = {
+    default_button({x=16,y=14,w=92,label="teams",func=function() set_screen("teams") end}),
+    default_button({x=112,y=14,w=92,label="missions",func=function() set_screen("missions") end}),
+    default_button({x=208,y=14,w=150,label="research + dev",func=function() set_screen("rnd") end}),
+    default_button({x=362,y=14,w=104,label="next day",bg=8,func=next_day})
   }
 
-  ui.utility_buttons = {
-    default_button({x=16,y=238,w=62,label="save",bg=6,func=save_campaign}),
-    default_button({x=82,y=238,w=62,label="load",bg=12,func=load_campaign}),
-    default_button({x=148,y=238,w=74,label="new run",bg=8,func=reset_campaign})
+  ui.screen.teams = {
+    default_button({x=16,y=206,w=98,label="team <",func=function() game.selected_team=clamp(game.selected_team-1,1,#game.teams) end}),
+    default_button({x=118,y=206,w=98,label="team >",func=function() game.selected_team=clamp(game.selected_team+1,1,#game.teams) end}),
+    default_button({x=220,y=206,w=88,label="train",bg=11,func=train_team}),
+    default_button({x=312,y=206,w=90,label="assign",bg=10,func=assign_team_department}),
+    default_button({x=406,y=206,w=58,label="gear",bg=6,func=cycle_team_gear})
   }
 
-  ui.mission_buttons = {
-    default_button({x=394,y=176,w=32,label="<",func=function() campaign.selected_mission = clamp(campaign.selected_mission-1,1,#campaign.missions) end}),
-    default_button({x=430,y=176,w=32,label=">",func=function() campaign.selected_mission = clamp(campaign.selected_mission+1,1,#campaign.missions) end})
+  ui.screen.missions = {
+    default_button({x=16,y=206,w=72,label="prev",func=prev_mission}),
+    default_button({x=92,y=206,w=72,label="next",func=next_mission}),
+    default_button({x=168,y=206,w=136,label="dispatch team",bg=11,func=dispatch_mission})
   }
 
-  ui.region_dd = default_dropdown({
-    x=16,
-    y=72,
-    w=148,
-    label="region",
-    items={
-      {label="north port",func=function() campaign.selected_region = 1 end},
-      {label="amber coast",func=function() campaign.selected_region = 2 end},
-      {label="capitol ring",func=function() campaign.selected_region = 3 end},
-      {label="iron valley",func=function() campaign.selected_region = 4 end}
-    },
-    func=function(item)
-      campaign.message = "region focus: "..item.label
-    end
-  })
-
-  ui.team_dd = default_dropdown({
-    x=172,
-    y=72,
-    w=146,
-    label="team",
-    items={
-      {label="vanguard",func=function() campaign.selected_team = 1 end},
-      {label="specter",func=function() campaign.selected_team = 2 end},
-      {label="atlas",func=function() campaign.selected_team = 3 end}
-    },
-    func=function(item)
-      campaign.message = "team focus: "..item.label
-    end
-  })
-
-  ui.speed_dd = default_dropdown({
-    x=326,
-    y=72,
-    w=138,
-    label="action cost",
-    items={
-      {label="slow (3 ap)",func=function() campaign.speed = "slow" end},
-      {label="normal (2 ap)",func=function() campaign.speed = "normal" end},
-      {label="fast (1 ap)",func=function() campaign.speed = "fast" end}
-    },
-    selected=2,
-    func=function(item)
-      campaign.message = "tempo set: "..item.label
-    end
-  })
-
-  ui.mode_dd = default_dropdown({
-    x=16,
-    y=100,
-    w=172,
-    label="campaign mode",
-    items={
-      {label="arcade",func=function() campaign.mode = "arcade" end},
-      {label="story",func=function() campaign.mode = "story" end},
-      {label="blitz",func=function() campaign.mode = "blitz" end}
-    },
-    func=function(item)
-      campaign.message = "mode switched to "..item.label
-    end
-  })
+  ui.screen.rnd = {
+    default_button({x=16,y=206,w=98,label="proj <",func=function() game.selected_research=clamp(game.selected_research-1,1,#game.research.projects) end}),
+    default_button({x=118,y=206,w=98,label="proj >",func=function() game.selected_research=clamp(game.selected_research+1,1,#game.research.projects) end}),
+    default_button({x=220,y=206,w=124,label="assign + progress",bg=11,func=advance_research}),
+    default_button({x=348,y=206,w=58,label="item<",func=function() game.selected_factory=clamp(game.selected_factory-1,1,#game.research.factory) end}),
+    default_button({x=410,y=206,w=58,label="item>",func=function() game.selected_factory=clamp(game.selected_factory+1,1,#game.research.factory) end}),
+    default_button({x=16,y=236,w=112,label="manufacture",bg=10,func=manufacture_item}),
+    default_button({x=132,y=236,w=88,label="sell",bg=6,func=sell_item})
+  }
 end
 
-function draw_top()
-  rectfill(10,10,470,30,2)
-  rect(10,10,470,30,7)
-  print("operation corporation: streamlined command", 11, 16, 16, 10)
-  print("day "..campaign.day.." | ap "..campaign.action_points.." | streak "..campaign.score_streak.." (best "..campaign.best_streak..")", 8, 254, 16, 7)
+function draw_header()
+  rectfill(10,10,470,46,2)
+  rect(10,10,470,46,7)
+  print("operation corporation // demo remake", 10, 18, 50, 10)
+  print("day "..game.day.." | screen: "..game.screen, 8, 18, 62, 7)
+  print("territory "..game.resources.territory.."% | influence "..game.resources.influence, 8, 18, 72, 11)
 end
 
-function draw_resource_strip()
-  rectfill(10,128,470,154,3)
-  rect(10,128,470,154,7)
-  print("$"..campaign.resources.money, 11, 18, 136, 7)
-  print("mat "..campaign.resources.materials, 11, 98, 136, 7)
-  print("intel "..campaign.resources.intel, 11, 184, 136, 7)
-  print("influence "..campaign.resources.influence, 11, 266, 136, 7)
-  print("territory "..campaign.resources.territory.."%", 11, 356, 136, 7)
+function draw_resources()
+  rectfill(10,52,470,78,3)
+  rect(10,52,470,78,7)
+  print("credits "..game.resources.credits, 8, 16, 58, 7)
+  print("materials "..game.resources.materials, 8, 116, 58, 7)
+  print("intel "..game.resources.intel, 8, 236, 58, 7)
+  print("prototypes "..game.resources.prototypes, 8, 316, 58, 7)
 end
 
-function draw_focus_panels()
-  local team = active_team()
-  local region = active_region()
+function draw_teams_screen()
+  local t = active_team()
+  rectfill(10,84,470,198,1)
+  rect(10,84,470,198,7)
+  print("1) teams // manage employees + training + assignment", 8, 18, 92, 10)
+  print("team: "..t.name.." (level "..t.level..")", 8, 18, 106, 7)
+  print("dept: "..t.dept.." | ability: "..t.ability, 8, 18, 118, 11)
+  print("power "..t.power.."  stealth "..t.stealth.."  logistics "..t.logistics.."  rnd "..t.research, 8, 18, 130, 12)
+  print("readiness "..t.readiness.."% | gear: "..t.gear, 8, 18, 142, 7)
 
-  rectfill(10,160,232,232,4)
-  rect(10,160,232,232,7)
-  print("team focus", 10, 18, 168, 10)
-  print(team.name.." ["..team.specialty.."]", 9, 18, 182, 7)
-  print("pow "..team.power.."  stl "..team.stealth.."  log "..team.logistics, 8, 18, 194, 11)
-  print("ready "..team.readiness.."%", 8, 18, 206, 12)
-
-  rectfill(238,160,470,232,5)
-  rect(238,160,470,232,7)
-  print("region focus", 10, 246, 168, 10)
-  print(title_case(region.id).." ("..region.style..")", 9, 246, 182, 7)
-  print("control "..region.control.."%  heat "..region.heat.."%", 8, 246, 194, 12)
-  print("wealth "..region.wealth.."  supply "..region.supply, 8, 246, 206, 11)
+  local y = 158
+  print("department levels unlock missions/research:", 8, 18, y, 10)
+  y = y + 12
+  print("security L"..game.departments.security.level.."   intelligence L"..game.departments.intelligence.level, 8, 18, y, 7)
+  y = y + 12
+  print("logistics L"..game.departments.logistics.level.."   engineering L"..game.departments.engineering.level, 8, 18, y, 7)
 end
 
-function draw_mission_panel()
+function draw_missions_screen()
   local m = active_mission()
-  rectfill(194,100,470,124,1)
-  rect(194,100,470,124,7)
+  rectfill(10,84,470,198,1)
+  rect(10,84,470,198,7)
+  print("2) missions // dispatch teams, risk vs reward, global control", 8, 18, 92, 10)
   if m == nil then
-    print("no missions available", 10, 202, 108, 8)
+    print("no missions available", 9, 18, 110, 8)
     return
   end
 
-  print("mission "..campaign.selected_mission.."/"..#campaign.missions, 8, 202, 106, 7)
-  print(m.name, 9, 202, 114, 10)
-  print(m.kind.." | need "..m.need.." | risk "..m.risk.." | turns "..m.turns, 8, 202, 120, 12)
+  print("mission "..game.selected_mission.." / "..#game.missions..": "..m.name, 8, 18, 108, 7)
+  print("requires "..m.dept.." level "..m.req.." | uses "..m.attr, 8, 18, 120, 11)
+  print("risk "..m.risk.." | reward "..m.reward.." credits | territory +"..m.territory, 8, 18, 132, 12)
+  print("recommended gear: "..m.equip, 8, 18, 144, 7)
+  print("assign your selected team and dispatch for economic/political gains", 8, 18, 162, 10)
 end
 
-function draw_bottom_log()
-  rectfill(228,238,470,262,2)
-  rect(228,238,470,262,7)
-  print("result: "..campaign.last_result, 8, 236, 246, 7)
-  print("status: "..campaign.message, 8, 236, 254, 11)
+function draw_rnd_screen()
+  local p = active_project()
+  local item = active_factory_item()
+
+  rectfill(10,84,470,198,1)
+  rect(10,84,470,198,7)
+  print("3) research + development // discover, build, sell, equip", 8, 18, 92, 10)
+
+  print("project: "..p.name, 8, 18, 108, 7)
+  print("dept "..p.dept.." req L"..p.req.." | cost "..p.cost.."c + "..p.mat.."m", 8, 18, 120, 11)
+  local status = p.done and "complete" or (p.progress.."/"..p.days)
+  print("progress "..status.." | unlock: "..p.unlock, 8, 18, 132, 12)
+
+  print("factory item: "..item.name.." | qty "..item.qty, 8, 18, 150, 7)
+  print("recipe "..item.recipe_c.."c + "..item.recipe_m.."m | sell "..item.sell, 8, 18, 162, 11)
+  print("manufacture for team gear or sell for market influence", 8, 18, 176, 10)
+end
+
+function draw_footer()
+  rectfill(10,238,470,262,2)
+  rect(10,238,470,262,7)
+  print("status: "..game.message, 8, 16, 246, 7)
 end
 
 function _init()
   default_controls("none")
-  refill_missions()
+  rebuild_missions()
   setup_ui()
 end
 
 function _update()
-  if keyp("space") then next_day() end
-  if keyp("z") then resolve_selected_mission() end
+  if keyp("1") then set_screen("teams") end
+  if keyp("2") then set_screen("missions") end
+  if keyp("3") then set_screen("rnd") end
 end
 
 function _draw()
-  cls(color(6, 9, 16))
-  draw_top()
-  ui_buttons(ui.nav_buttons)
-  ui_dropdown(ui.region_dd)
-  ui_dropdown(ui.team_dd)
-  ui_dropdown(ui.speed_dd)
-  ui_dropdown(ui.mode_dd)
+  cls(color(8, 11, 18))
+  draw_header()
+  draw_resources()
+  ui_buttons(ui.top)
 
-  draw_mission_panel()
-  ui_buttons(ui.mission_buttons)
-  draw_resource_strip()
-  draw_focus_panels()
+  if game.screen == "teams" then
+    draw_teams_screen()
+    ui_buttons(ui.screen.teams)
+  elseif game.screen == "missions" then
+    draw_missions_screen()
+    ui_buttons(ui.screen.missions)
+  else
+    draw_rnd_screen()
+    ui_buttons(ui.screen.rnd)
+  end
 
-  ui_buttons(ui.utility_buttons)
-  draw_bottom_log()
-
-  local ap_col = can_act() and 11 or 8
-  print("action cost: "..action_cost().." ap", 8, 194, 104, ap_col)
-  print("fun chain bonus: +"..(campaign.score_streak*3).." cash/materials", 8, 16, 118, 12)
+  draw_footer()
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -5294,7 +5201,7 @@ function getExampleProjects(){
     {id:'ui-functions',category:'ui examples',name:'UI Buttons + Dropdown Functions',description:'Uses default_button(), ui_button(), ui_buttons(), default_dropdown(), and ui_dropdown() to modify player money/health/level with per-button and per-item callbacks.',loader:loadUiFunctionsExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Strategic campaign command sim now documented at Version 1.1: foundation through 1.0 plus blueprint/prototype/manufacturing flow, production queues, finished inventory, and equip-vs-stockpile-vs-sell decisions.',loader:loadOperationCorporationExampleProject}
+    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Remade docs demo: three-screen command game with Team Management, Mission Dispatch, and Research & Development loops tied to department levels, gear, and territory growth.',loader:loadOperationCorporationExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
