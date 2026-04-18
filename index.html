@@ -3622,7 +3622,10 @@ function loadOperationCorporationExampleProject(){
   }
 }
 
-ui = {buttons = {top = {}, teams = {}, missions = {}, rnd = {}}, dropdowns = {teams = nil, missions = nil, rnd = nil}}
+ui = {
+  buttons = {top = {}, teams = {}, missions = {}, rnd = {}},
+  dropdowns = {teams = nil, missions = nil, rnd = nil, rnd_factory = nil}
+}
 
 function clamp(v,a,b)
   if v < a then return a end
@@ -3630,8 +3633,8 @@ function clamp(v,a,b)
   return v
 end
 
-function pick(list)
-  return list[flr(rnd(#list))+1]
+function random_choice(list)
+  return list[flr(rnd(#list)) + 1]
 end
 
 function active_team()
@@ -3676,7 +3679,7 @@ function rebuild_missions()
   }
 
   while #game.missions < 5 do
-    local t = pick(templates)
+    local t = random_choice(templates)
     local risk = clamp(t.risk + flr(rnd(18)) - 5, 18, 82)
     add(game.missions, {
       name = t.name,
@@ -3698,28 +3701,42 @@ function set_screen(name)
   game.message = "screen: "..name
 end
 
-function set_team_by_name(item)
-  for i=1,#game.teams do
-    if game.teams[i].name == item.value then game.selected_team = i return end
+function find_index_by_name(list, wanted_name)
+  for i = 1, #list do
+    if list[i].name == wanted_name then
+      return i
+    end
   end
+  return 1
+end
+
+function set_team_by_name(item)
+  game.selected_team = find_index_by_name(game.teams, item.value)
 end
 
 function set_mission_by_name(item)
-  for i=1,#game.missions do
-    if game.missions[i].name == item.value then game.selected_mission = i return end
-  end
+  game.selected_mission = find_index_by_name(game.missions, item.value)
 end
 
 function set_project_by_name(item)
-  for i=1,#game.research.projects do
-    if game.research.projects[i].name == item.value then game.selected_research = i return end
-  end
+  game.selected_research = find_index_by_name(game.research.projects, item.value)
 end
 
 function set_factory_by_name(item)
-  for i=1,#game.research.factory do
-    if game.research.factory[i].name == item.value then game.selected_factory = i return end
+  game.selected_factory = find_index_by_name(game.research.factory, item.value)
+end
+
+function next_name_in_list(names, current_name)
+  local index = 1
+  for i = 1, #names do
+    if names[i] == current_name then
+      index = i
+      break
+    end
   end
+  index = index + 1
+  if index > #names then index = 1 end
+  return names[index]
 end
 
 function build_team_items()
@@ -3794,14 +3811,7 @@ end
 function assign_team_department()
   local t = active_team()
   local dept_order = {"security","intelligence","logistics","engineering"}
-  local idx = 1
-  while idx <= #dept_order do
-    if dept_order[idx] == t.dept then break end
-    idx = idx + 1
-  end
-  idx = idx + 1
-  if idx > #dept_order then idx = 1 end
-  t.dept = dept_order[idx]
+  t.dept = next_name_in_list(dept_order, t.dept)
   game.message = t.name.." assigned to "..t.dept
   refresh_dropdowns()
 end
@@ -3809,14 +3819,7 @@ end
 function cycle_team_gear()
   local t = active_team()
   local gear = {"standard armor","signal veil","heavy truck","prototype rig","mk-ii armor","recon drone"}
-  local idx = 1
-  while idx <= #gear do
-    if gear[idx] == t.gear then break end
-    idx = idx + 1
-  end
-  idx = idx + 1
-  if idx > #gear then idx = 1 end
-  t.gear = gear[idx]
+  t.gear = next_name_in_list(gear, t.gear)
   t.readiness = clamp(t.readiness + 2, 0, 100)
   game.message = t.name.." equipped with "..t.gear
 end
@@ -3933,12 +3936,12 @@ function next_day()
   refresh_dropdowns()
 end
 
-function setup_ui_defaults()
+function define_ui_styles_once()
   default_button({bg=4, border=7, text=7, hover_bg=11})
   default_dropdown({w=170, h=18, bg=1, border=7, text=7, hover_bg=13})
 end
 
-function setup_ui()
+function define_ui_controls_once()
   ui.buttons.top = {
     {x=16,y=14,w=92,label="teams",func=function() set_screen("teams") end},
     {x=112,y=14,w=92,label="missions",func=function() set_screen("missions") end},
@@ -3973,7 +3976,7 @@ end
 function draw_header()
   rectfill(10,10,470,46,2)
   rect(10,10,470,46,7)
-  print("operation corporation // ui workflow remake", 10, 18, 50, 10)
+  print("operation corporation // simple ui demo", 10, 18, 50, 10)
   print("day "..game.day.." | screen: "..game.screen, 8, 18, 62, 7)
   print("territory "..game.resources.territory.."% | influence "..game.resources.influence, 8, 18, 72, 11)
 end
@@ -4040,7 +4043,7 @@ function draw_rnd_screen()
 
   print("factory item: "..item.name.." | qty "..item.qty, 8, 18, 150, 7)
   print("recipe "..item.recipe_c.."c + "..item.recipe_m.."m | sell "..item.sell, 8, 18, 162, 11)
-  print("defaults are configured once; controls are reused each frame", 8, 18, 176, 10)
+  print("ui styles + controls are defined once in _init", 8, 18, 176, 10)
 
   ui_dropdown(ui.dropdowns.rnd)
   ui_dropdown(ui.dropdowns.rnd_factory)
@@ -4055,8 +4058,8 @@ end
 function _init()
   default_controls("none")
   rebuild_missions()
-  setup_ui_defaults()
-  setup_ui()
+  define_ui_styles_once()
+  define_ui_controls_once()
 end
 
 function _update()
