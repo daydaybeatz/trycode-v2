@@ -433,7 +433,7 @@
           <div class="pane"><h4>TILES</h4><div class="tilePalette" id="tilePalette"></div></div>
           <div class="pane"><h4>LAYERS</h4><div class="formRow"><button class="mbtn" id="addLayerBtn">Add Layer</button></div><div class="layerList" id="layerList"></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button><button class="uiBtn" id="mapPrevLayerBtn" aria-label="Previous layer">&lt;L</button><div class="docDesc" id="mapLayerLabel">Layer 1 / 1</div><button class="uiBtn" id="mapNextLayerBtn" aria-label="Next layer">L&gt;</button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
       </div>
     </div>
 
@@ -882,7 +882,7 @@ end
 `;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteGridVisible:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:0.2,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteGridVisible:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -986,9 +986,18 @@ function updateMapToolButtons(){
   $("mapGridBtn")?.classList.toggle('active', state.mapGridVisible!==false);
   const hasSelection=!!(state.mapSelection&&state.mapSelection.layerIndex===state.currentLayerIndex&&state.mapSelection.cells&&state.mapSelection.cells.length);
   $("mapDeselectBtn")?.classList.toggle('hidden', !hasSelection);
-  const selectionActionsVisible=hasSelection && state.mapTool==='select';
+  const selectionActionsVisible=hasSelection;
   $("mapCombineSelectedBtn")?.classList.toggle('hidden', !selectionActionsVisible);
   $("mapDeleteSelectedBtn")?.classList.toggle('hidden', !selectionActionsVisible);
+}
+function updateLayerNavButtons(){
+  const layers=currentLayers();
+  const total=Math.max(1,layers.length||0);
+  const current=clamp(state.currentLayerIndex,0,total-1);
+  const label=$("mapLayerLabel");
+  if(label) label.textContent=`Layer ${current+1} / ${total}`;
+  $("mapPrevLayerBtn")?.classList.toggle('hidden', total<=1);
+  $("mapNextLayerBtn")?.classList.toggle('hidden', total<=1);
 }
 function currentMapHasAnimatedTiles(){ const mapObj=state.appProject&&state.appProject.maps&&state.appProject.maps[state.currentMapIndex]; if(!mapObj) return false; const ids=new Set(); for(const layer of mapObj.layers||[]){ if(!layer||layer.visible===false) continue; for(const row of layer.data||[]) for(const tid of row||[]) if(tid) ids.add(tid); } for(const id of ids){ const def=state.appProject.tileDefs&&state.appProject.tileDefs[id]; if(def&&def.animated) return true; } return false; }
 function runEditorAnimationFrame(){ if(state.activeView==='sprites' && state.spriteAnimPlaying){ drawSpriteAnimPreview(); } if(state.activeView==='map' && state.mapAnimPlaying && currentMapHasAnimatedTiles()){ drawMapEditor(); } requestAnimationFrame(runEditorAnimationFrame); }
@@ -1431,6 +1440,9 @@ function finishNewProject(){
   state.spriteZoom = 16;
   state.spriteOffsetX = 0;
   state.spriteOffsetY = 0;
+  state.mapZoom = 0.2;
+  state.mapOffsetX = 0;
+  state.mapOffsetY = 0;
   state.lastEdited = "code";
   state.appProject = defaultProject();
   invalidateEditorRenderCache();
@@ -1527,6 +1539,9 @@ function refreshProjectList(){
       state.spriteZoom=16;
       state.spriteOffsetX=0;
       state.spriteOffsetY=0;
+      state.mapZoom=0.2;
+      state.mapOffsetX=0;
+      state.mapOffsetY=0;
       renderCodeTabs();
       loadCurrentCodeFileToEditor();
       syncSpriteUI();
@@ -5850,7 +5865,7 @@ function applyTileEditorLive(options={}){ const refreshInputs=options.refreshInp
 function refreshMapList(){ const wrap=$("mapList"); wrap.innerHTML=""; state.appProject.maps.forEach((mapObj,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentMapIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=String(i); row.appendChild(label); row.onclick=()=>{ state.currentMapIndex=i; state.currentLayerIndex=0; clearMapSelection(); refreshMapList(); refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); }
 function refreshTilePalette(){ const wrap=$("tilePalette"); wrap.innerHTML=""; const ids=Object.keys(state.appProject.tileDefs).map(n=>parseInt(n,10)).sort((a,b)=>a-b); for(const id of ids){ const def=state.appProject.tileDefs[id]; const btn=document.createElement('div'); btn.className='tileBtn'+(id===state.selectedTileId?' active':''); btn.onclick=()=>setSelectedTile(id); const thumb=document.createElement('canvas'); thumb.className='tileThumb'; thumb.width=48; thumb.height=48; thumb.getContext('2d').drawImage(getEditorTileCanvas(def,48,48,id,true),0,0); const label=document.createElement('div'); label.textContent=id===0?'delete / none':`id ${id}`; btn.appendChild(thumb); btn.appendChild(label); wrap.appendChild(btn);} syncTileEditorActionButtons(); }
 function makeEyeIconMarkup(hidden){ return hidden?`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle><line x1="5" y1="19" x2="19" y2="5"></line></svg>`:`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>`; }
-function refreshLayerList(){ const wrap=$("layerList"); wrap.innerHTML=""; currentLayers().forEach((layer,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentLayerIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=`${layer.name||'new layer'} (${i})`; const eyeBtn=document.createElement('button'); eyeBtn.className='uiBtn iconBtn eyeToggleBtn'+(layer.visible===false?' is-hidden':''); eyeBtn.type='button'; eyeBtn.title=layer.visible===false?'Show layer':'Hide layer'; eyeBtn.setAttribute('aria-pressed', layer.visible===false?'false':'true'); eyeBtn.innerHTML=makeEyeIconMarkup(layer.visible===false); eyeBtn.onclick=(e)=>{ e.stopPropagation(); layer.visible=layer.visible===false?true:false; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); }; row.appendChild(label); row.appendChild(eyeBtn); row.onclick=()=>{ if(state.currentLayerIndex===i){ const name=prompt('Rename layer:', layer.name||'new layer'); if(name!=null){ const trimmed=name.trim(); if(trimmed) layer.name=trimmed; refreshLayerList(); runtime.syncProject(state.appProject); } return; } state.currentLayerIndex=i; clearMapSelection(); refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); }
+function refreshLayerList(){ const wrap=$("layerList"); wrap.innerHTML=""; currentLayers().forEach((layer,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentLayerIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=`${layer.name||'new layer'} (${i})`; const eyeBtn=document.createElement('button'); eyeBtn.className='uiBtn iconBtn eyeToggleBtn'+(layer.visible===false?' is-hidden':''); eyeBtn.type='button'; eyeBtn.title=layer.visible===false?'Show layer':'Hide layer'; eyeBtn.setAttribute('aria-pressed', layer.visible===false?'false':'true'); eyeBtn.innerHTML=makeEyeIconMarkup(layer.visible===false); eyeBtn.onclick=(e)=>{ e.stopPropagation(); layer.visible=layer.visible===false?true:false; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); }; row.appendChild(label); row.appendChild(eyeBtn); row.onclick=()=>{ if(state.currentLayerIndex===i){ const name=prompt('Rename layer:', layer.name||'new layer'); if(name!=null){ const trimmed=name.trim(); if(trimmed) layer.name=trimmed; refreshLayerList(); runtime.syncProject(state.appProject); } return; } state.currentLayerIndex=i; clearMapSelection(); refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); updateLayerNavButtons(); }
 function resolveAnimatedTileFolderIndex(def, spriteFolders=state.appProject&&state.appProject.spriteFolders){ if(!def) return null; const explicit=String(def.animFolder??'').trim(); if(explicit!=='' && Number.isFinite(Number(explicit))){ const idx=Math.max(0,parseInt(explicit,10)); const folder=spriteFolders&&spriteFolders[idx]; if(folder&&folder.frames&&folder.frames.length) return idx; } const fallback=parseSpriteRef(def.source||''); if(fallback){ const folder=spriteFolders&&spriteFolders[fallback.folder]; if(folder&&folder.frames&&folder.frames.length) return fallback.folder; } return null; }
 function getAnimatedTileFrame(def,timeMs=performance.now()){ if(!def||!def.animated) return null; const folderIndex=resolveAnimatedTileFolderIndex(def); if(folderIndex==null) return null; const folder=state.appProject.spriteFolders[folderIndex]; if(!folder||!folder.frames||!folder.frames.length) return null; const speed=Math.max(0.1,Number(def.animSpeed)||6); return {folder:folderIndex,frame:Math.floor((timeMs/1000)*speed)%folder.frames.length}; }
 function clearCurrentMapLayer(){
@@ -5894,6 +5909,22 @@ function drawMapEditor(){
       ctx.fillRect(px,py,tw,th);
       ctx.strokeRect(px+0.75,py+0.75,Math.max(1,tw-1.5),Math.max(1,th-1.5));
     }
+    const txs=state.mapSelection.cells.map(cell=>cell.tx);
+    const tys=state.mapSelection.cells.map(cell=>cell.ty);
+    const minTx=Math.min(...txs), maxTx=Math.max(...txs);
+    const minTy=Math.min(...tys), maxTy=Math.max(...tys);
+    const boxX=minTx*tw, boxY=minTy*th, boxW=(maxTx-minTx+1)*tw, boxH=(maxTy-minTy+1)*th;
+    ctx.strokeStyle=isDark?'rgba(255,246,191,.95)':'rgba(255,242,191,.95)';
+    ctx.lineWidth=2;
+    ctx.strokeRect(boxX+1,boxY+1,Math.max(1,boxW-2),Math.max(1,boxH-2));
+    const handle=Math.max(4,Math.round(Math.min(tw,th)*0.35));
+    ctx.fillStyle=isDark?'#ffe8a7':'#fff4cc';
+    ctx.strokeStyle=isDark?'#1f2d4a':'#6f3d20';
+    const drawHandle=(cx,cy)=>{ const hx=Math.round(cx-handle/2), hy=Math.round(cy-handle/2); ctx.fillRect(hx,hy,handle,handle); ctx.strokeRect(hx+0.5,hy+0.5,Math.max(1,handle-1),Math.max(1,handle-1)); };
+    drawHandle(boxX,boxY);
+    drawHandle(boxX+boxW,boxY);
+    drawHandle(boxX,boxY+boxH);
+    drawHandle(boxX+boxW,boxY+boxH);
     ctx.restore();
   }
   if(state.mapGridVisible!==false){
@@ -5913,18 +5944,22 @@ function floodFillMap(tx,ty,target,replacement){ if(target===replacement) return
 function mapCoordsFromEvent(e){ const wrap=$("mapCanvasWrap"); const z=state.mapZoom||1, ox=state.mapOffsetX||0, oy=state.mapOffsetY||0; const tw=state.appProject.project.tile_w, th=state.appProject.project.tile_h; const rect=wrap.getBoundingClientRect(); const lx=(e.clientX-rect.left-ox)/z, ly=(e.clientY-rect.top-oy)/z; return {tx:Math.floor(lx/tw), ty:Math.floor(ly/th)}; }
 function clearMapSelection(){ state.mapSelection.layerIndex=-1; state.mapSelection.cells=[]; state.mapSelection.lastCell=null; }
 function getMapSelectionKey(tx,ty){ return `${tx},${ty}`; }
+function mapSelectionHasCell(tx,ty){
+  const key=getMapSelectionKey(tx,ty);
+  return !!(state.mapSelection.cells||[]).find(cell=>getMapSelectionKey(cell.tx,cell.ty)===key);
+}
 function setMapSelectionCells(cells){
   const unique=new Map();
   for(const cell of cells||[]){ if(!cell) continue; unique.set(getMapSelectionKey(cell.tx,cell.ty), {tx:cell.tx|0,ty:cell.ty|0}); }
   state.mapSelection.layerIndex=state.currentLayerIndex;
   state.mapSelection.cells=[...unique.values()];
 }
-function updateMapSelectionFromRange(a,b){
+function updateMapSelectionFromRange(a,b,baseCells=[]){
   if(!a||!b) return;
   const mw=state.appProject.project.map_w, mh=state.appProject.project.map_h;
   const minX=Math.max(0,Math.min(a.tx,b.tx)), maxX=Math.min(mw-1,Math.max(a.tx,b.tx));
   const minY=Math.max(0,Math.min(a.ty,b.ty)), maxY=Math.min(mh-1,Math.max(a.ty,b.ty));
-  const cells=[];
+  const cells=[...(baseCells||[])];
   for(let ty=minY;ty<=maxY;ty++) for(let tx=minX;tx<=maxX;tx++) cells.push({tx,ty});
   setMapSelectionCells(cells);
 }
@@ -6467,14 +6502,16 @@ function wireUI(){
   function syncSidebarToggleButton(buttonId, viewId){ const btn=$(buttonId), view=$(viewId); if(!btn||!view) return; const hidden=view.classList.contains('sidebar-hidden'); btn.textContent=hidden?'>':'<'; btn.setAttribute('aria-expanded', hidden?'false':'true'); btn.title=hidden?'Open panel':'Close panel'; }
   bindClick("toggleMapSidebarBtn",()=>{ const mapView=$("mapView"); if(!mapView) return; mapView.classList.toggle('sidebar-hidden'); const hidden=mapView.classList.contains('sidebar-hidden'); syncSidebarToggleButton("toggleMapSidebarBtn","mapView"); const mapOverlayTools=$("mapOverlayTools"); if(mapOverlayTools) mapOverlayTools.classList.toggle('hidden', !hidden); });
   bindClick("toggleSpriteSidebarBtn",()=>{ const spriteView=$("spriteView"); if(!spriteView) return; spriteView.classList.toggle('sidebar-hidden'); syncSidebarToggleButton("toggleSpriteSidebarBtn","spriteView"); refreshEdgePalette(); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); });
-  const zoomMapAtPoint=(nextZoom,clientX,clientY)=>{ const wrap=$("mapCanvasWrap"); const rect=wrap.getBoundingClientRect(); const oldZoom=state.mapZoom||1; const newZoom=clamp(nextZoom,0.5,8); const lx=(clientX-rect.left-(state.mapOffsetX||0))/oldZoom; const ly=(clientY-rect.top-(state.mapOffsetY||0))/oldZoom; state.mapZoom=newZoom; state.mapOffsetX=(clientX-rect.left)-lx*newZoom; state.mapOffsetY=(clientY-rect.top)-ly*newZoom; drawMapEditor(); };
-  bindClick("mapZoomInBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)+0.25, rect.left+rect.width/2, rect.top+rect.height/2); });
-  bindClick("mapZoomOutBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)-0.25, rect.left+rect.width/2, rect.top+rect.height/2); });
+  const zoomMapAtPoint=(nextZoom,clientX,clientY)=>{ const wrap=$("mapCanvasWrap"); const rect=wrap.getBoundingClientRect(); const oldZoom=state.mapZoom||1; const newZoom=clamp(nextZoom,0.2,8); const lx=(clientX-rect.left-(state.mapOffsetX||0))/oldZoom; const ly=(clientY-rect.top-(state.mapOffsetY||0))/oldZoom; state.mapZoom=newZoom; state.mapOffsetX=(clientX-rect.left)-lx*newZoom; state.mapOffsetY=(clientY-rect.top)-ly*newZoom; drawMapEditor(); };
+  bindClick("mapZoomInBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)+0.05, rect.left+rect.width/2, rect.top+rect.height/2); });
+  bindClick("mapZoomOutBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)-0.05, rect.left+rect.width/2, rect.top+rect.height/2); });
   bindClick("mapDrawBtn",()=>{ state.mapTool = state.mapTool==='draw'?null:'draw'; updateMapToolButtons(); });
   bindClick("mapSelectBtn",()=>{ state.mapTool = state.mapTool==='select'?null:'select'; if(state.mapTool!=='select'){ clearMapSelection(); drawMapEditor(); } updateMapToolButtons(); });
   bindClick("mapDeselectBtn",()=>{ clearMapSelection(); drawMapEditor(); updateMapToolButtons(); });
   bindClick("mapCombineSelectedBtn",()=>combineMapSelection());
   bindClick("mapDeleteSelectedBtn",()=>deleteMapSelection());
+  bindClick("mapPrevLayerBtn",()=>{ const layers=currentLayers(); if(!layers.length) return; state.currentLayerIndex=(state.currentLayerIndex-1+layers.length)%layers.length; clearMapSelection(); refreshLayerList(); drawMapEditor(); });
+  bindClick("mapNextLayerBtn",()=>{ const layers=currentLayers(); if(!layers.length) return; state.currentLayerIndex=(state.currentLayerIndex+1)%layers.length; clearMapSelection(); refreshLayerList(); drawMapEditor(); });
   bindClick("mapRectBtn",()=>{ if(state.mapTool==='rect') state.mapTool='rectfill'; else if(state.mapTool==='rectfill') state.mapTool=null; else state.mapTool='rect'; updateMapToolButtons(); });
   bindClick("mapPanBtn",()=>{ state.mapTool = state.mapTool==='pan'?null:'pan'; updateMapToolButtons(); });
   bindClick("mapFillBtn",()=>{ state.mapTool = state.mapTool==='fill'?null:'fill'; updateMapToolButtons(); });
@@ -6488,7 +6525,7 @@ function wireUI(){
   bind("tileIdInput",'input',()=>{ const id=Math.max(0,parseInt($("tileIdInput")?.value||0,10)); state.appProject.tileDefs[id]=state.appProject.tileDefs[id]||createTileDefForId(id); setSelectedTile(id); });
   bind("tileSourceInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileBgColorInput",'input',applyTileEditorLive); bind("tileBgEnabledInput",'change',applyTileEditorLive); bind("tileSolidInput",'change',applyTileEditorLive); bind("tileAnimatedInput",'change',applyTileEditorLive); bind("tileAnimFolderInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileAnimSpeedInput",'input',()=>applyTileEditorLive({refreshInputs:false}));
   bindClick("addLayerBtn",()=>{ const data=[]; for(let y=0;y<state.appProject.project.map_h;y++){ const row=[]; for(let x=0;x<state.appProject.project.map_w;x++) row.push(0); data.push(row); } currentLayers().push({name:`new layer`,visible:true,data}); invalidateEditorRenderCache(); state.currentLayerIndex=currentLayers().length-1; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); });
-  let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint', mapRectStart=null, mapSelectionStart=null;
+  let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint', mapRectStart=null, mapSelectionStart=null, mapSelectionBaseCells=null;
   bind("mapCanvas",'contextmenu',e=>e.preventDefault());
   bind("mapCanvas",'pointerdown',e=>{
     e.preventDefault();
@@ -6499,14 +6536,14 @@ function wireUI(){
       const outOfBounds=point.tx<0||point.ty<0||point.tx>=state.appProject.project.map_w||point.ty>=state.appProject.project.map_h;
       if(outOfBounds){ clearMapSelection(); drawMapEditor(); return; }
       if(state.mapSelection.layerIndex!==state.currentLayerIndex) clearMapSelection();
-      mapSelectionStart=point;
-      updateMapSelectionFromRange(point, point);
-      const sameCell=state.mapSelection.lastCell && state.mapSelection.lastCell.tx===point.tx && state.mapSelection.lastCell.ty===point.ty;
-      const lay=currentLayers()[state.currentLayerIndex];
-      const tileId=lay.data[point.ty][point.tx]||0;
-      if(sameCell){
-        setSelectedTile(tileId);
-        $("tileSourceInput")?.focus();
+      mapSelectionBaseCells=[...(state.mapSelection.cells||[])];
+      if(mapSelectionHasCell(point.tx,point.ty)){
+        setMapSelectionCells(mapSelectionBaseCells.filter(cell=>!(cell.tx===point.tx && cell.ty===point.ty)));
+        mapSelectionStart=null;
+        mapSelectionBaseCells=null;
+      }else{
+        mapSelectionStart=point;
+        setMapSelectionCells([...(mapSelectionBaseCells||[]), point]);
       }
       state.mapSelection.lastCell={tx:point.tx,ty:point.ty};
       drawMapEditor();
@@ -6517,10 +6554,10 @@ function wireUI(){
   });
   window.addEventListener('pointerup',e=>{
     if((state.mapTool==='rect' || state.mapTool==='rectfill') && mapRectStart && e.button===0) paintMapRect(mapRectStart,mapCoordsFromEvent(e),state.mapTool==='rectfill');
-    painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint'; mapRectStart=null; mapSelectionStart=null;
+    painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint'; mapRectStart=null; mapSelectionStart=null; mapSelectionBaseCells=null;
   });
-  bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(state.mapTool==='select' && mapSelectionStart){ updateMapSelectionFromRange(mapSelectionStart,mapCoordsFromEvent(e)); drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
-  bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.25:-0.25), e.clientX, e.clientY); },{passive:false});
+  bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(state.mapTool==='select' && mapSelectionStart){ updateMapSelectionFromRange(mapSelectionStart,mapCoordsFromEvent(e),mapSelectionBaseCells||[]); drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
+  bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.05:-0.05), e.clientX, e.clientY); },{passive:false});
   bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); selectSpriteFolder(state.appProject.spriteFolders.length-1); });
   bindClick("applySpriteSizeBtn",()=>{ const s=currentSprite(); const nw=Math.max(1,parseInt($("spriteWInput")?.value||s.w,10)); const nh=Math.max(1,parseInt($("spriteHInput")?.value||s.h,10)); pushSpriteHistory(); const newPixels=[]; for(let y=0;y<nh;y++){ const row=[]; for(let x=0;x<nw;x++) row.push((s.pixels[y]&&s.pixels[y][x]!=null)?s.pixels[y][x]:-1); newPixels.push(row); } s.w=nw; s.h=nh; s.pixels=newPixels; invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); });
   bindClick("spriteDrawBtn",()=>setSpriteTool(state.spriteTool==='draw'?null:'draw')); bindClick("spriteEraseBtn",()=>setSpriteTool(state.spriteTool==='erase'?null:'erase')); bindClick("spriteFillBtn",()=>setSpriteTool(state.spriteTool==='fill'?null:'fill')); bindClick("spritePanBtn",()=>setSpriteTool(state.spriteTool==='pan'?null:'pan'));
