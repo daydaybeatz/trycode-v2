@@ -433,7 +433,7 @@
           <div class="pane"><h4>TILES</h4><div class="tilePalette" id="tilePalette"></div></div>
           <div class="pane"><h4>LAYERS</h4><div class="formRow"><button class="mbtn" id="addLayerBtn">Add Layer</button></div><div class="layerList" id="layerList"></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
       </div>
     </div>
 
@@ -882,7 +882,7 @@ end
 `;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteGridVisible:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",spriteZoom:16,spriteOffsetX:0,spriteOffsetY:0,mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteGridVisible:true,spriteAnimSpeed:6,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -974,6 +974,7 @@ function getMapAnimationTimeMs(){ return state.mapAnimPlaying ? performance.now(
 function updateMapAnimToggleButton(){ const btn=$("mapAnimToggleBtn"); if(!btn) return; btn.textContent=state.mapAnimPlaying?"Pause":"Play"; btn.classList.toggle('active', !state.mapAnimPlaying); btn.title=state.mapAnimPlaying?"Pause animated tile preview":"Play animated tile preview"; }
 function updateMapToolButtons(){
   $("mapDrawBtn")?.classList.toggle('active', state.mapTool==='draw');
+  $("mapSelectBtn")?.classList.toggle('active', state.mapTool==='select');
   const rectBtn=$("mapRectBtn");
   if(rectBtn){
     rectBtn.classList.toggle('active', state.mapTool==='rectfill');
@@ -983,6 +984,11 @@ function updateMapToolButtons(){
   $("mapPanBtn")?.classList.toggle('active', state.mapTool==='pan');
   $("mapFillBtn")?.classList.toggle('active', state.mapTool==='fill');
   $("mapGridBtn")?.classList.toggle('active', state.mapGridVisible!==false);
+  const hasSelection=!!(state.mapSelection&&state.mapSelection.layerIndex===state.currentLayerIndex&&state.mapSelection.cells&&state.mapSelection.cells.length);
+  $("mapDeselectBtn")?.classList.toggle('hidden', !hasSelection);
+  const selectionActionsVisible=hasSelection && state.mapTool==='select';
+  $("mapCombineSelectedBtn")?.classList.toggle('hidden', !selectionActionsVisible);
+  $("mapDeleteSelectedBtn")?.classList.toggle('hidden', !selectionActionsVisible);
 }
 function currentMapHasAnimatedTiles(){ const mapObj=state.appProject&&state.appProject.maps&&state.appProject.maps[state.currentMapIndex]; if(!mapObj) return false; const ids=new Set(); for(const layer of mapObj.layers||[]){ if(!layer||layer.visible===false) continue; for(const row of layer.data||[]) for(const tid of row||[]) if(tid) ids.add(tid); } for(const id of ids){ const def=state.appProject.tileDefs&&state.appProject.tileDefs[id]; if(def&&def.animated) return true; } return false; }
 function runEditorAnimationFrame(){ if(state.activeView==='sprites' && state.spriteAnimPlaying){ drawSpriteAnimPreview(); } if(state.activeView==='map' && state.mapAnimPlaying && currentMapHasAnimatedTiles()){ drawMapEditor(); } requestAnimationFrame(runEditorAnimationFrame); }
@@ -5841,10 +5847,10 @@ function refreshTileBackgroundUI(){
 }
 function refreshTileEditorFromSelected(){ $("tileIdInput").value=state.selectedTileId; const def=state.appProject.tileDefs[state.selectedTileId]||createTileDefForId(state.selectedTileId); if(document.activeElement!==$("tileSourceInput")) $("tileSourceInput").value=def.source||""; $("tileBgColorInput").value=def.bg||(state.selectedTileId===0?"#000000":"#444444"); $("tileBgEnabledInput").value=def.bgEnabled===false?"transparent":"true"; $("tileSolidInput").value=def.flags&&def.flags[0]?"true":"false"; $("tileAnimatedInput").value=def.animated?"true":"false"; if(document.activeElement!==$("tileAnimFolderInput")) $("tileAnimFolderInput").value=def.animFolder==null||String(def.animFolder).trim()===''?"":String(def.animFolder); if(document.activeElement!==$("tileAnimSpeedInput")) $("tileAnimSpeedInput").value=Number.isFinite(Number(def.animSpeed))?def.animSpeed:6; refreshTileAnimationUI(); refreshTileBackgroundUI(); syncTileEditorActionButtons(); }
 function applyTileEditorLive(options={}){ const refreshInputs=options.refreshInputs!==false; const id=Math.max(0,parseInt($("tileIdInput").value||"0",10)); state.selectedTileId=id; const base=createTileDefForId(id); state.appProject.tileDefs[id]={...base,...(state.appProject.tileDefs[id]||{})}; state.appProject.tileDefs[id].source=String($("tileSourceInput").value||"").trim(); state.appProject.tileDefs[id].bg=$("tileBgColorInput").value||(id===0?"#000000":"#444444"); const bgMode=String($("tileBgEnabledInput").value||"true"); state.appProject.tileDefs[id].bgEnabled=bgMode!=="transparent"; state.appProject.tileDefs[id].flags[0]=$("tileSolidInput").value==="true"; state.appProject.tileDefs[id].animated=$("tileAnimatedInput").value==="true"; const rawAnimFolder=String($("tileAnimFolderInput").value||"").trim(); state.appProject.tileDefs[id].animFolder=rawAnimFolder===''?"":Math.max(0,parseInt(rawAnimFolder,10)); const rawSpeed=$("tileAnimSpeedInput").value; state.appProject.tileDefs[id].animSpeed=Math.max(0.1,parseFloat(rawSpeed===""?"0":rawSpeed)||6); invalidateEditorRenderCache(); refreshTilePalette(); if(refreshInputs) refreshTileEditorFromSelected(); else { refreshTileAnimationUI(); refreshTileBackgroundUI(); syncTileEditorActionButtons(); } drawMapEditor(); runtime.syncProject(state.appProject); }
-function refreshMapList(){ const wrap=$("mapList"); wrap.innerHTML=""; state.appProject.maps.forEach((mapObj,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentMapIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=String(i); row.appendChild(label); row.onclick=()=>{ state.currentMapIndex=i; state.currentLayerIndex=0; refreshMapList(); refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); }
+function refreshMapList(){ const wrap=$("mapList"); wrap.innerHTML=""; state.appProject.maps.forEach((mapObj,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentMapIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=String(i); row.appendChild(label); row.onclick=()=>{ state.currentMapIndex=i; state.currentLayerIndex=0; clearMapSelection(); refreshMapList(); refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); }
 function refreshTilePalette(){ const wrap=$("tilePalette"); wrap.innerHTML=""; const ids=Object.keys(state.appProject.tileDefs).map(n=>parseInt(n,10)).sort((a,b)=>a-b); for(const id of ids){ const def=state.appProject.tileDefs[id]; const btn=document.createElement('div'); btn.className='tileBtn'+(id===state.selectedTileId?' active':''); btn.onclick=()=>setSelectedTile(id); const thumb=document.createElement('canvas'); thumb.className='tileThumb'; thumb.width=48; thumb.height=48; thumb.getContext('2d').drawImage(getEditorTileCanvas(def,48,48,id,true),0,0); const label=document.createElement('div'); label.textContent=id===0?'delete / none':`id ${id}`; btn.appendChild(thumb); btn.appendChild(label); wrap.appendChild(btn);} syncTileEditorActionButtons(); }
 function makeEyeIconMarkup(hidden){ return hidden?`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle><line x1="5" y1="19" x2="19" y2="5"></line></svg>`:`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>`; }
-function refreshLayerList(){ const wrap=$("layerList"); wrap.innerHTML=""; currentLayers().forEach((layer,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentLayerIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=`${layer.name||'new layer'} (${i})`; const eyeBtn=document.createElement('button'); eyeBtn.className='uiBtn iconBtn eyeToggleBtn'+(layer.visible===false?' is-hidden':''); eyeBtn.type='button'; eyeBtn.title=layer.visible===false?'Show layer':'Hide layer'; eyeBtn.setAttribute('aria-pressed', layer.visible===false?'false':'true'); eyeBtn.innerHTML=makeEyeIconMarkup(layer.visible===false); eyeBtn.onclick=(e)=>{ e.stopPropagation(); layer.visible=layer.visible===false?true:false; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); }; row.appendChild(label); row.appendChild(eyeBtn); row.onclick=()=>{ if(state.currentLayerIndex===i){ const name=prompt('Rename layer:', layer.name||'new layer'); if(name!=null){ const trimmed=name.trim(); if(trimmed) layer.name=trimmed; refreshLayerList(); runtime.syncProject(state.appProject); } return; } state.currentLayerIndex=i; refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); }
+function refreshLayerList(){ const wrap=$("layerList"); wrap.innerHTML=""; currentLayers().forEach((layer,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentLayerIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=`${layer.name||'new layer'} (${i})`; const eyeBtn=document.createElement('button'); eyeBtn.className='uiBtn iconBtn eyeToggleBtn'+(layer.visible===false?' is-hidden':''); eyeBtn.type='button'; eyeBtn.title=layer.visible===false?'Show layer':'Hide layer'; eyeBtn.setAttribute('aria-pressed', layer.visible===false?'false':'true'); eyeBtn.innerHTML=makeEyeIconMarkup(layer.visible===false); eyeBtn.onclick=(e)=>{ e.stopPropagation(); layer.visible=layer.visible===false?true:false; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); }; row.appendChild(label); row.appendChild(eyeBtn); row.onclick=()=>{ if(state.currentLayerIndex===i){ const name=prompt('Rename layer:', layer.name||'new layer'); if(name!=null){ const trimmed=name.trim(); if(trimmed) layer.name=trimmed; refreshLayerList(); runtime.syncProject(state.appProject); } return; } state.currentLayerIndex=i; clearMapSelection(); refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); }
 function resolveAnimatedTileFolderIndex(def, spriteFolders=state.appProject&&state.appProject.spriteFolders){ if(!def) return null; const explicit=String(def.animFolder??'').trim(); if(explicit!=='' && Number.isFinite(Number(explicit))){ const idx=Math.max(0,parseInt(explicit,10)); const folder=spriteFolders&&spriteFolders[idx]; if(folder&&folder.frames&&folder.frames.length) return idx; } const fallback=parseSpriteRef(def.source||''); if(fallback){ const folder=spriteFolders&&spriteFolders[fallback.folder]; if(folder&&folder.frames&&folder.frames.length) return fallback.folder; } return null; }
 function getAnimatedTileFrame(def,timeMs=performance.now()){ if(!def||!def.animated) return null; const folderIndex=resolveAnimatedTileFolderIndex(def); if(folderIndex==null) return null; const folder=state.appProject.spriteFolders[folderIndex]; if(!folder||!folder.frames||!folder.frames.length) return null; const speed=Math.max(0.1,Number(def.animSpeed)||6); return {folder:folderIndex,frame:Math.floor((timeMs/1000)*speed)%folder.frames.length}; }
 function clearCurrentMapLayer(){
@@ -5854,12 +5860,94 @@ function clearCurrentMapLayer(){
   drawMapEditor();
   runtime.syncProject(state.appProject);
 }
-function drawMapEditor(){ ensureProjectData(); const mapObj=currentMap(), canvas=$("mapCanvas"), ctx=canvas.getContext('2d'); const tw=state.appProject.project.tile_w, th=state.appProject.project.tile_h, mw=state.appProject.project.map_w, mh=state.appProject.project.map_h; const animTime=getMapAnimationTimeMs(); canvas.width=mw*tw; canvas.height=mh*th; const z=state.mapZoom||1, ox=state.mapOffsetX||0, oy=state.mapOffsetY||0; canvas.style.transformOrigin="0 0"; canvas.style.transform=`translate(${ox}px,${oy}px) scale(${z})`; ctx.clearRect(0,0,canvas.width,canvas.height); for(const layer of mapObj.layers){ if(layer.visible===false) continue; for(let y=0;y<mh;y++) for(let x=0;x<mw;x++){ const tid=layer.data[y][x]||0, def=state.appProject.tileDefs[tid]; if(!tid||!def) continue; const animatedRef=getAnimatedTileFrame(def, animTime); if(animatedRef){ const temp={...def,source:`${animatedRef.folder}${String.fromCharCode(97+animatedRef.frame)}`}; drawTileThumb(ctx,temp,x*tw,y*th,tw,th,tid,false); } else drawTileThumb(ctx,def,x*tw,y*th,tw,th,tid,false); } } if(state.mapGridVisible!==false){ const isDark=document.body.classList.contains("dark-mode"); ctx.save(); ctx.strokeStyle=isDark?"rgba(199,208,232,.26)":"rgba(80,50,20,.2)"; ctx.lineWidth=1; for(let gx=0;gx<=mw;gx++){ const px=gx*tw+0.5; ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,mh*th); ctx.stroke(); } for(let gy=0;gy<=mh;gy++){ const py=gy*th+0.5; ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(mw*tw,py); ctx.stroke(); } ctx.restore(); } $("mapGridBtn")?.classList.toggle("active", state.mapGridVisible!==false); }
+function drawMapEditor(){
+  ensureProjectData();
+  const mapObj=currentMap(), canvas=$("mapCanvas"), ctx=canvas.getContext('2d');
+  const tw=state.appProject.project.tile_w, th=state.appProject.project.tile_h, mw=state.appProject.project.map_w, mh=state.appProject.project.map_h;
+  const animTime=getMapAnimationTimeMs();
+  canvas.width=mw*tw; canvas.height=mh*th;
+  const z=state.mapZoom||1, ox=state.mapOffsetX||0, oy=state.mapOffsetY||0;
+  canvas.style.transformOrigin="0 0";
+  canvas.style.transform=`translate(${ox}px,${oy}px) scale(${z})`;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  for(const layer of mapObj.layers){
+    if(layer.visible===false) continue;
+    for(let y=0;y<mh;y++) for(let x=0;x<mw;x++){
+      const tid=layer.data[y][x]||0, def=state.appProject.tileDefs[tid];
+      if(!tid||!def) continue;
+      const animatedRef=getAnimatedTileFrame(def, animTime);
+      if(animatedRef){
+        const temp={...def,source:`${animatedRef.folder}${String.fromCharCode(97+animatedRef.frame)}`};
+        drawTileThumb(ctx,temp,x*tw,y*th,tw,th,tid,false);
+      }else drawTileThumb(ctx,def,x*tw,y*th,tw,th,tid,false);
+    }
+  }
+  if(state.mapSelection.layerIndex===state.currentLayerIndex && state.mapSelection.cells.length){
+    const isDark=document.body.classList.contains("dark-mode");
+    ctx.save();
+    ctx.fillStyle=isDark?'rgba(164,201,255,.28)':'rgba(179,31,36,.2)';
+    ctx.strokeStyle=isDark?'rgba(195,221,255,.9)':'rgba(179,31,36,.95)';
+    ctx.lineWidth=1.5;
+    for(const cell of state.mapSelection.cells){
+      if(!cell) continue;
+      const px=cell.tx*tw, py=cell.ty*th;
+      ctx.fillRect(px,py,tw,th);
+      ctx.strokeRect(px+0.75,py+0.75,Math.max(1,tw-1.5),Math.max(1,th-1.5));
+    }
+    ctx.restore();
+  }
+  if(state.mapGridVisible!==false){
+    const isDark=document.body.classList.contains("dark-mode");
+    ctx.save(); ctx.strokeStyle=isDark?"rgba(199,208,232,.26)":"rgba(80,50,20,.2)"; ctx.lineWidth=1;
+    for(let gx=0;gx<=mw;gx++){ const px=gx*tw+0.5; ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,mh*th); ctx.stroke(); }
+    for(let gy=0;gy<=mh;gy++){ const py=gy*th+0.5; ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(mw*tw,py); ctx.stroke(); }
+    ctx.restore();
+  }
+  $("mapGridBtn")?.classList.toggle("active", state.mapGridVisible!==false);
+  updateMapToolButtons();
+}
 function syncMapUIFromProject(){ $("tileWInput").value=state.appProject.project.tile_w; $("tileHInput").value=state.appProject.project.tile_h; $("mapWInput").value=state.appProject.project.map_w; $("mapHInput").value=state.appProject.project.map_h; refreshMapList(); refreshTilePalette(); refreshLayerList(); refreshTileEditorFromSelected(); drawMapEditor(); }
 let mapSyncTimer=0;
 function scheduleProjectSync(){ clearTimeout(mapSyncTimer); mapSyncTimer=setTimeout(()=>{ try{ runtime&&runtime.syncProject(state.appProject); }catch{} }, 40); }
 function floodFillMap(tx,ty,target,replacement){ if(target===replacement) return; const lay=currentLayers()[state.currentLayerIndex]; const mw=state.appProject.project.map_w, mh=state.appProject.project.map_h; const stack=[[tx,ty]]; while(stack.length){ const [x,y]=stack.pop(); if(x<0||y<0||x>=mw||y>=mh) continue; if(lay.data[y][x]!==target) continue; lay.data[y][x]=replacement; stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]); } }
 function mapCoordsFromEvent(e){ const wrap=$("mapCanvasWrap"); const z=state.mapZoom||1, ox=state.mapOffsetX||0, oy=state.mapOffsetY||0; const tw=state.appProject.project.tile_w, th=state.appProject.project.tile_h; const rect=wrap.getBoundingClientRect(); const lx=(e.clientX-rect.left-ox)/z, ly=(e.clientY-rect.top-oy)/z; return {tx:Math.floor(lx/tw), ty:Math.floor(ly/th)}; }
+function clearMapSelection(){ state.mapSelection.layerIndex=-1; state.mapSelection.cells=[]; state.mapSelection.lastCell=null; }
+function getMapSelectionKey(tx,ty){ return `${tx},${ty}`; }
+function setMapSelectionCells(cells){
+  const unique=new Map();
+  for(const cell of cells||[]){ if(!cell) continue; unique.set(getMapSelectionKey(cell.tx,cell.ty), {tx:cell.tx|0,ty:cell.ty|0}); }
+  state.mapSelection.layerIndex=state.currentLayerIndex;
+  state.mapSelection.cells=[...unique.values()];
+}
+function updateMapSelectionFromRange(a,b){
+  if(!a||!b) return;
+  const mw=state.appProject.project.map_w, mh=state.appProject.project.map_h;
+  const minX=Math.max(0,Math.min(a.tx,b.tx)), maxX=Math.min(mw-1,Math.max(a.tx,b.tx));
+  const minY=Math.max(0,Math.min(a.ty,b.ty)), maxY=Math.min(mh-1,Math.max(a.ty,b.ty));
+  const cells=[];
+  for(let ty=minY;ty<=maxY;ty++) for(let tx=minX;tx<=maxX;tx++) cells.push({tx,ty});
+  setMapSelectionCells(cells);
+}
+function deleteMapSelection(){
+  if(state.mapSelection.layerIndex!==state.currentLayerIndex || !state.mapSelection.cells.length) return;
+  const lay=currentLayers()[state.currentLayerIndex];
+  let changed=false;
+  for(const cell of state.mapSelection.cells){
+    if(!lay.data[cell.ty] || lay.data[cell.ty][cell.tx]==null) continue;
+    if(lay.data[cell.ty][cell.tx]!==0){ lay.data[cell.ty][cell.tx]=0; changed=true; }
+  }
+  if(changed){ drawMapEditor(); scheduleProjectSync(); }
+}
+function combineMapSelection(){
+  if(state.mapSelection.layerIndex!==state.currentLayerIndex || !state.mapSelection.cells.length) return;
+  const lay=currentLayers()[state.currentLayerIndex];
+  let changed=false;
+  for(const cell of state.mapSelection.cells){
+    if(!lay.data[cell.ty] || lay.data[cell.ty][cell.tx]==null) continue;
+    if(lay.data[cell.ty][cell.tx]!==state.selectedTileId){ lay.data[cell.ty][cell.tx]=state.selectedTileId; changed=true; }
+  }
+  if(changed){ drawMapEditor(); scheduleProjectSync(); }
+}
 function paintMapPoint(tx,ty,tileId=state.selectedTileId){ if(tx<0||ty<0||tx>=state.appProject.project.map_w||ty>=state.appProject.project.map_h) return false; const lay=currentLayers()[state.currentLayerIndex]; if(lay.data[ty][tx]===tileId) return false; lay.data[ty][tx]=tileId; return true; }
 function paintMapAtEvent(e,lastPoint,mode='paint'){ const {tx,ty}=mapCoordsFromEvent(e); if(tx<0||ty<0||tx>=state.appProject.project.map_w||ty>=state.appProject.project.map_h) return {tx,ty}; const lay=currentLayers()[state.currentLayerIndex]; const tileId=mode==='erase'?0:state.selectedTileId; let changed=false; if(mode!=='erase' && state.mapTool==='fill'){ const target=lay.data[ty][tx]; if(target===tileId) return {tx,ty}; floodFillMap(tx,ty,target,tileId); changed=true; } else { const start=lastPoint||{tx,ty}; forEachLinePoint(start.tx,start.ty,tx,ty,(x,y)=>{ if(paintMapPoint(x,y,tileId)) changed=true; }); } if(changed){ drawMapEditor(); scheduleProjectSync(); } return {tx,ty}; }
 function paintMapRect(start,end,filled){
@@ -6383,6 +6471,10 @@ function wireUI(){
   bindClick("mapZoomInBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)+0.25, rect.left+rect.width/2, rect.top+rect.height/2); });
   bindClick("mapZoomOutBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)-0.25, rect.left+rect.width/2, rect.top+rect.height/2); });
   bindClick("mapDrawBtn",()=>{ state.mapTool = state.mapTool==='draw'?null:'draw'; updateMapToolButtons(); });
+  bindClick("mapSelectBtn",()=>{ state.mapTool = state.mapTool==='select'?null:'select'; if(state.mapTool!=='select'){ clearMapSelection(); drawMapEditor(); } updateMapToolButtons(); });
+  bindClick("mapDeselectBtn",()=>{ clearMapSelection(); drawMapEditor(); updateMapToolButtons(); });
+  bindClick("mapCombineSelectedBtn",()=>combineMapSelection());
+  bindClick("mapDeleteSelectedBtn",()=>deleteMapSelection());
   bindClick("mapRectBtn",()=>{ if(state.mapTool==='rect') state.mapTool='rectfill'; else if(state.mapTool==='rectfill') state.mapTool=null; else state.mapTool='rect'; updateMapToolButtons(); });
   bindClick("mapPanBtn",()=>{ state.mapTool = state.mapTool==='pan'?null:'pan'; updateMapToolButtons(); });
   bindClick("mapFillBtn",()=>{ state.mapTool = state.mapTool==='fill'?null:'fill'; updateMapToolButtons(); });
@@ -6396,20 +6488,38 @@ function wireUI(){
   bind("tileIdInput",'input',()=>{ const id=Math.max(0,parseInt($("tileIdInput")?.value||0,10)); state.appProject.tileDefs[id]=state.appProject.tileDefs[id]||createTileDefForId(id); setSelectedTile(id); });
   bind("tileSourceInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileBgColorInput",'input',applyTileEditorLive); bind("tileBgEnabledInput",'change',applyTileEditorLive); bind("tileSolidInput",'change',applyTileEditorLive); bind("tileAnimatedInput",'change',applyTileEditorLive); bind("tileAnimFolderInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileAnimSpeedInput",'input',()=>applyTileEditorLive({refreshInputs:false}));
   bindClick("addLayerBtn",()=>{ const data=[]; for(let y=0;y<state.appProject.project.map_h;y++){ const row=[]; for(let x=0;x<state.appProject.project.map_w;x++) row.push(0); data.push(row); } currentLayers().push({name:`new layer`,visible:true,data}); invalidateEditorRenderCache(); state.currentLayerIndex=currentLayers().length-1; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); });
-  let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint', mapRectStart=null;
+  let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint', mapRectStart=null, mapSelectionStart=null;
   bind("mapCanvas",'contextmenu',e=>e.preventDefault());
   bind("mapCanvas",'pointerdown',e=>{
     e.preventDefault();
     if(e.button===1 || state.mapTool==='pan'){ mapPanning=true; mapLast={x:e.clientX,y:e.clientY}; return; }
     if(e.button===0 && !state.mapTool){ toast('Select a map tool first.'); return; }
+    if(state.mapTool==='select'){
+      const point=mapCoordsFromEvent(e);
+      const outOfBounds=point.tx<0||point.ty<0||point.tx>=state.appProject.project.map_w||point.ty>=state.appProject.project.map_h;
+      if(outOfBounds){ clearMapSelection(); drawMapEditor(); return; }
+      if(state.mapSelection.layerIndex!==state.currentLayerIndex) clearMapSelection();
+      mapSelectionStart=point;
+      updateMapSelectionFromRange(point, point);
+      const sameCell=state.mapSelection.lastCell && state.mapSelection.lastCell.tx===point.tx && state.mapSelection.lastCell.ty===point.ty;
+      const lay=currentLayers()[state.currentLayerIndex];
+      const tileId=lay.data[point.ty][point.tx]||0;
+      if(sameCell){
+        setSelectedTile(tileId);
+        $("tileSourceInput")?.focus();
+      }
+      state.mapSelection.lastCell={tx:point.tx,ty:point.ty};
+      drawMapEditor();
+      return;
+    }
     if(state.mapTool==='rect' || state.mapTool==='rectfill'){ mapRectStart=mapCoordsFromEvent(e); return; }
     painting=true; mapPaintMode=e.button===2?'erase':'paint'; mapPaintLast=paintMapAtEvent(e, undefined, mapPaintMode);
   });
   window.addEventListener('pointerup',e=>{
     if((state.mapTool==='rect' || state.mapTool==='rectfill') && mapRectStart && e.button===0) paintMapRect(mapRectStart,mapCoordsFromEvent(e),state.mapTool==='rectfill');
-    painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint'; mapRectStart=null;
+    painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint'; mapRectStart=null; mapSelectionStart=null;
   });
-  bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
+  bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(state.mapTool==='select' && mapSelectionStart){ updateMapSelectionFromRange(mapSelectionStart,mapCoordsFromEvent(e)); drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
   bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.25:-0.25), e.clientX, e.clientY); },{passive:false});
   bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); selectSpriteFolder(state.appProject.spriteFolders.length-1); });
   bindClick("applySpriteSizeBtn",()=>{ const s=currentSprite(); const nw=Math.max(1,parseInt($("spriteWInput")?.value||s.w,10)); const nh=Math.max(1,parseInt($("spriteHInput")?.value||s.h,10)); pushSpriteHistory(); const newPixels=[]; for(let y=0;y<nh;y++){ const row=[]; for(let x=0;x<nw;x++) row.push((s.pixels[y]&&s.pixels[y][x]!=null)?s.pixels[y][x]:-1); newPixels.push(row); } s.w=nw; s.h=nh; s.pixels=newPixels; invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); });
