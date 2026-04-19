@@ -3499,43 +3499,70 @@ function loadUiFunctionsExampleProject(){
   p.tileDefs={0:makeBlankTileDef()};
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`player = {money=100, health=100, level=1}
-ui = {buttons = {}, drop = nil}
-status = "use buttons/dropdown"
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- UPDATED UI FUNCTION EXAMPLE (tutorial style)
+-- Goal:
+--   Show the simplest practical setup for:
+--   1) default_button + ui_button/ui_buttons
+--   2) default_dropdown + ui_dropdown
+--
+-- Keep all "state" in tables so the UI can read and write values every frame.
+player = {money=100, health=100, level=1}
+ui = {buttons = {}, loadout = nil}
+status = "click a button or open the dropdown"
 
+-- Step 1: set global visual defaults once.
+-- Every button/dropdown can still override individual fields later.
 function setup_ui_defaults()
-  default_button({w=134,h=20,bg=5,border=7,text=0,hover_bg=6})
-  default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})
+  default_button({w=150,h=20,bg=5,border=7,text=0,hover_bg=6})
+  default_dropdown({w=190,h=20,bg=1,border=7,text=7,hover_bg=13})
 end
 
-function build_ui()
+-- Step 2: build UI tables.
+-- Buttons each have x, y, label, and func().
+function build_buttons()
   ui.buttons = {
-    {x=18,y=58,label="+25 money",func=function()
+    {x=20,y=60,label="+25 money",func=function()
       mod_value(player, "money", 25)
-      status = "money up"
+      status = "added 25 money"
     end},
-    {x=18,y=82,label="-10 health",bg=8,func=function()
+    -- This button overrides bg to show per-button style customization.
+    {x=20,y=86,label="-10 health",bg=8,func=function()
       mod_value(player, "health", -10)
       if player.health < 0 then player.health = 0 end
-      status = "health down"
+      status = "removed 10 health"
     end},
-    {x=18,y=106,label="level +1",bg=11,func=function()
+    {x=20,y=112,label="level +1",bg=11,func=function()
       mod_value(player, "level", 1)
-      status = "level up"
+      status = "leveled up"
     end}
   }
+end
 
-  ui.drop = {
-    x=18,
-    y=148,
-    label="select loadout",
+-- Step 3: build one dropdown table with options.
+-- items can be strings or tables; table items can include per-item func callbacks.
+function build_dropdown()
+  ui.loadout = {
+    x=20,
+    y=156,
+    label="choose loadout",
     items={
-      {label="balanced", func=function() set_value(player, "money", 100) set_value(player, "health", 100) status="balanced" end},
-      {label="rich", func=function() set_value(player, "money", 250) status="rich loadout" end},
-      {label="tank", func=function() set_value(player, "health", 180) status="tank loadout" end}
+      {label="balanced", func=function()
+        set_value(player, "money", 100)
+        set_value(player, "health", 100)
+        status = "set balanced loadout"
+      end},
+      {label="rich", func=function()
+        set_value(player, "money", 250)
+        status = "set rich loadout"
+      end},
+      {label="tank", func=function()
+        set_value(player, "health", 180)
+        status = "set tank loadout"
+      end}
     },
+    -- Runs after an item is selected.
     func=function(item, idx)
-      status = "picked "..item.label
+      status = "picked: "..item.label.." (#"..idx..")"
     end
   }
 end
@@ -3543,26 +3570,34 @@ end
 function _init()
   default_controls("none")
   setup_ui_defaults()
-  build_ui()
+  build_buttons()
+  build_dropdown()
 end
 
 function _update()
+  -- No manual input needed here.
+  -- ui_button/ui_dropdown read mouse/touch automatically in _draw().
 end
 
 function _draw()
   cls(1)
   rectfill(10,10,470,258,2)
   rect(10,10,470,258,7)
-  print("UI functions example", 14, 20, 20, 7)
-  print("money: "..player.money, 12, 232, 64, 10)
-  print("health: "..player.health, 12, 232, 84, 8)
-  print("level: "..player.level, 12, 232, 104, 11)
-  print("status: "..status, 11, 232, 132, 6)
+  print("updated ui function example", 14, 20, 20, 7)
 
+  -- Render model/state values on the right.
+  print("money: "..player.money, 12, 240, 66, 10)
+  print("health: "..player.health, 12, 240, 88, 8)
+  print("level: "..player.level, 12, 240, 110, 11)
+  print("status: "..status, 10, 240, 136, 6)
+
+  -- Simplest usage patterns:
+  --   ui_buttons(list) to draw many buttons
+  --   ui_dropdown(table) to draw one dropdown
   ui_buttons(ui.buttons)
-  ui_dropdown(ui.drop)
+  ui_dropdown(ui.loadout)
 
-  print("defaults set once in _init, reused every frame", 9, 20, 232, 12)
+  print("tutorial: defaults in _init, draw ui every frame", 9, 20, 234, 12)
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -5336,7 +5371,7 @@ function getExampleProjects(){
     {id:'note-app-save-load',category:'logic',name:'Note App Save + Load',description:'Simple note manager using entry_box() and save_data()/load_data() for persistent notes.',loader:loadNotesSaveLoadExampleProject},
     {id:'menu-screen-swap',category:'ui examples',name:'Basic Menu + Screen Swap',description:'Simple readable menu/game/pause screen flow with dpad/left-stick movement, right-stick r_spr() aiming, spr flip, sin/cosin motion, and add()/del() notes.',loader:loadMenuScreenSwapExampleProject},
     {id:'ui-mouse',category:'ui examples',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing with higher-contrast readability colors.',loader:loadUiMouseExampleProject},
-    {id:'ui-functions',category:'ui examples',name:'UI Buttons + Dropdown Functions',description:'Uses default_button(), ui_button(), ui_buttons(), default_dropdown(), and ui_dropdown() to modify player money/health/level with per-button and per-item callbacks.',loader:loadUiFunctionsExampleProject},
+    {id:'updated-ui-function-example',category:'ui examples',name:'Updated UI Function Example',description:'Tutorial-style, heavily commented starter showing the simplest default_button(), ui_buttons(), default_dropdown(), and ui_dropdown() workflow.',loader:loadUiFunctionsExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
     {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Remade docs demo: three-screen command game with Team Management, Mission Dispatch, and Research & Development loops tied to department levels, gear, and territory growth.',loader:loadOperationCorporationExampleProject}
