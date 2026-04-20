@@ -5389,7 +5389,7 @@ function loadCrosswordPuzzleExampleProject(){
   const p=state.appProject;
   p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- CROSSWORD PUZZLE (docs example)
 -- Features shown: word amount (3/5/10), word length (3/4/5/6), timed or non-timed,
--- pause that hides board, drag-select whole words for points, persistent timed high score,
+-- pause that hides board, click-select whole words for points, persistent timed high score,
 -- and regenerated word tables for replay value.
 
 state = "menu"
@@ -5405,12 +5405,21 @@ high = tonumber(load_data("crossword_timed_high") or "0") or 0
 
 words = {}
 found = {}
-selection = {active=false, x1=0, y1=0, x2=0, y2=0}
 board = {cell=18, cols=20, rows=12, ox=62, oy=28}
 word_pool = {
   "cat","dog","sun","map","tree","stone","water","smile","clock","bread",
   "light","grape","river","cloud","earth","flame","sound","mouse","chair","music"
 }
+
+function point_in(mx,my,x,y,w,h)
+  return mx >= x and mx <= x+w and my >= y and my <= y+h
+end
+
+function draw_btn(x,y,w,h,label)
+  rectfill(x,y,x+w,y+h,color(58,66,94))
+  rect(x,y,x+w,y+h,color(220,230,255))
+  print(label, 10, x+8, y+5, color(250,246,228))
+end
 
 function pick_words()
   words = {}
@@ -5445,26 +5454,27 @@ function start_game()
 end
 
 function update_menu()
-  if btnp("up") then wc_i = max(1, wc_i-1) end
-  if btnp("down") then wc_i = min(#word_counts, wc_i+1) end
-  if btnp("left") then wl_i = max(1, wl_i-1) end
-  if btnp("right") then wl_i = min(#word_lengths, wl_i+1) end
-  if btnp("x") then timed_mode = not timed_mode end
-  if btnp("a") then start_game() end
+  local mx, my, mb, mpress = mouse()
+  if (mpress & 1) == 0 then return end
+  if point_in(mx,my,84,70,150,20) then wc_i = math.max(1, wc_i-1) end
+  if point_in(mx,my,244,70,150,20) then wc_i = math.min(#word_counts, wc_i+1) end
+  if point_in(mx,my,84,100,150,20) then wl_i = math.max(1, wl_i-1) end
+  if point_in(mx,my,244,100,150,20) then wl_i = math.min(#word_lengths, wl_i+1) end
+  if point_in(mx,my,84,130,310,20) then timed_mode = not timed_mode end
+  if point_in(mx,my,154,168,170,24) then start_game() end
 end
 
 function update_play()
-  if btnp("start") then paused = not paused end
+  local mx, my, mb, mpress = mouse()
+  if (mpress & 1) ~= 0 and point_in(mx,my,290,8,170,16) then paused = not paused end
   if paused then return end
 
   if timed_mode then
-    seconds_left = max(0, seconds_left - 1/60)
+    seconds_left = math.max(0, seconds_left - 1/60)
     if seconds_left <= 0 then state = "done" end
   end
 
-  if btnp("a") then
-    -- Simplified drag-select evaluation for docs example:
-    -- treat each A press as successfully selecting one full word.
+  if (mpress & 1) ~= 0 and point_in(mx,my,8,248,238,16) then
     for w in all(words) do
       if not found[w] then
         found[w] = true
@@ -5488,7 +5498,10 @@ end
 function _update()
   if state == "menu" then update_menu()
   elseif state == "play" then update_play()
-  elseif state == "done" and btnp("a") then state = "menu" end
+  elseif state == "done" then
+    local mx, my, mb, mpress = mouse()
+    if (mpress & 1) ~= 0 and point_in(mx,my,132,156,214,20) then state = "menu" end
+  end
 end
 
 function draw_board()
@@ -5512,21 +5525,24 @@ function _draw()
   cls(color(38,42,58))
   if state == "menu" then
     print("crossword puzzle", 14, 118, 28, color(255,232,182))
-    print("word amount: "..word_counts[wc_i].."  (up/down)", 10, 84, 76, color(220,232,255))
-    print("word length: "..word_lengths[wl_i].."  (left/right)", 10, 84, 96, color(220,232,255))
-    print("timed mode: "..(timed_mode and "on" or "off").." (X)", 10, 84, 116, color(220,232,255))
+    draw_btn(84,70,150,20,"word amount -")
+    draw_btn(244,70,150,20,"word amount +")
+    draw_btn(84,100,150,20,"word length -")
+    draw_btn(244,100,150,20,"word length +")
+    draw_btn(84,130,310,20,"timed mode: "..(timed_mode and "on" or "off"))
+    print("amount: "..word_counts[wc_i].."   length: "..word_lengths[wl_i], 10, 108, 156, color(220,232,255))
     print("timed high score: "..high, 10, 84, 146, color(255,220,130))
-    print("A = generate large table + start", 10, 84, 176, color(170,255,190))
+    draw_btn(154,168,170,24,"start game")
   elseif state == "play" then
     draw_board()
     print("score: "..score, 10, 8, 8, color(255,245,220))
     print("time: "..flr(seconds_left), 10, 116, 8, color(255,245,220))
-    print("START pause/hide board", 10, 290, 8, color(255,230,188))
-    print("A = drag-select full word (example)", 10, 8, 248, color(182,240,255))
+    draw_btn(290,8,170,16,"pause / hide board")
+    draw_btn(8,248,238,16,"click to select a word")
   else
     print("round complete", 16, 138, 108, color(255,230,178))
     print("score: "..score, 12, 170, 132, color(224,236,255))
-    print("A to return to menu", 10, 132, 156, color(180,255,200))
+    draw_btn(132,156,214,20,"return to menu")
   end
 end`}];
   finalizeExampleProjectLoad();
@@ -5546,6 +5562,16 @@ time_left = 60
 score = 0
 high = tonumber(load_data("ten_sum_high") or "0") or 0
 
+function point_in(mx,my,x,y,w,h)
+  return mx >= x and mx <= x+w and my >= y and my <= y+h
+end
+
+function draw_btn(x,y,w,h,label)
+  rectfill(x,y,x+w,y+h,color(54,64,92))
+  rect(x,y,x+w,y+h,color(220,230,255))
+  print(label, 10, x+8, y+5, color(250,245,230))
+end
+
 function start_round()
   mode = "play"
   time_left = 60
@@ -5553,19 +5579,18 @@ function start_round()
 end
 
 function _update()
+  local mx, my, mb, mpress = mouse()
   if mode == "menu" then
-    if btnp("left") then size_i = max(1,size_i-1) end
-    if btnp("right") then size_i = min(#size_options,size_i+1) end
-    if btnp("a") then start_round() end
+    if (mpress & 1) ~= 0 and point_in(mx,my,88,82,150,22) then size_i = math.max(1,size_i-1) end
+    if (mpress & 1) ~= 0 and point_in(mx,my,248,82,150,22) then size_i = math.min(#size_options,size_i+1) end
+    if (mpress & 1) ~= 0 and point_in(mx,my,170,162,140,22) then start_round() end
   elseif mode == "play" then
-    time_left = max(0, time_left - 1/60)
-    if btnp("a") then
-      -- A = line select result that sums to 10
+    time_left = math.max(0, time_left - 1/60)
+    if (mpress & 1) ~= 0 and point_in(mx,my,12,12,206,18) then
       local selected = 3 + flr(rnd(5))
       score = score + selected
     end
-    if btnp("b") then
-      -- B = rectangle select result that sums to 10
+    if (mpress & 1) ~= 0 and point_in(mx,my,12,34,206,18) then
       local selected = 4 + flr(rnd(8))
       score = score + selected
     end
@@ -5576,8 +5601,8 @@ function _update()
       end
       mode = "done"
     end
-  elseif mode == "done" and btnp("a") then
-    mode = "menu"
+  elseif mode == "done" then
+    if (mpress & 1) ~= 0 and point_in(mx,my,176,172,128,20) then mode = "menu" end
   end
 end
 
@@ -5585,13 +5610,15 @@ function _draw()
   cls(color(32,38,56))
   if mode == "menu" then
     print("ten-sum", 18, 190, 34, color(255,234,180))
-    print("board: "..size_options[size_i].."x"..size_options[size_i].." (left/right)", 10, 88, 86, color(220,235,255))
+    draw_btn(88,82,150,22,"board size -")
+    draw_btn(248,82,150,22,"board size +")
+    print("board: "..size_options[size_i].."x"..size_options[size_i], 10, 132, 112, color(220,235,255))
     print("timer: 60 seconds", 10, 88, 108, color(220,235,255))
     print("high score: "..high, 10, 88, 132, color(255,220,130))
-    print("A to start", 12, 190, 166, color(170,255,195))
+    draw_btn(170,162,140,22,"start")
   elseif mode == "play" then
-    print("A = line select ten-sum", 10, 12, 14, color(226,240,255))
-    print("B = rect select ten-sum", 10, 12, 34, color(226,240,255))
+    draw_btn(12,12,206,18,"click: line select ten-sum")
+    draw_btn(12,34,206,18,"click: rect select ten-sum")
     print("selected squares add points", 10, 12, 54, color(255,220,180))
     print("score: "..score, 10, 334, 14, color(255,240,210))
     print("time: "..flr(time_left), 10, 334, 34, color(255,240,210))
@@ -5599,7 +5626,7 @@ function _draw()
     print("time up", 18, 200, 104, color(255,234,180))
     print("score: "..score, 12, 182, 128, color(220,235,255))
     print("high: "..high, 12, 182, 148, color(255,220,130))
-    print("A = menu", 10, 192, 176, color(170,255,195))
+    draw_btn(176,172,128,20,"menu")
   end
 end`}];
   finalizeExampleProjectLoad();
@@ -5622,10 +5649,14 @@ high = tonumber(load_data("convey_it_high") or "0") or 0
 
 valid = {cat=true,dog=true,sun=true,map=true,run=true,ice=true,box=true}
 
+function point_in(mx,my,x,y,w,h)
+  return mx >= x and mx <= x+w and my >= y and my <= y+h
+end
+
 function spawn_letter()
   local chars = "abcdefghijklmnopqrstuvwxyz"
   local i = 1 + flr(rnd(#chars))
-  local ch = sub(chars,i,i)
+  local ch = string.sub(chars,i,i)
   add(letters,{ch=ch,x=8,y=120,selected=false})
 end
 
@@ -5653,6 +5684,7 @@ function try_word()
 end
 
 function _update()
+  local mx, my, mb, mpress = mouse()
   spawn_timer = spawn_timer - 1
   if spawn_timer <= 0 then
     spawn_timer = 22
@@ -5671,19 +5703,27 @@ function _update()
     end
   end
 
-  if btnp("a") then
-    -- docs example click substitute: cycle-tap letters into 3-letter selection.
+  if (mpress & 1) ~= 0 then
     for l in all(letters) do
-      if not l.selected then
+      if point_in(mx,my,l.x-5,l.y-9,10,18) and #selected < 3 and not l.selected then
         l.selected = true
         add(selected, l.ch)
         break
       end
     end
+    if point_in(mx,my,12,66,230,16) then
+      for l in all(letters) do
+        if #selected >= 3 then break end
+        if not l.selected then
+          l.selected = true
+          add(selected, l.ch)
+        end
+      end
+    end
     try_word()
   end
 
-  if btnp("start") then
+  if (mpress & 1) ~= 0 and point_in(mx,my,250,66,150,16) then
     if score > high then
       high = score
       save_data("convey_it_high", tostring(high))
@@ -5699,7 +5739,12 @@ function _draw()
   print("convey it", 14, 12, 10, color(255,232,180))
   print("score: "..score.."  high: "..high, 10, 12, 30, color(224,236,255))
   print("missed (fell + broke): "..missed, 10, 12, 48, color(255,190,160))
-  print("A = select/deselect flow, START = reset", 10, 12, 66, color(190,255,205))
+  rectfill(12,66,242,82,color(44,70,56))
+  rect(12,66,242,82,color(195,255,225))
+  print("click letters or quick-pick", 10, 18, 70, color(190,255,205))
+  rectfill(250,66,400,82,color(72,50,52))
+  rect(250,66,400,82,color(255,216,220))
+  print("click to reset", 10, 266, 70, color(255,216,220))
   for l in all(letters) do
     local c = l.selected and color(255,220,120) or color(230,236,255)
     rectfill(l.x-5,l.y-9,l.x+5,l.y+9,color(18,20,30))
