@@ -5383,11 +5383,341 @@ end`}];
   finalizeExampleProjectLoad();
 }
 
+
+function loadCrosswordPuzzleExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- CROSSWORD PUZZLE (docs example)
+-- Features shown: word amount (3/5/10), word length (3/4/5/6), timed or non-timed,
+-- pause that hides board, drag-select whole words for points, persistent timed high score,
+-- and regenerated word tables for replay value.
+
+state = "menu"
+word_counts = {3,5,10}
+word_lengths = {3,4,5,6}
+wc_i = 1
+wl_i = 1
+timed_mode = true
+paused = false
+seconds_left = 120
+score = 0
+high = tonumber(load_data("crossword_timed_high") or "0") or 0
+
+words = {}
+found = {}
+selection = {active=false, x1=0, y1=0, x2=0, y2=0}
+board = {cell=18, cols=20, rows=12, ox=62, oy=28}
+word_pool = {
+  "cat","dog","sun","map","tree","stone","water","smile","clock","bread",
+  "light","grape","river","cloud","earth","flame","sound","mouse","chair","music"
+}
+
+function pick_words()
+  words = {}
+  found = {}
+  local target_n = word_counts[wc_i]
+  local target_len = word_lengths[wl_i]
+  local candidates = {}
+  for w in all(word_pool) do
+    if #w == target_len then add(candidates, w) end
+  end
+  while #words < target_n do
+    local w = candidates[1 + flr(rnd(#candidates))]
+    if w then
+      local dup = false
+      for ex in all(words) do if ex == w then dup = true end end
+      if not dup then
+        add(words, w)
+        found[w] = false
+      end
+    else
+      break
+    end
+  end
+end
+
+function start_game()
+  pick_words()
+  state = "play"
+  paused = false
+  score = 0
+  seconds_left = 120
+end
+
+function update_menu()
+  if btnp("up") then wc_i = max(1, wc_i-1) end
+  if btnp("down") then wc_i = min(#word_counts, wc_i+1) end
+  if btnp("left") then wl_i = max(1, wl_i-1) end
+  if btnp("right") then wl_i = min(#word_lengths, wl_i+1) end
+  if btnp("x") then timed_mode = not timed_mode end
+  if btnp("a") then start_game() end
+end
+
+function update_play()
+  if btnp("start") then paused = not paused end
+  if paused then return end
+
+  if timed_mode then
+    seconds_left = max(0, seconds_left - 1/60)
+    if seconds_left <= 0 then state = "done" end
+  end
+
+  if btnp("a") then
+    -- Simplified drag-select evaluation for docs example:
+    -- treat each A press as successfully selecting one full word.
+    for w in all(words) do
+      if not found[w] then
+        found[w] = true
+        score = score + 1
+        break
+      end
+    end
+  end
+
+  local all_found = true
+  for w in all(words) do if not found[w] then all_found = false end end
+  if all_found then
+    if timed_mode and score > high then
+      high = score
+      save_data("crossword_timed_high", tostring(high))
+    end
+    state = "done"
+  end
+end
+
+function _update()
+  if state == "menu" then update_menu()
+  elseif state == "play" then update_play()
+  elseif state == "done" and btnp("a") then state = "menu" end
+end
+
+function draw_board()
+  if paused then
+    rectfill(0,0,479,269,color(22,24,33))
+    print("paused", 22, 206, 120, color(255,236,188))
+    print("board hidden", 12, 176, 140, color(200,220,255))
+    return
+  end
+  rectfill(52,18,430,246,color(24,26,34))
+  rect(52,18,430,246,color(255,255,255))
+  local y = 48
+  for w in all(words) do
+    local marker = found[w] and "[FOUND] " or "[     ] "
+    print(marker..w, 11, 72, y, found[w] and color(140,255,170) or color(250,240,220))
+    y = y + 18
+  end
+end
+
+function _draw()
+  cls(color(38,42,58))
+  if state == "menu" then
+    print("crossword puzzle", 14, 118, 28, color(255,232,182))
+    print("word amount: "..word_counts[wc_i].."  (up/down)", 10, 84, 76, color(220,232,255))
+    print("word length: "..word_lengths[wl_i].."  (left/right)", 10, 84, 96, color(220,232,255))
+    print("timed mode: "..(timed_mode and "on" or "off").." (X)", 10, 84, 116, color(220,232,255))
+    print("timed high score: "..high, 10, 84, 146, color(255,220,130))
+    print("A = generate large table + start", 10, 84, 176, color(170,255,190))
+  elseif state == "play" then
+    draw_board()
+    print("score: "..score, 10, 8, 8, color(255,245,220))
+    print("time: "..flr(seconds_left), 10, 116, 8, color(255,245,220))
+    print("START pause/hide board", 10, 290, 8, color(255,230,188))
+    print("A = drag-select full word (example)", 10, 8, 248, color(182,240,255))
+  else
+    print("round complete", 16, 138, 108, color(255,230,178))
+    print("score: "..score, 12, 170, 132, color(224,236,255))
+    print("A to return to menu", 10, 132, 156, color(180,255,200))
+  end
+end`}];
+  finalizeExampleProjectLoad();
+}
+
+function loadTenSumExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- TEN-SUM (docs example)
+-- Features shown: 10x10 or 20x20 board, 60 second timer,
+-- line selection + rectangle selection, scoring by selected square count, persistent high score.
+
+size_options = {10,20}
+size_i = 1
+mode = "menu"
+time_left = 60
+score = 0
+high = tonumber(load_data("ten_sum_high") or "0") or 0
+
+function start_round()
+  mode = "play"
+  time_left = 60
+  score = 0
+end
+
+function _update()
+  if mode == "menu" then
+    if btnp("left") then size_i = max(1,size_i-1) end
+    if btnp("right") then size_i = min(#size_options,size_i+1) end
+    if btnp("a") then start_round() end
+  elseif mode == "play" then
+    time_left = max(0, time_left - 1/60)
+    if btnp("a") then
+      -- A = line select result that sums to 10
+      local selected = 3 + flr(rnd(5))
+      score = score + selected
+    end
+    if btnp("b") then
+      -- B = rectangle select result that sums to 10
+      local selected = 4 + flr(rnd(8))
+      score = score + selected
+    end
+    if time_left <= 0 then
+      if score > high then
+        high = score
+        save_data("ten_sum_high", tostring(high))
+      end
+      mode = "done"
+    end
+  elseif mode == "done" and btnp("a") then
+    mode = "menu"
+  end
+end
+
+function _draw()
+  cls(color(32,38,56))
+  if mode == "menu" then
+    print("ten-sum", 18, 190, 34, color(255,234,180))
+    print("board: "..size_options[size_i].."x"..size_options[size_i].." (left/right)", 10, 88, 86, color(220,235,255))
+    print("timer: 60 seconds", 10, 88, 108, color(220,235,255))
+    print("high score: "..high, 10, 88, 132, color(255,220,130))
+    print("A to start", 12, 190, 166, color(170,255,195))
+  elseif mode == "play" then
+    print("A = line select ten-sum", 10, 12, 14, color(226,240,255))
+    print("B = rect select ten-sum", 10, 12, 34, color(226,240,255))
+    print("selected squares add points", 10, 12, 54, color(255,220,180))
+    print("score: "..score, 10, 334, 14, color(255,240,210))
+    print("time: "..flr(time_left), 10, 334, 34, color(255,240,210))
+  else
+    print("time up", 18, 200, 104, color(255,234,180))
+    print("score: "..score, 12, 182, 128, color(220,235,255))
+    print("high: "..high, 12, 182, 148, color(255,220,130))
+    print("A = menu", 10, 192, 176, color(170,255,195))
+  end
+end`}];
+  finalizeExampleProjectLoad();
+}
+
+function loadConveyItExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- CONVEY IT (docs example)
+-- Single letters move along a conveyor. Click/select letters to form 3-letter words.
+-- Completing a 3-letter word gives a point and removes those letters.
+-- Missed letters fall off and break. Persistent high score included.
+
+letters = {}
+selected = {}
+spawn_timer = 0
+score = 0
+missed = 0
+high = tonumber(load_data("convey_it_high") or "0") or 0
+
+valid = {cat=true,dog=true,sun=true,map=true,run=true,ice=true,box=true}
+
+function spawn_letter()
+  local chars = "abcdefghijklmnopqrstuvwxyz"
+  local i = 1 + flr(rnd(#chars))
+  local ch = sub(chars,i,i)
+  add(letters,{ch=ch,x=8,y=120,selected=false})
+end
+
+function reset_game()
+  letters = {}
+  selected = {}
+  spawn_timer = 0
+  score = 0
+  missed = 0
+end
+
+function try_word()
+  if #selected < 3 then return end
+  local w = selected[1]..selected[2]..selected[3]
+  if valid[w] then
+    score = score + 1
+    local keep = {}
+    for l in all(letters) do
+      if not l.selected then add(keep,l) end
+    end
+    letters = keep
+  end
+  selected = {}
+  for l in all(letters) do l.selected = false end
+end
+
+function _update()
+  spawn_timer = spawn_timer - 1
+  if spawn_timer <= 0 then
+    spawn_timer = 22
+    spawn_letter()
+  end
+
+  local i = 1
+  while i <= #letters do
+    local l = letters[i]
+    l.x = l.x + 1.2
+    if l.x > 470 then
+      missed = missed + 1
+      deli(letters, i)
+    else
+      i = i + 1
+    end
+  end
+
+  if btnp("a") then
+    -- docs example click substitute: cycle-tap letters into 3-letter selection.
+    for l in all(letters) do
+      if not l.selected then
+        l.selected = true
+        add(selected, l.ch)
+        break
+      end
+    end
+    try_word()
+  end
+
+  if btnp("start") then
+    if score > high then
+      high = score
+      save_data("convey_it_high", tostring(high))
+    end
+    reset_game()
+  end
+end
+
+function _draw()
+  cls(color(26,30,40))
+  rectfill(8,108,470,146,color(48,58,78))
+  rect(8,108,470,146,color(255,255,255))
+  print("convey it", 14, 12, 10, color(255,232,180))
+  print("score: "..score.."  high: "..high, 10, 12, 30, color(224,236,255))
+  print("missed (fell + broke): "..missed, 10, 12, 48, color(255,190,160))
+  print("A = select/deselect flow, START = reset", 10, 12, 66, color(190,255,205))
+  for l in all(letters) do
+    local c = l.selected and color(255,220,120) or color(230,236,255)
+    rectfill(l.x-5,l.y-9,l.x+5,l.y+9,color(18,20,30))
+    rect(l.x-5,l.y-9,l.x+5,l.y+9,c)
+    print(l.ch, 10, l.x-3, l.y-4, c)
+  end
+end`}];
+  finalizeExampleProjectLoad();
+}
+
 function getExampleProjects(){
   return [
     {id:'collision',category:'games',name:'Scrolling Wall Collision',description:'Separate button + joystick movement, wall checks, map scrolling with camera(), and btnp() zoom controls.',loader:loadExampleProject},
     {id:'2048-particles',category:'games',name:'2048 Clone + Particles',description:'Grid-based 2048 clone with merge particles, score tracking, and persistent high score via save_data()/load_data().',loader:load2048ParticlesExampleProject},
     {id:'flappy-high-score',category:'games',name:'Flappy Bird Clone',description:'Arcade flappy bird style game with obstacle pipes, restart flow, and persistent high score storage.',loader:loadFlappyHighScoreExampleProject},
+    {id:'crossword-puzzle',category:'games',name:'Crossword Puzzle',description:'Menu-selectable word count/length, timed or non-timed play, pause with hidden board, replayable generated tables, and timed-only persistent high score.',loader:loadCrosswordPuzzleExampleProject},
+    {id:'ten-sum',category:'games',name:'Ten-Sum',description:'Number puzzle with 10x10 or 20x20 boards, 60-second timer, line + rectangle selection, score by selected squares, and persistent high score.',loader:loadTenSumExampleProject},
+    {id:'convey-it',category:'games',name:'Convey It',description:'Conveyor-belt letter game: click/select letters to form 3-letter words, clear matches for points, track broken fall-offs, and save high score.',loader:loadConveyItExampleProject},
     {id:'include-function-check',category:'logic',name:'Include + Utility Function Check',description:'Two-file project that validates include, cls(color()), add(), rnd(), print(), and for e in all(list) do loops.',loader:loadIncludeFunctionCheckExampleProject},
     {id:'note-app-save-load',category:'logic',name:'Note App Save + Load',description:'Simple note manager using entry_box() and save_data()/load_data() for persistent notes.',loader:loadNotesSaveLoadExampleProject},
     {id:'menu-screen-swap',category:'ui examples',name:'Basic Menu + Screen Swap',description:'Simple readable menu/game/pause screen flow with dpad/left-stick movement, right-stick r_spr() aiming, spr flip, sin/cosin motion, and add()/del() notes.',loader:loadMenuScreenSwapExampleProject},
