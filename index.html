@@ -6800,7 +6800,7 @@ function makeRuntime(){
   const pollGamepads=()=>{ input.btnGamepad.fill(0); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); const pads=navigator.getGamepads?navigator.getGamepads():[]; for(const pad of pads){ if(!pad) continue; const buttons=pad.buttons||[]; const axes=pad.axes||[]; input.btnGamepad[0]=input.btnGamepad[0]||(buttons[12]?.pressed?1:0); input.btnGamepad[1]=input.btnGamepad[1]||(buttons[13]?.pressed?1:0); input.btnGamepad[2]=input.btnGamepad[2]||(buttons[14]?.pressed?1:0); input.btnGamepad[3]=input.btnGamepad[3]||(buttons[15]?.pressed?1:0); input.btnGamepad[4]=input.btnGamepad[4]||(buttons[0]?.pressed?1:0); input.btnGamepad[5]=input.btnGamepad[5]||(buttons[1]?.pressed?1:0); input.btnGamepad[6]=input.btnGamepad[6]||(buttons[2]?.pressed?1:0); input.btnGamepad[7]=input.btnGamepad[7]||(buttons[3]?.pressed?1:0); input.btnGamepad[8]=input.btnGamepad[8]||(buttons[4]?.pressed?1:0); input.btnGamepad[9]=input.btnGamepad[9]||(buttons[5]?.pressed?1:0); input.btnGamepad[10]=input.btnGamepad[10]||((buttons[8]?.pressed||buttons[16]?.pressed)?1:0); input.btnGamepad[11]=input.btnGamepad[11]||((buttons[9]?.pressed||buttons[17]?.pressed)?1:0); const lx=clamp(Number(axes[0])||0,-1,1), ly=clamp(Number(axes[1])||0,-1,1), rx=clamp(Number(axes[2])||0,-1,1), ry=clamp(Number(axes[3])||0,-1,1); if(Math.abs(lx)>Math.abs(input.gamepadJoy[0].x)) input.gamepadJoy[0].x=lx; if(Math.abs(ly)>Math.abs(input.gamepadJoy[0].y)) input.gamepadJoy[0].y=ly; if(Math.abs(rx)>Math.abs(input.gamepadJoy[1].x)) input.gamepadJoy[1].x=rx; if(Math.abs(ry)>Math.abs(input.gamepadJoy[1].y)) input.gamepadJoy[1].y=ry; }
     input.gamepadJoy.forEach(joy=>{ if(Math.abs(joy.x)<0.14) joy.x=0; if(Math.abs(joy.y)<0.14) joy.y=0; joy.down=!!(joy.x||joy.y); }); recomputeVirtualInput(); };
   window.addEventListener('blur',()=>{ input.btnDpad.fill(0); input.btnFace.fill(0); input.btnSystem.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); keyDown.clear(); keyPressed.clear(); leftJoy.reset(); rightJoy.reset(); recomputeVirtualInput(); }); applyInputModeUI();
-  let col={r:255,g:255,b:255}, lastColorCall=null, camx=0, camy=0, viewZoom=1, zoomOffX=0, zoomOffY=0, clipRect=null, palIndexRemap=new Map(), palColorRemap=new Map();
+  let col={r:255,g:255,b:255}, lastColorCall=null, camx=0, camy=0, viewZoom=1, zoomOffX=0, zoomOffY=0, clipRect=null, palIndexRemap=new Map(), palColorRemap=new Map(), palVersion=0;
   const defaultPrintState={font:null,size:null,color:null};
   function resetRuntimeDefaults(){
     col={r:255,g:255,b:255};
@@ -6812,6 +6812,7 @@ function makeRuntime(){
     defaultPrintState.color=null;
     palIndexRemap.clear();
     palColorRemap.clear();
+    palVersion++;
     resetUiBoxStyle();
   }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
@@ -6841,21 +6842,45 @@ function makeRuntime(){
     return (token && palColorRemap.has(token)) ? palColorRemap.get(token) : (s||null);
   }
   function pal(from,to){
-    if(arguments.length===0 || (from==null&&to==null)){ palIndexRemap.clear(); palColorRemap.clear(); tileCache.clear(); return 0; }
+    if(arguments.length===0 || (from==null&&to==null)){
+      if(palIndexRemap.size || palColorRemap.size){
+        palIndexRemap.clear();
+        palColorRemap.clear();
+        palVersion++;
+        tileCache.clear();
+      }
+      return 0;
+    }
     const sourceRaw=String(from??'').trim();
     if(!sourceRaw) return 0;
     const sourceIsIndex=/^-?\d+$/.test(sourceRaw);
     if(to==null || String(to).trim()===''){
-      if(sourceIsIndex) palIndexRemap.delete(parseInt(sourceRaw,10)|0);
-      else palColorRemap.delete(normalizePalColorToken(sourceRaw));
-      tileCache.clear();
+      const removed=sourceIsIndex
+        ? palIndexRemap.delete(parseInt(sourceRaw,10)|0)
+        : palColorRemap.delete(normalizePalColorToken(sourceRaw));
+      if(removed){
+        palVersion++;
+        tileCache.clear();
+      }
       return 0;
     }
     const targetColor=resolveDrawColor(to);
     if(!targetColor) return 0;
-    if(sourceIsIndex) palIndexRemap.set(parseInt(sourceRaw,10)|0, targetColor);
-    else palColorRemap.set(normalizePalColorToken(sourceRaw), targetColor);
-    tileCache.clear();
+    if(sourceIsIndex){
+      const sourceIndex=parseInt(sourceRaw,10)|0;
+      if(palIndexRemap.get(sourceIndex)!==targetColor){
+        palIndexRemap.set(sourceIndex, targetColor);
+        palVersion++;
+        tileCache.clear();
+      }
+    }else{
+      const sourceToken=normalizePalColorToken(sourceRaw);
+      if(palColorRemap.get(sourceToken)!==targetColor){
+        palColorRemap.set(sourceToken, targetColor);
+        palVersion++;
+        tileCache.clear();
+      }
+    }
     return 0;
   }
   function resolvePrintColor(value){ if(value==null) return null; if(typeof value==='string'&&value.trim().toLowerCase()==='nil') return null; return resolveDrawColor(value); }
@@ -7032,11 +7057,7 @@ function makeRuntime(){
     }
     return spriteCanvas;
   }
-  function palCacheKey(){
-    const index=[...palIndexRemap.entries()].map(([k,v])=>`${k}:${v}`).sort().join('|');
-    const color=[...palColorRemap.entries()].map(([k,v])=>`${k}:${v}`).sort().join('|');
-    return `${index}__${color}`;
-  }
+  function palCacheKey(){ return String(palVersion); }
   function percentScale(value){ const n=Number(value); if(!Number.isFinite(n)||n===0) return 1; return Math.max(0.01,Math.abs((n+100)/100))*(n<0?-1:1); }
   function spr(fileOrIndex,x,y,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ drawInternalSpriteRuntime(ref,x,y,1,1,0,flip); clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,1,1,0,flip); clipPop(_cp); return; } clipPop(_cp); }
   function sspr(fileOrIndex,x,y,w,h,center=false,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const scaleX=percentScale(w), scaleY=percentScale(h); let dx=Number(x)||0, dy=Number(y)||0; if(center===true){ dx-=((sp.w*Math.abs(scaleX))-sp.w)/2; dy-=((sp.h*Math.abs(scaleY))-sp.h)/2; } drawInternalSpriteRuntime(ref,dx,dy,scaleX,scaleY,0,flip); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,percentScale(w),percentScale(h),0,flip); clipPop(_cp); return; } clipPop(_cp); }
