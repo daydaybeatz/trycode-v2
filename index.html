@@ -1710,8 +1710,51 @@ function importCodeFile(file){
   reader.onerror=()=>toast('<b>Import failed:</b> Could not read file.');
   reader.readAsText(file);
 }
-function saveProject(){ saveEditorToCurrentCodeFile(); const all=loadAllProjects(); const defaultName=state.currentProjectName||'project_1'; const name=promptForProjectName('Save project as:', defaultName); if(!name) return; state.currentProjectName=name; state.hasSaved=true; all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject) }; saveAllProjects(all); refreshProjectList();
-updateCodeLineNumbers(); toast(`<b>Saved:</b> ${escapeHtml(name)}`); }
+function persistProjectSnapshot(name){
+  const all=loadAllProjects();
+  state.currentProjectName=name;
+  state.hasSaved=true;
+  all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject) };
+  saveAllProjects(all);
+  refreshProjectList();
+  updateCodeLineNumbers();
+  toast(`<b>Saved:</b> ${escapeHtml(name)}`);
+}
+function saveProject(forcePrompt=true){
+  saveEditorToCurrentCodeFile();
+  const defaultName=state.currentProjectName||'project_1';
+  const shouldPrompt=forcePrompt || !state.hasSaved || !state.currentProjectName;
+  const name=shouldPrompt ? promptForProjectName('Save project as:', defaultName) : state.currentProjectName;
+  if(!name) return false;
+  persistProjectSnapshot(name);
+  return true;
+}
+function toggleCodeEditorLineComments(){
+  const editor=$("codeEditor");
+  if(!editor) return;
+  const value=editor.value||"";
+  const start=editor.selectionStart||0;
+  const end=editor.selectionEnd||0;
+  const blockStart=value.lastIndexOf('\n', Math.max(0,start-1))+1;
+  const blockEndIdx=value.indexOf('\n', end);
+  const blockEnd=blockEndIdx===-1 ? value.length : blockEndIdx;
+  const selected=value.slice(blockStart, blockEnd);
+  if(!selected.length) return;
+  const lines=selected.split('\n');
+  const nonEmpty=lines.filter(line=>line.trim().length>0);
+  const shouldUncomment=nonEmpty.length>0 && nonEmpty.every(line=>/^\s*--/.test(line));
+  const nextLines=lines.map(line=>{
+    if(!line.trim()) return line;
+    if(shouldUncomment) return line.replace(/^(\s*)--\s?/, '$1');
+    return line.replace(/^(\s*)/, '$1-- ');
+  });
+  const nextBlock=nextLines.join('\n');
+  editor.setRangeText(nextBlock, blockStart, blockEnd, 'select');
+  const nextSelectionStart=Math.min(blockStart, editor.value.length);
+  const nextSelectionEnd=Math.min(blockStart+nextBlock.length, editor.value.length);
+  editor.setSelectionRange(nextSelectionStart, nextSelectionEnd);
+  editor.dispatchEvent(new Event('input',{bubbles:true}));
+}
 let exportFengariSourcePromise=null;
 let jsZipLoadPromise=null;
 function escapeInlineScript(text){
@@ -7212,6 +7255,13 @@ function wireUI(){
     input.value='';
   });
   bindClick("stopMusicBtn",()=>stopMusicPlayback());
+  bind("codeEditor",'keydown',e=>{
+    const key=String(e.key||'').toLowerCase();
+    if((e.ctrlKey||e.metaKey) && !e.altKey && !e.shiftKey && key==='b'){
+      e.preventDefault();
+      toggleCodeEditorLineComments();
+    }
+  });
   bind("codeEditor",'input',()=>{ state.lastEdited='code'; saveEditorToCurrentCodeFile(); applyCodeSearchState({keepIndex:true}); updateCodeLineNumbers(); clearTimeout(state.codeDebounce); state.codeDebounce=setTimeout(()=>{ if(state.syncLock) return; runtime.setLua(getProjectLua()); },180); });
   bind("codeEditor",'scroll',()=>{ transferEditorScrollToShell(); saveCurrentCodeViewState(); });
   bind("codeScrollShell",'scroll',()=>{ resetCodePaneScroll(); saveCurrentCodeViewState(); });
@@ -7227,6 +7277,13 @@ function wireUI(){
   bindClick("spriteAnimPlayBtn",()=>{ state.spriteAnimPlaying=true; updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
   bindClick("spriteAnimPauseBtn",()=>{ state.spriteAnimPlaying=false; updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
   bind("spriteAnimSpeedInput",'input',()=>{ state.spriteAnimSpeed=Math.max(1,parseFloat($("spriteAnimSpeedInput")?.value)||6); updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
+  window.addEventListener('keydown',e=>{
+    const key=String(e.key||'').toLowerCase();
+    if((e.ctrlKey||e.metaKey) && !e.altKey && !e.shiftKey && key==='s'){
+      e.preventDefault();
+      saveProject(false);
+    }
+  },{passive:false});
   updateMapAnimToggleButton();
   updateMapToolButtons();
   syncResponsiveUI();
