@@ -607,6 +607,10 @@ function sub(text, start_i, end_i)
   return string.sub(source, first, last)
 end
 
+function upper(text)
+  return string.upper(tostring(text or ""))
+end
+
 function distance(a, b)
   if type(a) ~= "table" or type(b) ~= "table" then return 0 end
   local ax = tonumber(a.x) or 0
@@ -1126,7 +1130,7 @@ function getDocCategory(signature){
   if(sig==="_init()"||sig==="_update()"||sig==="_draw()") return "main callbacks";
   if(sig.startsWith("btn(")||sig.startsWith("btnp(")||sig.startsWith("mouse(")||sig.startsWith("joyx(")||sig.startsWith("joyy(")) return "controls";
   if(sig.startsWith("camera(")||sig.startsWith("map(")||sig.startsWith("pmap(")||sig.startsWith("mget(")||sig.startsWith("mset(")||sig.startsWith("fget(")||sig.startsWith("solid(")||sig.startsWith("wall(")) return "map";
-  if(sig.startsWith("distance(")||sig.startsWith("abs(")||sig.startsWith("flr(")||sig.startsWith("sin(")||sig.startsWith("rnd(")||sig.startsWith("sub(")) return "math";
+  if(sig.startsWith("distance(")||sig.startsWith("abs(")||sig.startsWith("flr(")||sig.startsWith("sin(")||sig.startsWith("rnd(")||sig.startsWith("sub(")||sig.startsWith("upper(")) return "math";
   if(sig.startsWith("a % b")) return "math";
   if(sig.startsWith("add(")||sig.startsWith("del(")||sig.startsWith("deli(")||sig.startsWith("all(")||sig.startsWith("foreach(")||sig.startsWith("pairs(")||sig.startsWith("get_value(")||sig.startsWith("set_value(")||sig.startsWith("mod_value(")) return "tables";
   if(sig.startsWith("#table")) return "tables";
@@ -1191,7 +1195,8 @@ const CODE_API_DOCS = [
   makeDoc("flr(n)", "Rounds a number down to the nearest integer.", [["n", "The number to round down."]], ["tile_x = flr(player_x / 8)"], "Useful when turning pixels into tile coordinates."),
   makeDoc("sin(n) / cosin(n) / tan(n)", "Returns the standard math sine, cosine, or tangent of a number in radians.", [["n", "Angle in radians."]], ["wave = sin(t)\nside = cosin(t)\nslope = tan(0.25)"], "Use these for orbits, waves, aiming math, and procedural animation."),
   makeDoc("rnd(x)", "Returns a random value below a number, or a random entry from a table.", [["x", "Number limit or list-style table."]], ["speed = rnd(4)\nloot = rnd({\"ammo\",\"med\",\"intel\"})"], "With numbers it returns a value in [0, x). With tables it picks one item from index 1 to #table."),
-  makeDoc("sub(text, start, finish)", "Returns a substring from start to finish (inclusive, 1-based).", [["text", "Text value to slice."],["start", "Start character index (1-based)."],["finish", "Optional end character index. Leave empty to slice to the end."]], ["name = \"kuocop\"","first = sub(name, 1, 1) -- \"k\"","rest = sub(name, 2) -- \"uocop\"","title = string.upper(sub(name, 1, 1)) .. sub(name, 2)"], "Use this as a short alias for string.sub(...) in gameplay scripts and UI text formatting."),
+  makeDoc("sub(text, start, finish)", "sub() returns a substring from start to finish (inclusive, 1-based).", [["text", "Text value to slice."],["start", "Start character index (1-based)."],["finish", "Optional end character index. Leave empty to slice to the end."]], ["name = \"kuocop\"","first = sub(name, 1, 1) -- \"k\"","rest = sub(name, 2) -- \"uocop\""], "Use this as a short alias for string.sub(...) in gameplay scripts and UI text formatting."),
+  makeDoc("upper(text)", "upper() turns letters into uppercase.", [["text", "Text value to convert."]], ["upper(\"k\")      -- \"K\"","upper(\"kuocop\") -- \"KUOCOP\""], "Use this helper when you want labels, names, or UI text in all caps."),
   makeDoc("a % b", "Returns the remainder after division (modulo).", [["a", "Value to divide."],["b", "Divisor."]], ["col = x % 16","if frame % 8 == 0 then blink = not blink end"], "Use this for wrapping indexes, timed pulses, and repeating patterns."),
   makeDoc("#table", "Returns the length of an array-style table.", [["table", "Array-style Lua table."]], ["for i=1,#enemies do\n  print(i, 8, 8)\nend","piece = pieces[flr(rnd(#pieces)) + 1]"], "Use #table to count list entries and drive loops."),
   makeDoc("add(list, value)", "Appends a value to the end of an array-style table and returns it.", [["list", "Table to grow."],["value", "Value to append."]], ["add(particles, {x=mx, y=my})"], "This is handy for projectiles, particles, enemies, and menu items."),
