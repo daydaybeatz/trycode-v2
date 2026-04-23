@@ -487,7 +487,7 @@
     <div class="menuBackdrop" id="menuBackdrop"></div>
     <div class="menu" id="menu"><div class="menuCard">
       <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button></div></div></div>
-      <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal (480x270)</option><option value="mobile_fullscreen">Mobile portrait (270x480)</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
+      <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal (480x270)</option><option value="hd_2x">2x (960x540)</option><option value="hd_3x">3x (1440x810)</option><option value="hd_4x">4x (1920x1080)</option><option value="mobile_fullscreen">Mobile portrait (270x480)</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
             <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="list menuLoadList" id="projectList"></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div></div>
     </div></div>
   </div>
@@ -1082,7 +1082,7 @@ function ensureProjectData(){
   p.project.tile_w=Math.max(1,p.project.tile_w|0); p.project.tile_h=Math.max(1,p.project.tile_h|0); p.project.map_w=Math.max(1,p.project.map_w|0); p.project.map_h=Math.max(1,p.project.map_h|0);
   p.settings=p.settings||{};
   if(!['dpad','left_joystick','none'].includes(p.settings.movementInput)) p.settings.movementInput='left_joystick';
-  if(!['normal','mobile_fullscreen'].includes(p.settings.displayMode)) p.settings.displayMode='normal';
+  if(!['normal','hd_2x','hd_3x','hd_4x','mobile_fullscreen'].includes(p.settings.displayMode)) p.settings.displayMode='normal';
   p.settings.touchOnly=!!p.settings.touchOnly;
   p.settings.defaultPrintFont=normalizePrintFontName(p.settings.defaultPrintFont);
   p.settings.darkMode=!!p.settings.darkMode;
@@ -6612,7 +6612,14 @@ function updateCurrentMusicFromUI(){ const m=currentMusic(); m.loop=$("musicLoop
 function drawMusicPreview(){}
 
 function makeRuntime(){
-  const NORMAL_GAME_W=480, NORMAL_GAME_H=270, MOBILE_GAME_W=270, MOBILE_GAME_H=480, canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=NORMAL_GAME_W, GAME_H=NORMAL_GAME_H; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
+  const RESOLUTION_PRESETS={
+    normal:{w:480,h:270},
+    hd_2x:{w:960,h:540},
+    hd_3x:{w:1440,h:810},
+    hd_4x:{w:1920,h:1080},
+    mobile_fullscreen:{w:270,h:480}
+  };
+  const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
   const dialogKeyboardInput=document.createElement('input');
   dialogKeyboardInput.type='text';
   dialogKeyboardInput.autocomplete='off';
@@ -6681,8 +6688,9 @@ function makeRuntime(){
     const stageW=Math.max(1,Math.floor(rect.width||0));
     const stageH=Math.max(1,Math.floor(rect.height||0));
     const displayMode=(projectRef.settings&&projectRef.settings.displayMode)||'normal';
-    const targetW=displayMode==='mobile_fullscreen'?MOBILE_GAME_W:NORMAL_GAME_W;
-    const targetH=displayMode==='mobile_fullscreen'?MOBILE_GAME_H:NORMAL_GAME_H;
+    const preset=RESOLUTION_PRESETS[displayMode]||RESOLUTION_PRESETS.normal;
+    const targetW=preset.w;
+    const targetH=preset.h;
     if(canvas.width!==targetW || canvas.height!==targetH){
       GAME_W=targetW;
       GAME_H=targetH;
@@ -7077,7 +7085,7 @@ function wireUI(){
   bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); closeLoadPanel(); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
   bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
-  bind("resolutionSelect",'change',()=>{ ensureProjectData(); const value=$("resolutionSelect")?.value; state.appProject.settings.displayMode=value==='mobile_fullscreen'?'mobile_fullscreen':'normal'; runtime.syncProject(state.appProject); runtime.resizeDisplay(); });
+  bind("resolutionSelect",'change',()=>{ ensureProjectData(); const value=String($("resolutionSelect")?.value||'').trim(); state.appProject.settings.displayMode=['normal','hd_2x','hd_3x','hd_4x','mobile_fullscreen'].includes(value)?value:'normal'; runtime.syncProject(state.appProject); runtime.resizeDisplay(); });
   bindClick("projectListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage-1+pages)%pages; refreshProjectList(); });
   bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
   bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
