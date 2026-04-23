@@ -937,7 +937,7 @@ function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
 function makeSound(){ return {name:"",wave:"square",length:0.3,volume:0.6,pitch:440,attack:0.01,decay:0.08,sustain:0.6,release:0.1,wavetable:Array.from({length:64},()=>0)}; }
-function makeMusic(){ return {name:"",file:"",fileName:"",loop:true}; }
+function makeMusic(){ return {name:"",file:"",fileName:"",fileData:"",loop:true}; }
 function makeBlankTileDef(){ return {source:"",flags:{0:false},bg:"#000000",bgEnabled:false,animated:false,animFolder:0,animSpeed:6}; }
 function ensurePalettePages(p){
   if(!Array.isArray(p.palette)) p.palette=[];
@@ -1097,7 +1097,14 @@ function ensureProjectData(){
   p.codeFiles=p.codeFiles.map((f,i)=>({name:(f&&f.name)||`file${i+1}.lua`,content:(f&&f.content)||"",tabTheme:Number.isInteger(f&&f.tabTheme)?f.tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}));
   p.spriteFolders.forEach(folder=>{ if(!folder.frames?.length) folder.frames=[makeSprite(16,16)]; folder.frames=folder.frames.slice(0,26); folder.frames.forEach(s=>{ s.w=Math.max(1,s.w|0); s.h=Math.max(1,s.h|0); if(!Array.isArray(s.pixels)) s.pixels=[]; s.pixels.length=s.h; for(let y=0;y<s.h;y++){ if(!Array.isArray(s.pixels[y])) s.pixels[y]=[]; s.pixels[y].length=s.w; for(let x=0;x<s.w;x++) if(s.pixels[y][x]==null) s.pixels[y][x]=-1; } }); folder.name=String(folder.name||''); ensureSpriteFolderView(folder); });
   p.sounds.forEach(s=>{ s.name=String(s.name||''); if(!Array.isArray(s.wavetable)) s.wavetable=Array.from({length:64},()=>0); while(s.wavetable.length<64) s.wavetable.push(0); s.wavetable=s.wavetable.slice(0,64); });
-  p.music.forEach(m=>{ m.name=String(m.name||''); if(m.loop==null) m.loop=true; if(!m.file) m.file=""; m.fileName=String(m.fileName||''); });
+  p.music.forEach(m=>{
+    m.name=String(m.name||'');
+    if(m.loop==null) m.loop=true;
+    if(!m.file) m.file="";
+    m.fileName=String(m.fileName||'');
+    m.fileData=String(m.fileData||'');
+    if(!m.file && m.fileData) m.file=m.fileData;
+  });
   p.tileDefs=p.tileDefs||{};
   p.tileDefs[0]={...makeBlankTileDef(),...(p.tileDefs[0]||{})};
   Object.keys(p.tileDefs).forEach(key=>{ const d=p.tileDefs[key]||{}; if(!d.flags) d.flags={}; if(d.bg==null) d.bg=key==='0'?"#000000":"#444444"; if(d.source==null) d.source=""; if(d.bgEnabled==null) d.bgEnabled=key==='0'?false:true; if(d.animated==null) d.animated=false; if(d.animFolder==null) d.animFolder=0; if(d.animSpeed==null) d.animSpeed=6; p.tileDefs[key]=d; });
@@ -6550,11 +6557,19 @@ async function playMusicEntry(src, action="play", loop=true){
   stopMusicPlayback();
   const ac=ctxAudio();
   try{ await ac.resume(); }catch{}
-  if(typeof src==="string" && !/^\d+$/.test(src)){ const audio=new Audio(src); audio.loop=!!loop; audio.play().catch(()=>{}); currentMusicSource=audio; return; }
+  if(typeof src==="string" && !/^\d+$/.test(src)){
+    const byName=(state.appProject.music||[]).find(m=>m && (m.fileName===src || m.name===src));
+    const resolved=(byName&& (byName.fileData||byName.file)) || src;
+    const audio=new Audio(resolved);
+    audio.loop=loop==null ? !!byName?.loop : !!loop;
+    audio.play().catch(()=>{});
+    currentMusicSource=audio;
+    return;
+  }
   const idx = typeof src==="number" ? src : parseInt(String(src||"0"),10);
   const m = state.appProject.music[idx];
-  if(!m || !m.file) return;
-  const audio=new Audio(m.file);
+  if(!m || (!m.file && !m.fileData)) return;
+  const audio=new Audio(m.fileData||m.file);
   audio.loop=loop==null ? !!m.loop : !!loop;
   audio.play().catch(()=>{});
   currentMusicSource=audio;
@@ -6926,8 +6941,9 @@ function makeRuntime(){
   };
   let lua, lauxlib, lualib, to_luastring, to_jsstring;
   function pushProjectTable(){ lua.lua_newtable(L); lua.lua_pushinteger(L,projectRef.project.tile_w); lua.lua_setfield(L,-2,to_luastring('tile_w')); lua.lua_pushinteger(L,projectRef.project.tile_h); lua.lua_setfield(L,-2,to_luastring('tile_h')); lua.lua_pushinteger(L,projectRef.project.map_w); lua.lua_setfield(L,-2,to_luastring('map_w')); lua.lua_pushinteger(L,projectRef.project.map_h); lua.lua_setfield(L,-2,to_luastring('map_h')); lua.lua_pushinteger(L,projectRef.maps.length); lua.lua_setfield(L,-2,to_luastring('map_count')); lua.lua_pushinteger(L,projectRef.spriteFolders.length); lua.lua_setfield(L,-2,to_luastring('sprite_count')); lua.lua_pushinteger(L,projectRef.sounds.length); lua.lua_setfield(L,-2,to_luastring('sound_count')); lua.lua_pushinteger(L,projectRef.music.length); lua.lua_setfield(L,-2,to_luastring('music_count')); lua.lua_setglobal(L,to_luastring('project')); }
-  function build(code){
+  function build(code, options={}){
     lastCode=code||'';
+    const suppressAudio=!!options.suppressAudio;
     builtOk=false;
     resetRuntimeDefaults();
     const fengariApi=getFengariApi();
@@ -6993,13 +7009,13 @@ function makeRuntime(){
     push('abs',L=>{ lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1))); return 1;});
     push('flr',L=>{ lua.lua_pushinteger(L,Math.floor(lua.lua_tonumber(L,1))); return 1;});
     push('upper',L=>{ let text=''; if(lua.lua_gettop(L)>=1&&!lua.lua_isnoneornil(L,1)){ if(lua.lua_isboolean(L,1)) text=lua.lua_toboolean(L,1)?'true':'false'; else if(lua.lua_isnumber(L,1)) text=String(lua.lua_tonumber(L,1)); else { const raw=lua.lua_tolstring(L,1); text=raw?to_jsstring(raw):''; } } lua.lua_pushstring(L,to_luastring(String(text).toUpperCase())); return 1;});
-    push('sfx',L=>{ const idx=lua.lua_tointeger(L,1); const loop=lua.lua_toboolean(L,2); sfxPlay(idx,!!loop); return 0;});
-    push('music',L=>{ let src; if(lua.lua_isnumber(L,1)) src=lua.lua_tonumber(L,1); else src=to_jsstring(lua.lua_tolstring(L,1)); const action=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'play'; const loop=lua.lua_gettop(L)>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
+    push('sfx',L=>{ if(suppressAudio) return 0; const idx=lua.lua_tointeger(L,1); const loop=lua.lua_toboolean(L,2); sfxPlay(idx,!!loop); return 0;});
+    push('music',L=>{ if(suppressAudio) return 0; let src; if(lua.lua_isnumber(L,1)) src=lua.lua_tonumber(L,1); else src=to_jsstring(lua.lua_tolstring(L,1)); const action=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'play'; const loop=lua.lua_gettop(L)>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
     const helperStatus=lauxlib.luaL_dostring(L,to_luastring(LUA_RUNTIME_HELPERS));
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); toast(`<b>Lua helper error:</b> ${escapeHtml(err)}`); cls(); return; }
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); toast(`<b>Lua error:</b> ${escapeHtml(err)}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); toast(`<b>_init error:</b> ${escapeHtml(err)}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
-  function setLua(code){ pendingCode=code||''; lastCode=pendingCode; clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode),80); }
+  function setLua(code){ pendingCode=code||''; lastCode=pendingCode; clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode,{suppressAudio:true}),80); }
   function rerun(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function reset(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); toast(`<b>${escapeHtml(name)} error:</b> ${escapeHtml(err)}`); builtOk=false; L=null; } } else lua.lua_pop(L,1); }
@@ -7179,9 +7195,15 @@ function wireUI(){
     if(!file) return;
     const m=currentMusic();
     if(m.file && m.file.startsWith('blob:')){ try{ URL.revokeObjectURL(m.file); }catch{} }
-    m.file=URL.createObjectURL(file);
-    m.fileName=file.name||'';
-    refreshMusicUI();
+    const reader=new FileReader();
+    reader.onload=()=>{
+      m.fileData=typeof reader.result==='string'?reader.result:'';
+      m.file=m.fileData;
+      m.fileName=file.name||'';
+      refreshMusicUI();
+    };
+    reader.onerror=()=>toast('<b>Import failed:</b> Could not read audio file.');
+    reader.readAsDataURL(file);
     input.value='';
   });
   bindClick("stopMusicBtn",()=>stopMusicPlayback());
