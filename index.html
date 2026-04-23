@@ -6914,7 +6914,8 @@ function makeRuntime(){
   };
   let lua, lauxlib, lualib, to_luastring, to_jsstring;
   function pushProjectTable(){ lua.lua_newtable(L); lua.lua_pushinteger(L,projectRef.project.tile_w); lua.lua_setfield(L,-2,to_luastring('tile_w')); lua.lua_pushinteger(L,projectRef.project.tile_h); lua.lua_setfield(L,-2,to_luastring('tile_h')); lua.lua_pushinteger(L,projectRef.project.map_w); lua.lua_setfield(L,-2,to_luastring('map_w')); lua.lua_pushinteger(L,projectRef.project.map_h); lua.lua_setfield(L,-2,to_luastring('map_h')); lua.lua_pushinteger(L,projectRef.maps.length); lua.lua_setfield(L,-2,to_luastring('map_count')); lua.lua_pushinteger(L,projectRef.spriteFolders.length); lua.lua_setfield(L,-2,to_luastring('sprite_count')); lua.lua_pushinteger(L,projectRef.sounds.length); lua.lua_setfield(L,-2,to_luastring('sound_count')); lua.lua_pushinteger(L,projectRef.music.length); lua.lua_setfield(L,-2,to_luastring('music_count')); lua.lua_setglobal(L,to_luastring('project')); }
-  function build(code){
+  function build(code, options={}){
+    const suppressAudio = options.suppressAudio === true;
     lastCode=code||'';
     builtOk=false;
     resetRuntimeDefaults();
@@ -6980,13 +6981,14 @@ function makeRuntime(){
     push('ui_box',defaultBoxFromLua);
     push('abs',L=>{ lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1))); return 1;});
     push('flr',L=>{ lua.lua_pushinteger(L,Math.floor(lua.lua_tonumber(L,1))); return 1;});
-    push('sfx',L=>{ const idx=lua.lua_tointeger(L,1); const loop=lua.lua_toboolean(L,2); sfxPlay(idx,!!loop); return 0;});
-    push('music',L=>{ let src; if(lua.lua_isnumber(L,1)) src=lua.lua_tonumber(L,1); else src=to_jsstring(lua.lua_tolstring(L,1)); const action=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'play'; const loop=lua.lua_gettop(L)>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
+    push('sfx',L=>{ const idx=lua.lua_tointeger(L,1); const loop=lua.lua_toboolean(L,2); if(!suppressAudio) sfxPlay(idx,!!loop); return 0;});
+    push('music',L=>{ let src; if(lua.lua_isnumber(L,1)) src=lua.lua_tonumber(L,1); else src=to_jsstring(lua.lua_tolstring(L,1)); const action=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'play'; const loop=lua.lua_gettop(L)>=3?!!lua.lua_toboolean(L,3):true; if(!suppressAudio) musicPlay(src,action,loop); return 0;});
     const helperStatus=lauxlib.luaL_dostring(L,to_luastring(LUA_RUNTIME_HELPERS));
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); toast(`<b>Lua helper error:</b> ${escapeHtml(err)}`); cls(); return; }
-    pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); toast(`<b>Lua error:</b> ${escapeHtml(err)}`); cls(); return; }
+    pushProjectTable();
+    const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); toast(`<b>Lua error:</b> ${escapeHtml(err)}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); toast(`<b>_init error:</b> ${escapeHtml(err)}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
-  function setLua(code){ pendingCode=code||''; lastCode=pendingCode; clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode),80); }
+  function setLua(code){ pendingCode=code||''; lastCode=pendingCode; clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode,{suppressAudio:true}),80); }
   function rerun(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function reset(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); toast(`<b>${escapeHtml(name)} error:</b> ${escapeHtml(err)}`); builtOk=false; L=null; } } else lua.lua_pop(L,1); }
