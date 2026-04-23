@@ -698,14 +698,6 @@ local function __tc_ui_draw_label(text, x, y, w, h, color, text_size, label_x, l
   if font_size == nil then font_size = math.max(8, math.floor(height * 0.55)) end
   font_size = math.max(1, math.floor(font_size))
   local char_w = math.max(1, font_size - 1)
-  local max_chars = math.max(1, math.floor((width - 8) / char_w))
-  if #label > max_chars then
-    if max_chars <= 3 then
-      label = string.sub(label, 1, max_chars)
-    else
-      label = string.sub(label, 1, max_chars - 3) .. "..."
-    end
-  end
   local text_w = #label * char_w
   local tx = (tonumber(x) or 0) + math.floor((width - text_w) / 2) + (tonumber(label_x) or 0)
   local ty = (tonumber(y) or 0) + math.floor((height - font_size) / 2) + (tonumber(label_y) or 0)
