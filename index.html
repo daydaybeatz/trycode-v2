@@ -1183,6 +1183,7 @@ const CODE_API_DOCS = [
   makeDoc("rectfill(x, y, w, h)", "Draws a filled rectangle using width and height.", [["x", "Left position."],["y", "Top position."],["w", "Width."],["h", "Height."]], ["rectfill(8, 8, 16, 10)"], "Use four arguments for width/height mode."),
   makeDoc("rectfill(x0, y0, x1, y1, color)", "Draws a filled rectangle using end coordinates and an optional color argument.", [["x0", "Left position."],["y0", "Top position."],["x1", "Right position."],["y1", "Bottom position."],["color", "Palette index, color() result, or CSS color string."]], ["rectfill(x, y, x + 7, y + 7, 8)","rectfill(4, 4, 20, 18, color(255,180,80))"], "Use five arguments when you want exact end coordinates with a specific color."),
   makeDoc("color(r, g, b)", "Sets the current draw color for print() and four-argument rectfill(), and returns that color for APIs like default_box().", [["r", "Red 0-255."],["g", "Green 0-255."],["b", "Blue 0-255."]], ["color(255, 255, 255)\nprint(\"hi\", 8, 8)","default_box(\"message\", {bg=color(27, 35, 64), text=color(255, 247, 232)})"], "Call this before drawing if you want a custom RGB color. The returned color value can also be reused in UI styling tables."),
+  makeDoc("pal(source, target)", "Temporarily remaps one draw color to another during runtime drawing.", [["source", "Palette index or color() / CSS color string to replace."],["target", "Palette index or color() / CSS color string to draw instead. Leave both empty to reset all remaps."]], ["pal(66, 9)\nspr(2)\npal()","pal(color(255,0,0), 12)\nprint(\"danger\", 12, 8, 8)"], "Call pal() with no arguments to clear all active remaps."),
   makeDoc("cls(color)", "Clears the screen to an optional color; defaults to black.", [["color", "Optional palette index, color() result, or CSS color string."]], ["cls()","cls(color(24,35,59))","cls(0)"], "Call cls() at the top of _draw(), then call camera(...), then draw the map, sprites, and text for that frame."),
   makeDoc("clip(x, y, w, h)", "Limits later drawing to a screen rectangle. Call clip() with no args to clear it.", [["x", "Clip left."],["y", "Clip top."],["w", "Clip width."],["h", "Clip height."]], ["clip(0, 0, 160, 90)\nmap(0)\nclip()"], "Useful for split-screen UI, picture-in-picture, or HUD windows."),
   makeDoc("zoom(z, ox, oy)", "Changes the view zoom level, with optional screen offsets.", [["z", "Zoom amount, such as 1 or 2."],["ox", "Optional screen x offset after zoom."],["oy", "Optional screen y offset after zoom."]], ["zoom(2)","zoom(1)","zoom(2, 0, 0)"], "Use btnp() to toggle zoom once instead of changing it every frame."),
@@ -1207,7 +1208,7 @@ const CODE_API_DOCS = [
   makeDoc("foreach(list, fn)", "Calls a function once for each value in an array-style table.", [["list", "Array-style table."],["fn", "Function that receives value and index."]], ["foreach(stars, function(star, i)\n  star.y += 1\nend)"], "Use it for quick setup or cleanup passes when you do not need a full for loop."),
   makeDoc("pairs(table)", "Lua's built-in key/value iterator for tables with named fields.", [["table", "Any Lua table."]], ["for key, value in pairs(player) do\n  print(key, 8, 8)\nend"], "Use pairs() when you want both keys and values, especially for settings or dictionaries."),
   makeDoc("sfx(index, loop)", "Plays a sound effect.", [["index", "Sound index to play."],["loop", "Optional true/false loop flag."]], ["sfx(0, false)"], "Trigger it with btnp() for one-shot sounds."),
-  makeDoc("music(indexOrFile, action, loop)", "Plays generated music by index or an imported file by name.", [["indexOrFile", "Music index like 0, or a file name string."],["action", "Usually \"play\" or \"stop\"."],["loop", "true or false."]], ["music(0, \"play\", true)","music(\"song.ogg\", \"play\", true)"], "Start music in _init() or when the level changes."),
+  makeDoc("music(indexOrFile, action, loop)", "Plays generated music by index or an imported file by name.", [["indexOrFile", "Music index like 0, a file name string, or \"stop\" to stop playback."],["action", "Usually \"play\" or \"stop\"."],["loop", "true or false."]], ["music(0, \"play\", true)","music(\"song.ogg\", \"play\", true)","music(\"stop\")","music(0, \"stop\")"], "Start music in _init() or when the level changes, and call music(\"stop\") to stop current playback."),
   makeDoc("message_box(message, title)", "Shows a lightweight OK dialog in the runtime.", [["message", "Text shown in the dialog body."],["title", "Optional heading text."]], ["if btnp(\"a\") then message_box(\"hello!\", \"notice\") end"], "This opens an on-screen modal that works with mouse and touch. Use default_box(\"message\", {...}) to restyle only message boxes."),
   makeDoc("confirm_box(message, title)", "Shows a yes/no style dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["title", "Optional heading text."]], ["default_box(\"confirm\", {bg=color(27,35,64), text=color(255,247,232)})","local answer = confirm_box(\"quit game?\", \"confirm\")","if answer == true then quit = true end"], "Call it every frame while waiting. It returns true for OK, false for Cancel, and nil until the player chooses. Call default_box(\"confirm\") with no style table to reset confirm boxes back to the built-in defaults."),
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
@@ -5896,7 +5897,11 @@ function getExampleProjects(){
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
 function setView(name){
+  const previousView=state.activeView;
   state.activeView=name;
+  if(previousView==="runtime" && name!=="runtime"){
+    stopMusicPlayback();
+  }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $("view-"+name).classList.add('active');
   if(name==="code") requestAnimationFrame(()=>$("codeEditor").focus({preventScroll:true}));
@@ -6624,7 +6629,8 @@ function refreshMusicWaveOptions(){ const sel=$("musicWaveInput"), cur=currentMu
 function refreshCustomScaleUI(){ const wrap=$("musicCustomScaleWrap"), keys=$("musicCustomScaleKeys"), m=currentMusic(); wrap.style.display = m.scale==='custom' ? 'block' : 'none'; keys.innerHTML=''; const labels=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; for(let i=0;i<12;i++){ const b=document.createElement('button'); b.className='miniKey'+(m.customNotes.includes(i)?' active':''); b.textContent=labels[i]; b.onclick=(e)=>{ e.preventDefault(); const arr=m.customNotes; const idx=arr.indexOf(i); if(idx>=0) arr.splice(idx,1); else arr.push(i); arr.sort((a,b)=>a-b); if(!arr.length) arr.push(0); refreshCustomScaleUI();  }; keys.appendChild(b); } }
 function stopMusicPlayback(){ if(currentMusicTimer){ clearInterval(currentMusicTimer); clearTimeout(currentMusicTimer); currentMusicTimer=null; } currentMusicNodes.forEach(n=>{ try{n.stop&&n.stop();}catch{} try{n.disconnect&&n.disconnect();}catch{} }); currentMusicNodes=[]; if(currentMusicSource){ try{currentMusicSource.pause&&currentMusicSource.pause();}catch{} try{currentMusicSource.currentTime=0;}catch{} try{currentMusicSource.stop&&currentMusicSource.stop();}catch{} currentMusicSource=null; } }
 async function playMusicEntry(src, action="play", loop=true){
-  if(action==="stop"){ stopMusicPlayback(); return; }
+  const normalizedAction=String(action??'play').trim().toLowerCase();
+  if(normalizedAction==="stop"){ stopMusicPlayback(); return; }
   stopMusicPlayback();
   const ac=ctxAudio();
   try{ await ac.resume(); }catch{}
@@ -6794,7 +6800,7 @@ function makeRuntime(){
   const pollGamepads=()=>{ input.btnGamepad.fill(0); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); const pads=navigator.getGamepads?navigator.getGamepads():[]; for(const pad of pads){ if(!pad) continue; const buttons=pad.buttons||[]; const axes=pad.axes||[]; input.btnGamepad[0]=input.btnGamepad[0]||(buttons[12]?.pressed?1:0); input.btnGamepad[1]=input.btnGamepad[1]||(buttons[13]?.pressed?1:0); input.btnGamepad[2]=input.btnGamepad[2]||(buttons[14]?.pressed?1:0); input.btnGamepad[3]=input.btnGamepad[3]||(buttons[15]?.pressed?1:0); input.btnGamepad[4]=input.btnGamepad[4]||(buttons[0]?.pressed?1:0); input.btnGamepad[5]=input.btnGamepad[5]||(buttons[1]?.pressed?1:0); input.btnGamepad[6]=input.btnGamepad[6]||(buttons[2]?.pressed?1:0); input.btnGamepad[7]=input.btnGamepad[7]||(buttons[3]?.pressed?1:0); input.btnGamepad[8]=input.btnGamepad[8]||(buttons[4]?.pressed?1:0); input.btnGamepad[9]=input.btnGamepad[9]||(buttons[5]?.pressed?1:0); input.btnGamepad[10]=input.btnGamepad[10]||((buttons[8]?.pressed||buttons[16]?.pressed)?1:0); input.btnGamepad[11]=input.btnGamepad[11]||((buttons[9]?.pressed||buttons[17]?.pressed)?1:0); const lx=clamp(Number(axes[0])||0,-1,1), ly=clamp(Number(axes[1])||0,-1,1), rx=clamp(Number(axes[2])||0,-1,1), ry=clamp(Number(axes[3])||0,-1,1); if(Math.abs(lx)>Math.abs(input.gamepadJoy[0].x)) input.gamepadJoy[0].x=lx; if(Math.abs(ly)>Math.abs(input.gamepadJoy[0].y)) input.gamepadJoy[0].y=ly; if(Math.abs(rx)>Math.abs(input.gamepadJoy[1].x)) input.gamepadJoy[1].x=rx; if(Math.abs(ry)>Math.abs(input.gamepadJoy[1].y)) input.gamepadJoy[1].y=ry; }
     input.gamepadJoy.forEach(joy=>{ if(Math.abs(joy.x)<0.14) joy.x=0; if(Math.abs(joy.y)<0.14) joy.y=0; joy.down=!!(joy.x||joy.y); }); recomputeVirtualInput(); };
   window.addEventListener('blur',()=>{ input.btnDpad.fill(0); input.btnFace.fill(0); input.btnSystem.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); keyDown.clear(); keyPressed.clear(); leftJoy.reset(); rightJoy.reset(); recomputeVirtualInput(); }); applyInputModeUI();
-  let col={r:255,g:255,b:255}, lastColorCall=null, camx=0, camy=0, viewZoom=1, zoomOffX=0, zoomOffY=0, clipRect=null;
+  let col={r:255,g:255,b:255}, lastColorCall=null, camx=0, camy=0, viewZoom=1, zoomOffX=0, zoomOffY=0, clipRect=null, palIndexRemap=new Map(), palColorRemap=new Map();
   const defaultPrintState={font:null,size:null,color:null};
   function resetRuntimeDefaults(){
     col={r:255,g:255,b:255};
@@ -6804,6 +6810,8 @@ function makeRuntime(){
     defaultPrintState.font=null;
     defaultPrintState.size=null;
     defaultPrintState.color=null;
+    palIndexRemap.clear();
+    palColorRemap.clear();
     resetUiBoxStyle();
   }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
@@ -6815,8 +6823,41 @@ function makeRuntime(){
   function toColorByte(value,fallback){ const n=Number(value); if(!Number.isFinite(n)) return fallback|0; return Math.max(0,Math.min(255,Math.round(n)))|0; }
   function color(r,g,b){ const prev={r:col.r,g:col.g,b:col.b}; col.r=toColorByte(r,col.r); col.g=toColorByte(g,col.g); col.b=toColorByte(b,col.b); const next=`rgb(${col.r},${col.g},${col.b})`; lastColorCall={value:next,prev}; return next; }
   function sty(){ return `rgb(${col.r},${col.g},${col.b})`; }
-  function paletteColor(index){ const value=projectRef.palette[index|0]; return value||sty(); }
-  function resolveDrawColor(value){ if(value==null||value==="") return null; if(typeof value==="number"&&Number.isFinite(value)) return paletteColor(value|0); const s=String(value).trim(); if(/^\d+$/.test(s)) return paletteColor(parseInt(s,10)); return s||null; }
+  function normalizePalColorToken(value){ return String(value||'').trim().toLowerCase(); }
+  function basePaletteColor(index){ const value=projectRef.palette[index|0]; return value||sty(); }
+  function applyPalRemap(index,colorValue){
+    if(Number.isFinite(index) && palIndexRemap.has(index|0)) return palIndexRemap.get(index|0);
+    const token=normalizePalColorToken(colorValue);
+    if(token && palColorRemap.has(token)) return palColorRemap.get(token);
+    return colorValue;
+  }
+  function paletteColor(index){ return applyPalRemap(index|0, basePaletteColor(index)); }
+  function resolveDrawColor(value){
+    if(value==null||value==="") return null;
+    if(typeof value==="number"&&Number.isFinite(value)) return paletteColor(value|0);
+    const s=String(value).trim();
+    if(/^\d+$/.test(s)) return paletteColor(parseInt(s,10));
+    const token=normalizePalColorToken(s);
+    return (token && palColorRemap.has(token)) ? palColorRemap.get(token) : (s||null);
+  }
+  function pal(from,to){
+    if(arguments.length===0 || (from==null&&to==null)){ palIndexRemap.clear(); palColorRemap.clear(); tileCache.clear(); return 0; }
+    const sourceRaw=String(from??'').trim();
+    if(!sourceRaw) return 0;
+    const sourceIsIndex=/^-?\d+$/.test(sourceRaw);
+    if(to==null || String(to).trim()===''){
+      if(sourceIsIndex) palIndexRemap.delete(parseInt(sourceRaw,10)|0);
+      else palColorRemap.delete(normalizePalColorToken(sourceRaw));
+      tileCache.clear();
+      return 0;
+    }
+    const targetColor=resolveDrawColor(to);
+    if(!targetColor) return 0;
+    if(sourceIsIndex) palIndexRemap.set(parseInt(sourceRaw,10)|0, targetColor);
+    else palColorRemap.set(normalizePalColorToken(sourceRaw), targetColor);
+    tileCache.clear();
+    return 0;
+  }
   function resolvePrintColor(value){ if(value==null) return null; if(typeof value==='string'&&value.trim().toLowerCase()==='nil') return null; return resolveDrawColor(value); }
   function resolvePrintFont(value, fallbackFont){ const raw=String(value??'').trim(); if(!raw||raw.toLowerCase()==='nil') return fallbackFont||DEFAULT_PRINT_FONT; return normalizePrintFontName(raw); }
   function hexToRgb(value){
@@ -6914,7 +6955,6 @@ function makeRuntime(){
   function default_font(font,size,colorValue){ const fileMenuFont=normalizePrintFontName(projectRef.settings&&projectRef.settings.defaultPrintFont); defaultPrintState.font=resolvePrintFont(font, fileMenuFont); if(font==null || (typeof font==='string'&&font.trim().toLowerCase()==='nil')) defaultPrintState.font=null; if(size==null || (typeof size==='string'&&size.trim().toLowerCase()==='nil')) defaultPrintState.size=null; else defaultPrintState.size=Math.max(1, Number(size)||12); if(colorValue==null || (typeof colorValue==='string'&&colorValue.trim().toLowerCase()==='nil')) defaultPrintState.color=null; else { const parsed=resolvePrintColor(colorValue); defaultPrintState.color=parsed!=null?parsed:null; } return 0; }
   function print(t,a,b,c,d,e,f,g){ const _cp=clipPush(); const oldFill=ctx.fillStyle, oldStroke=ctx.strokeStyle; const fileMenuFont=normalizePrintFontName(projectRef.settings&&projectRef.settings.defaultPrintFont); const defaultFont=defaultPrintState.font||fileMenuFont; const defaultFontSize=defaultPrintState.size==null?12:defaultPrintState.size; const defaultFill=defaultPrintState.color??sty(); let text=t, x=0, y=0, fontSize=defaultFontSize, fill=defaultFill, outline=null, font=defaultFont; if(arguments.length>=4&&typeof a==='number'&&typeof b==='number'&&typeof c==='number'){ fontSize=(a==null||String(a).trim().toLowerCase()==='nil')?defaultFontSize:(Number(a)||defaultFontSize); x=b; y=c; const parsedFill=resolvePrintColor(d); if(parsedFill!=null) fill=parsedFill; outline=resolvePrintColor(e); font=resolvePrintFont(f, defaultFont); } else if(a!=null&&b!=null&&c!=null&&typeof a==='number'&&typeof b==='number'&&typeof c==='number'){ x=0; y=0; fill=`rgb(${a|0},${b|0},${c|0})`; } else if(typeof a==='string' || (typeof a==='number' && (b==null||typeof b!=='number'||c!=null))){ const parsedFill=resolvePrintColor(a); if(parsedFill!=null) fill=parsedFill; outline=resolvePrintColor(b); } else { if(typeof a==='number'){ x=a; y=(typeof b==='number')?b:0; } else { if(a!=null) fontSize=(Number(a)||defaultFontSize); x=(typeof b==='number')?b:0; y=(typeof c==='number')?c:0; } if(typeof a!=='number'){ outline=resolvePrintColor(b); const parsedFill=resolvePrintColor(c); if(parsedFill!=null) fill=parsedFill; } } fontSize=Math.max(1,Math.round(fontSize*viewZoom)); ctx.fillStyle=fill; ctx.font=fontSize+'px '+font; ctx.textAlign='left'; ctx.textBaseline='top'; const dx=Math.round(sx(x)), dy=Math.round(sy(y)); if(outline!=null){ ctx.strokeStyle=outline; ctx.lineWidth=Math.max(1,Math.round(viewZoom)); ctx.strokeText(String(text),dx,dy); } ctx.fillText(String(text),dx,dy); ctx.fillStyle=oldFill; ctx.strokeStyle=oldStroke; clipPop(_cp); }
   const print_ = print;
-  function getRuntimeSpriteCanvas(ref){ const r=(typeof ref==='object')?ref:parseSpriteRef(ref); if(!r) return null; const key=`${r.folder}:${r.frame}`; if(spriteCache.has(key)) return spriteCache.get(key); const folder=projectRef.spriteFolders[r.folder]; const s=folder&&folder.frames[r.frame]; if(!s) return null; const spriteCanvas=makeCanvas(s.w,s.h), spriteCtx=spriteCanvas.getContext('2d'); for(let yy=0;yy<s.h;yy++) for(let xx=0;xx<s.w;xx++){ const p=s.pixels[yy][xx]; if(p>=0&&projectRef.palette[p]){ spriteCtx.fillStyle=projectRef.palette[p]; spriteCtx.fillRect(xx,yy,1,1); } } spriteCache.set(key,spriteCanvas); return spriteCanvas; }
   function drawImageRuntime(image,x,y,scaleX=1,scaleY=1,angleDeg=0,flip=false){
     if(!image) return false;
     scaleX=Number(scaleX); scaleY=Number(scaleY);
@@ -6937,13 +6977,72 @@ function makeRuntime(){
     ctx.restore();
     return true;
   }
-  function drawInternalSpriteRuntime(ref,x,y,scaleX=1,scaleY=1,angleDeg=0,flip=false){ const spriteCanvas=getRuntimeSpriteCanvas(ref); if(!spriteCanvas) return false; return drawImageRuntime(spriteCanvas,x,y,scaleX,scaleY,angleDeg,flip); }
+  function drawInternalSpriteRuntime(ref,x,y,scaleX=1,scaleY=1,angleDeg=0,flip=false){
+    scaleX=Number(scaleX); scaleY=Number(scaleY);
+    if(!Number.isFinite(scaleX)||scaleX===0) scaleX=1;
+    if(!Number.isFinite(scaleY)||scaleY===0) scaleY=1;
+    angleDeg=Number(angleDeg)||0;
+    const shouldFlip=!!flip;
+    const r=(typeof ref==='object')?ref:parseSpriteRef(ref);
+    if(!r) return false;
+    const folder=projectRef.spriteFolders[r.folder],s=folder&&folder.frames[r.frame];
+    if(!s) return false;
+    const absScaleX=Math.abs(scaleX),absScaleY=Math.abs(scaleY);
+    const stepX=Math.max(1,Math.ceil(absScaleX*viewZoom)),stepY=Math.max(1,Math.ceil(absScaleY*viewZoom));
+    const hasRotate=Math.abs(angleDeg)>0.0001;
+    if(!hasRotate&&!shouldFlip&&scaleX>0&&scaleY>0){
+      for(let yy=0;yy<s.h;yy++) for(let xx=0;xx<s.w;xx++){
+        const p=s.pixels[yy][xx];
+        if(p>=0&&projectRef.palette[p]){
+          ctx.fillStyle=paletteColor(p);
+          ctx.fillRect(Math.round(sx(x)+xx*(absScaleX*viewZoom)),Math.round(sy(y)+yy*(absScaleY*viewZoom)),stepX,stepY);
+        }
+      }
+      return true;
+    }
+    const drawW=Math.max(1,Math.round(s.w*absScaleX*viewZoom)),drawH=Math.max(1,Math.round(s.h*absScaleY*viewZoom));
+    const cx=Math.round(sx(x))+drawW/2,cy=Math.round(sy(y))+drawH/2;
+    ctx.save();
+    ctx.translate(cx,cy);
+    if(hasRotate) ctx.rotate(angleDeg*Math.PI/180);
+    ctx.scale((shouldFlip?-1:1)*(scaleX<0?-1:1),scaleY<0?-1:1);
+    const originX=-drawW/2,originY=-drawH/2;
+    for(let yy=0;yy<s.h;yy++) for(let xx=0;xx<s.w;xx++){
+      const p=s.pixels[yy][xx];
+      if(p>=0&&projectRef.palette[p]){
+        ctx.fillStyle=paletteColor(p);
+        ctx.fillRect(Math.round(originX+xx*(absScaleX*viewZoom)),Math.round(originY+yy*(absScaleY*viewZoom)),stepX,stepY);
+      }
+    }
+    ctx.restore();
+    return true;
+  }
+  function getRuntimeSpriteCanvas(ref){
+    const r=(typeof ref==='object')?ref:parseSpriteRef(ref);
+    if(!r) return null;
+    const folder=projectRef.spriteFolders[r.folder],s=folder&&folder.frames[r.frame];
+    if(!s) return null;
+    const spriteCanvas=makeCanvas(s.w,s.h), spriteCtx=spriteCanvas.getContext('2d');
+    for(let yy=0;yy<s.h;yy++) for(let xx=0;xx<s.w;xx++){
+      const p=s.pixels[yy][xx];
+      if(p>=0&&projectRef.palette[p]){
+        spriteCtx.fillStyle=paletteColor(p);
+        spriteCtx.fillRect(xx,yy,1,1);
+      }
+    }
+    return spriteCanvas;
+  }
+  function palCacheKey(){
+    const index=[...palIndexRemap.entries()].map(([k,v])=>`${k}:${v}`).sort().join('|');
+    const color=[...palColorRemap.entries()].map(([k,v])=>`${k}:${v}`).sort().join('|');
+    return `${index}__${color}`;
+  }
   function percentScale(value){ const n=Number(value); if(!Number.isFinite(n)||n===0) return 1; return Math.max(0.01,Math.abs((n+100)/100))*(n<0?-1:1); }
   function spr(fileOrIndex,x,y,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ drawInternalSpriteRuntime(ref,x,y,1,1,0,flip); clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,1,1,0,flip); clipPop(_cp); return; } clipPop(_cp); }
   function sspr(fileOrIndex,x,y,w,h,center=false,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const scaleX=percentScale(w), scaleY=percentScale(h); let dx=Number(x)||0, dy=Number(y)||0; if(center===true){ dx-=((sp.w*Math.abs(scaleX))-sp.w)/2; dy-=((sp.h*Math.abs(scaleY))-sp.h)/2; } drawInternalSpriteRuntime(ref,dx,dy,scaleX,scaleY,0,flip); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,percentScale(w),percentScale(h),0,flip); clipPop(_cp); return; } clipPop(_cp); }
   function r_spr(fileOrIndex,x,y,angle,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ drawInternalSpriteRuntime(ref,x,y,1,1,angle,flip); clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,1,1,angle,flip); clipPop(_cp); return; } clipPop(_cp); }
   function animate(ref,x,y,speed){ const _cp=clipPush(); const s=String(ref||'').trim(); const m=s.match(/^(\d+)/); const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN); if(!Number.isFinite(base)){ spr(ref,x,y); clipPop(_cp); return; } const folder=projectRef.spriteFolders[base]; if(!folder||!folder.frames||!folder.frames.length){ spr(ref,x,y); clipPop(_cp); return; } const spd=Math.max(0.01,Number(speed)||6); const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length; drawInternalSpriteRuntime({folder:base,frame:idx},x,y,1,1); clipPop(_cp); }
-  function getRuntimeTileCanvas(def,w,h,id,showId=false){ const key=`${id}:${w}x${h}:${showId?1:0}:${String(def.source||'').trim()}:${def.bg||''}:${def.bgEnabled===false?0:1}:${def.animated?1:0}:${resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders)??''}:${Number(def.animSpeed)||0}`; if(tileCache.has(key)) return tileCache.get(key); const tileCanvas=makeCanvas(w,h), tileCtx=tileCanvas.getContext('2d'); if(def.bgEnabled!==false){ tileCtx.fillStyle=def.bg||'#444'; tileCtx.fillRect(0,0,w,h); } const source=String(def.source||'').trim(); let spriteRef=parseSpriteRef(source); if(def.animated){ const folderIndex=resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders); const folder=folderIndex==null?null:projectRef.spriteFolders[folderIndex]; const speed=Math.max(0.1,Number(def.animSpeed)||6); if(folder&&folder.frames&&folder.frames.length) spriteRef={folder:folderIndex,frame:Math.floor((performance.now()/1000)*speed)%folder.frames.length}; } if(spriteRef){ const spriteCanvas=getRuntimeSpriteCanvas(spriteRef); if(spriteCanvas) tileCtx.drawImage(spriteCanvas,0,0,w,h); } else if(isImageLike(source)){ const a=getImg(source); if(a&&a.loaded) tileCtx.drawImage(a.img,0,0,w,h); } if(showId){ tileCtx.fillStyle='rgba(255,255,255,.45)'; tileCtx.font='11px monospace'; tileCtx.textAlign='center'; tileCtx.textBaseline='middle'; tileCtx.fillText(String(id),w/2,h/2); } tileCache.set(key,tileCanvas); return tileCanvas; }
+  function getRuntimeTileCanvas(def,w,h,id,showId=false){ const key=`${id}:${w}x${h}:${showId?1:0}:${String(def.source||'').trim()}:${def.bg||''}:${def.bgEnabled===false?0:1}:${def.animated?1:0}:${resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders)??''}:${Number(def.animSpeed)||0}:${palCacheKey()}`; if(tileCache.has(key)) return tileCache.get(key); const tileCanvas=makeCanvas(w,h), tileCtx=tileCanvas.getContext('2d'); if(def.bgEnabled!==false){ tileCtx.fillStyle=def.bg||'#444'; tileCtx.fillRect(0,0,w,h); } const source=String(def.source||'').trim(); let spriteRef=parseSpriteRef(source); if(def.animated){ const folderIndex=resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders); const folder=folderIndex==null?null:projectRef.spriteFolders[folderIndex]; const speed=Math.max(0.1,Number(def.animSpeed)||6); if(folder&&folder.frames&&folder.frames.length) spriteRef={folder:folderIndex,frame:Math.floor((performance.now()/1000)*speed)%folder.frames.length}; } if(spriteRef){ const spriteCanvas=getRuntimeSpriteCanvas(spriteRef); if(spriteCanvas) tileCtx.drawImage(spriteCanvas,0,0,w,h); } else if(isImageLike(source)){ const a=getImg(source); if(a&&a.loaded) tileCtx.drawImage(a.img,0,0,w,h); } if(showId){ tileCtx.fillStyle='rgba(255,255,255,.45)'; tileCtx.font='11px monospace'; tileCtx.textAlign='center'; tileCtx.textBaseline='middle'; tileCtx.fillText(String(id),w/2,h/2); } tileCache.set(key,tileCanvas); return tileCanvas; }
   function drawTileRuntime(def,x,y,w,h,id,showId=false){ const x0=sx(x), y0=sy(y), x1=sx(x+w), y1=sy(y+h); ctx.drawImage(getRuntimeTileCanvas(def,w,h,id,showId),x0,y0,Math.max(1,x1-x0),Math.max(1,y1-y0)); }
   function mget(x,y,layer,mapIndex){ x=Math.floor(Number(x)||0);y=Math.floor(Number(y)||0);layer=layer==null?0:layer|0;mapIndex=mapIndex==null?0:mapIndex|0; if(x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h) return 0; const mapObj=projectRef.maps[mapIndex]; if(!mapObj) return 0; const lay=mapObj.layers[layer]; if(!lay) return 0; return lay.data[y][x]||0; }
   function mset(x,y,tile,layer,mapIndex){ x|=0;y|=0;tile|=0;layer=layer==null?0:layer|0;mapIndex=mapIndex==null?0:mapIndex|0; if(x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h) return; const mapObj=projectRef.maps[mapIndex]; if(!mapObj) return; const lay=mapObj.layers[layer]; if(!lay) return; lay.data[y][x]=tile; }
@@ -7055,6 +7154,7 @@ function makeRuntime(){
     push('camera',L=>{ const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0; });
     push('zoom',L=>{ const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0; } lua.lua_pushnumber(L, zoom()); return 1;});
     push('color',L=>{ const readColorArg=i=>lua.lua_isnoneornil(L,i)?undefined:lua.lua_tonumber(L,i); lua.lua_pushstring(L,to_luastring(String(color(readColorArg(1),readColorArg(2),readColorArg(3))))); return 1;});
+    push('pal',L=>{ const argc=lua.lua_gettop(L); if(argc===0){ pal(); return 0; } const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); pal(readArg(1),argc>=2?readArg(2):null); return 0; });
     push('pset',L=>{ const argc=lua.lua_gettop(L); pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?(lua.lua_isnumber(L,3)?lua.lua_tonumber(L,3):to_jsstring(lua.lua_tolstring(L,3))):undefined); return 0;});
     push('pget',L=>{ lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2))); return 1;});
     push('line',L=>{ const argc=lua.lua_gettop(L); line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?(lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):to_jsstring(lua.lua_tolstring(L,5))):undefined); return 0;});
@@ -7097,7 +7197,7 @@ function makeRuntime(){
     push('flr',L=>{ lua.lua_pushinteger(L,Math.floor(lua.lua_tonumber(L,1))); return 1;});
     push('upper',L=>{ let text=''; if(lua.lua_gettop(L)>=1&&!lua.lua_isnoneornil(L,1)){ if(lua.lua_isboolean(L,1)) text=lua.lua_toboolean(L,1)?'true':'false'; else if(lua.lua_isnumber(L,1)) text=String(lua.lua_tonumber(L,1)); else { const raw=lua.lua_tolstring(L,1); text=raw?to_jsstring(raw):''; } } lua.lua_pushstring(L,to_luastring(String(text).toUpperCase())); return 1;});
     push('sfx',L=>{ if(suppressAudio) return 0; const idx=lua.lua_tointeger(L,1); const loop=lua.lua_toboolean(L,2); sfxPlay(idx,!!loop); return 0;});
-    push('music',L=>{ if(suppressAudio) return 0; let src; if(lua.lua_isnumber(L,1)) src=lua.lua_tonumber(L,1); else src=to_jsstring(lua.lua_tolstring(L,1)); const action=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'play'; const loop=lua.lua_gettop(L)>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
+    push('music',L=>{ if(suppressAudio) return 0; const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const src=readArg(1); const srcText=String(src??'').trim().toLowerCase(); if(argc<=1&&srcText==='stop'){ musicPlay(0,'stop',false); return 0; } const action=String((argc>=2?readArg(2):'play')??'play').trim().toLowerCase()||'play'; const loop=argc>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
     const helperStatus=lauxlib.luaL_dostring(L,to_luastring(LUA_RUNTIME_HELPERS));
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); toast(`<b>Lua helper error:</b> ${escapeHtml(err)}`); cls(); return; }
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); toast(`<b>Lua error:</b> ${escapeHtml(err)}`); cls(); return; }
