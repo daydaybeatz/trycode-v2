@@ -697,9 +697,7 @@ local function __tc_ui_draw_label(text, x, y, w, h, color, text_size, label_x, l
   local font_size = tonumber(text_size)
   if font_size == nil then font_size = math.max(8, math.floor(height * 0.55)) end
   font_size = math.max(1, math.floor(font_size))
-  local char_w = math.max(1, font_size - 1)
-  local text_w = #label * char_w
-  local tx = (tonumber(x) or 0) + math.floor((width - text_w) / 2) + (tonumber(label_x) or 0)
+  local tx = (tonumber(x) or 0) + 2 + (tonumber(label_x) or 0)
   local ty = (tonumber(y) or 0) + math.floor((height - font_size) / 2) + (tonumber(label_y) or 0)
   print(label, font_size, tx, ty, color)
 end
