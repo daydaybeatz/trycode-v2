@@ -7423,6 +7423,21 @@ function wireUI(){
   bind("spriteAnimSpeedInput",'input',()=>{ state.spriteAnimSpeed=Math.max(1,parseFloat($("spriteAnimSpeedInput")?.value)||6); updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
   window.addEventListener('keydown',e=>{
     const key=String(e.key||'').toLowerCase();
+    if((e.ctrlKey||e.metaKey) && !e.altKey && !e.shiftKey && key==='r'){
+      e.preventDefault();
+      const code=getProjectLua();
+      runtime.setLua(code);
+      runtime.rerun(code);
+      setView('runtime');
+      resetToolbar();
+      return;
+    }
+    if(key==='escape' && !e.ctrlKey && !e.metaKey && !e.altKey && state.activeView==='runtime' && !dialogState.active){
+      e.preventDefault();
+      setView('code');
+      resetToolbar();
+      return;
+    }
     if((e.ctrlKey||e.metaKey) && !e.altKey && !e.shiftKey && key==='s'){
       e.preventDefault();
       saveProject(false);
