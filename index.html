@@ -928,7 +928,7 @@ function initRuntime(){
 const previewImages = {};
 const editorRenderCache = { sprites:new Map(), tiles:new Map() };
 const spriteHistory = { undo: [], redo: [] };
-let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicTimer = null;
+let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicTimer = null, currentMusicSignature = null;
 function ctxAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
 function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++) row.push(-1); pixels.push(row);} return {w,h,pixels}; }
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
@@ -6627,10 +6627,16 @@ async function previewSound(index,loop=false){ const snd=state.appProject.sounds
 
 function refreshMusicWaveOptions(){ const sel=$("musicWaveInput"), cur=currentMusic().wave; const builtins=["sine","square","sawtooth","triangle"]; sel.innerHTML=''; builtins.forEach(w=>{ const o=document.createElement('option'); o.value=w; o.textContent=w; sel.appendChild(o); }); state.appProject.sounds.forEach((s,i)=>{ const o=document.createElement('option'); o.value='sfx:'+i; o.textContent='sfx '+i; sel.appendChild(o); }); sel.value = [...sel.options].some(o=>o.value===cur) ? cur : 'square'; }
 function refreshCustomScaleUI(){ const wrap=$("musicCustomScaleWrap"), keys=$("musicCustomScaleKeys"), m=currentMusic(); wrap.style.display = m.scale==='custom' ? 'block' : 'none'; keys.innerHTML=''; const labels=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; for(let i=0;i<12;i++){ const b=document.createElement('button'); b.className='miniKey'+(m.customNotes.includes(i)?' active':''); b.textContent=labels[i]; b.onclick=(e)=>{ e.preventDefault(); const arr=m.customNotes; const idx=arr.indexOf(i); if(idx>=0) arr.splice(idx,1); else arr.push(i); arr.sort((a,b)=>a-b); if(!arr.length) arr.push(0); refreshCustomScaleUI();  }; keys.appendChild(b); } }
-function stopMusicPlayback(){ if(currentMusicTimer){ clearInterval(currentMusicTimer); clearTimeout(currentMusicTimer); currentMusicTimer=null; } currentMusicNodes.forEach(n=>{ try{n.stop&&n.stop();}catch{} try{n.disconnect&&n.disconnect();}catch{} }); currentMusicNodes=[]; if(currentMusicSource){ try{currentMusicSource.pause&&currentMusicSource.pause();}catch{} try{currentMusicSource.currentTime=0;}catch{} try{currentMusicSource.stop&&currentMusicSource.stop();}catch{} currentMusicSource=null; } }
+function stopMusicPlayback(){ if(currentMusicTimer){ clearInterval(currentMusicTimer); clearTimeout(currentMusicTimer); currentMusicTimer=null; } currentMusicNodes.forEach(n=>{ try{n.stop&&n.stop();}catch{} try{n.disconnect&&n.disconnect();}catch{} }); currentMusicNodes=[]; if(currentMusicSource){ try{currentMusicSource.pause&&currentMusicSource.pause();}catch{} try{currentMusicSource.currentTime=0;}catch{} try{currentMusicSource.stop&&currentMusicSource.stop();}catch{} currentMusicSource=null; } currentMusicSignature=null; }
 async function playMusicEntry(src, action="play", loop=true){
   const normalizedAction=String(action??'play').trim().toLowerCase();
   if(normalizedAction==="stop"){ stopMusicPlayback(); return; }
+  const normalizedLoop=!!loop;
+  const normalizedSource=(typeof src==="number"&&Number.isFinite(src))?src:String(src??"0").trim();
+  const requestSignature=`${normalizedSource}|${normalizedAction}|${normalizedLoop?'1':'0'}`;
+  if(currentMusicSignature===requestSignature && currentMusicSource){
+    return;
+  }
   stopMusicPlayback();
   const ac=ctxAudio();
   try{ await ac.resume(); }catch{}
@@ -6638,18 +6644,20 @@ async function playMusicEntry(src, action="play", loop=true){
     const byName=(state.appProject.music||[]).find(m=>m && (m.fileName===src || m.name===src));
     const resolved=(byName&& (byName.fileData||byName.file)) || src;
     const audio=new Audio(resolved);
-    audio.loop=loop==null ? !!byName?.loop : !!loop;
+    audio.loop=loop==null ? !!byName?.loop : normalizedLoop;
     audio.play().catch(()=>{});
     currentMusicSource=audio;
+    currentMusicSignature=requestSignature;
     return;
   }
   const idx = typeof src==="number" ? src : parseInt(String(src||"0"),10);
   const m = state.appProject.music[idx];
   if(!m || (!m.file && !m.fileData)) return;
   const audio=new Audio(m.fileData||m.file);
-  audio.loop=loop==null ? !!m.loop : !!loop;
+  audio.loop=loop==null ? !!m.loop : normalizedLoop;
   audio.play().catch(()=>{});
   currentMusicSource=audio;
+  currentMusicSignature=requestSignature;
 }
 function refreshSoundList(){
   const wrap=$("soundList"); wrap.innerHTML="";
