@@ -114,10 +114,13 @@
     .musicRowMain{display:flex;align-items:center;gap:8px;width:100%}
     .musicRowLabel{flex:1 1 auto;min-width:0}
     .musicRowActions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
-    .strokeStepper{display:flex;align-items:center;gap:6px}
-    .spriteToolGroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-    .spriteSecondaryTools{position:absolute;right:8px;z-index:26;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:min(280px,58vw)}
-    .spriteSecondaryTools.dock-anim{bottom:150px}
+    .strokeStepper{display:inline-flex;align-items:center;gap:4px;padding:2px 5px;border:2px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#fff8ea,#efd3a0);box-shadow:0 2px 0 #c08b52;flex:0 0 auto}
+    .strokeStepperValue{min-width:22px;text-align:center;font-size:11px;font-weight:800;line-height:1}
+    .strokeStepperBtn{width:24px;min-width:24px;height:24px;padding:0;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;line-height:1}
+    .spriteToolGroup{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap;flex:0 0 auto}
+    .spriteSecondaryTools{position:absolute;left:58px;right:14px;z-index:27;display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding:4px 2px;scrollbar-width:none}
+    .spriteSecondaryTools::-webkit-scrollbar{display:none}
+    .spriteSecondaryTools.dock-anim{bottom:124px}
     .spriteSecondaryTools.dock-bottom{bottom:10px}
     .spriteListRow{display:flex;align-items:center;gap:6px;width:100%}
     .spriteIndexBtn{flex:1 1 auto;text-align:left;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
@@ -165,13 +168,15 @@
 
     .overlayTools{position:absolute;left:64px;right:14px;top:10px;bottom:auto;z-index:25;display:flex;gap:8px;flex-direction:row;align-items:center;justify-content:flex-start;flex-wrap:wrap;max-width:none}
     #spriteOverlayTools{left:64px;right:14px;top:10px;bottom:auto}
+    #spriteOverlayTools{overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;padding:2px 2px 6px;scrollbar-width:none}
+    #spriteOverlayTools::-webkit-scrollbar{display:none}
     #mapOverlayTools{right:8px;top:64px;left:auto;bottom:auto;display:flex;gap:6px;flex-direction:column;align-items:flex-end}
     #spriteOverlayTools.hidden,#mapOverlayTools.hidden{display:none}
     .overlayTools .uiBtn{padding:4px 8px;font-size:11px;min-width:42px}
     #spriteOverlayTools .uiBtn{padding:4px 9px;min-width:0}
     .overlayTools .uiBtn.destructive{background:linear-gradient(180deg,#ff9ca2,#c94c67);border-color:#ffd7dc;box-shadow:0 4px 0 #5a2030;color:#20111a}
-    .animPreviewBar{position:absolute;left:58px;right:14px;bottom:10px;z-index:25;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 9px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 4px 0 #c08b52}
-    .animPreviewBar canvas{width:64px;height:64px;border:3px solid var(--line);border-radius:12px;background:
+    .animPreviewBar{position:absolute;left:58px;right:14px;bottom:10px;z-index:25;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px 7px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 4px 0 #c08b52}
+    .animPreviewBar canvas{width:48px;height:48px;border:2px solid var(--line);border-radius:10px;background:
       linear-gradient(45deg, rgba(0,0,0,.07) 25%, transparent 25%),
       linear-gradient(-45deg, rgba(0,0,0,.07) 25%, transparent 25%),
       linear-gradient(45deg, transparent 75%, rgba(0,0,0,.07) 75%),
@@ -223,10 +228,10 @@
     .screenStage,#screen{ -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent }
     #screen{touch-action:none}
     .screenStage.mobile-fullscreen{inset:0;border-radius:0}
-    .animPreviewInfo{display:flex;flex-direction:column;gap:2px;min-width:96px}
+    .animPreviewInfo{display:flex;flex-direction:column;gap:1px;min-width:88px}
     .animPreviewInfo .docDesc{margin:0}
-    .animPreviewControls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-    .animPreviewControls .uiBtn{padding:4px 8px;font-size:11px;min-width:42px}
+    .animPreviewControls{display:flex;align-items:center;gap:5px;flex-wrap:wrap;flex:1 1 auto}
+    .animPreviewControls .uiBtn{padding:3px 7px;font-size:10px;min-width:36px;box-shadow:0 3px 0 var(--shadow)}
     .arrowIcon line,.arrowIcon path{stroke:#fff7e9;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;fill:none}
     .layerLabel{flex:1;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
     .iconBtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 34px;padding:0}
@@ -419,7 +424,7 @@
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><button class="uiBtn" id="spriteLineWidthDownBtn" type="button" title="Decrease stroke size">s-</button><button class="uiBtn" id="spriteLineWidthUpBtn" type="button" title="Increase stroke size">s+</button><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">▶️</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="strokeStepper" title="Stroke size"><button class="uiBtn strokeStepperBtn" id="spriteLineWidthDownBtn" type="button" aria-label="Decrease stroke size">−</button><span class="strokeStepperValue" id="spriteLineWidthValue">1</span><button class="uiBtn strokeStepperBtn" id="spriteLineWidthUpBtn" type="button" aria-label="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">▶️</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:52px"></label></div></div>
       </div>
     </div>
 
@@ -6413,11 +6418,15 @@ function getSpriteCanvasMetrics(){
   const sprite=currentSprite();
   const z=getSpriteDisplayZoom();
   const wrap=$("spriteCanvasWrap");
+  const view=currentSpriteView();
   const minWidth=wrap?wrap.clientWidth:0;
   const minHeight=wrap?wrap.clientHeight:0;
-  const padding=Math.max(120, z*4);
-  const width=Math.max(256, minWidth, Math.ceil(sprite.w*z + padding*2));
-  const height=Math.max(256, minHeight, Math.ceil(sprite.h*z + padding*2));
+  const dynamicOffsetX=Math.abs(view.offsetX||0);
+  const dynamicOffsetY=Math.abs(view.offsetY||0);
+  const paddingX=Math.max(120, z*4, dynamicOffsetX+64);
+  const paddingY=Math.max(120, z*4, dynamicOffsetY+64);
+  const width=Math.max(256, minWidth, Math.ceil(sprite.w*z + paddingX*2));
+  const height=Math.max(256, minHeight, Math.ceil(sprite.h*z + paddingY*2));
   return {sprite, z, width, height, baseX:Math.floor((width-sprite.w*z)/2), baseY:Math.floor((height-sprite.h*z)/2)};
 }
 function refreshSpriteFrames(){
@@ -6472,6 +6481,7 @@ function syncSpriteUI(){
   refreshPaletteUI();
   refreshEdgePalette();
   setSpriteTool(state.spriteTool);
+  updateSpriteLineWidthDisplay();
   updateSpriteFrameStatus();
   updateSpriteOnionButton();
 }
@@ -6537,6 +6547,10 @@ function applySpriteToolAtEvent(e,lastPoint){
   if(changed){ invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); }
   return point;
 }
+function updateSpriteLineWidthDisplay(){
+  const label=$("spriteLineWidthValue");
+  if(label) label.textContent=String(Math.max(1,state.spriteLineWidth||1));
+}
 function syncSpriteCanvasChrome(){
   const spriteView=$("spriteView");
   const sidebarHidden=!!spriteView && spriteView.classList.contains("sidebar-hidden");
@@ -6549,8 +6563,10 @@ function syncSpriteCanvasChrome(){
     const panelVisible=!!animPreviewBar && !animPreviewBar.classList.contains("hidden");
     secondaryTools.classList.toggle("dock-anim", panelVisible);
     secondaryTools.classList.toggle("dock-bottom", !panelVisible);
+    secondaryTools.style.bottom=panelVisible?`${Math.max(14,(animPreviewBar?.offsetHeight||0)+12)}px`:'10px';
   }
   $("spriteAnimPreviewToggleBtn")?.classList.toggle("active", state.spriteAnimPreviewVisible!==false);
+  updateSpriteLineWidthDisplay();
 }
 function getEditorSpriteCanvas(spriteRef){
   const ref=typeof spriteRef==='object'?spriteRef:parseSpriteRef(spriteRef);
@@ -6725,13 +6741,18 @@ function clearCurrentMapLayer(){
 function drawMapEditor(){
   ensureProjectData();
   const mapObj=currentMap(), canvas=$("mapCanvas"), ctx=canvas.getContext('2d');
+  const wrap=$("mapCanvasWrap");
   const tw=state.appProject.project.tile_w, th=state.appProject.project.tile_h, mw=state.appProject.project.map_w, mh=state.appProject.project.map_h;
   const animTime=getMapAnimationTimeMs();
-  canvas.width=mw*tw; canvas.height=mh*th;
+  const wrapW=Math.max(1,wrap?.clientWidth||mw*tw);
+  const wrapH=Math.max(1,wrap?.clientHeight||mh*th);
+  canvas.width=wrapW; canvas.height=wrapH;
   const z=state.mapZoom||1, ox=state.mapOffsetX||0, oy=state.mapOffsetY||0;
-  canvas.style.transformOrigin="0 0";
-  canvas.style.transform=`translate(${ox}px,${oy}px) scale(${z})`;
+  canvas.style.transformOrigin="";
+  canvas.style.transform="";
   ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.setTransform(z,0,0,z,ox,oy);
   for(const layer of mapObj.layers){
     if(layer.visible===false) continue;
     for(let y=0;y<mh;y++) for(let x=0;x<mw;x++){
@@ -6746,7 +6767,6 @@ function drawMapEditor(){
   }
   if(state.mapSelection.layerIndex===state.currentLayerIndex && state.mapSelection.cells.length){
     const isDark=document.body.classList.contains("dark-mode");
-    ctx.save();
     ctx.fillStyle=isDark?'rgba(164,201,255,.28)':'rgba(179,31,36,.2)';
     ctx.strokeStyle=isDark?'rgba(195,221,255,.9)':'rgba(179,31,36,.95)';
     ctx.lineWidth=1.5;
@@ -6772,15 +6792,14 @@ function drawMapEditor(){
     drawHandle(boxX+boxW,boxY);
     drawHandle(boxX,boxY+boxH);
     drawHandle(boxX+boxW,boxY+boxH);
-    ctx.restore();
   }
   if(state.mapGridVisible!==false){
     const isDark=document.body.classList.contains("dark-mode");
-    ctx.save(); ctx.strokeStyle=isDark?"rgba(199,208,232,.26)":"rgba(80,50,20,.2)"; ctx.lineWidth=1;
+    ctx.strokeStyle=isDark?"rgba(199,208,232,.26)":"rgba(80,50,20,.2)"; ctx.lineWidth=1;
     for(let gx=0;gx<=mw;gx++){ const px=gx*tw+0.5; ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,mh*th); ctx.stroke(); }
     for(let gy=0;gy<=mh;gy++){ const py=gy*th+0.5; ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(mw*tw,py); ctx.stroke(); }
-    ctx.restore();
   }
+  ctx.restore();
   $("mapGridBtn")?.classList.toggle("active", state.mapGridVisible!==false);
   updateMapToolButtons();
 }
@@ -7623,8 +7642,8 @@ function wireUI(){
   bind("tileSourceInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileBgColorInput",'input',applyTileEditorLive); bind("tileBgEnabledInput",'change',applyTileEditorLive); bind("tileSolidInput",'change',applyTileEditorLive); bind("tileAnimatedInput",'change',applyTileEditorLive); bind("tileAnimFolderInput",'input',()=>applyTileEditorLive({refreshInputs:false})); bind("tileAnimSpeedInput",'input',()=>applyTileEditorLive({refreshInputs:false}));
   bindClick("addLayerBtn",()=>{ const data=[]; for(let y=0;y<state.appProject.project.map_h;y++){ const row=[]; for(let x=0;x<state.appProject.project.map_w;x++) row.push(0); data.push(row); } currentLayers().push({name:`new layer`,visible:true,data}); invalidateEditorRenderCache(); state.currentLayerIndex=currentLayers().length-1; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); });
   let painting=false, mapPanning=false, mapLast={x:0,y:0}, mapPaintLast=null, mapPaintMode='paint', mapRectStart=null, mapSelectionStart=null, mapSelectionBaseCells=null;
-  bind("mapCanvas",'contextmenu',e=>e.preventDefault());
-  bind("mapCanvas",'pointerdown',e=>{
+  bind("mapCanvasWrap",'contextmenu',e=>e.preventDefault());
+  bind("mapCanvasWrap",'pointerdown',e=>{
     e.preventDefault();
     if(e.button===1 || state.mapTool==='pan'){ mapPanning=true; mapLast={x:e.clientX,y:e.clientY}; return; }
     if(e.button===0 && !state.mapTool){ toast('Select a map tool first.'); return; }
@@ -7653,7 +7672,7 @@ function wireUI(){
     if((state.mapTool==='rect' || state.mapTool==='rectfill') && mapRectStart && e.button===0) paintMapRect(mapRectStart,mapCoordsFromEvent(e),state.mapTool==='rectfill');
     painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint'; mapRectStart=null; mapSelectionStart=null; mapSelectionBaseCells=null;
   });
-  bind("mapCanvas",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(state.mapTool==='select' && mapSelectionStart){ updateMapSelectionFromRange(mapSelectionStart,mapCoordsFromEvent(e),mapSelectionBaseCells||[]); drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
+  bind("mapCanvasWrap",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(state.mapTool==='select' && mapSelectionStart){ updateMapSelectionFromRange(mapSelectionStart,mapCoordsFromEvent(e),mapSelectionBaseCells||[]); drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
   bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.05:-0.05), e.clientX, e.clientY); },{passive:false});
   bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); selectSpriteFolder(state.appProject.spriteFolders.length-1); });
   bindClick("applySpriteSizeBtn",()=>{ const s=currentSprite(); const nw=Math.max(1,parseInt($("spriteWInput")?.value||s.w,10)); const nh=Math.max(1,parseInt($("spriteHInput")?.value||s.h,10)); pushSpriteHistory(); const newPixels=[]; for(let y=0;y<nh;y++){ const row=[]; for(let x=0;x<nw;x++) row.push((s.pixels[y]&&s.pixels[y][x]!=null)?s.pixels[y][x]:-1); newPixels.push(row); } s.w=nw; s.h=nh; s.pixels=newPixels; invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); });
@@ -7679,6 +7698,7 @@ function wireUI(){
   });
   const setSpriteLineWidth=value=>{
     state.spriteLineWidth=clamp(parseInt(value,10)||1,1,16);
+    updateSpriteLineWidthDisplay();
     if(state.spriteLinePreview){
       state.spriteLinePreview.width=state.spriteLineWidth;
       drawSpriteEditor();
@@ -7704,7 +7724,7 @@ function wireUI(){
   bind("paletteColorInput",'input',()=>{ state.appProject.palette[state.selectedPaletteIndex]=$("paletteColorInput")?.value||'#ffffff'; invalidateEditorRenderCache(); refreshPaletteUI(); refreshEdgePalette(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); });
   bindClick("removePaletteColorBtn",()=>{ if(state.appProject.palette.length<=1) return; const removed=state.selectedPaletteIndex; state.appProject.palette.splice(removed,1); invalidateEditorRenderCache(); state.selectedPaletteIndex=Math.max(0,Math.min(state.selectedPaletteIndex,state.appProject.palette.length-1)); state.appProject.spriteFolders.forEach(folder=>folder.frames.forEach(sp=>{ for(let y=0;y<sp.h;y++) for(let x=0;x<sp.w;x++){ const p=sp.pixels[y][x]; if(p===removed) sp.pixels[y][x]=-1; else if(p>removed) sp.pixels[y][x]=p-1; } })); refreshPaletteUI(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); });
   const zoomSpriteAtPoint=(nextZoom,clientX,clientY)=>{ const canvas=$("spriteCanvas"); const rect=canvas.getBoundingClientRect(); const px=(clientX-rect.left)*(canvas.width/rect.width); const py=(clientY-rect.top)*(canvas.height/rect.height); const {baseX,baseY}=getSpriteCanvasMetrics(); const view=currentSpriteView(); const oldZoom=getSpriteDisplayZoom(); const worldX=(px-(baseX+view.offsetX))/oldZoom; const worldY=(py-(baseY+view.offsetY))/oldZoom; view.zoom=clamp(Math.round(nextZoom),1,64); const {baseX:nextBaseX,baseY:nextBaseY}=getSpriteCanvasMetrics(); view.offsetX=px-nextBaseX-worldX*view.zoom; view.offsetY=py-nextBaseY-worldY*view.zoom; drawSpriteEditor(); };
-  let spritePainting=false, spritePanning=false, lastPan={x:0,y:0}, spritePaintLast=null, spritePointerMode='tool', spriteLineStart=null; bind("spriteCanvas",'contextmenu',e=>e.preventDefault()); bind("spriteCanvas",'pointerdown',e=>{ e.preventDefault(); spritePointerMode=e.button===1?'pan':(e.button===2?'erase':'tool'); if(spritePointerMode==='pan' || state.spriteTool==='pan'){ spritePanning=true; lastPan.x=e.clientX; lastPan.y=e.clientY; return; } if(e.button===0 && !state.spriteTool){ toast('Select a sprite tool first.'); return; } const point=spriteCoordsFromEvent(e); if(state.spriteTool==='line' && spritePointerMode!=='erase'){ spriteLineStart=point; state.spriteLinePreview={start:point,end:point,mode:'draw',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } if(state.spriteTool==='line' && spritePointerMode==='erase'){ spriteLineStart=point; state.spriteLinePreview={start:point,end:point,mode:'erase',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } spritePainting=true; if(state.spriteTool!=='fill'&&state.spriteTool!=='erase-fill' || spritePointerMode==='erase') pushSpriteHistory(); if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e); }); bind("spriteCanvas",'pointermove',e=>{ e.preventDefault(); if(spritePanning){ const view=currentSpriteView(); view.offsetX += e.clientX-lastPan.x; view.offsetY += e.clientY-lastPan.y; lastPan.x=e.clientX; lastPan.y=e.clientY; drawSpriteEditor(); return; } if(spriteLineStart){ const point=spriteCoordsFromEvent(e); state.spriteLinePreview={start:spriteLineStart,end:point,mode:spritePointerMode==='erase'?'erase':'draw',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } if(spritePainting && (state.spriteTool!=='fill'&&state.spriteTool!=='erase-fill' || spritePointerMode==='erase')){ if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); } }); ['pointerup','pointercancel'].forEach(ev=>bind("spriteCanvas",ev,e=>{ e.preventDefault(); if(spriteLineStart){ const end=spriteCoordsFromEvent(e); const mode=spritePointerMode==='erase'?'erase':'draw'; pushSpriteHistory(); if(applySpriteLine(spriteLineStart,end,mode,Math.max(1,state.spriteLineWidth||1))){ invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); } } spritePainting=false; spritePanning=false; spritePaintLast=null; spritePointerMode='tool'; spriteLineStart=null; state.spriteLinePreview=null; drawSpriteEditor(); })); bind("spriteCanvasWrap",'touchmove',e=>e.preventDefault(),{passive:false}); bind("spriteCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomSpriteAtPoint((getSpriteDisplayZoom()||1)+(e.deltaY<0?2:-2), e.clientX, e.clientY); },{passive:false});
+  let spritePainting=false, spritePanning=false, lastPan={x:0,y:0}, spritePaintLast=null, spritePointerMode='tool', spriteLineStart=null; bind("spriteCanvasWrap",'contextmenu',e=>e.preventDefault()); bind("spriteCanvasWrap",'pointerdown',e=>{ e.preventDefault(); spritePointerMode=e.button===1?'pan':(e.button===2?'erase':'tool'); if(spritePointerMode==='pan' || state.spriteTool==='pan'){ spritePanning=true; lastPan.x=e.clientX; lastPan.y=e.clientY; return; } if(e.button===0 && !state.spriteTool){ toast('Select a sprite tool first.'); return; } const point=spriteCoordsFromEvent(e); if(state.spriteTool==='line' && spritePointerMode!=='erase'){ spriteLineStart=point; state.spriteLinePreview={start:point,end:point,mode:'draw',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } if(state.spriteTool==='line' && spritePointerMode==='erase'){ spriteLineStart=point; state.spriteLinePreview={start:point,end:point,mode:'erase',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } spritePainting=true; if(state.spriteTool!=='fill'&&state.spriteTool!=='erase-fill' || spritePointerMode==='erase') pushSpriteHistory(); if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e); }); bind("spriteCanvasWrap",'pointermove',e=>{ e.preventDefault(); if(spritePanning){ const view=currentSpriteView(); view.offsetX += e.clientX-lastPan.x; view.offsetY += e.clientY-lastPan.y; lastPan.x=e.clientX; lastPan.y=e.clientY; drawSpriteEditor(); return; } if(spriteLineStart){ const point=spriteCoordsFromEvent(e); state.spriteLinePreview={start:spriteLineStart,end:point,mode:spritePointerMode==='erase'?'erase':'draw',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } if(spritePainting && (state.spriteTool!=='fill'&&state.spriteTool!=='erase-fill' || spritePointerMode==='erase')){ if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); } }); ['pointerup','pointercancel'].forEach(ev=>window.addEventListener(ev,e=>{ if(!spritePainting && !spritePanning && !spriteLineStart) return; e.preventDefault(); if(spriteLineStart){ const end=spriteCoordsFromEvent(e); const mode=spritePointerMode==='erase'?'erase':'draw'; pushSpriteHistory(); if(applySpriteLine(spriteLineStart,end,mode,Math.max(1,state.spriteLineWidth||1))){ invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); } } spritePainting=false; spritePanning=false; spritePaintLast=null; spritePointerMode='tool'; spriteLineStart=null; state.spriteLinePreview=null; drawSpriteEditor(); })); bind("spriteCanvasWrap",'touchmove',e=>e.preventDefault(),{passive:false}); bind("spriteCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomSpriteAtPoint((getSpriteDisplayZoom()||1)+(e.deltaY<0?2:-2), e.clientX, e.clientY); },{passive:false});
   bindClick("addSoundBtn",()=>{ state.appProject.sounds.push(makeSound()); state.currentSoundIndex=state.appProject.sounds.length-1; refreshSoundUI(); drawSoundWaveCanvas(); });
   ["soundWaveInput","soundLengthInput","soundVolumeInput","soundPitchInput","soundAttackInput","soundDecayInput","soundSustainInput","soundReleaseInput"].forEach(id=>bind(id,'input',()=>{ updateCurrentSoundFromUI(); drawSoundWaveCanvas(); })); bindClick("previewSoundBtn",async()=>{ try{ await ctxAudio().resume(); }catch{} previewSound(state.currentSoundIndex,false); });
   let soundDraw=false; bind("soundWaveCanvas",'pointerdown',e=>{ soundDraw=true; e.preventDefault(); writeWavePoint(e); }); bind("soundWaveCanvas",'pointermove',e=>{ if(soundDraw){ e.preventDefault(); writeWavePoint(e); }}); window.addEventListener('pointerup',()=>soundDraw=false);
