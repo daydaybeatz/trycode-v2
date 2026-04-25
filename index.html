@@ -412,7 +412,7 @@
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="pageRow strokeStepper" style="margin:0"><button class="uiBtn" id="spriteLineWidthDownBtn" type="button" title="Decrease stroke size">-</button><button class="uiBtn strokeStepperValue" id="spriteLineWidthValueBtn" type="button" title="Stroke size">1</button><button class="uiBtn" id="spriteLineWidthUpBtn" type="button" title="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">Del Frame</button><button class="uiBtn" id="spriteAddFrameBtn">New Frame</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="pageRow strokeStepper" style="margin:0"><button class="uiBtn" id="spriteLineWidthDownBtn" type="button" title="Decrease stroke size">-</button><button class="uiBtn strokeStepperValue" id="spriteLineWidthValueBtn" type="button" title="Stroke size">1</button><button class="uiBtn" id="spriteLineWidthUpBtn" type="button" title="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">▶️</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
       </div>
     </div>
 
@@ -501,13 +501,14 @@
 
     <div class="menuBackdrop" id="menuBackdrop"></div>
     <div class="menu" id="menu"><div class="menuCard">
-      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button></div></div></div>
+      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnImportProject">Import</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button></div></div></div>
       <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal (480x270)</option><option value="hd_2x">2x (960x540)</option><option value="hd_3x">3x (1440x810)</option><option value="hd_4x">4x (1920x1080)</option><option value="mobile_fullscreen">Mobile portrait (270x480)</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
             <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="list menuLoadList" id="projectList"></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div></div>
     </div></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<input type="file" id="importProjectZipInput" accept=".zip,application/zip" style="display:none">
 
 <script>
 (() => {
@@ -1949,6 +1950,96 @@ async function exportProjectZip(){
   }catch(err){
     console.error(err);
     toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
+  }
+}
+async function importProjectZip(file){
+  if(!file) return;
+  try{
+    const JSZip=await ensureJsZipLoaded();
+    const zip=await JSZip.loadAsync(file);
+    const fullProjectEntry=zip.file('project/full_project.json');
+    let importedProject=null;
+    if(fullProjectEntry){
+      const fullProjectRaw=await fullProjectEntry.async('string');
+      importedProject=JSON.parse(fullProjectRaw);
+    }else{
+      const readJson=async path=>{
+        const entry=zip.file(path);
+        if(!entry) return null;
+        const raw=await entry.async('string');
+        return JSON.parse(raw);
+      };
+      const project=await readJson('project/project.json');
+      if(!project) throw new Error('Missing project data in zip.');
+      const codeFiles=[];
+      zip.forEach((relativePath, entry)=>{
+        if(entry.dir) return;
+        if(!relativePath.startsWith('lua/')) return;
+        const name=relativePath.slice(4);
+        if(!name || name.endsWith('/')) return;
+        codeFiles.push({name, entry});
+      });
+      codeFiles.sort((a,b)=>a.name.localeCompare(b.name));
+      const importedCodeFiles=[];
+      for(const fileEntry of codeFiles){
+        const content=await fileEntry.entry.async('string');
+        importedCodeFiles.push({name:fileEntry.name, content, tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)});
+      }
+      importedProject={
+        project,
+        codeFiles:importedCodeFiles,
+        spriteFolders:await readJson('sprites/sprite_folders.json'),
+        maps:await readJson('maps/maps.json'),
+        music:await readJson('music/music.json'),
+        sounds:await readJson('sounds/sounds.json'),
+        palette:await readJson('palette/palette.json'),
+        tileDefs:await readJson('tiles/tile_defs.json'),
+        settings:await readJson('settings/settings.json')
+      };
+    }
+    state.currentProjectName="";
+    state.hasSaved=false;
+    state.appProject=cloneProjectSnapshot(importedProject);
+    invalidateEditorRenderCache();
+    ensureProjectData();
+    state.currentMapIndex=0;
+    state.currentLayerIndex=0;
+    state.currentSpriteIndex=0;
+    state.currentSpriteFrame=0;
+    state.currentSoundIndex=0;
+    state.currentMusicIndex=0;
+    state.currentCodeFile=0;
+    state.codeSearchOpen=false;
+    state.codeSearchQuery="";
+    state.codeSearchMatches=[];
+    state.codeSearchMatchIndex=-1;
+    state.codeViewByFile={};
+    state.selectedTileId=1;
+    state.selectedPaletteIndex=0;
+    state.palettePage=0;
+    state.spriteFramePage=0;
+    state.spriteListPage=0;
+    state.projectListPage=0;
+    state.mapZoom=1;
+    state.mapOffsetX=0;
+    state.mapOffsetY=0;
+    state.mapAutoCenterPending=true;
+    renderCodeTabs();
+    loadCurrentCodeFileToEditor();
+    syncSpriteUI();
+    drawSpriteEditor();
+    syncMapUIFromProject();
+    refreshSoundUI();
+    drawSoundWaveCanvas();
+    refreshMusicUI();
+    refreshMenuSettingsUI();
+    runtime.syncProject(state.appProject);
+    runtime.reset(getProjectLua());
+    setView('code');
+    toast(`<b>Imported project:</b> ${escapeHtml(file.name||'project.zip')}`);
+  }catch(err){
+    console.error(err);
+    toast(`<b>Import failed:</b> ${escapeHtml(err?.message||String(err))}`);
   }
 }
 function exportProject(format){
@@ -6349,6 +6440,8 @@ function updateSpriteFrameStatus(){
   const frameCount=folder&&folder.frames?folder.frames.length:0;
   const editLabel=$("spriteEditFrameLabel");
   if(editLabel) editLabel.textContent=`Editing frame ${spriteFrameName(state.currentSpriteFrame)} / ${Math.max(1, frameCount)}`;
+  const animToggleBtn=$("spriteAnimToggleBtn");
+  if(animToggleBtn) animToggleBtn.textContent=state.spriteAnimPlaying?'⏸️':'▶️';
   const statusLabel=$("spriteAnimStatusLabel");
   if(statusLabel){
     if(state.spriteAnimPlaying) statusLabel.textContent=`Preview playing at ${Math.max(1, Number(state.spriteAnimSpeed)||6)} fps`;
@@ -7429,6 +7522,8 @@ function wireUI(){
   bindClick("btnImportCodeFile",e=>{ e.stopPropagation(); setFileMenuOpen(false); $("importCodeFileInput")?.click(); });
   bind("importCodeFileInput",'change',e=>{ const input=e.target; const file=input?.files?.[0]; if(file) importCodeFile(file); if(input) input.value=''; });
   bindClick("btnNewProject",e=>{ e.stopPropagation(); setFileMenuOpen(false); newProject(); });
+  bindClick("btnImportProject",e=>{ e.stopPropagation(); setFileMenuOpen(false); $("importProjectZipInput")?.click(); });
+  bind("importProjectZipInput",'change',e=>{ const input=e.target; const file=input?.files?.[0]; if(file) importProjectZip(file); if(input) input.value=''; });
   const setExportFormatRowOpen=open=>$("exportFormatRow")?.classList.toggle('hidden', !open);
   bindClick("btnExport",e=>{ e.stopPropagation(); const row=$("exportFormatRow"); setExportFormatRowOpen(row?.classList.contains('hidden')); });
   bindClick("btnExportZip",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.zip'); });
@@ -7597,8 +7692,7 @@ function wireUI(){
   bindClick("playMusicBtn",async()=>{ try{ await ctxAudio().resume(); }catch{} playMusicEntry(state.currentMusicIndex, "play", currentMusic().loop); });
   bindClick("spriteEditPrevBtn",()=>stepCurrentSpriteFrame(-1, {redraw:true, refreshFrames:true, stopAnimation:false}));
   bindClick("spriteEditNextBtn",()=>stepCurrentSpriteFrame(1, {redraw:true, refreshFrames:true, stopAnimation:false}));
-  bindClick("spriteAnimPlayBtn",()=>{ state.spriteAnimPlaying=true; updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
-  bindClick("spriteAnimPauseBtn",()=>{ state.spriteAnimPlaying=false; updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
+  bindClick("spriteAnimToggleBtn",()=>{ state.spriteAnimPlaying=!state.spriteAnimPlaying; updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
   bindClick("spriteDeleteFrameBtn",()=>{
     const folder=currentSpriteFolder();
     if(!folder || !folder.frames || folder.frames.length<=1){
