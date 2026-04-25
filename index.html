@@ -110,11 +110,15 @@
     .pageRow .uiBtn{padding:4px 8px;font-size:12px}
     .itemRow{display:flex;gap:8px;align-items:center;justify-content:space-between;border:3px solid var(--line);border-radius:12px;padding:7px 9px;background:linear-gradient(180deg,#fff6df,#efd39f);box-shadow:0 3px 0 #c08b52;cursor:pointer}
     .itemRow.active{border-color:var(--accent);box-shadow:0 3px 0 #7f2b1f}
+    .itemRow.cleared{opacity:.65;filter:saturate(.75)}
     .musicRowMain{display:flex;align-items:center;gap:8px;width:100%}
     .musicRowLabel{flex:1 1 auto;min-width:0}
     .musicRowActions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .strokeStepper{display:flex;align-items:center;gap:6px}
-    .strokeStepperValue{min-width:34px;text-align:center;font-weight:800}
+    .spriteToolGroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .spriteSecondaryTools{position:absolute;right:8px;z-index:26;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:min(280px,58vw)}
+    .spriteSecondaryTools.dock-anim{bottom:150px}
+    .spriteSecondaryTools.dock-bottom{bottom:10px}
     .spriteListRow{display:flex;align-items:center;gap:6px;width:100%}
     .spriteIndexBtn{flex:1 1 auto;text-align:left;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
     .spriteActionBtn{flex:0 0 auto;padding:3px 9px;font-size:11px;line-height:1;min-width:auto}
@@ -159,13 +163,15 @@
     .palBtn.active{outline:3px solid var(--accent2);outline-offset:1px}
     .palBtnIndex{position:absolute;right:3px;bottom:1px;font-size:11px;line-height:1;font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.9),0 0 1px rgba(0,0,0,.85);pointer-events:none}
 
-    .overlayTools{position:absolute;right:8px;top:64px;bottom:auto;z-index:25;display:flex;gap:6px;flex-direction:column;align-items:flex-end;max-width:none}
-    #spriteOverlayTools{right:8px;top:64px;left:auto;bottom:auto}
+    .overlayTools{position:absolute;left:64px;right:14px;top:10px;bottom:auto;z-index:25;display:flex;gap:8px;flex-direction:row;align-items:center;justify-content:flex-start;flex-wrap:wrap;max-width:none}
+    #spriteOverlayTools{left:64px;right:14px;top:10px;bottom:auto}
+    #mapOverlayTools{right:8px;top:64px;left:auto;bottom:auto;display:flex;gap:6px;flex-direction:column;align-items:flex-end}
     #spriteOverlayTools.hidden,#mapOverlayTools.hidden{display:none}
-    .overlayTools .uiBtn{padding:4px 6px;font-size:11px;min-width:46px}
+    .overlayTools .uiBtn{padding:4px 8px;font-size:11px;min-width:42px}
+    #spriteOverlayTools .uiBtn{padding:4px 9px;min-width:0}
     .overlayTools .uiBtn.destructive{background:linear-gradient(180deg,#ff9ca2,#c94c67);border-color:#ffd7dc;box-shadow:0 4px 0 #5a2030;color:#20111a}
-    .animPreviewBar{position:absolute;left:64px;right:14px;bottom:14px;z-index:25;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 4px 0 #c08b52}
-    .animPreviewBar canvas{width:72px;height:72px;border:3px solid var(--line);border-radius:12px;background:
+    .animPreviewBar{position:absolute;left:58px;right:14px;bottom:10px;z-index:25;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 9px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 4px 0 #c08b52}
+    .animPreviewBar canvas{width:64px;height:64px;border:3px solid var(--line);border-radius:12px;background:
       linear-gradient(45deg, rgba(0,0,0,.07) 25%, transparent 25%),
       linear-gradient(-45deg, rgba(0,0,0,.07) 25%, transparent 25%),
       linear-gradient(45deg, transparent 75%, rgba(0,0,0,.07) 75%),
@@ -219,7 +225,8 @@
     .screenStage.mobile-fullscreen{inset:0;border-radius:0}
     .animPreviewInfo{display:flex;flex-direction:column;gap:2px;min-width:96px}
     .animPreviewInfo .docDesc{margin:0}
-    .animPreviewControls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .animPreviewControls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .animPreviewControls .uiBtn{padding:4px 8px;font-size:11px;min-width:42px}
     .arrowIcon line,.arrowIcon path{stroke:#fff7e9;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;fill:none}
     .layerLabel{flex:1;min-width:0;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
     .iconBtn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:0 0 34px;padding:0}
@@ -412,7 +419,7 @@
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="pageRow strokeStepper" style="margin:0"><button class="uiBtn" id="spriteLineWidthDownBtn" type="button" title="Decrease stroke size">-</button><button class="uiBtn strokeStepperValue" id="spriteLineWidthValueBtn" type="button" title="Stroke size">1</button><button class="uiBtn" id="spriteLineWidthUpBtn" type="button" title="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">▶️</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><button class="uiBtn" id="spriteLineWidthDownBtn" type="button" title="Decrease stroke size">s-</button><button class="uiBtn" id="spriteLineWidthUpBtn" type="button" title="Increase stroke size">s+</button><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">▶️</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
       </div>
     </div>
 
@@ -6282,31 +6289,27 @@ function importPngIntoSpriteFolder(folderIndex,file){
   reader.readAsDataURL(file);
 }
 function deleteSpriteFolder(index){
+  clearSpriteFolder(index);
+}
+function clearSpriteFolder(index){
   const folders=state.appProject.spriteFolders||[];
-  if(folders.length<=1){ toast('At least one sprite folder is required.'); return; }
   const folder=folders[index];
-  const hasPixels=!!folder&&folder.frames?.some(frame=>!isSpriteFrameEmpty(frame));
-  if(hasPixels && !confirm(`Delete sprite ${index}? This folder has drawn pixels.`)) return;
-  if(!hasPixels && !confirm(`Delete sprite ${index}?`)) return;
-  folders.splice(index,1);
-  Object.values(state.appProject.tileDefs||{}).forEach(def=>{
-    if(!def) return;
-    const ref=parseSpriteRef(def.source||'');
-    if(ref){
-      if(ref.folder===index) def.source='';
-      else if(ref.folder>index) def.source=`${ref.folder-1}${String.fromCharCode(97+ref.frame)}`;
-    }
-    const raw=String(def.animFolder??'').trim();
-    if(raw!=='' && Number.isFinite(Number(raw))){
-      const val=parseInt(raw,10);
-      if(val===index) def.animFolder='';
-      else if(val>index) def.animFolder=val-1;
-    }
-  });
+  if(!folder) return;
+  const hasPixels=folder.frames?.some(frame=>!isSpriteFrameEmpty(frame));
+  if(hasPixels && !confirm(`Clear sprite ${index}? This resets all frames in this slot.`)) return;
+  if(!hasPixels && !confirm(`Clear sprite ${index}?`)) return;
+  folder.frames=[makeSprite(16,16)];
   invalidateEditorRenderCache();
-  const next=Math.min(index,folders.length-1);
-  selectSpriteFolder(next);
-  toast(`<b>Deleted sprite</b> ${index}`);
+  if(state.currentSpriteIndex===index){
+    state.currentSpriteFrame=0;
+    syncSpriteUI();
+    drawSpriteEditor();
+    runtime.syncProject(state.appProject);
+  }else{
+    refreshSpriteList();
+    runtime.syncProject(state.appProject);
+  }
+  toast(`<b>Cleared sprite</b> ${index}`);
 }
 function openListRename(kind,index){
   state.listRename={kind,index};
@@ -6338,7 +6341,8 @@ function refreshSpriteList(){
   folders.slice(start,start+SPRITE_LIST_PAGE_SIZE).forEach((folder,off)=>{
     const i=start+off;
     const row=document.createElement('div');
-    row.className='itemRow'+(i===state.currentSpriteIndex?' active':'');
+    const isCleared=!!folder && (folder.frames||[]).length===1 && isSpriteFrameEmpty(folder.frames[0]);
+    row.className='itemRow'+(i===state.currentSpriteIndex?' active':'')+(isCleared?' cleared':'');
     const rowInner=document.createElement('div');
     rowInner.className='spriteListRow';
     const selectBtn=document.createElement('button');
@@ -6371,8 +6375,8 @@ function refreshSpriteList(){
     };
     const deleteBtn=document.createElement('button');
     deleteBtn.className='smallbtn';
-    deleteBtn.textContent='Delete';
-    deleteBtn.onclick=(e)=>{ e.stopPropagation(); actionMenu.classList.remove('open'); deleteSpriteFolder(i); };
+    deleteBtn.textContent='Clr';
+    deleteBtn.onclick=(e)=>{ e.stopPropagation(); actionMenu.classList.remove('open'); clearSpriteFolder(i); };
     actionMenu.appendChild(importBtn);
     actionMenu.appendChild(deleteBtn);
     actionBtn.onclick=(e)=>{
@@ -6468,8 +6472,6 @@ function syncSpriteUI(){
   refreshPaletteUI();
   refreshEdgePalette();
   setSpriteTool(state.spriteTool);
-  const widthLabel=$("spriteLineWidthValueBtn");
-  if(widthLabel) widthLabel.textContent=String(Math.max(1,state.spriteLineWidth||1));
   updateSpriteFrameStatus();
   updateSpriteOnionButton();
 }
@@ -6542,6 +6544,12 @@ function syncSpriteCanvasChrome(){
   if(spriteOverlayTools) spriteOverlayTools.classList.toggle("hidden", !sidebarHidden);
   const animPreviewBar=$("animPreviewBar");
   if(animPreviewBar) animPreviewBar.classList.toggle("hidden", !sidebarHidden || state.spriteAnimPreviewVisible===false);
+  const secondaryTools=$("spriteSecondaryTools");
+  if(secondaryTools){
+    const panelVisible=!!animPreviewBar && !animPreviewBar.classList.contains("hidden");
+    secondaryTools.classList.toggle("dock-anim", panelVisible);
+    secondaryTools.classList.toggle("dock-bottom", !panelVisible);
+  }
   $("spriteAnimPreviewToggleBtn")?.classList.toggle("active", state.spriteAnimPreviewVisible!==false);
 }
 function getEditorSpriteCanvas(spriteRef){
@@ -6659,7 +6667,8 @@ function refreshMapList(){
   const wrap=$("mapList"); wrap.innerHTML="";
   state.appProject.maps.forEach((mapObj,i)=>{
     const row=document.createElement('div');
-    row.className='itemRow'+(i===state.currentMapIndex?' active':'');
+    const isCleared=(mapObj.layers||[]).every(layer=>(layer.data||[]).every(row=>row.every(cell=>(cell|0)===0)));
+    row.className='itemRow'+(i===state.currentMapIndex?' active':'')+(isCleared?' cleared':'');
     if(isRenameOpen('map',i)){
       row.appendChild(buildListLabelEditor('map',i,mapObj.name,nextName=>{ mapObj.name=nextName; refreshMapList(); }));
     }else{
@@ -6667,6 +6676,14 @@ function refreshMapList(){
       label.className='layerLabel';
       label.textContent=getDisplayNameWithIndex(i,mapObj.name);
       row.appendChild(label);
+      if(i===state.currentMapIndex){
+        const clrBtn=document.createElement('button');
+        clrBtn.className='smallbtn spriteActionBtn';
+        clrBtn.type='button';
+        clrBtn.textContent='Clr';
+        clrBtn.onclick=(e)=>{ e.stopPropagation(); clearMapSlot(i); };
+        row.appendChild(clrBtn);
+      }
     }
     row.onclick=()=>{
       if(i===state.currentMapIndex){ openListRename('map',i); return; }
@@ -6675,6 +6692,23 @@ function refreshMapList(){
     };
     wrap.appendChild(row);
   });
+}
+function clearMapSlot(index){
+  const mapObj=state.appProject.maps[index];
+  if(!mapObj) return;
+  if(!confirm(`Clear map ${index}?`)) return;
+  const empty=makeEmptyMap(mapObj.name||'', state.appProject.project.map_w, state.appProject.project.map_h);
+  mapObj.layers=empty.layers;
+  if(state.currentMapIndex===index){
+    state.currentLayerIndex=0;
+    clearMapSelection();
+    refreshMapList();
+    refreshLayerList();
+    drawMapEditor();
+  }else{
+    refreshMapList();
+  }
+  runtime.syncProject(state.appProject);
 }
 function refreshTilePalette(){ const wrap=$("tilePalette"); wrap.innerHTML=""; const ids=Object.keys(state.appProject.tileDefs).map(n=>parseInt(n,10)).sort((a,b)=>a-b); for(const id of ids){ const def=state.appProject.tileDefs[id]; const btn=document.createElement('div'); btn.className='tileBtn'+(id===state.selectedTileId?' active':''); btn.onclick=()=>setSelectedTile(id); const thumb=document.createElement('canvas'); thumb.className='tileThumb'; thumb.width=48; thumb.height=48; thumb.getContext('2d').drawImage(getEditorTileCanvas(def,48,48,id,true),0,0); const label=document.createElement('div'); label.textContent=id===0?'delete / none':`id ${id}`; btn.appendChild(thumb); btn.appendChild(label); wrap.appendChild(btn);} syncTileEditorActionButtons(); }
 function makeEyeIconMarkup(hidden){ return hidden?`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle><line x1="5" y1="19" x2="19" y2="5"></line></svg>`:`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>`; }
@@ -6854,9 +6888,19 @@ function refreshSoundList(){
   const wrap=$("soundList"); wrap.innerHTML="";
   state.appProject.sounds.forEach((s,i)=>{
     const row=document.createElement('div');
-    row.className='itemRow'+(i===state.currentSoundIndex?' active':'');
+    const def=makeSound();
+    const isCleared=s.wave===def.wave && Number(s.length)===def.length && Number(s.volume)===def.volume && Number(s.pitch)===def.pitch && Number(s.attack)===def.attack && Number(s.decay)===def.decay && Number(s.sustain)===def.sustain && Number(s.release)===def.release && Array.isArray(s.wavetable) && s.wavetable.every(v=>(v||0)===0);
+    row.className='itemRow'+(i===state.currentSoundIndex?' active':'')+(isCleared?' cleared':'');
     if(isRenameOpen('sound',i)) row.appendChild(buildListLabelEditor('sound',i,s.name,nextName=>{ s.name=nextName; refreshSoundList(); }));
     else row.textContent=getDisplayNameWithIndex(i,s.name);
+    if(i===state.currentSoundIndex){
+      const clrBtn=document.createElement('button');
+      clrBtn.className='smallbtn spriteActionBtn';
+      clrBtn.type='button';
+      clrBtn.textContent='Clr';
+      clrBtn.onclick=(e)=>{ e.stopPropagation(); clearSoundSlot(i); };
+      row.appendChild(clrBtn);
+    }
     row.onclick=()=>{
       if(i===state.currentSoundIndex){ openListRename('sound',i); return; }
       closeListRename();
@@ -6865,6 +6909,18 @@ function refreshSoundList(){
     wrap.appendChild(row);
   });
 }
+function clearSoundSlot(index){
+  const snd=state.appProject.sounds[index];
+  if(!snd) return;
+  if(!confirm(`Clear sfx ${index}?`)) return;
+  const blank=makeSound();
+  state.appProject.sounds[index]={...blank,name:snd.name||""};
+  if(state.currentSoundIndex===index){
+    refreshSoundUI();
+    drawSoundWaveCanvas();
+  }else refreshSoundList();
+  runtime.syncProject(state.appProject);
+}
 function refreshSoundUI(){ const s=currentSound(); refreshSoundList(); $("soundWaveInput").value=s.wave; $("soundLengthInput").value=s.length; $("soundVolumeInput").value=s.volume; $("soundPitchInput").value=s.pitch; $("soundAttackInput").value=s.attack; $("soundDecayInput").value=s.decay; $("soundSustainInput").value=s.sustain; $("soundReleaseInput").value=s.release; }
 function updateCurrentSoundFromUI(){ const s=currentSound(); s.wave=$("soundWaveInput").value; s.length=parseFloat($("soundLengthInput").value)||0.3; s.volume=parseFloat($("soundVolumeInput").value)||0.6; s.pitch=parseFloat($("soundPitchInput").value)||440; s.attack=parseFloat($("soundAttackInput").value)||0.01; s.decay=parseFloat($("soundDecayInput").value)||0.08; s.sustain=parseFloat($("soundSustainInput").value)||0.6; s.release=parseFloat($("soundReleaseInput").value)||0.1; }
 function drawSoundWaveCanvas(){ const c=$("soundWaveCanvas"), ctx=c.getContext('2d'), s=currentSound(); ctx.clearRect(0,0,c.width,c.height); ctx.fillStyle='#fff7e8'; ctx.fillRect(0,0,c.width,c.height); ctx.strokeStyle='#6f3d20'; ctx.lineWidth=3; ctx.strokeRect(0,0,c.width,c.height); ctx.strokeStyle='rgba(111,61,32,0.35)'; ctx.beginPath(); ctx.moveTo(0,c.height/2); ctx.lineTo(c.width,c.height/2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,c.height/2); for(let i=0;i<s.wavetable.length;i++){ const x=(i/Math.max(1,s.wavetable.length-1))*c.width; const y=(1-((s.wavetable[i]+1)/2))*c.height; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.strokeStyle='#b31f24'; ctx.lineWidth=4; ctx.stroke(); }
@@ -6872,7 +6928,8 @@ function refreshMusicList(){
   const wrap=$("musicList"); wrap.innerHTML="";
   state.appProject.music.forEach((m,i)=>{
     const row=document.createElement('div');
-    row.className='itemRow'+(i===state.currentMusicIndex?' active':'');
+    const isCleared=!m.file && !m.fileData && !m.fileName;
+    row.className='itemRow'+(i===state.currentMusicIndex?' active':'')+(isCleared?' cleared':'');
     if(isRenameOpen('music',i)){
       row.appendChild(buildListLabelEditor('music',i,m.name,nextName=>{ m.name=nextName; refreshMusicList(); }));
     }else{
@@ -6900,18 +6957,8 @@ function refreshMusicList(){
         const deleteBtn=document.createElement('button');
         deleteBtn.className='uiBtn destructive';
         deleteBtn.type='button';
-        deleteBtn.textContent='Del';
-        deleteBtn.onclick=(e)=>{
-          e.stopPropagation();
-          if(state.appProject.music.length<=1){
-            toast('At least one music track is required.');
-            return;
-          }
-          if(!confirm(`Delete track ${i}?`)) return;
-          state.appProject.music.splice(i,1);
-          state.currentMusicIndex=Math.max(0, Math.min(state.currentMusicIndex, state.appProject.music.length-1));
-          refreshMusicUI();
-        };
+        deleteBtn.textContent='Clr';
+        deleteBtn.onclick=(e)=>{ e.stopPropagation(); clearMusicSlot(i); };
         actions.appendChild(browseBtn);
         actions.appendChild(loopSelect);
         actions.appendChild(deleteBtn);
@@ -6926,6 +6973,16 @@ function refreshMusicList(){
     };
     wrap.appendChild(row);
   });
+}
+function clearMusicSlot(index){
+  const track=state.appProject.music[index];
+  if(!track) return;
+  if(!confirm(`Clear track ${index}?`)) return;
+  const blank=makeMusic();
+  state.appProject.music[index]={...blank,name:track.name||""};
+  if(state.currentMusicIndex===index) refreshMusicUI();
+  else refreshMusicList();
+  runtime.syncProject(state.appProject);
 }
 function refreshMusicUI(){ const m=currentMusic(); refreshMusicList(); $("musicFileLabel").textContent=m.fileName||m.file||"No file selected"; }
 function updateCurrentMusicFromUI(){}
@@ -7622,8 +7679,6 @@ function wireUI(){
   });
   const setSpriteLineWidth=value=>{
     state.spriteLineWidth=clamp(parseInt(value,10)||1,1,16);
-    const widthLabel=$("spriteLineWidthValueBtn");
-    if(widthLabel) widthLabel.textContent=String(state.spriteLineWidth);
     if(state.spriteLinePreview){
       state.spriteLinePreview.width=state.spriteLineWidth;
       drawSpriteEditor();
