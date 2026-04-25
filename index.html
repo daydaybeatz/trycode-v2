@@ -113,6 +113,8 @@
     .musicRowMain{display:flex;align-items:center;gap:8px;width:100%}
     .musicRowLabel{flex:1 1 auto;min-width:0}
     .musicRowActions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+    .strokeStepper{display:flex;align-items:center;gap:6px}
+    .strokeStepperValue{min-width:34px;text-align:center;font-weight:800}
     .spriteListRow{display:flex;align-items:center;gap:6px;width:100%}
     .spriteIndexBtn{flex:1 1 auto;text-align:left;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
     .spriteActionBtn{flex:0 0 auto;padding:3px 9px;font-size:11px;line-height:1;min-width:auto}
@@ -410,7 +412,7 @@
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="pageRow" style="margin:0"><input class="uiBtn" id="spriteLineWidthInput" type="number" min="1" max="16" step="1" value="1" title="Stroke size" style="width:52px;padding:4px 6px;text-align:center"></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="pageRow strokeStepper" style="margin:0"><button class="uiBtn" id="spriteLineWidthDownBtn" type="button" title="Decrease stroke size">-</button><button class="uiBtn strokeStepperValue" id="spriteLineWidthValueBtn" type="button" title="Stroke size">1</button><button class="uiBtn" id="spriteLineWidthUpBtn" type="button" title="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">Del Frame</button><button class="uiBtn" id="spriteAddFrameBtn">New Frame</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
       </div>
     </div>
 
@@ -952,7 +954,7 @@ end
 `;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -5947,8 +5949,7 @@ function getExampleProjects(){
     {id:'ui-mouse',category:'ui examples',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing with higher-contrast readability colors.',loader:loadUiMouseExampleProject},
     {id:'updated-ui-function-example',category:'ui examples',name:'Updated UI Function Example',description:'Tutorial-style, heavily commented starter showing the simplest default_button(), ui_buttons(), default_dropdown(), and ui_dropdown() workflow.',loader:loadUiFunctionsExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
-    {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject},
-    {id:'operation-corporation',category:'ui-heavy games',name:'Operation Corporation: Ultimate',description:'Remade docs demo: three-screen command game with Team Management, Mission Dispatch, and Research & Development loops tied to department levels, gear, and territory growth.',loader:loadOperationCorporationExampleProject}
+    {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject}
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
@@ -6364,7 +6365,21 @@ function updateSpriteOnionButton(){
   btn.textContent=`Onion: ${labels[mode]||'Off'}`;
   btn.classList.toggle('active', mode!=='off');
 }
-function syncSpriteUI(){ const s=currentSprite(); state.spriteListPage=Math.floor((state.currentSpriteIndex||0)/SPRITE_LIST_PAGE_SIZE); $("spriteWInput").value=s.w; $("spriteHInput").value=s.h; refreshSpriteList(); refreshSpriteFrames(); refreshPaletteUI(); refreshEdgePalette(); setSpriteTool(state.spriteTool); if($("spriteLineWidthInput")) $("spriteLineWidthInput").value=String(Math.max(1,state.spriteLineWidth||1)); updateSpriteFrameStatus(); updateSpriteOnionButton(); }
+function syncSpriteUI(){
+  const s=currentSprite();
+  state.spriteListPage=Math.floor((state.currentSpriteIndex||0)/SPRITE_LIST_PAGE_SIZE);
+  $("spriteWInput").value=s.w;
+  $("spriteHInput").value=s.h;
+  refreshSpriteList();
+  refreshSpriteFrames();
+  refreshPaletteUI();
+  refreshEdgePalette();
+  setSpriteTool(state.spriteTool);
+  const widthLabel=$("spriteLineWidthValueBtn");
+  if(widthLabel) widthLabel.textContent=String(Math.max(1,state.spriteLineWidth||1));
+  updateSpriteFrameStatus();
+  updateSpriteOnionButton();
+}
 function getSpriteDisplayZoom(){ return Math.max(1,currentSpriteView().zoom||1); }
 function getSpriteGridStep(){
   const mode=currentSpriteView().gridMode;
@@ -6789,8 +6804,24 @@ function refreshMusicList(){
         loopSelect.value=String(m.loop!==false);
         loopSelect.onclick=e=>e.stopPropagation();
         loopSelect.onchange=(e)=>{ e.stopPropagation(); m.loop=e.target.value==="true"; refreshMusicUI(); };
+        const deleteBtn=document.createElement('button');
+        deleteBtn.className='uiBtn destructive';
+        deleteBtn.type='button';
+        deleteBtn.textContent='Del';
+        deleteBtn.onclick=(e)=>{
+          e.stopPropagation();
+          if(state.appProject.music.length<=1){
+            toast('At least one music track is required.');
+            return;
+          }
+          if(!confirm(`Delete track ${i}?`)) return;
+          state.appProject.music.splice(i,1);
+          state.currentMusicIndex=Math.max(0, Math.min(state.currentMusicIndex, state.appProject.music.length-1));
+          refreshMusicUI();
+        };
         actions.appendChild(browseBtn);
         actions.appendChild(loopSelect);
+        actions.appendChild(deleteBtn);
         main.appendChild(actions);
       }
       row.appendChild(main);
@@ -7494,9 +7525,17 @@ function wireUI(){
     view.gridMode=order[(idx+1+order.length)%order.length];
     drawSpriteEditor();
   });
-  const setSpriteLineWidth=value=>{ state.spriteLineWidth=clamp(parseInt(value,10)||1,1,16); const input=$("spriteLineWidthInput"); if(input) input.value=String(state.spriteLineWidth); if(state.spriteLinePreview){ state.spriteLinePreview.width=state.spriteLineWidth; drawSpriteEditor(); } };
-  bind("spriteLineWidthInput",'change',e=>setSpriteLineWidth(e.target.value));
-  bind("spriteLineWidthInput",'input',e=>setSpriteLineWidth(e.target.value));
+  const setSpriteLineWidth=value=>{
+    state.spriteLineWidth=clamp(parseInt(value,10)||1,1,16);
+    const widthLabel=$("spriteLineWidthValueBtn");
+    if(widthLabel) widthLabel.textContent=String(state.spriteLineWidth);
+    if(state.spriteLinePreview){
+      state.spriteLinePreview.width=state.spriteLineWidth;
+      drawSpriteEditor();
+    }
+  };
+  bindClick("spriteLineWidthDownBtn",()=>setSpriteLineWidth((state.spriteLineWidth||1)-1));
+  bindClick("spriteLineWidthUpBtn",()=>setSpriteLineWidth((state.spriteLineWidth||1)+1));
   bindClick("spriteOnionBtn",()=>{ const order=["off","previousframe","nextframe"]; const idx=order.indexOf(String(state.spriteOnionMode||"off")); state.spriteOnionMode=order[(idx+1)%order.length]; updateSpriteOnionButton(); drawSpriteEditor(); });
   bindClick("spriteClearBtn",clearCurrentSpriteFrame); const adjustSpriteFolderFrames=(delta)=>{ const folder=currentSpriteFolder(); const n=Math.max(1,Math.min(26,folder.frames.length+delta)); if(n===folder.frames.length) return; while(folder.frames.length<n) folder.frames.push(makeSprite(currentSprite().w,currentSprite().h)); while(folder.frames.length>n){ const removedFrame=folder.frames[folder.frames.length-1]; if(!isSpriteFrameEmpty(removedFrame) && !confirm(`Remove frame ${spriteFrameName(folder.frames.length-1)}? This frame is not empty.`)) return; folder.frames.pop(); } invalidateEditorRenderCache(); state.currentSpriteFrame=Math.min(state.currentSpriteFrame, folder.frames.length-1); syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); }; bindClick("spriteFolderMinusBtn",()=>adjustSpriteFolderFrames(-1)); bindClick("spriteFolderPlusBtn",()=>adjustSpriteFolderFrames(1));
   bindClick("spriteAnimPreviewToggleBtn",()=>{ state.spriteAnimPreviewVisible=!(state.spriteAnimPreviewVisible!==false); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); });
@@ -7560,6 +7599,39 @@ function wireUI(){
   bindClick("spriteEditNextBtn",()=>stepCurrentSpriteFrame(1, {redraw:true, refreshFrames:true, stopAnimation:false}));
   bindClick("spriteAnimPlayBtn",()=>{ state.spriteAnimPlaying=true; updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
   bindClick("spriteAnimPauseBtn",()=>{ state.spriteAnimPlaying=false; updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
+  bindClick("spriteDeleteFrameBtn",()=>{
+    const folder=currentSpriteFolder();
+    if(!folder || !folder.frames || folder.frames.length<=1){
+      toast('At least one frame is required.');
+      return;
+    }
+    const frameName=spriteFrameName(state.currentSpriteFrame);
+    if(!confirm(`Delete frame ${frameName}?`)) return;
+    folder.frames.splice(state.currentSpriteFrame,1);
+    state.currentSpriteFrame=Math.max(0,Math.min(state.currentSpriteFrame,folder.frames.length-1));
+    state.spriteFramePage=Math.floor(state.currentSpriteFrame/SPRITE_FRAMES_PER_PAGE);
+    state.spriteAnimPlaying=false;
+    invalidateEditorRenderCache();
+    syncSpriteUI();
+    drawSpriteEditor();
+    refreshTilePalette();
+    runtime.syncProject(state.appProject);
+  });
+  bindClick("spriteAddFrameBtn",()=>{
+    const folder=currentSpriteFolder();
+    const current=currentSprite();
+    if(!folder || !current) return;
+    const nextFrame=makeSprite(current.w,current.h);
+    folder.frames.splice(state.currentSpriteFrame+1,0,nextFrame);
+    state.currentSpriteFrame=Math.min(folder.frames.length-1,state.currentSpriteFrame+1);
+    state.spriteFramePage=Math.floor(state.currentSpriteFrame/SPRITE_FRAMES_PER_PAGE);
+    state.spriteAnimPlaying=false;
+    invalidateEditorRenderCache();
+    syncSpriteUI();
+    drawSpriteEditor();
+    refreshTilePalette();
+    runtime.syncProject(state.appProject);
+  });
   bind("spriteAnimSpeedInput",'input',()=>{ state.spriteAnimSpeed=Math.max(1,parseFloat($("spriteAnimSpeedInput")?.value)||6); updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
   window.addEventListener('keydown',e=>{
     const key=String(e.key||'').toLowerCase();
