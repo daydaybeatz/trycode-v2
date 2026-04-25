@@ -379,8 +379,30 @@
     body.dark-mode .codeHighlight{color:#f1f5ff}
     body.dark-mode .tok-identifier{color:#edf2ff}
     @media (max-width: 900px){
-      .animPreviewBar{right:76px}
-      .animPreviewSpeed input{width:46px}
+      .animPreviewBar{
+        right:76px;
+        grid-template-columns:auto minmax(0,1fr);
+        grid-template-rows:auto;
+        align-items:center;
+        column-gap:6px;
+        row-gap:0;
+        padding:4px 6px;
+      }
+      .animPreviewBar canvas{
+        grid-row:auto;
+        width:38px;
+        height:38px;
+      }
+      .animPreviewTopRow{
+        align-items:center;
+        gap:6px;
+      }
+      .animPreviewControls{
+        grid-column:1 / -1;
+        margin-top:2px;
+      }
+      .animPreviewSpeed input{width:44px}
+      .spriteSecondaryTools.dock-anim{bottom:92px}
     }
 </style>
 </head>
