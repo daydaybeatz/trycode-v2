@@ -108,6 +108,9 @@
     .pageRow .uiBtn{padding:4px 8px;font-size:12px}
     .itemRow{display:flex;gap:8px;align-items:center;justify-content:space-between;border:3px solid var(--line);border-radius:12px;padding:7px 9px;background:linear-gradient(180deg,#fff6df,#efd39f);box-shadow:0 3px 0 #c08b52;cursor:pointer}
     .itemRow.active{border-color:var(--accent);box-shadow:0 3px 0 #7f2b1f}
+    .musicRowMain{display:flex;align-items:center;gap:8px;width:100%}
+    .musicRowLabel{flex:1 1 auto;min-width:0}
+    .musicRowActions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .spriteListRow{display:flex;align-items:center;gap:6px;width:100%}
     .spriteIndexBtn{flex:1 1 auto;text-align:left;white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
     .spriteActionBtn{flex:0 0 auto;padding:3px 9px;font-size:11px;line-height:1;min-width:auto}
@@ -172,8 +175,9 @@
     .hidden{display:none !important}
 
     .runtimeView{position:absolute;inset:10px;padding:10px}
+    .runtimeView.mobile-fullscreen{inset:0;padding:0;border:none;box-shadow:none;background:transparent;border-radius:0}
     .screenStage{position:absolute;inset:10px;display:flex;align-items:center;justify-content:center;border:4px solid var(--line);border-radius:18px;background:#201810;box-shadow:inset 0 0 0 3px #5c452f}
-    #screen{image-rendering:pixelated;background:#000;display:block;border-radius:8px}
+    #screen{image-rendering:pixelated;background:#000;display:block;border-radius:0}
     .runtimeBar{position:absolute;top:14px;right:14px;display:flex;gap:8px;z-index:30}
     .runtimeErrorBox{position:absolute;left:16px;top:16px;z-index:35;display:none;max-width:min(420px,calc(100% - 32px));padding:10px 12px;border:3px solid #5f0f10;border-radius:16px;background:rgba(97,16,18,.94);box-shadow:0 6px 0 rgba(42,6,8,.45);color:#fff7ee}
     .runtimeErrorBox.show{display:block}
@@ -353,6 +357,9 @@
     body.dark-mode .codeLineNumbers{background:linear-gradient(180deg,#202946,#151d34);color:#9fb0d9}
     body.dark-mode .codeHighlight{color:#f1f5ff}
     body.dark-mode .tok-identifier{color:#edf2ff}
+    @media (max-width: 900px){
+      .animPreviewBar{right:76px}
+    }
 </style>
 </head>
 <body>
@@ -397,7 +404,7 @@
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="pageRow" style="margin:0"><button class="uiBtn" id="spriteLineWidthMinusBtn">-</button><div class="docDesc" id="spriteLineWidthLabel">1</div><button class="uiBtn" id="spriteLineWidthPlusBtn">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="pageRow" style="margin:0"><input class="uiBtn" id="spriteLineWidthInput" type="number" min="1" max="16" step="1" value="1" title="Stroke size" style="width:52px;padding:4px 6px;text-align:center"></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button><button class="uiBtn" id="spriteZoomOutBtn">-</button><button class="uiBtn" id="spriteZoomInBtn">+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimPlayBtn">Play</button><button class="uiBtn" id="spriteAnimPauseBtn">Pause</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div><label class="docDesc">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6" style="width:64px"></label></div></div>
       </div>
     </div>
 
@@ -422,7 +429,7 @@
       <div class="splitView" id="musicView">
         <div class="sidebar panelSkin">
           <div class="pane"><h4>MUSIC</h4><div class="formRow"><button class="mbtn" id="addMusicBtn">Add Music</button></div><div class="musicList" id="musicList"></div></div>
-          <div class="pane"><h4>AUDIO FILE</h4><div class="formRow"><div class="field"><label>Import Track</label><button class="mbtn" id="musicBrowseBtn">Browse File</button><input id="musicFileBrowseInput" type="file" accept="audio/*" style="display:none"><div class="docDesc" id="musicFileLabel">No file selected</div></div><div class="field"><label>Loop</label><select id="musicLoopInput"><option value="true">true</option><option value="false">false</option></select></div></div><div class="formRow" style="margin-top:8px"><button class="mbtn" id="playMusicBtn">Play</button><button class="mbtn" id="stopMusicBtn">Stop</button></div>
+          <div class="pane"><h4>AUDIO FILE</h4><div class="formRow"><div class="field"><label>Selected Track</label><div class="docDesc" id="musicFileLabel">No file selected</div></div></div><div class="formRow" style="margin-top:8px"><button class="mbtn" id="playMusicBtn">Play</button><button class="mbtn" id="stopMusicBtn">Stop</button></div>
           </div>
         </div>
         
@@ -671,11 +678,11 @@ local __tc_ui_state = {
 }
 
 local __tc_button_theme = {
-  x = 0, y = 0, w = 84, h = 18, label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
+  x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
 }
 
 local __tc_dropdown_theme = {
-  x = 0, y = 0, w = 112, h = 18, label = "dropdown", bg = 1, border = 7, text = 7, hover_bg = 13, text_size = nil, label_x = 0, label_y = 0, open = false, selected = 1, items = {}, visible = true, enabled = true
+  x = 0, y = 0, w = 112, h = 18, r = 8, type = "rect", label = "dropdown", bg = 1, border = 7, text = 7, hover_bg = 13, text_size = nil, label_x = 0, label_y = 0, open = false, selected = 1, items = {}, visible = true, enabled = true
 }
 
 local function __tc_uicopy(dst, src)
@@ -713,7 +720,7 @@ local function __tc_button_theme_patch(opts)
   if type(opts) ~= "table" then return false end
   if opts.theme == true then return true end
   local has_layout = opts.x ~= nil or opts.y ~= nil or opts.label ~= nil or opts.func ~= nil
-  local has_style = opts.w ~= nil or opts.h ~= nil or opts.bg ~= nil or opts.border ~= nil or opts.text ~= nil or opts.hover_bg ~= nil or opts.text_size ~= nil or opts.label_x ~= nil or opts.label_y ~= nil or opts.visible ~= nil or opts.enabled ~= nil
+  local has_style = opts.w ~= nil or opts.h ~= nil or opts.r ~= nil or opts.radius ~= nil or opts.type ~= nil or opts.bg ~= nil or opts.border ~= nil or opts.text ~= nil or opts.hover_bg ~= nil or opts.text_size ~= nil or opts.label_x ~= nil or opts.label_y ~= nil or opts.visible ~= nil or opts.enabled ~= nil
   return (not has_layout) and has_style
 end
 
@@ -721,8 +728,23 @@ local function __tc_dropdown_theme_patch(opts)
   if type(opts) ~= "table" then return false end
   if opts.theme == true then return true end
   local has_layout = opts.x ~= nil or opts.y ~= nil or opts.label ~= nil or opts.func ~= nil or opts.items ~= nil or opts.selected ~= nil
-  local has_style = opts.w ~= nil or opts.h ~= nil or opts.bg ~= nil or opts.border ~= nil or opts.text ~= nil or opts.hover_bg ~= nil or opts.text_size ~= nil or opts.label_x ~= nil or opts.label_y ~= nil or opts.visible ~= nil or opts.enabled ~= nil
+  local has_style = opts.w ~= nil or opts.h ~= nil or opts.r ~= nil or opts.radius ~= nil or opts.type ~= nil or opts.bg ~= nil or opts.border ~= nil or opts.text ~= nil or opts.hover_bg ~= nil or opts.text_size ~= nil or opts.label_x ~= nil or opts.label_y ~= nil or opts.visible ~= nil or opts.enabled ~= nil
   return (not has_layout) and has_style
+end
+
+local function __tc_ui_is_circ(widget)
+  return tostring(widget.type or "rect"):lower() == "circ"
+end
+
+local function __tc_ui_radius(widget)
+  return math.max(1, math.floor(tonumber(widget.r) or tonumber(widget.radius) or 8))
+end
+
+local function __tc_ui_hover(mx, my, widget)
+  if __tc_ui_is_circ(widget) then
+    return col2({x=mx,y=my,r=0},{x=widget.x or 0,y=widget.y or 0,r=__tc_ui_radius(widget)})
+  end
+  return __tc_point_in(mx, my, widget.x or 0, widget.y or 0, widget.w or 84, widget.h or 18)
 end
 
 function default_button(opts)
@@ -773,11 +795,20 @@ function ui_button(btn)
   if resolved.visible == false then return false end
   local mx, my, mbtn, mpress = mouse()
   local clicked = (mpress & 1) == 1
-  local hover = __tc_point_in(mx, my, resolved.x or 0, resolved.y or 0, resolved.w or 84, resolved.h or 18)
+  local hover = __tc_ui_hover(mx, my, resolved)
   local bg = (hover and resolved.hover_bg ~= nil) and resolved.hover_bg or resolved.bg
-  rectfill(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, bg)
-  rect(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, resolved.border)
-  __tc_ui_draw_label(resolved.label or "button", resolved.x, resolved.y, resolved.w, resolved.h, resolved.text, resolved.text_size, resolved.label_x, resolved.label_y)
+  if __tc_ui_is_circ(resolved) then
+    local r = __tc_ui_radius(resolved)
+    local cx = resolved.x or 0
+    local cy = resolved.y or 0
+    circfill(cx, cy, r, bg)
+    circ(cx, cy, r, resolved.border)
+    __tc_ui_draw_label(resolved.label or "button", cx - r, cy - r, r * 2, r * 2, resolved.text, resolved.text_size, resolved.label_x, resolved.label_y)
+  else
+    rectfill(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, bg)
+    rect(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, resolved.border)
+    __tc_ui_draw_label(resolved.label or "button", resolved.x, resolved.y, resolved.w, resolved.h, resolved.text, resolved.text_size, resolved.label_x, resolved.label_y)
+  end
   if clicked and hover and resolved.enabled ~= false then
     if type(resolved.func) == "function" then resolved.func(resolved) end
     return true
@@ -816,10 +847,18 @@ local function __tc_ui_draw_dropdown_panel(dd, mx, my, clicked, process_input)
   local changed = false
   for i, item in ipairs(dd.items) do
     local iy = y + (i * item_h)
-    local ihover = __tc_point_in(mx, my, x, iy, w, item_h)
-    rectfill(x, iy, x + w - 1, iy + item_h - 1, ihover and (hover_bg or bg) or bg)
-    rect(x, iy, x + w - 1, iy + item_h - 1, border)
-    __tc_ui_draw_label(__tc_dropdown_label(item), x + 2, iy, w - 4, item_h, text, dd.text_size, dd.label_x, dd.label_y)
+    local ihover = __tc_ui_is_circ(dd) and col2({x=mx,y=my,r=0},{x=x,y=iy + math.floor(item_h/2),r=__tc_ui_radius(dd)}) or __tc_point_in(mx, my, x, iy, w, item_h)
+    if __tc_ui_is_circ(dd) then
+      local r = __tc_ui_radius(dd)
+      local cy = iy + math.floor(item_h/2)
+      circfill(x, cy, r, ihover and (hover_bg or bg) or bg)
+      circ(x, cy, r, border)
+      __tc_ui_draw_label(__tc_dropdown_label(item), x - r, cy - r, r * 2, r * 2, text, dd.text_size, dd.label_x, dd.label_y)
+    else
+      rectfill(x, iy, x + w - 1, iy + item_h - 1, ihover and (hover_bg or bg) or bg)
+      rect(x, iy, x + w - 1, iy + item_h - 1, border)
+      __tc_ui_draw_label(__tc_dropdown_label(item), x + 2, iy, w - 4, item_h, text, dd.text_size, dd.label_x, dd.label_y)
+    end
     if process_input and clicked and ihover and dd.enabled ~= false then
       dd.selected = i
       dd.open = false
@@ -843,7 +882,7 @@ local function __tc_ui_render_open_dropdown_overlay(mx, my, clicked)
   local y = open_dd.y or __tc_dropdown_theme.y or 0
   local w = open_dd.w or __tc_dropdown_theme.w or 112
   local h = open_dd.h or __tc_dropdown_theme.h or 18
-  local hover = __tc_point_in(mx, my, x, y, w, h)
+  local hover = __tc_ui_is_circ(open_dd) and col2({x=mx,y=my,r=0},{x=x,y=y,r=__tc_ui_radius(open_dd)}) or __tc_point_in(mx, my, x, y, w, h)
   local changed = __tc_ui_draw_dropdown_panel(open_dd, mx, my, clicked, true)
   if clicked and not hover then
     local total_h = h + (#open_dd.items * h)
@@ -869,15 +908,26 @@ function ui_dropdown(dd)
   local text = dd.text or __tc_dropdown_theme.text
   local base_bg = dd.bg or __tc_dropdown_theme.bg
   local hover_bg = (dd.hover_bg ~= nil) and dd.hover_bg or __tc_dropdown_theme.hover_bg
-  local hover = __tc_point_in(mx, my, x, y, w, h)
+  local hover = __tc_ui_is_circ(dd) and col2({x=mx,y=my,r=0},{x=x,y=y,r=__tc_ui_radius(dd)}) or __tc_point_in(mx, my, x, y, w, h)
   local bg = hover and hover_bg or base_bg
-  rectfill(x, y, x + w - 1, y + h - 1, bg)
-  rect(x, y, x + w - 1, y + h - 1, border)
+  if __tc_ui_is_circ(dd) then
+    local r = __tc_ui_radius(dd)
+    circfill(x, y, r, bg)
+    circ(x, y, r, border)
+  else
+    rectfill(x, y, x + w - 1, y + h - 1, bg)
+    rect(x, y, x + w - 1, y + h - 1, border)
+  end
   local selected_item = dd.items[math.max(1, math.floor(tonumber(dd.selected) or 1))]
   local shown = dd.label or __tc_dropdown_label(selected_item)
-  local arrow_w = math.max(10, math.floor(h * 0.8))
-  __tc_ui_draw_label(shown, x + 2, y, w - arrow_w - 4, h, text, dd.text_size, dd.label_x, dd.label_y)
-  __tc_ui_draw_label(dd.open and "^" or "v", x + w - arrow_w - 2, y, arrow_w, h, text, dd.text_size, dd.label_x, dd.label_y)
+  local arrow_w = math.max(10, math.floor((__tc_ui_is_circ(dd) and (__tc_ui_radius(dd)*2) or h) * 0.8))
+  if __tc_ui_is_circ(dd) then
+    local r = __tc_ui_radius(dd)
+    __tc_ui_draw_label(shown, x - r, y - r, r * 2, r * 2, text, dd.text_size, dd.label_x, dd.label_y)
+  else
+    __tc_ui_draw_label(shown, x + 2, y, w - arrow_w - 4, h, text, dd.text_size, dd.label_x, dd.label_y)
+    __tc_ui_draw_label(dd.open and "^" or "v", x + w - arrow_w - 2, y, arrow_w, h, text, dd.text_size, dd.label_x, dd.label_y)
+  end
 
   if clicked and hover and dd.enabled ~= false then
     dd.open = not dd.open
@@ -896,7 +946,7 @@ end
 `;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:0.2,mapOffsetX:0,mapOffsetY:0,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:true,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -1175,7 +1225,7 @@ const CODE_API_DOCS = [
   makeDoc("circ(x, y, r, color)", "Draws a circle outline.", [["x", "Center x."],["y", "Center y."],["r", "Radius in pixels."],["color", "Optional palette index, color() result, or CSS color string."]], ["circ(64, 48, 12, 8)","circ(64, 48, 12, color(255,120,80))"], "Useful for vision cones, radar rings, and range indicators."),
   makeDoc("circfill(x, y, r, color)", "Draws a filled circle.", [["x", "Center x."],["y", "Center y."],["r", "Radius in pixels."],["color", "Optional palette index."]], ["circfill(96, 64, 7, 11)"], "Great for pings, particles, or rounded UI badges."),
   makeDoc("spr(indexOrSource, x, y, flip)", "Draws a sprite folder frame, sprite reference such as 0a, or image source.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."],["flip", "Optional true/false horizontal flip. Defaults to false."]], ["spr(0, 40, 20)","spr(\"0b\", 56, 20, true)"], "Sprite folder indices draw frame a by default. Set flip=true to mirror horizontally."),
-  makeDoc("sspr(indexOrSource, x, y, w, h, center, flip)", "Draws a scaled sprite using percentage multipliers for width/height.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."],["w", "Width percentage multiplier where 0 means normal size, positive grows, and negative shrinks."],["h", "Height percentage multiplier where 0 means normal size, positive grows, and negative shrinks."],["center", "Optional true/false. When true, x/y act as the sprite center while scaling."],["flip", "Optional true/false horizontal flip. Defaults to false."]], ["sspr(0, 40, 20, 0, 0)","sspr(\"0b\", 56, 20, 25, 25)","sspr(0, player.x, player.y, 100, 100, true, player.flip)"], "Use w/h as percentages relative to normal size. -99 is roughly a 1-pixel sprite, while +100 doubles size."),
+  makeDoc("sspr(indexOrSource, x, y, w, h, center, flip)", "Draws a scaled sprite using percentage multipliers for width/height.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."],["w", "Width percentage multiplier where 0 means normal size, positive grows, and negative shrinks."],["h", "Height percentage multiplier where 0 means normal size, positive grows, and negative shrinks."],["center", "Optional true/false. When true, x/y act as the sprite center while scaling."],["flip", "Optional true/false horizontal flip. Defaults to false."]], ["sspr(0, 40, 20, 0, 0)","sspr(\"0b\", 56, 20, 25, 25)","sspr(0, player.x, player.y, 100, 100, true, player.flip)"], "Scaling is intentionally aggressive now: 0 is normal, +100 is ~10x size, and -100 becomes nearly invisible."),
   makeDoc("r_spr(indexOrSource, x, y, angle, flip)", "Draws a sprite rotated by angle (degrees), with optional horizontal flip.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."],["angle", "Rotation angle in degrees, around the sprite center."],["flip", "Optional true/false horizontal flip. Defaults to false."]], ["r_spr(0, 40, 20, 45)","r_spr(\"0b\", player_x, player_y, heading, true)"], "Use this for Pico-8-style custom rotation helpers. x/y remain the sprite's top-left anchor."),
   makeDoc("animate(ref, x, y, speed)", "Draws a sprite folder and cycles through its frames automatically.", [["ref", "Folder index or ref such as \"0a\"."],["x", "Destination x."],["y", "Destination y."],["speed", "Frames per second style speed value."]], ["animate(0, 80, 40, 6)","animate(\"0a\", player_x, player_y, 8)"], "Use this when a sprite folder contains several frames."),
   makeDoc("print(text, fontsize, x, y, color, outlineColor, font)", "Draws text with explicit font size and optional fill/outline colors and font family.", [["text", "Any value converted to text."],["fontsize", "Font size in pixels. Pass nil or \"nil\" for the default size 12."],["x", "Screen/world x position."],["y", "Screen/world y position."],["color", "Fill color string, palette index, color() result, nil, or \"nil\". nil/\"nil\" uses current draw color (default black)."],["outlineColor", "Outline color string, palette index, color() result, nil, or \"nil\". nil/\"nil\" means no outline."],["font", "Optional font family string. nil or \"nil\" uses the default print font from File menu settings."]], ["print(\"score\", nil, 8, 8, nil, nil, nil)","print(score, 14, 8, 20, color(255,255,255), nil, \"Orbitron\")","print(\"alert\", 16, 8, 32, color(255,247,232), color(111,61,32), \"Merriweather\")"], "Preferred order is print(text, fontsize, x, y, color, outlineColor, font). Older print argument layouts are still supported for compatibility."),
@@ -1214,9 +1264,9 @@ const CODE_API_DOCS = [
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
   makeDoc("default_font(font, size, color)", "Sets default print font settings used when print() leaves those values nil.", [["font", "Font family string, nil, or \"nil\". nil keeps the File menu font."],["size", "Default font size in pixels, nil, or \"nil\". nil resets to 12."],["color", "Default fill color string, palette index, color() result, nil, or \"nil\". nil follows current color()."]], ["default_font(\"Orbitron\", 14, color(255,247,232))","default_font(nil, nil, nil) -- reset all print defaults","print(\"score\", nil, 8, 8) -- now uses default_font settings"], "Use this once in _init() when you want a global text style without repeating font arguments."),
   makeDoc("default_controls(mode)", "Sets the movement control scheme to joystick or d-pad.", [["mode", "Use \"joystick\"/\"left_joystick\" for joystick controls, or \"dpad\"/\"d-pad\" for directional pad controls."]], ["default_controls(\"dpad\")","default_controls(\"joystick\")"], "Returns the current mode string after applying the setting."),
-  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=12,y=48,label=\"-5\",bg=8,label_x=-2}) -- per-button override"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
+  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons and runs callbacks on click.", [["button", "Button table; ui_button merges it with the current default_button theme."],["list", "Array of button tables for ui_buttons()."]], ["if ui_button({x=12,y=24,label=\"buy\",func=buy_item}) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Use table overrides when one button needs different size/colors."),
-  makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
+  makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, 8, 8) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("keyboard_box(message, default_text, title)", "Alias of entry_box for explicitly requesting the in-engine keyboard input dialog.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["player = keyboard_box(\"name\", player or \"\", \"keyboard\")","if player then print(player, 8, 8) end"], "Use this exactly like entry_box(). On touch devices, tapping the input area opens the mobile on-screen keyboard."),
   makeDoc("save_data(key, value)", "Stores a persistent string value in browser local storage for this project name.", [["key", "Save slot key."],["value", "String or number to store."]], ["save_data(\"save_slot\", \"hq=2;funds=140\")"], "Call this after meaningful progress. Values remain after reload."),
@@ -1522,9 +1572,10 @@ function finishNewProject(){
   state.spriteFramePage = 0;
   state.spriteListPage = 0;
   state.projectListPage = 0;
-  state.mapZoom = 0.2;
+  state.mapZoom = 1;
   state.mapOffsetX = 0;
   state.mapOffsetY = 0;
+  state.mapAutoCenterPending = true;
   state.lastEdited = "code";
   state.appProject = defaultProject();
   invalidateEditorRenderCache();
@@ -1618,9 +1669,10 @@ function refreshProjectList(){
       state.spriteFramePage=0;
       state.spriteListPage=0;
       state.projectListPage=0;
-      state.mapZoom=0.2;
+      state.mapZoom=1;
       state.mapOffsetX=0;
       state.mapOffsetY=0;
+      state.mapAutoCenterPending=true;
       renderCodeTabs();
       loadCurrentCodeFileToEditor();
       syncSpriteUI();
@@ -1821,7 +1873,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
 	    "function rect(x0,y0,x1,y1,colorIndex){const left=Math.round(Math.min(Number(x0)||0,Number(x1)||0)),right=Math.round(Math.max(Number(x0)||0,Number(x1)||0)),top=Math.round(Math.min(Number(y0)||0,Number(y1)||0)),bottom=Math.round(Math.max(Number(y0)||0,Number(y1)||0));for(let x=left;x<=right;x++){pset(x,top,colorIndex);pset(x,bottom,colorIndex)}for(let y=top;y<=bottom;y++){pset(left,y,colorIndex);pset(right,y,colorIndex)}}function rectfill(x0,y0,a,b,colorIndex){const hasPaletteColor=colorIndex!=null;const left=Number(x0)||0;const top=Number(y0)||0;const right=hasPaletteColor?(Number(a)||0):left+(Number(a)||0);const bottom=hasPaletteColor?(Number(b)||0):top+(Number(b)||0);const x=Math.min(left,right),y=Math.min(top,bottom),w=Math.abs(right-left)+(hasPaletteColor?1:0),h=Math.abs(bottom-top)+(hasPaletteColor?1:0);ctx.fillStyle=hasPaletteColor?(resolveDrawColor(colorIndex)||sty()):sty();ctx.fillRect(sx(x),sy(y),Math.max(1,Math.round(w*viewZoom)),Math.max(1,Math.round(h*viewZoom)))}function circ(x,y,r,colorIndex){let cx=Math.round(Number(x)||0),cy=Math.round(Number(y)||0),rr=Math.max(0,Math.round(Number(r)||0));let px=rr,py=0,err=1-rr;while(px>=py){pset(cx+px,cy+py,colorIndex);pset(cx+py,cy+px,colorIndex);pset(cx-py,cy+px,colorIndex);pset(cx-px,cy+py,colorIndex);pset(cx-px,cy-py,colorIndex);pset(cx-py,cy-px,colorIndex);pset(cx+py,cy-px,colorIndex);pset(cx+px,cy-py,colorIndex);py++;if(err<0){err+=2*py+1}else{px--;err+=2*(py-px+1)}}}function circfill(x,y,r,colorIndex){const cx=Math.round(Number(x)||0),cy=Math.round(Number(y)||0),rr=Math.max(0,Math.round(Number(r)||0));for(let dy=-rr;dy<=rr;dy++){const span=Math.floor(Math.sqrt(Math.max(0,rr*rr-dy*dy)));line(cx-span,cy+dy,cx+span,cy+dy,colorIndex)}}",
 	    "function default_font(font,size,colorValue){const fileMenuFont=normalizePrintFontName(projectRef.settings&&projectRef.settings.defaultPrintFont);defaultPrintState.font=resolvePrintFont(font,fileMenuFont);if(font==null||(typeof font==='string'&&font.trim().toLowerCase()==='nil'))defaultPrintState.font=null;if(size==null||(typeof size==='string'&&size.trim().toLowerCase()==='nil'))defaultPrintState.size=null;else defaultPrintState.size=Math.max(1,Number(size)||12);if(colorValue==null||(typeof colorValue==='string'&&colorValue.trim().toLowerCase()==='nil'))defaultPrintState.color=null;else{const parsed=resolvePrintColor(colorValue);defaultPrintState.color=parsed!=null?parsed:null}return 0}function print(t,a,b,c,d,e,f,g){const _cp=clipPush();const oldFill=ctx.fillStyle,oldStroke=ctx.strokeStyle;const fileMenuFont=normalizePrintFontName(projectRef.settings&&projectRef.settings.defaultPrintFont);const defaultFont=defaultPrintState.font||fileMenuFont;const defaultFontSize=defaultPrintState.size==null?12:defaultPrintState.size;const defaultFill=defaultPrintState.color??sty();let text=t,x=0,y=0,fontSize=defaultFontSize,fill=defaultFill,outline=null,font=defaultFont;if(arguments.length>=4&&typeof a==='number'&&typeof b==='number'&&typeof c==='number'){fontSize=(a==null||String(a).trim().toLowerCase()==='nil')?defaultFontSize:(Number(a)||defaultFontSize);x=b;y=c;const parsedFill=resolvePrintColor(d);if(parsedFill!=null)fill=parsedFill;outline=resolvePrintColor(e);font=resolvePrintFont(f,defaultFont);}else if(a!=null&&b!=null&&c!=null&&typeof a==='number'&&typeof b==='number'&&typeof c==='number'){x=0;y=0;fill='rgb('+((a|0))+','+((b|0))+','+((c|0))+')';}else if(typeof a==='string' || (typeof a==='number' && (b==null||typeof b!=='number'||c!=null))){const parsedFill=resolvePrintColor(a);if(parsedFill!=null)fill=parsedFill;outline=resolvePrintColor(b);}else{if(typeof a==='number'){x=a;y=(typeof b==='number')?b:0;}else{if(a!=null)fontSize=(Number(a)||defaultFontSize);x=(typeof b==='number')?b:0;y=(typeof c==='number')?c:0;}if(typeof a!=='number'){outline=resolvePrintColor(b);const parsedFill=resolvePrintColor(c);if(parsedFill!=null)fill=parsedFill;}}fontSize=Math.max(1,Math.round(fontSize*viewZoom));ctx.fillStyle=fill;ctx.font=fontSize+'px '+font;ctx.textAlign='left';ctx.textBaseline='top';const dx=Math.round(sx(x)),dy=Math.round(sy(y));if(outline!=null){ctx.strokeStyle=outline;ctx.lineWidth=Math.max(1,Math.round(viewZoom));ctx.strokeText(String(text),dx,dy);}ctx.fillText(String(text),dx,dy);ctx.fillStyle=oldFill;ctx.strokeStyle=oldStroke;clipPop(_cp)}const print_=print;",
 	    "function drawInternalSpriteRuntime(ref,x,y,scaleX,scaleY,angleDeg,flip){scaleX=Number(scaleX);scaleY=Number(scaleY);if(!Number.isFinite(scaleX)||scaleX===0)scaleX=1;if(!Number.isFinite(scaleY)||scaleY===0)scaleY=1;angleDeg=Number(angleDeg)||0;const shouldFlip=!!flip;const r=(typeof ref==='object')?ref:parseSpriteRef(ref);if(!r)return false;const folder=projectRef.spriteFolders[r.folder],s=folder&&folder.frames[r.frame];if(!s)return false;const absScaleX=Math.abs(scaleX),absScaleY=Math.abs(scaleY);const stepX=Math.max(1,Math.ceil(absScaleX*viewZoom)),stepY=Math.max(1,Math.ceil(absScaleY*viewZoom));const hasRotate=Math.abs(angleDeg)>0.0001;if(!hasRotate&&!shouldFlip&&scaleX>0&&scaleY>0){for(let yy=0;yy<s.h;yy++)for(let xx=0;xx<s.w;xx++){const p=s.pixels[yy][xx];if(p>=0&&projectRef.palette[p]){ctx.fillStyle=projectRef.palette[p];ctx.fillRect(Math.round(sx(x)+xx*(absScaleX*viewZoom)),Math.round(sy(y)+yy*(absScaleY*viewZoom)),stepX,stepY)}}return true}const drawW=Math.max(1,Math.round(s.w*absScaleX*viewZoom)),drawH=Math.max(1,Math.round(s.h*absScaleY*viewZoom));const cx=Math.round(sx(x))+drawW/2,cy=Math.round(sy(y))+drawH/2;ctx.save();ctx.translate(cx,cy);if(hasRotate)ctx.rotate(angleDeg*Math.PI/180);ctx.scale((shouldFlip?-1:1)*(scaleX<0?-1:1),scaleY<0?-1:1);const originX=-drawW/2,originY=-drawH/2;for(let yy=0;yy<s.h;yy++)for(let xx=0;xx<s.w;xx++){const p=s.pixels[yy][xx];if(p>=0&&projectRef.palette[p]){ctx.fillStyle=projectRef.palette[p];ctx.fillRect(Math.round(originX+xx*(absScaleX*viewZoom)),Math.round(originY+yy*(absScaleY*viewZoom)),stepX,stepY)}}ctx.restore();return true}",
-	    "function percentScale(value){const n=Number(value);if(!Number.isFinite(n)||n===0)return 1;return Math.max(0.01,Math.abs((n+100)/100))*(n<0?-1:1)}function spr(v,x,y,flip){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){drawInternalSpriteRuntime(r,x,y,1,1,0,!!flip);clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function sspr(v,x,y,w,h,center,flip){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){const folder=projectRef.spriteFolders[r.folder],sp=folder&&folder.frames[r.frame];if(sp){const scaleX=percentScale(w),scaleY=percentScale(h);let dx=Number(x)||0,dy=Number(y)||0;if(center===true){dx-=((sp.w*Math.abs(scaleX))-sp.w)/2;dy-=((sp.h*Math.abs(scaleY))-sp.h)/2}drawInternalSpriteRuntime(r,dx,dy,scaleX,scaleY,0,!!flip);}clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function r_spr(v,x,y,angle,flip){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){drawInternalSpriteRuntime(r,x,y,1,1,angle,!!flip);clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function animate(ref,x,y,speed){const _cp=clipPush();const s=String(ref||'').trim();const m=s.match(/^(\d+)/);const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN);if(!Number.isFinite(base)){spr(ref,x,y);clipPop(_cp);return;}const folder=projectRef.spriteFolders[base];if(!folder||!folder.frames||!folder.frames.length){spr(ref,x,y);clipPop(_cp);return;}const spd=Math.max(0.01,Number(speed)||6);const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length;drawInternalSpriteRuntime({folder:base,frame:idx},x,y,1,1);clipPop(_cp);}",
+	    "function percentScale(value){const n=Number(value);if(!Number.isFinite(n)||n===0)return 1;if(n>0)return Math.max(0.001,1+(n*0.09));return Math.max(0.001,1+(n/100));}function spr(v,x,y,flip){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){drawInternalSpriteRuntime(r,x,y,1,1,0,!!flip);clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function sspr(v,x,y,w,h,center,flip){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){const folder=projectRef.spriteFolders[r.folder],sp=folder&&folder.frames[r.frame];if(sp){const scaleX=percentScale(w),scaleY=percentScale(h);let dx=Number(x)||0,dy=Number(y)||0;if(center===true){dx-=((sp.w*Math.abs(scaleX))-sp.w)/2;dy-=((sp.h*Math.abs(scaleY))-sp.h)/2}drawInternalSpriteRuntime(r,dx,dy,scaleX,scaleY,0,!!flip);}clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function r_spr(v,x,y,angle,flip){const _cp=clipPush();if(typeof v==='number')v=String(v);const r=parseSpriteRef(v);if(r){drawInternalSpriteRuntime(r,x,y,1,1,angle,!!flip);clipPop(_cp);return;}if(isImageLike(v)){clipPop(_cp);return;}clipPop(_cp);}function animate(ref,x,y,speed){const _cp=clipPush();const s=String(ref||'').trim();const m=s.match(/^(\d+)/);const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN);if(!Number.isFinite(base)){spr(ref,x,y);clipPop(_cp);return;}const folder=projectRef.spriteFolders[base];if(!folder||!folder.frames||!folder.frames.length){spr(ref,x,y);clipPop(_cp);return;}const spd=Math.max(0.01,Number(speed)||6);const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length;drawInternalSpriteRuntime({folder:base,frame:idx},x,y,1,1);clipPop(_cp);}",
 	    "function mget(x,y,l,m){x=Math.floor(Number(x)||0);y=Math.floor(Number(y)||0);l=l==null?0:l|0;m=m==null?0:m|0;const mapObj=projectRef.maps[m];if(!mapObj||x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h)return 0;const lay=mapObj.layers[l];return lay?lay.data[y][x]||0:0} function mset(x,y,tile,l,m){x|=0;y|=0;tile|=0;l=l==null?0:l|0;m=m==null?0:m|0;const mapObj=projectRef.maps[m];if(!mapObj||x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h)return;const lay=mapObj.layers[l];if(lay)lay.data[y][x]=tile}",
     "function fget(tile,flag){const d=projectRef.tileDefs[tile|0];return !!(d&&d.flags&&d.flags[flag|0])}function tileAt(x,y,l,m){return mget(Math.floor((Number(x)||0)/projectRef.project.tile_w),Math.floor((Number(y)||0)/projectRef.project.tile_h),l,m)}function solid(x,y,l,m){m=m==null?0:m|0;const mapObj=projectRef.maps[m];if(!mapObj)return false;if(l!=null)return fget(tileAt(x,y,l,m),0);for(let i=0;i<mapObj.layers.length;i++){const layer=mapObj.layers[i];if(!layer||layer.visible===false)continue;if(fget(tileAt(x,y,i,m),0))return true}return false}const wall=solid;",
     "function pmap(mi,mx,my,sx0,sy0,mw,mh,sl,el){mi=mi==null?0:mi|0;const mapObj=projectRef.maps[mi];if(!mapObj)return;const totalLayers=mapObj.layers.length;mx=mx==null?0:mx|0;my=my==null?0:my|0;sx0=Number(sx0)||0;sy0=Number(sy0)||0;mw=mw==null?projectRef.project.map_w:mw|0;mh=mh==null?projectRef.project.map_h:mh|0;sl=sl==null?0:sl|0;el=el==null?Math.max(0,totalLayers-1):el|0;for(let li=sl;li<=el;li++){const layer=mapObj.layers[li];if(!layer||layer.visible===false)continue;for(let yy=0;yy<mh;yy++)for(let xx=0;xx<mw;xx++){const gx=mx+xx,gy=my+yy;if(gx<0||gy<0||gx>=projectRef.project.map_w||gy>=projectRef.project.map_h)continue;const tid=layer.data[gy][gx]||0,def=projectRef.tileDefs[tid];if(!tid||!def)continue;const wx=sx0+xx*projectRef.project.tile_w,wy=sy0+yy*projectRef.project.tile_h;const x0=sx(wx),y0=sy(wy),x1=sx(wx+projectRef.project.tile_w),y1=sy(wy+projectRef.project.tile_h);const tileW=Math.max(1,x1-x0),tileH=Math.max(1,y1-y0);if(def.bgEnabled!==false){ctx.fillStyle=def.bg||'#444';ctx.fillRect(x0,y0,tileW,tileH)}let sr=parseSpriteRef(def.source||'');if(def.animated){const folderIndex=resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders),folder=folderIndex==null?null:projectRef.spriteFolders[folderIndex],speed=Math.max(0.1,Number(def.animSpeed)||6);if(folder&&folder.frames&&folder.frames.length)sr={folder:folderIndex,frame:Math.floor((performance.now()/1000)*speed)%folder.frames.length};}if(sr){const folder=projectRef.spriteFolders[sr.folder],sp=folder&&folder.frames[sr.frame];if(sp){drawInternalSpriteRuntime(sr,wx,wy,projectRef.project.tile_w/sp.w,projectRef.project.tile_h/sp.h);continue;}}}}}function map(mi,sx0,sy0,layer){mi=mi==null?0:mi|0;const mapObj=projectRef.maps[mi];if(!mapObj)return;const totalLayers=mapObj.layers.length;const sl=layer==null?0:layer|0;const el=layer==null?Math.max(0,totalLayers-1):sl;pmap(mi,0,0,sx0,sy0,projectRef.project.map_w,projectRef.project.map_h,sl,el)}",
@@ -2917,7 +2969,7 @@ function draw_menu()
   print("mushroom run", 28, 128, 58, color(255, 247, 232))
   print("a tiny platformer demo for trycode", 14, 98, 98, color(255, 247, 232))
   print("run, jump, collect coins, and reach the banner", 14, 74, 124, color(255, 247, 232))
-  print("press a or enter to start", 16, 130, 168, color(255, 247, 232))
+  print("press any button to start", 16, 118, 168, color(255, 247, 232))
   spr("0a", 92, 152)
   animate(4, 344, 154, 8)
 end
@@ -2930,7 +2982,7 @@ function draw_win()
   color(255, 247, 232)
   print("course clear", 28, 138, 74, color(255, 247, 232))
   print("coins collected "..best_score, 16, 142, 118, color(255, 247, 232))
-  print("press a to play again", 16, 144, 154, color(255, 247, 232))
+  print("press any button to play again", 16, 118, 154, color(255, 247, 232))
   draw_particles()
 end
 
@@ -2961,6 +3013,7 @@ function _init()
 end
 
 function _update()
+  local any_press = btnp("a") or btnp("b") or btnp("x") or btnp("y") or btnp("start") or btnp("select")
   if btnp("select") then
     sprint_toggle = not sprint_toggle
   end
@@ -2968,7 +3021,7 @@ function _update()
   update_particles()
 
   if state == "menu" then
-    if btnp("a") or keyp("enter") then
+    if any_press then
       start_game()
     end
   elseif state == "play" then
@@ -2980,7 +3033,7 @@ function _update()
       update_player()
     end
   elseif state == "win" then
-    if btnp("a") or keyp("enter") then
+    if any_press then
       start_game()
     end
   end
@@ -5882,9 +5935,6 @@ function getExampleProjects(){
     {id:'collision',category:'games',name:'Scrolling Wall Collision',description:'Separate button + joystick movement, wall checks, map scrolling with camera(), and btnp() zoom controls.',loader:loadExampleProject},
     {id:'2048-particles',category:'games',name:'2048 Clone + Particles',description:'Grid-based 2048 clone with merge particles, score tracking, and persistent high score via save_data()/load_data().',loader:load2048ParticlesExampleProject},
     {id:'flappy-high-score',category:'games',name:'Flappy Bird Clone',description:'Arcade flappy bird style game with obstacle pipes, restart flow, and persistent high score storage.',loader:loadFlappyHighScoreExampleProject},
-    {id:'crossword-puzzle',category:'games',name:'Crossword Puzzle',description:'Menu-selectable word count/length, timed or non-timed play, pause with hidden board, replayable generated tables, and timed-only persistent high score.',loader:loadCrosswordPuzzleExampleProject},
-    {id:'ten-sum',category:'games',name:'Ten-Sum',description:'Number puzzle with 10x10 or 20x20 boards, 60-second timer, line + rectangle selection, score by selected squares, and persistent high score.',loader:loadTenSumExampleProject},
-    {id:'convey-it',category:'games',name:'Convey It',description:'Conveyor-belt letter game: click/select letters to form 3-letter words, clear matches for points, track broken fall-offs, and save high score.',loader:loadConveyItExampleProject},
     {id:'include-function-check',category:'logic',name:'Include + Utility Function Check',description:'Two-file project that validates include, cls(color()), add(), rnd(), print(), and for e in all(list) do loops.',loader:loadIncludeFunctionCheckExampleProject},
     {id:'note-app-save-load',category:'logic',name:'Note App Save + Load',description:'Simple note manager using entry_box() and save_data()/load_data() for persistent notes.',loader:loadNotesSaveLoadExampleProject},
     {id:'menu-screen-swap',category:'ui examples',name:'Basic Menu + Screen Swap',description:'Simple readable menu/game/pause screen flow with dpad/left-stick movement, right-stick r_spr() aiming, spr flip, sin/cosin motion, and add()/del() notes.',loader:loadMenuScreenSwapExampleProject},
@@ -5896,6 +5946,20 @@ function getExampleProjects(){
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
+function centerMapEditorView(closeup=true){
+  const wrap=$("mapCanvasWrap");
+  if(!wrap || !state.appProject) return;
+  const tw=state.appProject.project.tile_w, th=state.appProject.project.tile_h;
+  const mw=state.appProject.project.map_w, mh=state.appProject.project.map_h;
+  const mapW=Math.max(1,mw*tw), mapH=Math.max(1,mh*th);
+  const rect=wrap.getBoundingClientRect();
+  if(rect.width<=0 || rect.height<=0) return;
+  const fit=Math.min(rect.width/mapW, rect.height/mapH);
+  const targetZoom=closeup ? Math.max(1, fit*1.4) : Math.max(0.2, fit);
+  state.mapZoom=clamp(targetZoom,0.2,8);
+  state.mapOffsetX=Math.floor((rect.width-(mapW*state.mapZoom))/2);
+  state.mapOffsetY=Math.floor((rect.height-(mapH*state.mapZoom))/2);
+}
 function setView(name){
   const previousView=state.activeView;
   state.activeView=name;
@@ -5908,7 +5972,13 @@ function setView(name){
   if(name==="sprites") drawSpriteEditor();
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
   if(name==="music") { refreshMusicUI();  }
-  if(name==="map") drawMapEditor();
+  if(name==="map"){
+    if(state.mapAutoCenterPending){
+      centerMapEditorView(true);
+      state.mapAutoCenterPending=false;
+    }
+    drawMapEditor();
+  }
   if(name==="runtime"){
     runtime.resizeDisplay();
     requestAnimationFrame(()=>runtime.resizeDisplay());
@@ -6281,7 +6351,7 @@ function updateSpriteOnionButton(){
   btn.textContent=`Onion: ${labels[mode]||'Off'}`;
   btn.classList.toggle('active', mode!=='off');
 }
-function syncSpriteUI(){ const s=currentSprite(); state.spriteListPage=Math.floor((state.currentSpriteIndex||0)/SPRITE_LIST_PAGE_SIZE); $("spriteWInput").value=s.w; $("spriteHInput").value=s.h; refreshSpriteList(); refreshSpriteFrames(); refreshPaletteUI(); refreshEdgePalette(); setSpriteTool(state.spriteTool); $("spriteLineWidthLabel")&&( $("spriteLineWidthLabel").textContent=String(Math.max(1,state.spriteLineWidth||1)) ); updateSpriteFrameStatus(); updateSpriteOnionButton(); }
+function syncSpriteUI(){ const s=currentSprite(); state.spriteListPage=Math.floor((state.currentSpriteIndex||0)/SPRITE_LIST_PAGE_SIZE); $("spriteWInput").value=s.w; $("spriteHInput").value=s.h; refreshSpriteList(); refreshSpriteFrames(); refreshPaletteUI(); refreshEdgePalette(); setSpriteTool(state.spriteTool); if($("spriteLineWidthInput")) $("spriteLineWidthInput").value=String(Math.max(1,state.spriteLineWidth||1)); updateSpriteFrameStatus(); updateSpriteOnionButton(); }
 function getSpriteDisplayZoom(){ return Math.max(1,currentSpriteView().zoom||1); }
 function getSpriteGridStep(){
   const mode=currentSpriteView().gridMode;
@@ -6682,8 +6752,36 @@ function refreshMusicList(){
   state.appProject.music.forEach((m,i)=>{
     const row=document.createElement('div');
     row.className='itemRow'+(i===state.currentMusicIndex?' active':'');
-    if(isRenameOpen('music',i)) row.appendChild(buildListLabelEditor('music',i,m.name,nextName=>{ m.name=nextName; refreshMusicList(); }));
-    else row.textContent=getDisplayNameWithIndex(i,m.name);
+    if(isRenameOpen('music',i)){
+      row.appendChild(buildListLabelEditor('music',i,m.name,nextName=>{ m.name=nextName; refreshMusicList(); }));
+    }else{
+      const main=document.createElement('div');
+      main.className='musicRowMain';
+      const label=document.createElement('div');
+      label.className='musicRowLabel';
+      label.textContent=getDisplayNameWithIndex(i,m.name);
+      main.appendChild(label);
+      if(i===state.currentMusicIndex){
+        const actions=document.createElement('div');
+        actions.className='musicRowActions';
+        const browseBtn=document.createElement('button');
+        browseBtn.className='uiBtn';
+        browseBtn.type='button';
+        browseBtn.textContent='Import';
+        browseBtn.onclick=(e)=>{ e.stopPropagation(); $("musicFileBrowseInput")?.click(); };
+        const loopSelect=document.createElement('select');
+        loopSelect.className='uiBtn';
+        loopSelect.style.padding='4px 6px';
+        loopSelect.innerHTML='<option value="true">loop: true</option><option value="false">loop: false</option>';
+        loopSelect.value=String(m.loop!==false);
+        loopSelect.onclick=e=>e.stopPropagation();
+        loopSelect.onchange=(e)=>{ e.stopPropagation(); m.loop=e.target.value==="true"; refreshMusicUI(); };
+        actions.appendChild(browseBtn);
+        actions.appendChild(loopSelect);
+        main.appendChild(actions);
+      }
+      row.appendChild(main);
+    }
     row.onclick=()=>{
       if(i===state.currentMusicIndex){ openListRename('music',i); return; }
       closeListRename();
@@ -6692,8 +6790,8 @@ function refreshMusicList(){
     wrap.appendChild(row);
   });
 }
-function refreshMusicUI(){ const m=currentMusic(); refreshMusicList(); $("musicFileLabel").textContent=m.fileName||m.file||"No file selected"; $("musicLoopInput").value=String(m.loop); }
-function updateCurrentMusicFromUI(){ const m=currentMusic(); m.loop=$("musicLoopInput").value==="true"; }
+function refreshMusicUI(){ const m=currentMusic(); refreshMusicList(); $("musicFileLabel").textContent=m.fileName||m.file||"No file selected"; }
+function updateCurrentMusicFromUI(){}
 function drawMusicPreview(){}
 
 function makeRuntime(){
@@ -6785,6 +6883,8 @@ function makeRuntime(){
       resetViewTransform();
     }
     stage.classList.toggle('mobile-fullscreen', displayMode==='mobile_fullscreen');
+    const runtimeShell=$("view-runtime")?.querySelector('.runtimeView');
+    runtimeShell?.classList.toggle('mobile-fullscreen', displayMode==='mobile_fullscreen');
     const aspect=GAME_W/GAME_H;
     let w=stageW, h=Math.floor(w/aspect);
     if(h>stageH){
@@ -7066,7 +7166,7 @@ function makeRuntime(){
     return spriteCanvas;
   }
   function palCacheKey(){ return String(palVersion); }
-  function percentScale(value){ const n=Number(value); if(!Number.isFinite(n)||n===0) return 1; return Math.max(0.01,Math.abs((n+100)/100))*(n<0?-1:1); }
+  function percentScale(value){ const n=Number(value); if(!Number.isFinite(n)||n===0) return 1; if(n>0) return Math.max(0.001,1+(n*0.09)); return Math.max(0.001,1+(n/100)); }
   function spr(fileOrIndex,x,y,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ drawInternalSpriteRuntime(ref,x,y,1,1,0,flip); clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,1,1,0,flip); clipPop(_cp); return; } clipPop(_cp); }
   function sspr(fileOrIndex,x,y,w,h,center=false,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const scaleX=percentScale(w), scaleY=percentScale(h); let dx=Number(x)||0, dy=Number(y)||0; if(center===true){ dx-=((sp.w*Math.abs(scaleX))-sp.w)/2; dy-=((sp.h*Math.abs(scaleY))-sp.h)/2; } drawInternalSpriteRuntime(ref,dx,dy,scaleX,scaleY,0,flip); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,percentScale(w),percentScale(h),0,flip); clipPop(_cp); return; } clipPop(_cp); }
   function r_spr(fileOrIndex,x,y,angle,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ drawInternalSpriteRuntime(ref,x,y,1,1,angle,flip); clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,1,1,angle,flip); clipPop(_cp); return; } clipPop(_cp); }
@@ -7381,9 +7481,9 @@ function wireUI(){
     view.gridMode=order[(idx+1+order.length)%order.length];
     drawSpriteEditor();
   });
-  const adjustSpriteLineWidth=(delta)=>{ state.spriteLineWidth=clamp((state.spriteLineWidth||1)+delta,1,16); const label=$("spriteLineWidthLabel"); if(label) label.textContent=String(state.spriteLineWidth); if(state.spriteLinePreview){ state.spriteLinePreview.width=state.spriteLineWidth; drawSpriteEditor(); } };
-  bindClick("spriteLineWidthMinusBtn",()=>adjustSpriteLineWidth(-1));
-  bindClick("spriteLineWidthPlusBtn",()=>adjustSpriteLineWidth(1));
+  const setSpriteLineWidth=value=>{ state.spriteLineWidth=clamp(parseInt(value,10)||1,1,16); const input=$("spriteLineWidthInput"); if(input) input.value=String(state.spriteLineWidth); if(state.spriteLinePreview){ state.spriteLinePreview.width=state.spriteLineWidth; drawSpriteEditor(); } };
+  bind("spriteLineWidthInput",'change',e=>setSpriteLineWidth(e.target.value));
+  bind("spriteLineWidthInput",'input',e=>setSpriteLineWidth(e.target.value));
   bindClick("spriteOnionBtn",()=>{ const order=["off","previousframe","nextframe"]; const idx=order.indexOf(String(state.spriteOnionMode||"off")); state.spriteOnionMode=order[(idx+1)%order.length]; updateSpriteOnionButton(); drawSpriteEditor(); });
   bindClick("spriteClearBtn",clearCurrentSpriteFrame); const adjustSpriteFolderFrames=(delta)=>{ const folder=currentSpriteFolder(); const n=Math.max(1,Math.min(26,folder.frames.length+delta)); if(n===folder.frames.length) return; while(folder.frames.length<n) folder.frames.push(makeSprite(currentSprite().w,currentSprite().h)); while(folder.frames.length>n){ const removedFrame=folder.frames[folder.frames.length-1]; if(!isSpriteFrameEmpty(removedFrame) && !confirm(`Remove frame ${spriteFrameName(folder.frames.length-1)}? This frame is not empty.`)) return; folder.frames.pop(); } invalidateEditorRenderCache(); state.currentSpriteFrame=Math.min(state.currentSpriteFrame, folder.frames.length-1); syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); }; bindClick("spriteFolderMinusBtn",()=>adjustSpriteFolderFrames(-1)); bindClick("spriteFolderPlusBtn",()=>adjustSpriteFolderFrames(1));
   bindClick("spriteAnimPreviewToggleBtn",()=>{ state.spriteAnimPreviewVisible=!(state.spriteAnimPreviewVisible!==false); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); });
@@ -7408,8 +7508,6 @@ function wireUI(){
   let soundDraw=false; bind("soundWaveCanvas",'pointerdown',e=>{ soundDraw=true; e.preventDefault(); writeWavePoint(e); }); bind("soundWaveCanvas",'pointermove',e=>{ if(soundDraw){ e.preventDefault(); writeWavePoint(e); }}); window.addEventListener('pointerup',()=>soundDraw=false);
   bindClick("addMusicBtn",()=>{ state.appProject.music.push(makeMusic()); state.currentMusicIndex=state.appProject.music.length-1; refreshMusicUI();  });
 
-  bind("musicLoopInput",'input',()=>{ updateCurrentMusicFromUI();  });
-  bindClick("musicBrowseBtn",()=>$("musicFileBrowseInput")?.click());
   bind("musicFileBrowseInput",'change',e=>{
     const input=e.target;
     const file=input?.files?.[0];
