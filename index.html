@@ -301,6 +301,9 @@
     .miniBtn{padding:4px 8px;font-size:11px;line-height:1;box-shadow:0 3px 0 var(--shadow)}
     #addCodeTabBtn,#deleteCodeTabBtn,#btnImportCodeFile{padding:4px 8px;font-size:11px;line-height:1}
     #mapRectBtn.rect-outline{background:transparent}
+    #mapCircBtn.circ-outline{background:transparent}
+    #spriteRectBtn.rect-outline{background:transparent}
+    #spriteCircBtn.circ-outline{background:transparent}
     body.dark-mode{--bg:#0f1220;--paper:#12182c;--panel:#1b2340;--panel2:#283256;--line:#5f6f98;--shadow:#070b17;--ink:#f6f1df;--accent:#ff6b8f;--accent2:#f7b267;--blue:#86b1ff;--green:#93de86;--cream:#344062;--danger:#ff8a9c;background:linear-gradient(180deg,#05070d 0 20px,#11172a 20px 100%)}
     body.dark-mode .topbar{background:linear-gradient(180deg,#4f618d,#39486c);box-shadow:inset 0 -3px 0 #222b46}
     body.dark-mode .brand{background:linear-gradient(180deg,#e55b7a,#8e3851);color:#fff8ef;text-shadow:2px 2px 0 #341521;box-shadow:0 4px 0 #2a1020}
@@ -327,6 +330,15 @@
     body.dark-mode .sidebar textarea{background:#10162a;color:var(--ink)}
     body.dark-mode .itemRow{background:linear-gradient(180deg,#2d3759,#1a213a);box-shadow:0 3px 0 #0f1528}
     body.dark-mode .tileBtn{background:linear-gradient(180deg,#2d3759,#1a213a);box-shadow:0 3px 0 #0f1528}
+    body.dark-mode .palBtn{box-shadow:0 3px 0 #0f1528}
+    body.dark-mode .strokeStepper{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 2px 0 #0f1528}
+    body.dark-mode .spritePanelPreview{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 3px 0 #0f1528}
+    body.dark-mode .spritePanelPreview canvas{background:
+      linear-gradient(45deg, rgba(244,241,227,.08) 25%, transparent 25%),
+      linear-gradient(-45deg, rgba(244,241,227,.08) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, rgba(244,241,227,.08) 75%),
+      linear-gradient(-45deg, transparent 75%, rgba(244,241,227,.08) 75%),
+      #10162a}
     body.dark-mode .canvasWrap{background:
       linear-gradient(45deg, rgba(244,241,227,.04) 25%, transparent 25%),
       linear-gradient(-45deg, rgba(244,241,227,.04) 25%, transparent 25%),
@@ -452,7 +464,7 @@
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="strokeStepper" title="Stroke size"><button class="uiBtn strokeStepperBtn" id="spriteLineWidthDownBtn" type="button" aria-label="Decrease stroke size">−</button><span class="strokeStepperValue" id="spriteLineWidthValue">1</span><button class="uiBtn strokeStepperBtn" id="spriteLineWidthUpBtn" type="button" aria-label="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewTopRow"><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><label class="animPreviewSpeed">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6"></label></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">▶️</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteRectBtn">Rect</button><button class="uiBtn" id="spriteCircBtn">Circ</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="strokeStepper" title="Stroke size"><button class="uiBtn strokeStepperBtn" id="spriteLineWidthDownBtn" type="button" aria-label="Decrease stroke size">−</button><span class="strokeStepperValue" id="spriteLineWidthValue">1</span><button class="uiBtn strokeStepperBtn" id="spriteLineWidthUpBtn" type="button" aria-label="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewTopRow"><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><label class="animPreviewSpeed">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6"></label></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">▶️</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div></div></div>
       </div>
     </div>
 
@@ -493,7 +505,7 @@
           <div class="pane"><h4>TILES</h4><div class="tilePalette" id="tilePalette"></div></div>
           <div class="pane"><h4>LAYERS</h4><div class="formRow"><button class="mbtn" id="addLayerBtn">Add Layer</button></div><div class="layerList" id="layerList"></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button><button class="uiBtn" id="mapPrevLayerBtn" aria-label="Previous layer">&lt;L</button><div class="docDesc" id="mapLayerLabel">Layer 1 / 1</div><button class="uiBtn" id="mapNextLayerBtn" aria-label="Next layer">L&gt;</button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button><button class="uiBtn" id="mapPrevLayerBtn" aria-label="Previous layer">&lt;L</button><div class="docDesc" id="mapLayerLabel">Layer 1 / 1</div><button class="uiBtn" id="mapNextLayerBtn" aria-label="Next layer">L&gt;</button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn" id="mapLineBtn">Line</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapCircBtn">Circ</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
       </div>
     </div>
 
@@ -995,7 +1007,7 @@ end
 `;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,mapShapePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
 const PRESET_PALETTE_PAGES = [
   ["#000000","#1d2b53","#7e2553","#008751","#ab5236","#5f574f","#c2c3c7","#fff1e8","#ff004d","#ffa300","#ffec27","#00e436","#29adff","#83769c","#ff77a8","#ffccaa"],
   ["#291814","#111d35","#422136","#125359","#742f29","#49333b","#a28879","#f3ef7d","#be1250","#ff6c24","#a8e72e","#00b543","#065ab5","#754665","#ff6e59","#ff9d81"],
@@ -1103,11 +1115,18 @@ function updateMapAnimToggleButton(){ const btn=$("mapAnimToggleBtn"); if(!btn) 
 function updateMapToolButtons(){
   $("mapDrawBtn")?.classList.toggle('active', state.mapTool==='draw');
   $("mapSelectBtn")?.classList.toggle('active', state.mapTool==='select');
+  $("mapLineBtn")?.classList.toggle('active', state.mapTool==='line');
   const rectBtn=$("mapRectBtn");
   if(rectBtn){
     rectBtn.classList.toggle('active', state.mapTool==='rectfill');
     rectBtn.classList.toggle('rect-outline', state.mapTool==='rect');
     rectBtn.textContent=state.mapTool==='rectfill'?'Rect Fill':'Rect';
+  }
+  const circBtn=$("mapCircBtn");
+  if(circBtn){
+    circBtn.classList.toggle('active', state.mapTool==='circfill');
+    circBtn.classList.toggle('circ-outline', state.mapTool==='circ');
+    circBtn.textContent=state.mapTool==='circfill'?'Circ Fill':'Circ';
   }
   $("mapPanBtn")?.classList.toggle('active', state.mapTool==='pan');
   $("mapFillBtn")?.classList.toggle('active', state.mapTool==='fill');
@@ -6193,9 +6212,21 @@ function refreshPaletteUI(){
 }
 function setSpriteTool(name){
   state.spriteTool=name||null;
-  ["spriteDrawBtn","spriteLineBtn","spriteEraseBtn","spriteFillBtn","spritePanBtn"].forEach(id=>$(id)?.classList.remove("active"));
+  ["spriteDrawBtn","spriteLineBtn","spriteRectBtn","spriteCircBtn","spriteEraseBtn","spriteFillBtn","spritePanBtn"].forEach(id=>$(id)?.classList.remove("active"));
   if(state.spriteTool==="draw") $("spriteDrawBtn")?.classList.add("active");
   if(state.spriteTool==="line") $("spriteLineBtn")?.classList.add("active");
+  const rectBtn=$("spriteRectBtn");
+  if(rectBtn){
+    rectBtn.classList.toggle("active", state.spriteTool==="rectfill");
+    rectBtn.classList.toggle("rect-outline", state.spriteTool==="rect");
+    rectBtn.textContent=state.spriteTool==="rectfill"?"Rect Fill":"Rect";
+  }
+  const circBtn=$("spriteCircBtn");
+  if(circBtn){
+    circBtn.classList.toggle("active", state.spriteTool==="circfill");
+    circBtn.classList.toggle("circ-outline", state.spriteTool==="circ");
+    circBtn.textContent=state.spriteTool==="circfill"?"Circ Fill":"Circ";
+  }
   if(state.spriteTool==="erase"||state.spriteTool==="erase-fill"){
     const eraseBtn=$("spriteEraseBtn");
     eraseBtn?.classList.add("active");
@@ -6521,7 +6552,7 @@ function getSpriteGridStep(){
   return Math.max(1,parseInt(mode,10)||1);
 }
 function getSpriteCellRect(x,y,metrics=getSpriteCanvasMetrics()){ const {baseX,baseY,z}=metrics; const view=currentSpriteView(); return {rx:baseX+view.offsetX+x*z, ry:baseY+view.offsetY+y*z, size:z}; }
-function drawSpriteEditor(){ ensureProjectData(); const canvas=$("spriteCanvas"), ctx=canvas.getContext('2d'); const metrics=getSpriteCanvasMetrics(); const {sprite:s, width:cw, height:ch}=metrics; canvas.width=cw; canvas.height=ch; ctx.clearRect(0,0,cw,ch); const isDark=document.body.classList.contains("dark-mode"); ctx.fillStyle=isDark?"#1a223c":"#f7eed7"; ctx.fillRect(0,0,cw,ch); const checkerA=isDark?"rgba(255,255,255,.05)":"rgba(0,0,0,.05)"; const checkerB=isDark?"rgba(255,255,255,.02)":"rgba(255,255,255,.04)"; const checkerSize=24; for(let y=0;y<ch;y+=checkerSize){ for(let x=0;x<cw;x+=checkerSize){ ctx.fillStyle=((x/checkerSize + y/checkerSize)%2===0)?checkerA:checkerB; ctx.fillRect(x,y,checkerSize,checkerSize); } } const gridStep=getSpriteGridStep(); const showGrid=gridStep>0; const onionMode=String(state.spriteOnionMode||"off"); if(onionMode!=="off"){ const folder=currentSpriteFolder(); const offset=onionMode==="nextframe"?1:-1; const onionIndex=((state.currentSpriteFrame+offset)%folder.frames.length+folder.frames.length)%folder.frames.length; const onion=folder.frames[onionIndex]; if(onion){ ctx.save(); ctx.globalAlpha=0.35; for(let y=0;y<onion.h;y++) for(let x=0;x<onion.w;x++){ const p=onion.pixels[y][x]; const {rx,ry,size}=getSpriteCellRect(x,y,metrics); if(p>=0&&state.appProject.palette[p]){ ctx.fillStyle=state.appProject.palette[p]; ctx.fillRect(rx,ry,size,size); } } ctx.restore(); } } for(let y=0;y<s.h;y++) for(let x=0;x<s.w;x++){ const p=s.pixels[y][x]; const {rx,ry,size}=getSpriteCellRect(x,y,metrics); if(p>=0&&state.appProject.palette[p]){ ctx.fillStyle=state.appProject.palette[p]; const inset=(showGrid && gridStep===1 && size>4)?1:0; ctx.fillRect(rx+inset,ry+inset,Math.max(1,size-inset*2),Math.max(1,size-inset*2)); } } if(showGrid){ const size=getSpriteDisplayZoom(); const totalW=s.w*size; const totalH=s.h*size; const topLeft=getSpriteCellRect(0,0,metrics); const lineW=Math.max(1,Math.min(2,size*0.08)); ctx.save(); ctx.strokeStyle=isDark?"rgba(199,208,232,.32)":"rgba(80,50,20,.2)"; ctx.lineWidth=lineW; for(let gy=0;gy<=s.h;gy+=gridStep){ const y=topLeft.ry+gy*size; ctx.beginPath(); ctx.moveTo(topLeft.rx,y+0.5); ctx.lineTo(topLeft.rx+totalW,y+0.5); ctx.stroke(); } for(let gx=0;gx<=s.w;gx+=gridStep){ const x=topLeft.rx+gx*size; ctx.beginPath(); ctx.moveTo(x+0.5,topLeft.ry); ctx.lineTo(x+0.5,topLeft.ry+totalH); ctx.stroke(); } ctx.restore(); } const preview=state.spriteLinePreview; if(preview){ ctx.save(); ctx.globalAlpha=0.7; const color=preview.mode==="erase"?"rgba(24,16,16,.45)":(state.appProject.palette[state.selectedPaletteIndex]||"#ffffff"); ctx.fillStyle=color; forEachLinePoint(preview.start.x,preview.start.y,preview.end.x,preview.end.y,(x,y)=>{ const w=Math.max(1,preview.width|0), left=Math.floor((w-1)/2), right=Math.ceil((w-1)/2); for(let yy=y-left;yy<=y+right;yy++) for(let xx=x-left;xx<=x+right;xx++){ if(xx<0||yy<0||xx>=s.w||yy>=s.h) continue; const {rx,ry,size}=getSpriteCellRect(xx,yy,metrics); ctx.fillRect(rx,ry,size,size); }}); ctx.restore(); } $("spriteGridBtn")?.classList.toggle("active", showGrid); drawSpriteAnimPreview(); drawSpritePanelPreview(); }
+function drawSpriteEditor(){ ensureProjectData(); const canvas=$("spriteCanvas"), ctx=canvas.getContext('2d'); const metrics=getSpriteCanvasMetrics(); const {sprite:s, width:cw, height:ch}=metrics; canvas.width=cw; canvas.height=ch; ctx.clearRect(0,0,cw,ch); const isDark=document.body.classList.contains("dark-mode"); ctx.fillStyle=isDark?"#1a223c":"#f7eed7"; ctx.fillRect(0,0,cw,ch); const checkerA=isDark?"rgba(255,255,255,.05)":"rgba(0,0,0,.05)"; const checkerB=isDark?"rgba(255,255,255,.02)":"rgba(255,255,255,.04)"; const checkerSize=24; for(let y=0;y<ch;y+=checkerSize){ for(let x=0;x<cw;x+=checkerSize){ ctx.fillStyle=((x/checkerSize + y/checkerSize)%2===0)?checkerA:checkerB; ctx.fillRect(x,y,checkerSize,checkerSize); } } const gridStep=getSpriteGridStep(); const showGrid=gridStep>0; const onionMode=String(state.spriteOnionMode||"off"); if(onionMode!=="off"){ const folder=currentSpriteFolder(); const offset=onionMode==="nextframe"?1:-1; const onionIndex=((state.currentSpriteFrame+offset)%folder.frames.length+folder.frames.length)%folder.frames.length; const onion=folder.frames[onionIndex]; if(onion){ ctx.save(); ctx.globalAlpha=0.35; for(let y=0;y<onion.h;y++) for(let x=0;x<onion.w;x++){ const p=onion.pixels[y][x]; const {rx,ry,size}=getSpriteCellRect(x,y,metrics); if(p>=0&&state.appProject.palette[p]){ ctx.fillStyle=state.appProject.palette[p]; ctx.fillRect(rx,ry,size,size); } } ctx.restore(); } } for(let y=0;y<s.h;y++) for(let x=0;x<s.w;x++){ const p=s.pixels[y][x]; const {rx,ry,size}=getSpriteCellRect(x,y,metrics); if(p>=0&&state.appProject.palette[p]){ ctx.fillStyle=state.appProject.palette[p]; const inset=(showGrid && gridStep===1 && size>4)?1:0; ctx.fillRect(rx+inset,ry+inset,Math.max(1,size-inset*2),Math.max(1,size-inset*2)); } } if(showGrid){ const size=getSpriteDisplayZoom(); const totalW=s.w*size; const totalH=s.h*size; const topLeft=getSpriteCellRect(0,0,metrics); const lineW=Math.max(1,Math.min(2,size*0.08)); ctx.save(); ctx.strokeStyle=isDark?"rgba(199,208,232,.32)":"rgba(80,50,20,.2)"; ctx.lineWidth=lineW; for(let gy=0;gy<=s.h;gy+=gridStep){ const y=topLeft.ry+gy*size; ctx.beginPath(); ctx.moveTo(topLeft.rx,y+0.5); ctx.lineTo(topLeft.rx+totalW,y+0.5); ctx.stroke(); } for(let gx=0;gx<=s.w;gx+=gridStep){ const x=topLeft.rx+gx*size; ctx.beginPath(); ctx.moveTo(x+0.5,topLeft.ry); ctx.lineTo(x+0.5,topLeft.ry+totalH); ctx.stroke(); } ctx.restore(); } const preview=state.spriteLinePreview; if(preview){ ctx.save(); const color=preview.mode==="erase"?"rgba(24,16,16,.92)":(state.appProject.palette[state.selectedPaletteIndex]||"#ffffff"); ctx.fillStyle=color; forEachShapePoint(preview.kind||'line',preview.start,preview.end,!!preview.filled,(x,y)=>{ const w=Math.max(1,preview.width|0), left=Math.floor((w-1)/2), right=Math.ceil((w-1)/2); for(let yy=y-left;yy<=y+right;yy++) for(let xx=x-left;xx<=x+right;xx++){ if(xx<0||yy<0||xx>=s.w||yy>=s.h) continue; const {rx,ry,size}=getSpriteCellRect(xx,yy,metrics); ctx.fillRect(rx,ry,size,size); }}); ctx.restore(); } $("spriteGridBtn")?.classList.toggle("active", showGrid); drawSpriteAnimPreview(); drawSpritePanelPreview(); }
 function drawSpriteAnimPreview(){
   const c=$("spriteAnimPreviewCanvas"); if(!c) return;
   const bar=$("animPreviewBar");
@@ -6539,6 +6570,9 @@ function drawSpriteAnimPreview(){
 function spriteFloodFill(x,y,from,to){ const s=currentSprite(); if(x<0||y<0||x>=s.w||y>=s.h||from===to) return; const stack=[[x,y]]; while(stack.length){ const [cx,cy]=stack.pop(); if(cx<0||cy<0||cx>=s.w||cy>=s.h) continue; if(s.pixels[cy][cx]!==from) continue; s.pixels[cy][cx]=to; stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]); } }
 function spriteCoordsFromEvent(e){ const canvas=$("spriteCanvas"), rect=canvas.getBoundingClientRect(); const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height; const px=(e.clientX-rect.left)*scaleX, py=(e.clientY-rect.top)*scaleY; const {baseX,baseY,z}=getSpriteCanvasMetrics(); const view=currentSpriteView(); return {x:Math.floor((px-(baseX+view.offsetX))/z), y:Math.floor((py-(baseY+view.offsetY))/z)}; }
 function forEachLinePoint(x0,y0,x1,y1,fn){ let dx=Math.abs(x1-x0), sx=x0<x1?1:-1, dy=-Math.abs(y1-y0), sy=y0<y1?1:-1, err=dx+dy; while(true){ fn(x0,y0); if(x0===x1 && y0===y1) break; const e2=2*err; if(e2>=dy){ err+=dy; x0+=sx; } if(e2<=dx){ err+=dx; y0+=sy; } } }
+function forEachRectPoint(start,end,filled,fn){ const minX=Math.min(start.x,end.x), maxX=Math.max(start.x,end.x), minY=Math.min(start.y,end.y), maxY=Math.max(start.y,end.y); for(let y=minY;y<=maxY;y++) for(let x=minX;x<=maxX;x++){ if(!filled && x>minX && x<maxX && y>minY && y<maxY) continue; fn(x,y); } }
+function forEachCirclePoint(start,end,filled,fn){ const minX=Math.min(start.x,end.x), maxX=Math.max(start.x,end.x), minY=Math.min(start.y,end.y), maxY=Math.max(start.y,end.y); const cx=(minX+maxX)/2, cy=(minY+maxY)/2; const rx=Math.max(0.5,(maxX-minX+1)/2), ry=Math.max(0.5,(maxY-minY+1)/2); for(let y=minY;y<=maxY;y++) for(let x=minX;x<=maxX;x++){ const nx=(x+0.5-cx)/rx, ny=(y+0.5-cy)/ry; const dist=(nx*nx)+(ny*ny); if(filled){ if(dist<=1) fn(x,y); }else if(dist<=1.08 && dist>=0.68) fn(x,y); } }
+function forEachShapePoint(kind,start,end,filled,fn){ if(!start||!end) return; if(kind==='rect') return forEachRectPoint(start,end,filled,fn); if(kind==='circ') return forEachCirclePoint(start,end,filled,fn); return forEachLinePoint(start.x,start.y,end.x,end.y,fn); }
 function paintSpriteBrush(x,y,mode,width=Math.max(1,state.spriteLineWidth||1)){
   const s=currentSprite();
   const w=Math.max(1,width|0);
@@ -6557,7 +6591,12 @@ function paintSpriteBrush(x,y,mode,width=Math.max(1,state.spriteLineWidth||1)){
 }
 function applySpriteLine(start,end,mode,width=Math.max(1,state.spriteLineWidth||1)){
   let changed=false;
-  forEachLinePoint(start.x,start.y,end.x,end.y,(x,y)=>{ if(paintSpriteBrush(x,y,mode,width)) changed=true; });
+  forEachShapePoint('line',start,end,false,(x,y)=>{ if(paintSpriteBrush(x,y,mode,width)) changed=true; });
+  return changed;
+}
+function applySpriteShape(start,end,mode,kind,filled,width=Math.max(1,state.spriteLineWidth||1)){
+  let changed=false;
+  forEachShapePoint(kind,start,end,filled,(x,y)=>{ if(paintSpriteBrush(x,y,mode,width)) changed=true; });
   return changed;
 }
 function applySpriteToolAtEvent(e,lastPoint){
@@ -6821,6 +6860,15 @@ function drawMapEditor(){
     drawHandle(boxX,boxY+boxH);
     drawHandle(boxX+boxW,boxY+boxH);
   }
+  const shapePreview=state.mapShapePreview;
+  if(shapePreview){
+    const isDark=document.body.classList.contains("dark-mode");
+    ctx.fillStyle=isDark?'rgba(255,232,167,.95)':'rgba(179,31,36,.95)';
+    forEachShapePoint(shapePreview.kind||'line',shapePreview.start,shapePreview.end,!!shapePreview.filled,(x,y)=>{
+      if(x<0||y<0||x>=mw||y>=mh) return;
+      ctx.fillRect(x*tw,y*th,tw,th);
+    });
+  }
   if(state.mapGridVisible!==false){
     const isDark=document.body.classList.contains("dark-mode");
     ctx.strokeStyle=isDark?"rgba(199,208,232,.26)":"rgba(80,50,20,.2)"; ctx.lineWidth=1;
@@ -6880,17 +6928,31 @@ function combineMapSelection(){
 function paintMapPoint(tx,ty,tileId=state.selectedTileId){ if(tx<0||ty<0||tx>=state.appProject.project.map_w||ty>=state.appProject.project.map_h) return false; const lay=currentLayers()[state.currentLayerIndex]; if(lay.data[ty][tx]===tileId) return false; lay.data[ty][tx]=tileId; return true; }
 function paintMapAtEvent(e,lastPoint,mode='paint'){ const {tx,ty}=mapCoordsFromEvent(e); if(tx<0||ty<0||tx>=state.appProject.project.map_w||ty>=state.appProject.project.map_h) return {tx,ty}; const lay=currentLayers()[state.currentLayerIndex]; const tileId=mode==='erase'?0:state.selectedTileId; let changed=false; if(mode!=='erase' && state.mapTool==='fill'){ const target=lay.data[ty][tx]; if(target===tileId) return {tx,ty}; floodFillMap(tx,ty,target,tileId); changed=true; } else { const start=lastPoint||{tx,ty}; forEachLinePoint(start.tx,start.ty,tx,ty,(x,y)=>{ if(paintMapPoint(x,y,tileId)) changed=true; }); } if(changed){ drawMapEditor(); scheduleProjectSync(); } return {tx,ty}; }
 function paintMapRect(start,end,filled){
-  if(!start||!end) return;
+  if(!start||!end) return false;
   const lay=currentLayers()[state.currentLayerIndex];
   const tileId=state.selectedTileId;
-  const minX=Math.max(0,Math.min(start.tx,end.tx)), maxX=Math.min(state.appProject.project.map_w-1,Math.max(start.tx,end.tx));
-  const minY=Math.max(0,Math.min(start.ty,end.ty)), maxY=Math.min(state.appProject.project.map_h-1,Math.max(start.ty,end.ty));
   let changed=false;
-  for(let y=minY;y<=maxY;y++) for(let x=minX;x<=maxX;x++){
-    if(!filled && x>minX && x<maxX && y>minY && y<maxY) continue;
-    if(lay.data[y][x]!==tileId){ lay.data[y][x]=tileId; changed=true; }
-  }
+  forEachShapePoint('rect',{x:start.tx,y:start.ty},{x:end.tx,y:end.ty},filled,(x,y)=>{ if(!lay.data[y]||lay.data[y][x]==null) return; if(lay.data[y][x]!==tileId){ lay.data[y][x]=tileId; changed=true; } });
   if(changed){ drawMapEditor(); scheduleProjectSync(); }
+  return changed;
+}
+function paintMapLine(start,end){
+  if(!start||!end) return false;
+  const lay=currentLayers()[state.currentLayerIndex];
+  const tileId=state.selectedTileId;
+  let changed=false;
+  forEachShapePoint('line',{x:start.tx,y:start.ty},{x:end.tx,y:end.ty},false,(x,y)=>{ if(!lay.data[y]||lay.data[y][x]==null) return; if(lay.data[y][x]!==tileId){ lay.data[y][x]=tileId; changed=true; } });
+  if(changed){ drawMapEditor(); scheduleProjectSync(); }
+  return changed;
+}
+function paintMapCircle(start,end,filled){
+  if(!start||!end) return false;
+  const lay=currentLayers()[state.currentLayerIndex];
+  const tileId=state.selectedTileId;
+  let changed=false;
+  forEachShapePoint('circ',{x:start.tx,y:start.ty},{x:end.tx,y:end.ty},filled,(x,y)=>{ if(!lay.data[y]||lay.data[y][x]==null) return; if(lay.data[y][x]!==tileId){ lay.data[y][x]=tileId; changed=true; } });
+  if(changed){ drawMapEditor(); scheduleProjectSync(); }
+  return changed;
 }
 function midiToHz(n){ return 440*Math.pow(2,(n-69)/12); }
 async function previewSound(index,loop=false){ const snd=state.appProject.sounds[index]; if(!snd) return; const ac=ctxAudio(); try{ await ac.resume(); }catch{} const now=ac.currentTime; const len=Math.max(0.05,snd.length); const steps=Math.max(1,snd.wavetable.length); const stepDur=len/steps; if(snd.wave==="noise"){ const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ const seq=snd.wavetable[Math.floor((i/data.length)*steps)]||0; data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65); } const src=ac.createBufferSource(); const gain=ac.createGain(); src.buffer=buffer; src.loop=!!loop; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(snd.volume,now+snd.attack); gain.gain.linearRampToValueAtTime(snd.volume*snd.sustain,now+snd.attack+snd.decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+snd.release); src.connect(gain).connect(ac.destination); src.start(now); if(!loop) src.stop(now+len+snd.release+0.02); return; }
@@ -7656,7 +7718,9 @@ function wireUI(){
   bindClick("mapDeleteSelectedBtn",()=>deleteMapSelection());
   bindClick("mapPrevLayerBtn",()=>{ const layers=currentLayers(); if(!layers.length) return; state.currentLayerIndex=(state.currentLayerIndex-1+layers.length)%layers.length; clearMapSelection(); refreshLayerList(); drawMapEditor(); });
   bindClick("mapNextLayerBtn",()=>{ const layers=currentLayers(); if(!layers.length) return; state.currentLayerIndex=(state.currentLayerIndex+1)%layers.length; clearMapSelection(); refreshLayerList(); drawMapEditor(); });
+  bindClick("mapLineBtn",()=>{ state.mapTool = state.mapTool==='line'?null:'line'; updateMapToolButtons(); });
   bindClick("mapRectBtn",()=>{ if(state.mapTool==='rect') state.mapTool='rectfill'; else if(state.mapTool==='rectfill') state.mapTool=null; else state.mapTool='rect'; updateMapToolButtons(); });
+  bindClick("mapCircBtn",()=>{ if(state.mapTool==='circ') state.mapTool='circfill'; else if(state.mapTool==='circfill') state.mapTool=null; else state.mapTool='circ'; updateMapToolButtons(); });
   bindClick("mapPanBtn",()=>{ state.mapTool = state.mapTool==='pan'?null:'pan'; updateMapToolButtons(); });
   bindClick("mapFillBtn",()=>{ state.mapTool = state.mapTool==='fill'?null:'fill'; updateMapToolButtons(); });
   bindClick("mapAnimToggleBtn",()=>{ state.mapAnimPlaying=!state.mapAnimPlaying; if(!state.mapAnimPlaying) state.mapAnimPausedAt=performance.now(); updateMapAnimToggleButton(); drawMapEditor(); });
@@ -7693,19 +7757,26 @@ function wireUI(){
       drawMapEditor();
       return;
     }
-    if(state.mapTool==='rect' || state.mapTool==='rectfill'){ mapRectStart=mapCoordsFromEvent(e); return; }
+    if(e.button===0 && (state.mapTool==='line' || state.mapTool==='rect' || state.mapTool==='rectfill' || state.mapTool==='circ' || state.mapTool==='circfill')){ mapRectStart=mapCoordsFromEvent(e); state.mapShapePreview={kind:state.mapTool.startsWith('circ')?'circ':(state.mapTool.startsWith('rect')?'rect':'line'),filled:state.mapTool.endsWith('fill'),start:{x:mapRectStart.tx,y:mapRectStart.ty},end:{x:mapRectStart.tx,y:mapRectStart.ty}}; drawMapEditor(); return; }
     painting=true; mapPaintMode=e.button===2?'erase':'paint'; mapPaintLast=paintMapAtEvent(e, undefined, mapPaintMode);
   });
   window.addEventListener('pointerup',e=>{
-    if((state.mapTool==='rect' || state.mapTool==='rectfill') && mapRectStart && e.button===0) paintMapRect(mapRectStart,mapCoordsFromEvent(e),state.mapTool==='rectfill');
-    painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint'; mapRectStart=null; mapSelectionStart=null; mapSelectionBaseCells=null;
+    if(mapRectStart && e.button===0){
+      const end=mapCoordsFromEvent(e);
+      if(state.mapTool==='line') paintMapLine(mapRectStart,end);
+      else if(state.mapTool==='rect' || state.mapTool==='rectfill') paintMapRect(mapRectStart,end,state.mapTool==='rectfill');
+      else if(state.mapTool==='circ' || state.mapTool==='circfill') paintMapCircle(mapRectStart,end,state.mapTool==='circfill');
+    }
+    painting=false; mapPanning=false; mapPaintLast=null; mapPaintMode='paint'; mapRectStart=null; mapSelectionStart=null; mapSelectionBaseCells=null; state.mapShapePreview=null; drawMapEditor();
   });
-  bind("mapCanvasWrap",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(state.mapTool==='select' && mapSelectionStart){ updateMapSelectionFromRange(mapSelectionStart,mapCoordsFromEvent(e),mapSelectionBaseCells||[]); drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
+  bind("mapCanvasWrap",'pointermove',e=>{ e.preventDefault(); if(mapPanning){ state.mapOffsetX += e.clientX-mapLast.x; state.mapOffsetY += e.clientY-mapLast.y; mapLast={x:e.clientX,y:e.clientY}; drawMapEditor(); return; } if(state.mapTool==='select' && mapSelectionStart){ updateMapSelectionFromRange(mapSelectionStart,mapCoordsFromEvent(e),mapSelectionBaseCells||[]); drawMapEditor(); return; } if(mapRectStart && state.mapShapePreview){ const p=mapCoordsFromEvent(e); state.mapShapePreview.end={x:p.tx,y:p.ty}; drawMapEditor(); return; } if(painting && (state.mapTool!=='fill' || mapPaintMode==='erase')) mapPaintLast=paintMapAtEvent(e,mapPaintLast,mapPaintMode); });
   bind("mapCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomMapAtPoint((state.mapZoom||1)+(e.deltaY<0?0.05:-0.05), e.clientX, e.clientY); },{passive:false});
   bindClick("addSpriteBtn",()=>{ state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]}); invalidateEditorRenderCache(); selectSpriteFolder(state.appProject.spriteFolders.length-1); });
   bindClick("applySpriteSizeBtn",()=>{ const s=currentSprite(); const nw=Math.max(1,parseInt($("spriteWInput")?.value||s.w,10)); const nh=Math.max(1,parseInt($("spriteHInput")?.value||s.h,10)); pushSpriteHistory(); const newPixels=[]; for(let y=0;y<nh;y++){ const row=[]; for(let x=0;x<nw;x++) row.push((s.pixels[y]&&s.pixels[y][x]!=null)?s.pixels[y][x]:-1); newPixels.push(row); } s.w=nw; s.h=nh; s.pixels=newPixels; invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); });
   bindClick("spriteDrawBtn",()=>setSpriteTool(state.spriteTool==='draw'?null:'draw'));
   bindClick("spriteLineBtn",()=>setSpriteTool(state.spriteTool==='line'?null:'line'));
+  bindClick("spriteRectBtn",()=>{ if(state.spriteTool==='rect') setSpriteTool('rectfill'); else if(state.spriteTool==='rectfill') setSpriteTool(null); else setSpriteTool('rect'); });
+  bindClick("spriteCircBtn",()=>{ if(state.spriteTool==='circ') setSpriteTool('circfill'); else if(state.spriteTool==='circfill') setSpriteTool(null); else setSpriteTool('circ'); });
   bindClick("spriteEraseBtn",()=>{
     if(state.spriteTool==='erase') setSpriteTool('erase-fill');
     else if(state.spriteTool==='erase-fill') setSpriteTool('erase');
@@ -7752,7 +7823,7 @@ function wireUI(){
   bind("paletteColorInput",'input',()=>{ state.appProject.palette[state.selectedPaletteIndex]=$("paletteColorInput")?.value||'#ffffff'; invalidateEditorRenderCache(); refreshPaletteUI(); refreshEdgePalette(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); });
   bindClick("removePaletteColorBtn",()=>{ if(state.appProject.palette.length<=1) return; const removed=state.selectedPaletteIndex; state.appProject.palette.splice(removed,1); invalidateEditorRenderCache(); state.selectedPaletteIndex=Math.max(0,Math.min(state.selectedPaletteIndex,state.appProject.palette.length-1)); state.appProject.spriteFolders.forEach(folder=>folder.frames.forEach(sp=>{ for(let y=0;y<sp.h;y++) for(let x=0;x<sp.w;x++){ const p=sp.pixels[y][x]; if(p===removed) sp.pixels[y][x]=-1; else if(p>removed) sp.pixels[y][x]=p-1; } })); refreshPaletteUI(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); });
   const zoomSpriteAtPoint=(nextZoom,clientX,clientY)=>{ const canvas=$("spriteCanvas"); const rect=canvas.getBoundingClientRect(); const px=(clientX-rect.left)*(canvas.width/rect.width); const py=(clientY-rect.top)*(canvas.height/rect.height); const {baseX,baseY}=getSpriteCanvasMetrics(); const view=currentSpriteView(); const oldZoom=getSpriteDisplayZoom(); const worldX=(px-(baseX+view.offsetX))/oldZoom; const worldY=(py-(baseY+view.offsetY))/oldZoom; view.zoom=clamp(Math.round(nextZoom),1,64); const {baseX:nextBaseX,baseY:nextBaseY}=getSpriteCanvasMetrics(); view.offsetX=px-nextBaseX-worldX*view.zoom; view.offsetY=py-nextBaseY-worldY*view.zoom; drawSpriteEditor(); };
-  let spritePainting=false, spritePanning=false, lastPan={x:0,y:0}, spritePaintLast=null, spritePointerMode='tool', spriteLineStart=null; bind("spriteCanvasWrap",'contextmenu',e=>e.preventDefault()); bind("spriteCanvasWrap",'pointerdown',e=>{ e.preventDefault(); spritePointerMode=e.button===1?'pan':(e.button===2?'erase':'tool'); if(spritePointerMode==='pan' || state.spriteTool==='pan'){ spritePanning=true; lastPan.x=e.clientX; lastPan.y=e.clientY; return; } if(e.button===0 && !state.spriteTool){ toast('Select a sprite tool first.'); return; } const point=spriteCoordsFromEvent(e); if(state.spriteTool==='line' && spritePointerMode!=='erase'){ spriteLineStart=point; state.spriteLinePreview={start:point,end:point,mode:'draw',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } if(state.spriteTool==='line' && spritePointerMode==='erase'){ spriteLineStart=point; state.spriteLinePreview={start:point,end:point,mode:'erase',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } spritePainting=true; if(state.spriteTool!=='fill'&&state.spriteTool!=='erase-fill' || spritePointerMode==='erase') pushSpriteHistory(); if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e); }); bind("spriteCanvasWrap",'pointermove',e=>{ e.preventDefault(); if(spritePanning){ const view=currentSpriteView(); view.offsetX += e.clientX-lastPan.x; view.offsetY += e.clientY-lastPan.y; lastPan.x=e.clientX; lastPan.y=e.clientY; drawSpriteEditor(); return; } if(spriteLineStart){ const point=spriteCoordsFromEvent(e); state.spriteLinePreview={start:spriteLineStart,end:point,mode:spritePointerMode==='erase'?'erase':'draw',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } if(spritePainting && (state.spriteTool!=='fill'&&state.spriteTool!=='erase-fill' || spritePointerMode==='erase')){ if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); } }); ['pointerup','pointercancel'].forEach(ev=>window.addEventListener(ev,e=>{ if(!spritePainting && !spritePanning && !spriteLineStart) return; e.preventDefault(); if(spriteLineStart){ const end=spriteCoordsFromEvent(e); const mode=spritePointerMode==='erase'?'erase':'draw'; pushSpriteHistory(); if(applySpriteLine(spriteLineStart,end,mode,Math.max(1,state.spriteLineWidth||1))){ invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); } } spritePainting=false; spritePanning=false; spritePaintLast=null; spritePointerMode='tool'; spriteLineStart=null; state.spriteLinePreview=null; drawSpriteEditor(); })); bind("spriteCanvasWrap",'touchmove',e=>e.preventDefault(),{passive:false}); bind("spriteCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomSpriteAtPoint((getSpriteDisplayZoom()||1)+(e.deltaY<0?2:-2), e.clientX, e.clientY); },{passive:false});
+  let spritePainting=false, spritePanning=false, lastPan={x:0,y:0}, spritePaintLast=null, spritePointerMode='tool', spriteLineStart=null; bind("spriteCanvasWrap",'contextmenu',e=>e.preventDefault()); bind("spriteCanvasWrap",'pointerdown',e=>{ e.preventDefault(); spritePointerMode=e.button===1?'pan':(e.button===2?'erase':'tool'); if(spritePointerMode==='pan' || state.spriteTool==='pan'){ spritePanning=true; lastPan.x=e.clientX; lastPan.y=e.clientY; return; } if(e.button===0 && !state.spriteTool){ toast('Select a sprite tool first.'); return; } const point=spriteCoordsFromEvent(e); const shapeKind=(state.spriteTool==='line')?'line':(state.spriteTool==='rect'||state.spriteTool==='rectfill')?'rect':(state.spriteTool==='circ'||state.spriteTool==='circfill')?'circ':null; if(shapeKind){ spriteLineStart=point; state.spriteLinePreview={kind:shapeKind,filled:state.spriteTool.endsWith('fill'),start:point,end:point,mode:spritePointerMode==='erase'?'erase':'draw',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } spritePainting=true; if(state.spriteTool!=='fill'&&state.spriteTool!=='erase-fill' || spritePointerMode==='erase') pushSpriteHistory(); if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e); }); bind("spriteCanvasWrap",'pointermove',e=>{ e.preventDefault(); if(spritePanning){ const view=currentSpriteView(); view.offsetX += e.clientX-lastPan.x; view.offsetY += e.clientY-lastPan.y; lastPan.x=e.clientX; lastPan.y=e.clientY; drawSpriteEditor(); return; } if(spriteLineStart){ const point=spriteCoordsFromEvent(e); state.spriteLinePreview={...(state.spriteLinePreview||{}),start:spriteLineStart,end:point,mode:spritePointerMode==='erase'?'erase':'draw',width:Math.max(1,state.spriteLineWidth||1)}; drawSpriteEditor(); return; } if(spritePainting && (state.spriteTool!=='fill'&&state.spriteTool!=='erase-fill' || spritePointerMode==='erase')){ if(spritePointerMode==='erase'){ const prev=state.spriteTool; setSpriteTool('erase'); spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); setSpriteTool(prev); } else spritePaintLast=applySpriteToolAtEvent(e,spritePaintLast); } }); ['pointerup','pointercancel'].forEach(ev=>window.addEventListener(ev,e=>{ if(!spritePainting && !spritePanning && !spriteLineStart) return; e.preventDefault(); if(spriteLineStart){ const end=spriteCoordsFromEvent(e); const mode=spritePointerMode==='erase'?'erase':'draw'; const kind=state.spriteLinePreview?.kind||'line'; const filled=!!state.spriteLinePreview?.filled; pushSpriteHistory(); const applied=kind==='line'?applySpriteLine(spriteLineStart,end,mode,Math.max(1,state.spriteLineWidth||1)):applySpriteShape(spriteLineStart,end,mode,kind,filled,Math.max(1,state.spriteLineWidth||1)); if(applied){ invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); drawMapEditor(); runtime.syncProject(state.appProject); } } spritePainting=false; spritePanning=false; spritePaintLast=null; spritePointerMode='tool'; spriteLineStart=null; state.spriteLinePreview=null; drawSpriteEditor(); })); bind("spriteCanvasWrap",'touchmove',e=>e.preventDefault(),{passive:false}); bind("spriteCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomSpriteAtPoint((getSpriteDisplayZoom()||1)+(e.deltaY<0?2:-2), e.clientX, e.clientY); },{passive:false});
   bindClick("addSoundBtn",()=>{ state.appProject.sounds.push(makeSound()); state.currentSoundIndex=state.appProject.sounds.length-1; refreshSoundUI(); drawSoundWaveCanvas(); });
   ["soundWaveInput","soundLengthInput","soundVolumeInput","soundPitchInput","soundAttackInput","soundDecayInput","soundSustainInput","soundReleaseInput"].forEach(id=>bind(id,'input',()=>{ updateCurrentSoundFromUI(); drawSoundWaveCanvas(); })); bindClick("previewSoundBtn",async()=>{ try{ await ctxAudio().resume(); }catch{} previewSound(state.currentSoundIndex,false); });
   let soundDraw=false; bind("soundWaveCanvas",'pointerdown',e=>{ soundDraw=true; e.preventDefault(); writeWavePoint(e); }); bind("soundWaveCanvas",'pointermove',e=>{ if(soundDraw){ e.preventDefault(); writeWavePoint(e); }}); window.addEventListener('pointerup',()=>soundDraw=false);
