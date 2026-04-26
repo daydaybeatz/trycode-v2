@@ -6949,13 +6949,30 @@ function drawMapEditor(){
       ctx.fillRect(x*tw,y*th,tw,th);
     });
   }
+  ctx.restore();
   if(state.mapGridVisible!==false){
     const isDark=document.body.classList.contains("dark-mode");
-    ctx.strokeStyle=isDark?"rgba(199,208,232,.26)":"rgba(80,50,20,.2)"; ctx.lineWidth=1;
-    for(let gx=0;gx<=mw;gx++){ const px=gx*tw+0.5; ctx.beginPath(); ctx.moveTo(px,0); ctx.lineTo(px,mh*th); ctx.stroke(); }
-    for(let gy=0;gy<=mh;gy++){ const py=gy*th+0.5; ctx.beginPath(); ctx.moveTo(0,py); ctx.lineTo(mw*tw,py); ctx.stroke(); }
+    const mapLeft=ox, mapTop=oy, mapRight=ox+(mw*tw*z), mapBottom=oy+(mh*th*z);
+    const lineColor=isDark?"rgba(199,208,232,.34)":"rgba(80,50,20,.3)";
+    ctx.save();
+    ctx.strokeStyle=lineColor;
+    ctx.lineWidth=1;
+    for(let gx=0;gx<=mw;gx++){
+      const x=Math.round(mapLeft+(gx*tw*z))+0.5;
+      ctx.beginPath();
+      ctx.moveTo(x,mapTop);
+      ctx.lineTo(x,mapBottom);
+      ctx.stroke();
+    }
+    for(let gy=0;gy<=mh;gy++){
+      const y=Math.round(mapTop+(gy*th*z))+0.5;
+      ctx.beginPath();
+      ctx.moveTo(mapLeft,y);
+      ctx.lineTo(mapRight,y);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
-  ctx.restore();
   $("mapGridBtn")?.classList.toggle("active", state.mapGridVisible!==false);
   updateMapToolButtons();
 }
