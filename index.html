@@ -7811,7 +7811,15 @@ function wireUI(){
   bindClick("runBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); });
   bindClick("resetBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.reset(code); });
   function syncSidebarToggleButton(buttonId, viewId){ const btn=$(buttonId), view=$(viewId); if(!btn||!view) return; const hidden=view.classList.contains('sidebar-hidden'); btn.textContent=hidden?'>':'<'; btn.setAttribute('aria-expanded', hidden?'false':'true'); btn.title=hidden?'Open panel':'Close panel'; }
-  bindClick("toggleMapSidebarBtn",()=>{ const mapView=$("mapView"); if(!mapView) return; mapView.classList.toggle('sidebar-hidden'); syncSidebarToggleButton("toggleMapSidebarBtn","mapView"); syncMapCanvasChrome(); });
+  bindClick("toggleMapSidebarBtn",()=>{
+    const mapView=$("mapView");
+    if(!mapView) return;
+    mapView.classList.toggle('sidebar-hidden');
+    syncSidebarToggleButton("toggleMapSidebarBtn","mapView");
+    syncMapCanvasChrome();
+    drawMapEditor();
+    requestAnimationFrame(()=>drawMapEditor());
+  });
   bindClick("toggleSpriteSidebarBtn",()=>{ const spriteView=$("spriteView"); if(!spriteView) return; spriteView.classList.toggle('sidebar-hidden'); syncSidebarToggleButton("toggleSpriteSidebarBtn","spriteView"); refreshEdgePalette(); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); });
   const zoomMapAtPoint=(nextZoom,clientX,clientY)=>{ const wrap=$("mapCanvasWrap"); const rect=wrap.getBoundingClientRect(); const oldZoom=state.mapZoom||1; const newZoom=clamp(nextZoom,0.2,8); const lx=(clientX-rect.left-(state.mapOffsetX||0))/oldZoom; const ly=(clientY-rect.top-(state.mapOffsetY||0))/oldZoom; state.mapZoom=newZoom; state.mapOffsetX=(clientX-rect.left)-lx*newZoom; state.mapOffsetY=(clientY-rect.top)-ly*newZoom; drawMapEditor(); };
   bindClick("mapZoomInBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)+0.05, rect.left+rect.width/2, rect.top+rect.height/2); });
