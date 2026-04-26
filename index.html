@@ -6151,17 +6151,18 @@ function getExampleProjects(){
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
 function centerMapEditorView(closeup=true){
   const wrap=$("mapCanvasWrap");
-  if(!wrap || !state.appProject) return;
+  if(!wrap || !state.appProject) return false;
   const tw=state.appProject.project.tile_w, th=state.appProject.project.tile_h;
   const mw=state.appProject.project.map_w, mh=state.appProject.project.map_h;
   const mapW=Math.max(1,mw*tw), mapH=Math.max(1,mh*th);
   const rect=wrap.getBoundingClientRect();
-  if(rect.width<=0 || rect.height<=0) return;
+  if(rect.width<=0 || rect.height<=0) return false;
   const fit=Math.min(rect.width/mapW, rect.height/mapH);
   const targetZoom=closeup ? Math.max(1, fit*1.4) : Math.max(0.2, fit);
   state.mapZoom=clamp(targetZoom,0.2,8);
   state.mapOffsetX=Math.floor((rect.width-(mapW*state.mapZoom))/2);
   state.mapOffsetY=Math.floor((rect.height-(mapH*state.mapZoom))/2);
+  return true;
 }
 function setView(name){
   const previousView=state.activeView;
@@ -6178,12 +6179,15 @@ function setView(name){
   if(name==="map"){
     syncMapCanvasChrome();
     if(state.mapAutoCenterPending){
-      centerMapEditorView(true);
+      const centeredNow=centerMapEditorView(true);
       requestAnimationFrame(()=>{
-        centerMapEditorView(true);
-        drawMapEditor();
+        const centeredOnFrame=centerMapEditorView(true);
+        requestAnimationFrame(()=>{
+          const centeredOnSecondFrame=centerMapEditorView(true);
+          if(centeredNow||centeredOnFrame||centeredOnSecondFrame) state.mapAutoCenterPending=false;
+          drawMapEditor();
+        });
       });
-      state.mapAutoCenterPending=false;
     }
     drawMapEditor();
   }
