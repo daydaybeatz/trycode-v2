@@ -6181,6 +6181,10 @@ function setView(name){
       });
     }
     drawMapEditor();
+    requestAnimationFrame(()=>{
+      drawMapEditor();
+      requestAnimationFrame(()=>drawMapEditor());
+    });
   }
   if(name==="runtime"){
     runtime.resizeDisplay();
@@ -8051,6 +8055,10 @@ function wireUI(){
   updateMapToolButtons();
   syncResponsiveUI();
   window.addEventListener('resize',syncResponsiveUI);
+  window.addEventListener('resize',()=>{
+    if(state.activeView==='map') drawMapEditor();
+    if(state.activeView==='sprites') drawSpriteEditor();
+  });
   syncSidebarToggleButton("toggleMapSidebarBtn","mapView");
   syncSidebarToggleButton("toggleSpriteSidebarBtn","spriteView");
   syncSpriteCanvasChrome();
