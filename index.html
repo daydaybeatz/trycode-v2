@@ -191,6 +191,8 @@
     .animPreviewSpeed input{width:52px}
     .edgePalette{position:absolute;left:8px;top:56px;bottom:8px;width:44px;z-index:26;display:flex;flex-direction:column;gap:6px;overflow-y:auto;overflow-x:hidden;padding:4px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff2d7,#f0d7a2);box-shadow:0 3px 0 #c08b52}
     .edgePalette .palBtn{height:32px;min-height:32px}
+    .mapEdgePalette .palBtn{padding:0}
+    .mapEdgeTileThumb{width:100%;height:100%;display:block;image-rendering:pixelated}
     .hidden{display:none !important}
 
     .runtimeView{position:absolute;inset:10px;padding:10px}
@@ -505,7 +507,7 @@
           <div class="pane"><h4>TILES</h4><div class="tilePalette" id="tilePalette"></div></div>
           <div class="pane"><h4>LAYERS</h4><div class="formRow"><button class="mbtn" id="addLayerBtn">Add Layer</button></div><div class="layerList" id="layerList"></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button><button class="uiBtn mapLayerNavControl" id="mapPrevLayerBtn" aria-label="Previous layer">&lt;L</button><div class="docDesc mapLayerNavControl" id="mapLayerLabel">Layer 1 / 1</div><button class="uiBtn mapLayerNavControl" id="mapNextLayerBtn" aria-label="Next layer">L&gt;</button><button class="uiBtn iconBtn eyeToggleBtn mapLayerNavControl" id="mapToggleCurrentLayerBtn" aria-label="Toggle current layer visibility" title="Hide current layer"></button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn" id="mapLineBtn">Line</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapCircBtn">Circ</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapUndoBtn">Undo</button><button class="uiBtn" id="mapRedoBtn">Redo</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button><button class="uiBtn mapLayerNavControl" id="mapPrevLayerBtn" aria-label="Previous layer">&lt;L</button><div class="docDesc mapLayerNavControl" id="mapLayerLabel">Layer 1 / 1</div><button class="uiBtn mapLayerNavControl" id="mapNextLayerBtn" aria-label="Next layer">L&gt;</button><button class="uiBtn iconBtn eyeToggleBtn mapLayerNavControl" id="mapToggleCurrentLayerBtn" aria-label="Toggle current layer visibility" title="Hide current layer"></button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button></div><div class="edgePalette mapEdgePalette hidden" id="mapEdgePalette"></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn" id="mapLineBtn">Line</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapCircBtn">Circ</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapUndoBtn">Undo</button><button class="uiBtn" id="mapRedoBtn">Redo</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
       </div>
     </div>
 
@@ -1179,6 +1181,7 @@ function syncMapCanvasChrome(){
   const mapView=$("mapView");
   const sidebarHidden=!!mapView?.classList.contains('sidebar-hidden');
   document.querySelectorAll(".mapLayerNavControl").forEach(el=>el.classList.toggle("hidden", !sidebarHidden));
+  $("mapEdgePalette")?.classList.toggle("hidden", !sidebarHidden);
 }
 function currentMapHasAnimatedTiles(){ const mapObj=state.appProject&&state.appProject.maps&&state.appProject.maps[state.currentMapIndex]; if(!mapObj) return false; const ids=new Set(); for(const layer of mapObj.layers||[]){ if(!layer||layer.visible===false) continue; for(const row of layer.data||[]) for(const tid of row||[]) if(tid) ids.add(tid); } for(const id of ids){ const def=state.appProject.tileDefs&&state.appProject.tileDefs[id]; if(def&&def.animated) return true; } return false; }
 function runEditorAnimationFrame(){ if(state.activeView==='sprites' && state.spriteAnimPlaying){ drawSpriteAnimPreview(); } if(state.activeView==='map' && state.mapAnimPlaying && currentMapHasAnimatedTiles()){ drawMapEditor(); } requestAnimationFrame(runEditorAnimationFrame); }
@@ -6759,6 +6762,7 @@ function setSelectedTile(id, refreshPalette=true){
   state.selectedTileId=Math.max(0,id|0);
   refreshTileEditorFromSelected();
   if(refreshPalette) refreshTilePalette();
+  else refreshMapEdgeTileSelector();
 }
 function syncTileEditorActionButtons(){
   const deleteBtn=$("deleteTileBtn");
@@ -6849,7 +6853,31 @@ function clearMapSlot(index){
   }
   runtime.syncProject(state.appProject);
 }
-function refreshTilePalette(){ const wrap=$("tilePalette"); wrap.innerHTML=""; const ids=Object.keys(state.appProject.tileDefs).map(n=>parseInt(n,10)).sort((a,b)=>a-b); for(const id of ids){ const def=state.appProject.tileDefs[id]; const btn=document.createElement('div'); btn.className='tileBtn'+(id===state.selectedTileId?' active':''); btn.onclick=()=>setSelectedTile(id); const thumb=document.createElement('canvas'); thumb.className='tileThumb'; thumb.width=48; thumb.height=48; thumb.getContext('2d').drawImage(getEditorTileCanvas(def,48,48,id,true),0,0); const label=document.createElement('div'); label.textContent=id===0?'delete / none':`id ${id}`; btn.appendChild(thumb); btn.appendChild(label); wrap.appendChild(btn);} syncTileEditorActionButtons(); }
+function refreshTilePalette(){ const wrap=$("tilePalette"); wrap.innerHTML=""; const ids=Object.keys(state.appProject.tileDefs).map(n=>parseInt(n,10)).sort((a,b)=>a-b); for(const id of ids){ const def=state.appProject.tileDefs[id]; const btn=document.createElement('div'); btn.className='tileBtn'+(id===state.selectedTileId?' active':''); btn.onclick=()=>setSelectedTile(id); const thumb=document.createElement('canvas'); thumb.className='tileThumb'; thumb.width=48; thumb.height=48; thumb.getContext('2d').drawImage(getEditorTileCanvas(def,48,48,id,true),0,0); const label=document.createElement('div'); label.textContent=id===0?'delete / none':`id ${id}`; btn.appendChild(thumb); btn.appendChild(label); wrap.appendChild(btn);} syncTileEditorActionButtons(); refreshMapEdgeTileSelector(); }
+function refreshMapEdgeTileSelector(){
+  const wrap=$("mapEdgePalette");
+  if(!wrap) return;
+  wrap.innerHTML='';
+  const ids=Object.keys(state.appProject.tileDefs).map(n=>parseInt(n,10)).sort((a,b)=>a-b);
+  for(const id of ids){
+    const def=state.appProject.tileDefs[id];
+    const btn=document.createElement('button');
+    btn.className='palBtn'+(id===state.selectedTileId?' active':'');
+    const thumb=document.createElement('canvas');
+    thumb.className='mapEdgeTileThumb';
+    thumb.width=32;
+    thumb.height=32;
+    thumb.getContext('2d').drawImage(getEditorTileCanvas(def,32,32,id,false),0,0);
+    const indexLabel=document.createElement('span');
+    indexLabel.className='palBtnIndex';
+    indexLabel.textContent=String(id);
+    btn.appendChild(thumb);
+    btn.appendChild(indexLabel);
+    btn.onclick=(e)=>{ e.preventDefault(); setSelectedTile(id); drawMapEditor(); };
+    wrap.appendChild(btn);
+  }
+  wrap.classList.toggle('hidden', !$("mapView")?.classList.contains('sidebar-hidden'));
+}
 function makeEyeIconMarkup(hidden){ return hidden?`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle><line x1="5" y1="19" x2="19" y2="5"></line></svg>`:`<svg class="eyeIcon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12c2.8-4 6-6 9-6s6.2 2 9 6c-2.8 4-6 6-9 6s-6.2-2-9-6z"></path><circle cx="12" cy="12" r="2.8"></circle></svg>`; }
 function refreshLayerList(){ const wrap=$("layerList"); wrap.innerHTML=""; currentLayers().forEach((layer,i)=>{ const row=document.createElement('div'); row.className='itemRow'+(i===state.currentLayerIndex?' active':''); const label=document.createElement('div'); label.className='layerLabel'; label.textContent=`${layer.name||'new layer'} (${i})`; const eyeBtn=document.createElement('button'); eyeBtn.className='uiBtn iconBtn eyeToggleBtn'+(layer.visible===false?' is-hidden':''); eyeBtn.type='button'; eyeBtn.title=layer.visible===false?'Show layer':'Hide layer'; eyeBtn.setAttribute('aria-pressed', layer.visible===false?'false':'true'); eyeBtn.innerHTML=makeEyeIconMarkup(layer.visible===false); eyeBtn.onclick=(e)=>{ e.stopPropagation(); layer.visible=layer.visible===false?true:false; refreshLayerList(); drawMapEditor(); runtime.syncProject(state.appProject); }; row.appendChild(label); row.appendChild(eyeBtn); row.onclick=()=>{ if(state.currentLayerIndex===i){ const name=prompt('Rename layer:', layer.name||'new layer'); if(name!=null){ const trimmed=name.trim(); if(trimmed) layer.name=trimmed; refreshLayerList(); runtime.syncProject(state.appProject); } return; } state.currentLayerIndex=i; clearMapSelection(); refreshLayerList(); drawMapEditor(); }; wrap.appendChild(row); }); updateLayerNavButtons(); }
 function resolveAnimatedTileFolderIndex(def, spriteFolders=state.appProject&&state.appProject.spriteFolders){ if(!def) return null; const explicit=String(def.animFolder??'').trim(); if(explicit!=='' && Number.isFinite(Number(explicit))){ const idx=Math.max(0,parseInt(explicit,10)); const folder=spriteFolders&&spriteFolders[idx]; if(folder&&folder.frames&&folder.frames.length) return idx; } const fallback=parseSpriteRef(def.source||''); if(fallback){ const folder=spriteFolders&&spriteFolders[fallback.folder]; if(folder&&folder.frames&&folder.frames.length) return fallback.folder; } return null; }
