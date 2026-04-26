@@ -128,15 +128,7 @@
     .spriteActionMenu{display:none;gap:6px;margin-top:6px;justify-content:flex-end}
     .spriteActionMenu.open{display:flex}
     .spritePanelPreview{display:flex;flex-direction:column;align-items:center;gap:6px;margin:8px 0 10px;padding:8px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff6df,#efd39f);box-shadow:0 3px 0 #c08b52}
-    .spritePanelPreview canvas{width:44px;height:44px;border:3px solid var(--line);border-radius:10px;background:
-      linear-gradient(45deg, rgba(0,0,0,.07) 25%, transparent 25%),
-      linear-gradient(-45deg, rgba(0,0,0,.07) 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, rgba(0,0,0,.07) 75%),
-      linear-gradient(-45deg, transparent 75%, rgba(0,0,0,.07) 75%),
-      transparent;
-      background-size:12px 12px;
-      background-position:0 0, 0 6px, 6px -6px, -6px 0;
-      image-rendering:pixelated}
+    .spritePanelPreview canvas{width:44px;height:44px;border:3px solid var(--line);border-radius:10px;background:transparent;image-rendering:pixelated}
     .spritePanelPreviewLabel{font-size:12px;font-weight:700}
     .tilePalette,.paletteGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
     .tileBtn{border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff6df,#efd39f);padding:6px;text-align:center;box-shadow:0 3px 0 #c08b52;cursor:pointer}
@@ -335,12 +327,7 @@
     body.dark-mode .palBtn{box-shadow:0 3px 0 #0f1528}
     body.dark-mode .strokeStepper{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 2px 0 #0f1528}
     body.dark-mode .spritePanelPreview{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 3px 0 #0f1528}
-    body.dark-mode .spritePanelPreview canvas{background:
-      linear-gradient(45deg, rgba(244,241,227,.08) 25%, transparent 25%),
-      linear-gradient(-45deg, rgba(244,241,227,.08) 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, rgba(244,241,227,.08) 75%),
-      linear-gradient(-45deg, transparent 75%, rgba(244,241,227,.08) 75%),
-      #10162a}
+    body.dark-mode .spritePanelPreview canvas{background:transparent}
     body.dark-mode .canvasWrap{background:
       linear-gradient(45deg, rgba(244,241,227,.04) 25%, transparent 25%),
       linear-gradient(-45deg, rgba(244,241,227,.04) 25%, transparent 25%),
@@ -507,7 +494,7 @@
           <div class="pane"><h4>TILES</h4><div class="tilePalette" id="tilePalette"></div></div>
           <div class="pane"><h4>LAYERS</h4><div class="formRow"><button class="mbtn" id="addLayerBtn">Add Layer</button></div><div class="layerList" id="layerList"></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button><button class="uiBtn mapLayerNavControl" id="mapPrevLayerBtn" aria-label="Previous layer">&lt;L</button><div class="docDesc mapLayerNavControl" id="mapLayerLabel">Layer 1 / 1</div><button class="uiBtn mapLayerNavControl" id="mapNextLayerBtn" aria-label="Next layer">L&gt;</button><button class="uiBtn iconBtn eyeToggleBtn mapLayerNavControl" id="mapToggleCurrentLayerBtn" aria-label="Toggle current layer visibility" title="Hide current layer"></button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button></div><div class="edgePalette mapEdgePalette hidden" id="mapEdgePalette"></div><div class="overlayTools" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn" id="mapLineBtn">Line</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapCircBtn">Circ</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapUndoBtn">Undo</button><button class="uiBtn" id="mapRedoBtn">Redo</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleMapSidebarBtn" aria-label="Toggle map panel">&lt;</button><button class="uiBtn mapLayerNavControl" id="mapPrevLayerBtn" aria-label="Previous layer">&lt;L</button><div class="docDesc mapLayerNavControl" id="mapLayerLabel">Layer 1 / 1</div><button class="uiBtn mapLayerNavControl" id="mapNextLayerBtn" aria-label="Next layer">L&gt;</button><button class="uiBtn iconBtn eyeToggleBtn mapLayerNavControl" id="mapToggleCurrentLayerBtn" aria-label="Toggle current layer visibility" title="Hide current layer"></button><button class="uiBtn hidden" id="mapCombineSelectedBtn">Combine</button><button class="uiBtn hidden destructive" id="mapDeleteSelectedBtn">Delete</button></div><div class="edgePalette mapEdgePalette hidden" id="mapEdgePalette"></div><div class="overlayTools hidden" id="mapOverlayTools"><button class="uiBtn" id="mapZoomOutBtn">-</button><button class="uiBtn" id="mapZoomInBtn">+</button><button class="uiBtn" id="mapDrawBtn">Draw</button><button class="uiBtn" id="mapSelectBtn">Sel</button><button class="uiBtn hidden" id="mapDeselectBtn">Deselect</button><button class="uiBtn" id="mapLineBtn">Line</button><button class="uiBtn" id="mapRectBtn">Rect</button><button class="uiBtn" id="mapCircBtn">Circ</button><button class="uiBtn" id="mapPanBtn">Pan</button><button class="uiBtn" id="mapFillBtn">Fill</button><button class="uiBtn" id="mapUndoBtn">Undo</button><button class="uiBtn" id="mapRedoBtn">Redo</button><button class="uiBtn" id="mapAnimToggleBtn">Pause</button><button class="uiBtn" id="mapGridBtn">Grid</button><button class="uiBtn destructive" id="mapClearBtn">Clear</button></div><div class="canvasWrap" id="mapCanvasWrap"><canvas id="mapCanvas"></canvas></div></div>
       </div>
     </div>
 
@@ -1182,6 +1169,10 @@ function syncMapCanvasChrome(){
   const sidebarHidden=!!mapView?.classList.contains('sidebar-hidden');
   document.querySelectorAll(".mapLayerNavControl").forEach(el=>el.classList.toggle("hidden", !sidebarHidden));
   $("mapEdgePalette")?.classList.toggle("hidden", !sidebarHidden);
+  const mapOverlayTools=$("mapOverlayTools");
+  const mapCanvasWrap=$("mapCanvasWrap");
+  const canvasVisible=!!mapCanvasWrap && mapCanvasWrap.clientWidth>0 && mapCanvasWrap.clientHeight>0;
+  if(mapOverlayTools) mapOverlayTools.classList.toggle("hidden", !(sidebarHidden && canvasVisible && state.activeView==="map"));
 }
 function currentMapHasAnimatedTiles(){ const mapObj=state.appProject&&state.appProject.maps&&state.appProject.maps[state.currentMapIndex]; if(!mapObj) return false; const ids=new Set(); for(const layer of mapObj.layers||[]){ if(!layer||layer.visible===false) continue; for(const row of layer.data||[]) for(const tid of row||[]) if(tid) ids.add(tid); } for(const id of ids){ const def=state.appProject.tileDefs&&state.appProject.tileDefs[id]; if(def&&def.animated) return true; } return false; }
 function runEditorAnimationFrame(){ if(state.activeView==='sprites' && state.spriteAnimPlaying){ drawSpriteAnimPreview(); } if(state.activeView==='map' && state.mapAnimPlaying && currentMapHasAnimatedTiles()){ drawMapEditor(); } requestAnimationFrame(runEditorAnimationFrame); }
@@ -7799,7 +7790,7 @@ function wireUI(){
   bindClick("runBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); });
   bindClick("resetBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.reset(code); });
   function syncSidebarToggleButton(buttonId, viewId){ const btn=$(buttonId), view=$(viewId); if(!btn||!view) return; const hidden=view.classList.contains('sidebar-hidden'); btn.textContent=hidden?'>':'<'; btn.setAttribute('aria-expanded', hidden?'false':'true'); btn.title=hidden?'Open panel':'Close panel'; }
-  bindClick("toggleMapSidebarBtn",()=>{ const mapView=$("mapView"); if(!mapView) return; mapView.classList.toggle('sidebar-hidden'); const hidden=mapView.classList.contains('sidebar-hidden'); syncSidebarToggleButton("toggleMapSidebarBtn","mapView"); const mapOverlayTools=$("mapOverlayTools"); if(mapOverlayTools) mapOverlayTools.classList.toggle('hidden', !hidden); syncMapCanvasChrome(); });
+  bindClick("toggleMapSidebarBtn",()=>{ const mapView=$("mapView"); if(!mapView) return; mapView.classList.toggle('sidebar-hidden'); syncSidebarToggleButton("toggleMapSidebarBtn","mapView"); syncMapCanvasChrome(); });
   bindClick("toggleSpriteSidebarBtn",()=>{ const spriteView=$("spriteView"); if(!spriteView) return; spriteView.classList.toggle('sidebar-hidden'); syncSidebarToggleButton("toggleSpriteSidebarBtn","spriteView"); refreshEdgePalette(); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); });
   const zoomMapAtPoint=(nextZoom,clientX,clientY)=>{ const wrap=$("mapCanvasWrap"); const rect=wrap.getBoundingClientRect(); const oldZoom=state.mapZoom||1; const newZoom=clamp(nextZoom,0.2,8); const lx=(clientX-rect.left-(state.mapOffsetX||0))/oldZoom; const ly=(clientY-rect.top-(state.mapOffsetY||0))/oldZoom; state.mapZoom=newZoom; state.mapOffsetX=(clientX-rect.left)-lx*newZoom; state.mapOffsetY=(clientY-rect.top)-ly*newZoom; drawMapEditor(); };
   bindClick("mapZoomInBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)+0.05, rect.left+rect.width/2, rect.top+rect.height/2); });
