@@ -673,6 +673,10 @@ function sub(text, start_i, end_i)
   return string.sub(source, first, last)
 end
 
+function tostr(value)
+  return tostring(value or "")
+end
+
 function distance(a, b)
   if type(a) ~= "table" or type(b) ~= "table" then return 0 end
   local ax = tonumber(a.x) or 0
@@ -1353,6 +1357,7 @@ const CODE_API_DOCS = [
   makeDoc("sin(n) / cosin(n) / tan(n)", "Returns the standard math sine, cosine, or tangent of a number in radians.", [["n", "Angle in radians."]], ["wave = sin(t)\nside = cosin(t)\nslope = tan(0.25)"], "Use these for orbits, waves, aiming math, and procedural animation."),
   makeDoc("rnd(x)", "Returns a random value below a number, or a random entry from a table.", [["x", "Number limit or list-style table."]], ["speed = rnd(4)\nloot = rnd({\"ammo\",\"med\",\"intel\"})"], "With numbers it returns a value in [0, x). With tables it picks one item from index 1 to #table."),
   makeDoc("sub(text, start, finish)", "sub() returns a substring from start to finish (inclusive, 1-based).", [["text", "Text value to slice."],["start", "Start character index (1-based)."],["finish", "Optional end character index. Leave empty to slice to the end."]], ["name = \"kuocop\"","first = sub(name, 1, 1) -- \"k\"","rest = sub(name, 2) -- \"uocop\""], "Use this as a short alias for string.sub(...) in gameplay scripts and UI text formatting."),
+  makeDoc("tostr(value)", "Converts any value into text using Lua tostring().", [["value", "Any value (number, boolean, table field, or nil)."]], ["label = tostr(score)","status = \"hp: \"..tostr(player.hp)","print(tostr(nil), 12, 8, 8) -- prints empty text"], "Use this when you need explicit string conversion. nil becomes an empty string so UI labels stay safe."),
   makeDoc("upper(text)", "upper() turns letters into uppercase.", [["text", "Text value to convert."]], ["upper(\"k\")      -- \"K\"","upper(\"kuocop\") -- \"KUOCOP\""], "Use this helper when you want labels, names, or UI text in all caps."),
   makeDoc("a % b", "Returns the remainder after division (modulo).", [["a", "Value to divide."],["b", "Divisor."]], ["col = x % 16","if frame % 8 == 0 then blink = not blink end"], "Use this for wrapping indexes, timed pulses, and repeating patterns."),
   makeDoc("#table", "Returns the length of an array-style table.", [["table", "Array-style Lua table."]], ["for i=1,#enemies do\n  print(i, 8, 8)\nend","piece = pieces[flr(rnd(#pieces)) + 1]"], "Use #table to count list entries and drive loops."),
@@ -1587,7 +1592,7 @@ function codeTokenHtml(cls,value){ return `<span class="${cls}">${escapeHtml(val
 function highlightLuaLine(line){
   const {code, comment}=splitLuaLineComment(line);
   const keywords=new Set(["function","local","if","then","elseif","else","end","for","in","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
-  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","sspr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","abs","flr","sin","cosin","tan","rnd","sub","upper","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","pairs"]);
+  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","sspr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","abs","flr","sin","cosin","tan","rnd","sub","tostr","upper","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","pairs"]);
   let html="";
   const regex=/(\b\d+(?:\.\d+)?\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*|==|~=|<=|>=|\.\.\.|\.\.|[+\-*\/%#=<>]+)/g;
   let last=0, match;
