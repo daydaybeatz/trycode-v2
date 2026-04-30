@@ -3899,105 +3899,136 @@ function loadUiFunctionsExampleProject(){
   p.tileDefs={0:makeBlankTileDef()};
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- UPDATED UI FUNCTION EXAMPLE (tutorial style)
--- Goal:
---   Show the simplest practical setup for:
---   1) default_button + ui_button/ui_buttons
---   2) default_dropdown + ui_dropdown
---
--- Keep all "state" in tables so the UI can read and write values every frame.
-player = {money=100, health=100, level=1}
-ui = {buttons = {}, loadout = nil}
-status = "click a button or open the dropdown"
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- UI FUNCTIONS/buttons, lists and dropdowns
+-- difficulty: easy
 
--- Step 1: set global visual defaults once.
--- Every button/dropdown can still override individual fields later.
+team_a = {"ava","ben","cara"}
+team_b = {"dax","eli","faye"}
+selected = nil
+status = "select a team member"
+
+ui = {
+  team_a_buttons = {},
+  team_b_buttons = {},
+  circle_buttons = {},
+  mode_dd = nil
+}
+
 function setup_ui_defaults()
-  default_button({w=150,h=20,bg=5,border=7,text=0,hover_bg=6})
-  default_dropdown({w=190,h=20,bg=1,border=7,text=7,hover_bg=13})
+  default_button({w=130,h=20,bg=5,border=7,text=0,hover_bg=6})
+  default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})
 end
 
--- Step 2: build UI tables.
--- Buttons each have x, y, label, and func().
-function build_buttons()
-  ui.buttons = {
-    {x=20,y=60,label="+25 money",func=function()
-      mod_value(player, "money", 25)
-      status = "added 25 money"
-    end},
-    -- This button overrides bg to show per-button style customization.
-    {x=20,y=86,label="-10 health",bg=8,func=function()
-      mod_value(player, "health", -10)
-      if player.health < 0 then player.health = 0 end
-      status = "removed 10 health"
-    end},
-    {x=20,y=112,label="level +1",bg=11,func=function()
-      mod_value(player, "level", 1)
-      status = "leveled up"
-    end}
-  }
+function make_team_buttons(team, x, start_y, team_name, color_id)
+  local out = {}
+  for i=1,#team do
+    local name = team[i]
+    local is_selected = selected and selected.team == team_name and selected.index == i
+    add(out, {
+      x=x,
+      y=start_y + (i-1)*24,
+      w=150,
+      label=name,
+      bg=is_selected and color_id or 5,
+      func=function()
+        if selected and selected.team == team_name and selected.index == i then
+          selected = nil
+          status = "deselected "..name
+        else
+          selected = {team=team_name,index=i}
+          status = "selected "..name
+        end
+      end
+    })
+  end
+  return out
 end
 
--- Step 3: build one dropdown table with options.
--- items can be strings or tables; table items can include per-item func callbacks.
+function transfer_selected()
+  if not selected then return end
+  local from = selected.team == "a" and team_a or team_b
+  local to = selected.team == "a" and team_b or team_a
+  local who = from[selected.index]
+  add(to, who)
+  deli(from, selected.index)
+  status = "sent "..who.." to team "..(selected.team == "a" and "b" or "a")
+  selected = nil
+end
+
 function build_dropdown()
-  ui.loadout = {
-    x=20,
-    y=156,
-    label="choose loadout",
+  ui.mode_dd = {
+    x=20, y=200, label="mode: choose",
     items={
-      {label="balanced", func=function()
-        set_value(player, "money", 100)
-        set_value(player, "health", 100)
-        status = "set balanced loadout"
-      end},
-      {label="rich", func=function()
-        set_value(player, "money", 250)
-        status = "set rich loadout"
-      end},
-      {label="tank", func=function()
-        set_value(player, "health", 180)
-        status = "set tank loadout"
-      end}
+      {label="easy", func=function() status = "mode set to easy" end},
+      {label="medium", func=function() status = "mode set to medium" end},
+      {label="hard", func=function() status = "mode set to hard" end}
     },
-    -- Runs after an item is selected.
     func=function(item, idx)
-      status = "picked: "..item.label.." (#"..idx..")"
+      ui.mode_dd.label = "mode: "..item.label
+      status = "selected dropdown #"..idx
     end
   }
+end
+
+function build_circle_buttons()
+  ui.circle_buttons = {}
+  for i=1,5 do
+    add(ui.circle_buttons, {
+      x=300 + (i-1)*28, y=206, r=11, type="circ",
+      label=tostr(i),
+      on=false
+    })
+  end
+end
+
+function draw_circle_toggles()
+  print("circle toggles (any can be on)", 9, 280, 182, 7)
+  for b in all(ui.circle_buttons) do
+    local bg = b.on and 11 or 2
+    if ui_button({x=b.x,y=b.y,r=b.r,type="circ",label=b.label,bg=bg,border=7,text=7,hover_bg=6}) then
+      b.on = not b.on
+      status = "toggled circle "..b.label
+    end
+  end
+end
+
+function rebuild_team_lists()
+  ui.team_a_buttons = make_team_buttons(team_a, 20, 56, "a", 11)
+  ui.team_b_buttons = make_team_buttons(team_b, 180, 56, "b", 10)
 end
 
 function _init()
   default_controls("none")
   setup_ui_defaults()
-  build_buttons()
   build_dropdown()
+  build_circle_buttons()
 end
 
 function _update()
-  -- No manual input needed here.
-  -- ui_button/ui_dropdown read mouse/touch automatically in _draw().
 end
 
 function _draw()
   cls(1)
   rectfill(10,10,470,258,2)
   rect(10,10,470,258,7)
-  print("updated ui function example", 14, 20, 20, 7)
+  print("UI FUNCTIONS/buttons, lists and dropdowns", 12, 16, 18, 7)
 
-  -- Render model/state values on the right.
-  print("money: "..player.money, 12, 240, 66, 10)
-  print("health: "..player.health, 12, 240, 88, 8)
-  print("level: "..player.level, 12, 240, 110, 11)
-  print("status: "..status, 10, 240, 136, 6)
+  rebuild_team_lists()
+  ui_buttons(ui.team_a_buttons)
+  ui_buttons(ui.team_b_buttons)
 
-  -- Simplest usage patterns:
-  --   ui_buttons(list) to draw many buttons
-  --   ui_dropdown(table) to draw one dropdown
-  ui_buttons(ui.buttons)
-  ui_dropdown(ui.loadout)
+  print("team a", 10, 20, 38, 11)
+  print("team b", 10, 180, 38, 10)
 
-  print("tutorial: defaults in _init, draw ui every frame", 9, 20, 234, 12)
+  if selected then
+    local send_label = selected.team == "a" and "send to team b" or "send to team a"
+    ui_button({x=20,y=146,w=180,label=send_label,bg=12,func=transfer_selected})
+  end
+
+  ui_dropdown(ui.mode_dd)
+  draw_circle_toggles()
+
+  print("status: "..status, 9, 20, 236, 6)
 end`}];
   finalizeExampleProjectLoad();
 }
@@ -6143,7 +6174,7 @@ function getExampleProjects(){
     {id:'note-app-save-load',category:'logic',name:'Note App Save + Load',description:'Simple note manager using entry_box() and save_data()/load_data() for persistent notes.',loader:loadNotesSaveLoadExampleProject},
     {id:'menu-screen-swap',category:'ui examples',name:'Basic Menu + Screen Swap',description:'Simple readable menu/game/pause screen flow with dpad/left-stick movement, right-stick r_spr() aiming, spr flip, sin/cosin motion, and add()/del() notes.',loader:loadMenuScreenSwapExampleProject},
     {id:'ui-mouse',category:'ui examples',name:'UI + Mouse Studio',description:'default_box(), entry_box(), confirm_box(), message_box(), mouse(), pget(), and particle drawing with higher-contrast readability colors.',loader:loadUiMouseExampleProject},
-    {id:'updated-ui-function-example',category:'ui examples',name:'Updated UI Function Example',description:'Tutorial-style, heavily commented starter showing the simplest default_button(), ui_buttons(), default_dropdown(), and ui_dropdown() workflow.',loader:loadUiFunctionsExampleProject},
+    {id:'updated-ui-function-example',category:'ui examples',name:'UI FUNCTIONS/buttons, lists and dropdowns',description:'Easy UI demo with two team lists, selectable transfer button, dynamic dropdown label, and independent circle toggles.',loader:loadUiFunctionsExampleProject},
     {id:'poster',category:'games',name:'Mushroom Run Platformer',description:'A side-scrolling platformer with a main menu, sprite animation, pickups via mget()/mset(), camera scrolling, particles, and a win banner.',loader:loadPosterShowcaseExampleProject},
     {id:'tetris-theme',category:'games',name:'Neon Stack (Tetris Style)',description:'Tetronimoes puzzle game with falling pieces, line clears, rotation, score, level speed-up, and persistent high-score board via save_data()/load_data().',loader:loadTetrisThemeExampleProject}
   ];
