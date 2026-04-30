@@ -2036,9 +2036,7 @@ function buildCombinedCodeExportText(){
     content:String(file?.content||'')
   }));
   return files.map(file=>`--- ${file.name}
-${file.content}`).join('
-
-');
+${file.content}`).join('\n\n');
 }
 async function exportProjectCodeTxt(){
   saveEditorToCurrentCodeFile();
