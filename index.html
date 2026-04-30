@@ -551,7 +551,7 @@
 
     <div class="menuBackdrop" id="menuBackdrop"></div>
     <div class="menu" id="menu"><div class="menuCard">
-      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnImportProject">Import</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button></div></div></div>
+      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnImportProject">Import</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button><button class="mbtn" id="btnExportCodeTxt">code.txt</button></div></div></div>
       <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal (480x270)</option><option value="hd_2x">2x (960x540)</option><option value="hd_3x">3x (1440x810)</option><option value="hd_4x">4x (1920x1080)</option><option value="mobile_fullscreen">Mobile portrait (270x480)</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
             <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="list menuLoadList" id="projectList"></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div></div>
     </div></div>
@@ -2030,6 +2030,32 @@ async function exportHTML(){
     toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
   }
 }
+function buildCombinedCodeExportText(){
+  const files=(state.appProject.codeFiles||[]).map(file=>({
+    name:String(file?.name||'file.lua').trim()||'file.lua',
+    content:String(file?.content||'')
+  }));
+  return files.map(file=>`--- ${file.name}
+${file.content}`).join('
+
+');
+}
+async function exportProjectCodeTxt(){
+  saveEditorToCurrentCodeFile();
+  const exportName=promptForProjectName('Project file name for export:', state.currentProjectName||'project_1');
+  if(!exportName) return;
+  const exportFilename=makeProjectFilename(exportName);
+  try{
+    const combinedCode=buildCombinedCodeExportText();
+    const blob=new Blob([combinedCode],{type:'text/plain;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=exportFilename+'_code.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
+    toast(`<b>Exported code bundle:</b> ${escapeHtml(exportFilename)}_code.txt`);
+  }catch(err){
+    console.error(err);
+    toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
+  }
+}
 async function exportProjectZip(){
   saveEditorToCurrentCodeFile();
   const exportName=promptForProjectName('Project file name for export:', state.currentProjectName||'project_1');
@@ -2155,6 +2181,7 @@ function exportProject(format){
   const normalized=String(format||'').trim().toLowerCase();
   if(normalized==='.zip' || normalized==='zip') exportProjectZip();
   else if(normalized==='.html' || normalized==='html') exportHTML();
+  else if(normalized==='code.txt' || normalized==='.txt' || normalized==='txt' || normalized==='code') exportProjectCodeTxt();
 }
 function buildDocs(){
   const root=$("docsView");
@@ -7854,6 +7881,7 @@ function wireUI(){
   bindClick("btnExport",e=>{ e.stopPropagation(); const row=$("exportFormatRow"); setExportFormatRowOpen(row?.classList.contains('hidden')); });
   bindClick("btnExportZip",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.zip'); });
   bindClick("btnExportHtml",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.html'); });
+  bindClick("btnExportCodeTxt",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('code.txt'); });
   bindClick("btnMenuLoadProjects",e=>{ e.stopPropagation(); refreshProjectList(); setLoadPanelOpen(true); });
   bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); closeLoadPanel(); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
