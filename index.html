@@ -8085,7 +8085,7 @@ function wireUI(){
       applyRuntimeUiHiddenState();
       return;
     }
-    if(key==='escape' && !e.ctrlKey && !e.metaKey && !e.altKey && state.activeView==='runtime' && !dialogState.active){
+    if((key==='escape' || key==='esc') && !e.ctrlKey && !e.metaKey && !e.altKey && state.activeView==='runtime' && !dialogState.active){
       e.preventDefault();
       if(runtimeUiHidden){
         runtimeUiHidden=false;
