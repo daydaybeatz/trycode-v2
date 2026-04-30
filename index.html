@@ -8085,7 +8085,17 @@ function wireUI(){
       applyRuntimeUiHiddenState();
       return;
     }
-    if((key==='escape' || key==='esc') && !e.ctrlKey && !e.metaKey && !e.altKey && state.activeView==='runtime' && !dialogState.active){
+    const isEscapeKey=(key==='escape' || key==='esc');
+    const isEscapeShortcut=isEscapeKey && !e.altKey && state.activeView==='runtime' && !dialogState.active;
+    if(isEscapeShortcut && (e.ctrlKey || e.metaKey)){
+      e.preventDefault();
+      if(runtimeUiHidden){
+        runtimeUiHidden=false;
+        applyRuntimeUiHiddenState();
+      }
+      return;
+    }
+    if(isEscapeShortcut && !e.ctrlKey && !e.metaKey){
       e.preventDefault();
       if(runtimeUiHidden){
         runtimeUiHidden=false;
