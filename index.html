@@ -873,7 +873,7 @@ function ui_button(btn)
     __tc_ui_draw_label(resolved.label or "button", resolved.x, resolved.y, resolved.w, resolved.h, resolved.text, resolved.text_size, resolved.label_x, resolved.label_y)
   end
   if clicked and hover and resolved.enabled ~= false then
-    if type(resolved.func) == "function" then resolved.func(resolved) end
+    if type(resolved.func) == "function" then resolved.func(btn) end
     return true
   end
   return false
