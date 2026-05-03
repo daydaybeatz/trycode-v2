@@ -1379,8 +1379,8 @@ const CODE_API_DOCS = [
   makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, 8, 8) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("keyboard_box(message, default_text, title)", "Alias of entry_box for explicitly requesting the in-engine keyboard input dialog.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["player = keyboard_box(\"name\", player or \"\", \"keyboard\")","if player then print(player, 8, 8) end"], "Use this exactly like entry_box(). On touch devices, tapping the input area opens the mobile on-screen keyboard."),
-  makeDoc("save_data(key, value)", "Stores a persistent string value in browser local storage for this project name.", [["key", "Save slot key."],["value", "String or number to store."]], ["save_data(\"save_slot\", \"hq=2;funds=140\")"], "Call this after meaningful progress. Values remain after reload."),
-  makeDoc("load_data(key)", "Loads a previously stored string value, or nil when missing.", [["key", "Save slot key."]], ["local blob = load_data(\"save_slot\")"], "Use this in _init() to restore campaign progress and settings."),
+  makeDoc("save_data(slot, values)", "Stores a persistent table of values in browser local storage for this project name.", [["slot", "Save slot key."],["values", "Lua table of fields to store."]], ["save_data(\"save_slot\", {hq=2,funds=140})"], "Call this after meaningful progress. Values remain after reload."),
+  makeDoc("load_data(slot)", "Loads a previously stored table for that slot, or nil when missing.", [["slot", "Save slot key."]], ["local data = load_data(\"save_slot\")\nif data then funds = tonumber(data.funds) or 0 end"], "Use this in _init() to restore campaign progress and settings."),
   makeDoc("include \"file.lua\"", "Inserts another code tab into main.lua before the program runs.", [["\"file.lua\"", "Exact code file name to include."]], ["include \"player.lua\"","include player.lua","#include \"enemy.lua\""], "Use quoted or unquoted file names; #include also works. Keep main.lua small by splitting reusable systems into separate files."),
   makeDoc("x += value / x -= value", "Shorthand for updating an existing variable.", [["value", "The amount to add or subtract."]], ["x += 1","y -= speed"], "The app expands this into standard Lua before running your code.")
 ].sort(compareDocsByCategory);
@@ -3632,12 +3632,13 @@ function save_scores()
     raw = raw .. tostring(high_scores[i])
     if i < math.min(5,#high_scores) then raw = raw .. "," end
   end
-  save_data("tetris_high_scores", raw)
+  save_data("tetris_high_scores", {raw=raw})
 end
 
 function load_scores()
   high_scores = {}
-  local raw = load_data("tetris_high_scores")
+  local tetris_save = load_data("tetris_high_scores")
+  local raw = tetris_save and tetris_save.raw or nil
   if raw and raw ~= "" then
     local value = ""
     for i=1,#raw do
@@ -5303,14 +5304,13 @@ function click_in_screen(mx,my)
     if hit("set_balanced",mx,my) then world.policy="balanced" add_feed("policy set: balanced") end
     if hit("set_stability",mx,my) then world.policy="stability" add_feed("policy set: stability") end
     if hit("set_diplomatic",mx,my) then world.policy="diplomatic" add_feed("policy set: diplomatic") end
-    if hit("set_save",mx,my) then save_data("opcorp_snapshot",world.treasury.."|"..world.domination.."|"..world.unrest) add_feed("snapshot saved") end
+    if hit("set_save",mx,my) then save_data("opcorp_snapshot",{treasury=world.treasury,domination=world.domination,unrest=world.unrest}) add_feed("snapshot saved") end
     if hit("set_load",mx,my) then
       local raw = load_data("opcorp_snapshot")
       if raw then
-        local a,b,c = string.match(raw,"([^|]+)|([^|]+)|([^|]+)")
-        world.treasury = tonumber(a) or world.treasury
-        world.domination = tonumber(b) or world.domination
-        world.unrest = tonumber(c) or world.unrest
+        world.treasury = tonumber(raw.treasury) or world.treasury
+        world.domination = tonumber(raw.domination) or world.domination
+        world.unrest = tonumber(raw.unrest) or world.unrest
         add_feed("snapshot loaded")
       else
         add_feed("no snapshot found")
@@ -5415,13 +5415,13 @@ end
 
 function load_high_score()
   local saved = load_data("high_score")
-  if saved ~= nil then
-    high_score = tonumber(saved) or 0
+  if saved then
+    high_score = tonumber(saved.high_score) or 0
   end
 end
 
 function save_high_score()
-  save_data("high_score", tostring(high_score))
+  save_data("high_score", {high_score=high_score})
 end
 
 function reset_board()
@@ -5666,13 +5666,13 @@ function save_notes()
     blob = blob .. notes[i]
     if i < #notes then blob = blob .. "\\n" end
   end
-  save_data("notes_blob", blob)
-  save_data("notes_count", tostring(#notes))
+  save_data("notes_state", {blob=blob,count=#notes})
   status = "saved " .. #notes .. " notes"
 end
 
 function load_notes()
-  local blob = load_data("notes_blob")
+  local notes_save = load_data("notes_state")
+  local blob = notes_save and notes_save.blob or nil
   notes = {}
   if blob ~= nil and blob ~= "" then
     local line = ""
@@ -5812,7 +5812,7 @@ speed = 1.5
 function _init()
   default_controls("dpad")
   local saved = load_data("flappy_high_score")
-  if saved ~= nil then high_score = tonumber(saved) or 0 end
+  if saved then high_score = tonumber(saved.high_score) or 0 end
   restart_game()
 end
 
@@ -5869,7 +5869,7 @@ function _update()
         score = score + 1
         if score > high_score then
           high_score = score
-          save_data("flappy_high_score", tostring(high_score))
+          save_data("flappy_high_score", {high_score=high_score})
         end
       end
       if hit_pipe(pipe) then alive = false end
@@ -5923,7 +5923,8 @@ timed_mode = true
 paused = false
 seconds_left = 120
 score = 0
-high = tonumber(load_data("crossword_timed_high") or "0") or 0
+local timed_save = load_data("crossword_timed_high")
+high = timed_save and (tonumber(timed_save.high) or 0) or 0
 
 words = {}
 found = {}
@@ -6011,7 +6012,7 @@ function update_play()
   if all_found then
     if timed_mode and score > high then
       high = score
-      save_data("crossword_timed_high", tostring(high))
+      save_data("crossword_timed_high", {high=high})
     end
     state = "done"
   end
@@ -6082,7 +6083,8 @@ size_i = 1
 mode = "menu"
 time_left = 60
 score = 0
-high = tonumber(load_data("ten_sum_high") or "0") or 0
+local ten_sum_save = load_data("ten_sum_high")
+high = ten_sum_save and (tonumber(ten_sum_save.high) or 0) or 0
 
 function point_in(mx,my,x,y,w,h)
   return mx >= x and mx <= x+w and my >= y and my <= y+h
@@ -6119,7 +6121,7 @@ function _update()
     if time_left <= 0 then
       if score > high then
         high = score
-        save_data("ten_sum_high", tostring(high))
+        save_data("ten_sum_high", {high=high})
       end
       mode = "done"
     end
@@ -6167,7 +6169,8 @@ selected = {}
 spawn_timer = 0
 score = 0
 missed = 0
-high = tonumber(load_data("convey_it_high") or "0") or 0
+local convey_save = load_data("convey_it_high")
+high = convey_save and (tonumber(convey_save.high) or 0) or 0
 
 valid = {cat=true,dog=true,sun=true,map=true,run=true,ice=true,box=true}
 
@@ -6248,7 +6251,7 @@ function _update()
   if (mpress & 1) ~= 0 and point_in(mx,my,250,66,150,16) then
     if score > high then
       high = score
-      save_data("convey_it_high", tostring(high))
+      save_data("convey_it_high", {high=high})
     end
     reset_game()
   end
@@ -7386,8 +7389,8 @@ function makeRuntime(){
   const dialogState={active:null,results:new Map(),caretBlinkAt:0};
   const BUTTON_ALIASES={up:0,u:0,down:1,d:1,left:2,l:2,right:3,r:3,a:4,b:5,x:6,y:7,leftshoulder:8,lb:8,l1:8,rightshoulder:9,rb:9,r1:9,select:10,back:10,start:11};
   const persistPrefix=()=>`trycode_runtime_save:${state.currentProjectName||'project'}:`;
-  const saveData=(key,value)=>{ const k=String(key??'').trim(); if(!k) return false; try{ localStorage.setItem(persistPrefix()+k, String(value??'')); return true; }catch(_){ return false; } };
-  const loadData=key=>{ const k=String(key??'').trim(); if(!k) return null; try{ const value=localStorage.getItem(persistPrefix()+k); return value==null?null:value; }catch(_){ return null; } };
+  const saveData=(key,values)=>{ const k=String(key??'').trim(); if(!k||values==null||typeof values!=='object') return false; try{ localStorage.setItem(persistPrefix()+k, JSON.stringify(values)); return true; }catch(_){ return false; } };
+  const loadData=key=>{ const k=String(key??'').trim(); if(!k) return null; try{ const raw=localStorage.getItem(persistPrefix()+k); if(raw==null) return null; const parsed=JSON.parse(raw); return (parsed&&typeof parsed==='object')?parsed:null; }catch(_){ return null; } };
   const normalizeButtonIndex=value=>{ if(typeof value==='number'&&Number.isFinite(value)){ const i=value|0; return i>=0&&i<12?i:-1; } const s=String(value??'').trim().toLowerCase(); if(!s) return -1; if(/^(?:[0-9]|1[01])$/.test(s)) return parseInt(s,10); return Object.prototype.hasOwnProperty.call(BUTTON_ALIASES,s)?BUTTON_ALIASES[s]:-1; };
   const normalizeKeyName=value=>{ const s=String(value??'').trim().toLowerCase(); if(!s) return ''; const aliases={spacebar:'space',' ':'space',esc:'escape',return:'enter',ctrl:'ctrl',control:'ctrl',left:'left',right:'right',up:'up',down:'down'}; return aliases[s]||s; };
   const eventKeyNames=e=>{ const names=new Set(); const key=normalizeKeyName(e.key); if(key) names.add(key); const code=String(e.code||''); if(/^Key[A-Z]$/.test(code)) names.add(code.slice(3).toLowerCase()); else if(/^Digit\d$/.test(code)) names.add(code.slice(5)); else if(/^Numpad\d$/.test(code)) names.add(code.slice(6)); const codeMap={Space:['space'],Tab:['tab'],Enter:['enter'],Escape:['escape'],Backspace:['backspace'],Delete:['delete'],Insert:['insert'],Home:['home'],End:['end'],PageUp:['pageup'],PageDown:['pagedown'],ArrowUp:['up'],ArrowDown:['down'],ArrowLeft:['left'],ArrowRight:['right'],Minus:['-'],Equal:['='],BracketLeft:['['],BracketRight:[']'],Backslash:['\\'],Semicolon:[';'],Quote:["'"],Comma:[','],Period:['.'],Slash:['/'],Backquote:['`'],ControlLeft:['lctrl','ctrl'],ControlRight:['rctrl','ctrl'],ShiftLeft:['lshift','shift'],ShiftRight:['rshift','shift'],AltLeft:['lalt','alt'],AltRight:['ralt','alt'],MetaLeft:['lmeta','meta'],MetaRight:['rmeta','meta']}; (codeMap[code]||[]).forEach(name=>names.add(name)); if(/^F\d{1,2}$/.test(code)) names.add(code.toLowerCase()); return names; };
@@ -7887,8 +7890,8 @@ function makeRuntime(){
     push('confirm_box',L=>{ const message=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):""; const title=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):"confirm"; const status=runDialog('confirm',message,title); if(!status.done){ lua.lua_pushnil(L); return 1; } lua.lua_pushboolean(L,status.result?1:0); return 1; });
     push('entry_box',L=>{ const message=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):""; const initial=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):""; const title=lua.lua_gettop(L)>=3?to_jsstring(lua.lua_tolstring(L,3)):"entry"; const status=runDialog('entry',message,title,initial); if(!status.done){ lua.lua_pushnil(L); return 1; } if(status.result===false){ lua.lua_pushboolean(L,0); return 1; } lua.lua_pushstring(L,to_luastring(String(status.result??''))); return 1; });
     push('keyboard_box',L=>{ const message=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):""; const initial=lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):""; const title=lua.lua_gettop(L)>=3?to_jsstring(lua.lua_tolstring(L,3)):"keyboard"; const status=runDialog('entry',message,title,initial); if(!status.done){ lua.lua_pushnil(L); return 1; } if(status.result===false){ lua.lua_pushboolean(L,0); return 1; } lua.lua_pushstring(L,to_luastring(String(status.result??''))); return 1; });
-    push('save_data',L=>{ const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):''; let value=''; if(lua.lua_gettop(L)>=2){ value=lua.lua_isnumber(L,2)?String(lua.lua_tonumber(L,2)):to_jsstring(lua.lua_tolstring(L,2)); } lua.lua_pushboolean(L,saveData(key,value)?1:0); return 1; });
-    push('load_data',L=>{ const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):''; const value=loadData(key); if(value==null){ lua.lua_pushnil(L); return 1; } lua.lua_pushstring(L,to_luastring(String(value))); return 1; });
+    push('save_data',L=>{ const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):''; if(!lua.lua_istable(L,2)){ lua.lua_pushboolean(L,0); return 1; } const out={}; lua.lua_pushnil(L); while(lua.lua_next(L,2)!==0){ const k=lua.lua_isnumber(L,-2)?String(lua.lua_tonumber(L,-2)):to_jsstring(lua.lua_tolstring(L,-2)); if(lua.lua_isnumber(L,-1)) out[k]=lua.lua_tonumber(L,-1); else if(lua.lua_isboolean(L,-1)) out[k]=!!lua.lua_toboolean(L,-1); else if(lua.lua_isstring(L,-1)) out[k]=to_jsstring(lua.lua_tolstring(L,-1)); lua.lua_pop(L,1); } lua.lua_pushboolean(L,saveData(key,out)?1:0); return 1; });
+    push('load_data',L=>{ const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):''; const value=loadData(key); if(value==null){ lua.lua_pushnil(L); return 1; } lua.lua_newtable(L); Object.keys(value).forEach(k=>{ const v=value[k]; if(typeof v==='number') lua.lua_pushnumber(L,v); else if(typeof v==='boolean') lua.lua_pushboolean(L,v?1:0); else lua.lua_pushstring(L,to_luastring(String(v??''))); lua.lua_setfield(L,-2,to_luastring(String(k))); }); return 1; });
     const defaultBoxFromLua=L=>{ const argc=lua.lua_gettop(L); if(argc===0 || lua.lua_isnoneornil(L,1)){ resetUiBoxStyle(); return 0; } if(lua.lua_istable(L,1)){ const patch=stylePatchFromLuaTable(1); UI_BOX_KINDS.forEach(kind=>applyUiBoxStyle(kind, patch)); return 0; } const kind=normalizeUiBoxKind(to_jsstring(lua.lua_tolstring(L,1))); if(!kind) return 0; if(argc===1 || lua.lua_isnoneornil(L,2)){ resetUiBoxStyle(kind); return 0; } if(lua.lua_istable(L,2)){ applyUiBoxStyle(kind, stylePatchFromLuaTable(2)); return 0; } applyUiBoxStyle(kind,{x:lua.lua_isnumber(L,2)?lua.lua_tonumber(L,2):null,y:lua.lua_isnumber(L,3)?lua.lua_tonumber(L,3):null,w:lua.lua_isnumber(L,4)?lua.lua_tonumber(L,4):null,h:lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):null}); return 0; };
     push('default_box',defaultBoxFromLua);
     push('ui_box',defaultBoxFromLua);
