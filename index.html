@@ -1624,7 +1624,7 @@ function renderCodeHighlight(){
 function expandLuaShorthand(source){
   return String(source||"").split(/\r?\n/).map(line=>{
     const {code, comment}=splitLuaLineComment(line);
-    const m=code.match(/^(\s*)([A-Za-z_][A-Za-z0-9_\.]*)(\s*)([+\-])=(\s*)(.*\S)\s*$/);
+    const m=code.match(/^(\s*)([A-Za-z_][A-Za-z0-9_\.]*)(\s*)([+\-*\/])=(\s*)(.*\S)\s*$/);
     if(!m) return line;
     const [,indent,name,,op,,rhs]=m;
     return `${indent}${name} = ${name} ${op} (${rhs})${comment}`;
