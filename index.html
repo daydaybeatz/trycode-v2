@@ -1592,7 +1592,7 @@ function codeTokenHtml(cls,value){ return `<span class="${cls}">${escapeHtml(val
 function highlightLuaLine(line){
   const {code, comment}=splitLuaLineComment(line);
   const keywords=new Set(["function","local","if","then","elseif","else","end","for","in","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
-  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","sspr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","abs","flr","sin","cosin","tan","rnd","sub","tostr","upper","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","pairs"]);
+  const builtins=new Set(["_init","_update","_draw","print","print_","cls","camera","map","pmap","spr","sspr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","time","abs","flr","sin","cosin","tan","rnd","sub","tostr","upper","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","pairs"]);
   let html="";
   const regex=/(\b\d+(?:\.\d+)?\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*|==|~=|<=|>=|\.\.\.|\.\.|[+\-*\/%#=<>]+)/g;
   let last=0, match;
@@ -7895,6 +7895,7 @@ function makeRuntime(){
     const defaultBoxFromLua=L=>{ const argc=lua.lua_gettop(L); if(argc===0 || lua.lua_isnoneornil(L,1)){ resetUiBoxStyle(); return 0; } if(lua.lua_istable(L,1)){ const patch=stylePatchFromLuaTable(1); UI_BOX_KINDS.forEach(kind=>applyUiBoxStyle(kind, patch)); return 0; } const kind=normalizeUiBoxKind(to_jsstring(lua.lua_tolstring(L,1))); if(!kind) return 0; if(argc===1 || lua.lua_isnoneornil(L,2)){ resetUiBoxStyle(kind); return 0; } if(lua.lua_istable(L,2)){ applyUiBoxStyle(kind, stylePatchFromLuaTable(2)); return 0; } applyUiBoxStyle(kind,{x:lua.lua_isnumber(L,2)?lua.lua_tonumber(L,2):null,y:lua.lua_isnumber(L,3)?lua.lua_tonumber(L,3):null,w:lua.lua_isnumber(L,4)?lua.lua_tonumber(L,4):null,h:lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):null}); return 0; };
     push('default_box',defaultBoxFromLua);
     push('ui_box',defaultBoxFromLua);
+    push('time',L=>{ lua.lua_pushnumber(L, performance.now()/1000); return 1;});
     push('abs',L=>{ lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1))); return 1;});
     push('flr',L=>{ lua.lua_pushinteger(L,Math.floor(lua.lua_tonumber(L,1))); return 1;});
     push('upper',L=>{ let text=''; if(lua.lua_gettop(L)>=1&&!lua.lua_isnoneornil(L,1)){ if(lua.lua_isboolean(L,1)) text=lua.lua_toboolean(L,1)?'true':'false'; else if(lua.lua_isnumber(L,1)) text=String(lua.lua_tonumber(L,1)); else { const raw=lua.lua_tolstring(L,1); text=raw?to_jsstring(raw):''; } } lua.lua_pushstring(L,to_luastring(String(text).toUpperCase())); return 1;});
