@@ -8208,6 +8208,43 @@ function wireUI(){
   });
   bindClick("stopMusicBtn",()=>stopMusicPlayback());
   bind("codeEditor",'keydown',e=>{
+    const editor=e.currentTarget;
+    if(e.key==='Tab' && editor){
+      e.preventDefault();
+      const value=editor.value||"";
+      const start=editor.selectionStart||0;
+      const end=editor.selectionEnd||0;
+      if(e.shiftKey){
+        const lineStart=value.lastIndexOf('\n',Math.max(0,start-1))+1;
+        const selected=value.slice(lineStart,end);
+        const lines=selected.split('\n');
+        let removedTotal=0;
+        const out=lines.map((line,i)=>{
+          if(line.startsWith('\t')){ removedTotal+=1; return line.slice(1); }
+          if(line.startsWith('  ')){ removedTotal+=2; return line.slice(2); }
+          if(line.startsWith(' ')){ removedTotal+=1; return line.slice(1); }
+          return line;
+        }).join('\n');
+        editor.value=value.slice(0,lineStart)+out+value.slice(end);
+        const newStart=Math.max(lineStart,start-(start>lineStart?Math.min(2,start-lineStart):0));
+        const newEnd=Math.max(newStart,end-removedTotal);
+        editor.selectionStart=newStart;
+        editor.selectionEnd=newEnd;
+      }else if(start!==end){
+        const lineStart=value.lastIndexOf('\n',Math.max(0,start-1))+1;
+        const selected=value.slice(lineStart,end);
+        const lines=selected.split('\n');
+        const out=lines.map(line=>'\t'+line).join('\n');
+        editor.value=value.slice(0,lineStart)+out+value.slice(end);
+        editor.selectionStart=start+1;
+        editor.selectionEnd=end+lines.length;
+      }else{
+        editor.value=value.slice(0,start)+'\t'+value.slice(end);
+        editor.selectionStart=editor.selectionEnd=start+1;
+      }
+      editor.dispatchEvent(new Event('input',{bubbles:true}));
+      return;
+    }
     const key=String(e.key||'').toLowerCase();
     if((e.ctrlKey||e.metaKey) && !e.altKey && !e.shiftKey && key==='b'){
       e.preventDefault();
