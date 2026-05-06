@@ -90,6 +90,9 @@
     .codeHighlightInner{min-height:100%}
     .code textarea.code{position:relative;z-index:1;resize:none;background:transparent;color:transparent;caret-color:#f8eccf;box-shadow:none;overflow:hidden}
     .code textarea.code::selection{background:rgba(255,236,186,.25)}
+    .codeFunctionTooltip{position:fixed;z-index:120;display:none;max-width:min(520px,calc(100vw - 24px));padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#fffaf1,#efd39f);box-shadow:0 5px 0 rgba(80,45,22,.42);color:var(--ink);font:12px/1.35 Consolas,"SFMono-Regular",monospace;pointer-events:none;white-space:normal}
+    .codeFunctionTooltip.show{display:block}
+    .codeFunctionTooltip b{color:var(--accent)}
     .tok-comment{color:#958471}
     .tok-keyword{color:#ffd479;font-weight:700}
     .tok-builtin{color:#7ad7ff}
@@ -551,13 +554,14 @@
 
     <div class="menuBackdrop" id="menuBackdrop"></div>
     <div class="menu" id="menu"><div class="menuCard">
-      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnImportProject">Import</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="importFormatRow"><button class="mbtn" id="btnImportZip">.zip</button><button class="mbtn" id="btnImportCodeTxt">code.txt</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button><button class="mbtn" id="btnExportCodeTxt">code.txt</button></div></div></div>
+      <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnImportProject">Import</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnLoadBackup">Backup</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="importFormatRow"><button class="mbtn" id="btnImportZip">.zip</button><button class="mbtn" id="btnImportCodeTxt">code.txt</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button><button class="mbtn" id="btnExportCodeTxt">code.txt</button></div></div></div>
       <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal (480x270)</option><option value="hd_2x">2x (960x540)</option><option value="hd_3x">3x (1440x810)</option><option value="hd_4x">4x (1920x1080)</option><option value="mobile_fullscreen">Mobile portrait (270x480)</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
             <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="list menuLoadList" id="projectList"></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div></div>
     </div></div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<div class="codeFunctionTooltip" id="codeFunctionTooltip" role="tooltip"></div>
 <input type="file" id="importProjectZipInput" accept=".zip,application/zip" style="display:none">
 
 <script>
@@ -565,6 +569,8 @@
 "use strict";
 const $ = id => document.getElementById(id);
 const LS_KEY = "try_code_projects_v20";
+const BACKUP_KEY = "try_code_auto_backup_v1";
+const AUTO_BACKUP_INTERVAL_MS = 3 * 60 * 1000;
 const NOTE_MAP = {"C":0,"C#":1,"D":2,"D#":3,"E":4,"F":5,"F#":6,"G":7,"G#":8,"A":9,"A#":10,"B":11};
 const SCALE_MAP = {
   major:[0,2,4,5,7,9,11],
@@ -1386,6 +1392,9 @@ const CODE_API_DOCS = [
 ].sort(compareDocsByCategory);
 let docsPage = 0;
 let examplesPage = 0;
+const SYSTEM_FUNCTION_SIGNATURES = new Map([
+  ['cls','cls(clearColor?)'],['camera','camera(x?, y?) — no args resets camera'],['zoom','zoom(scale?, originX?, originY?) -> number|nil'],['color','color(indexOrHex?, r?, g?) -> string'],['pal','pal(fromColor?, toColor?) — no args resets palette map'],['pset','pset(x, y, color?)'],['pget','pget(x, y) -> colorIndex'],['line','line(x0, y0, x1, y1, color?)'],['rect','rect(x0, y0, x1, y1, color?)'],['rectfill','rectfill(x0, y0, x1, y1, color?)'],['circ','circ(x, y, radius, color?)'],['circfill','circfill(x, y, radius, color?)'],['print','print(text, size?, x?, y?, color?, font?)'],['print_','print_(...) — alias to print behavior'],['default_font','default_font(fontName?, size?, spacing?)'],['default_controls','default_controls(mode?) -> string'],['spr','spr(source, x, y, flip?)'],['sspr','sspr(source, x, y, cropXPct?, cropYPct?, center?, flip?)'],['r_spr','r_spr(source, x, y, angle?, flip?)'],['animate','animate(spriteRef, x, y, fps)'],['mget','mget(tileX, tileY, layer=0, mapIndex=0) -> tileId'],['mset','mset(tileX, tileY, tileId, layer=0, mapIndex=0)'],['fget','fget(tileId, flagIndex) -> bool'],['solid','solid(pixelX, pixelY, layer?, mapIndex=0) -> bool'],['wall','wall(pixelX, pixelY, layer?, mapIndex=0) -> bool'],['map','map(mapIndex=0, screenX=0, screenY=0, layer?)'],['pmap','pmap(mapIndex=0, mapX=0, mapY=0, screenX=0, screenY=0, mapW?, mapH?, startLayer?, endLayer?)'],['btn','btn(button) -> bool'],['btnp','btnp(button) -> bool'],['mouse','mouse() -> x, y, buttonsBitmask, pressedBitmask'],['key','key(name) -> bool'],['keyp','keyp(name) -> bool'],['joyx','joyx(playerIndex) -> number'],['joyy','joyy(playerIndex) -> number'],['message_box','message_box(message="", title="message") -> doneBool'],['confirm_box','confirm_box(message="", title="confirm") -> bool|nil'],['entry_box','entry_box(message="", initial="", title="entry") -> string|false|nil'],['keyboard_box','keyboard_box(message="", initial="", title="keyboard") -> string|false|nil'],['save_data','save_data(key, table) -> bool'],['load_data','load_data(key) -> table|nil'],['default_box','default_box(styleTable?) or default_box(kind, styleTableOrXYWH?)'],['ui_box','ui_box(...) — same behavior as default_box'],['clock','clock() -> seconds'],['abs','abs(n) -> number'],['flr','flr(n) -> integer'],['upper','upper(text) -> string'],['sfx','sfx(index, loop?)'],['music','music(sourceOrCommand, action="play", loop=true) — music("stop") stops playback'],['add','add(t, value) -> value'],['del','del(t, value) -> value|nil'],['deli','deli(t, index?) -> removedValue|nil'],['all','all(t) -> iteratorFn'],['foreach','foreach(t, fn)'],['sin','sin(x) -> number'],['cosin','cosin(x) -> number'],['tan','tan(x) -> number'],['rnd','rnd(limitOrTable?) -> number|item|nil'],['sub','sub(text, startIndex, endIndex?) -> string'],['tostr','tostr(value) -> string'],['distance','distance(a, b) -> number — expects {x,y}'],['col','col(a, b) -> bool — expects {x,y,w,h}'],['col2','col2(a, b) -> bool — expects {x,y,r} or {radius}'],['mod_value','mod_value(t, key, amount) -> newNumber|nil'],['set_value','set_value(t, key, value) -> value|nil'],['get_value','get_value(t, key) -> any|nil'],['default_button','default_button(optsTable) -> buttonTable'],['default_dropdown','default_dropdown(optsTable) -> dropdownTable'],['default_ui_theme','default_ui_theme(kind, patchTable)'],['ui_button','ui_button(buttonTable) -> clickedBool'],['ui_buttons','ui_buttons(buttonList) -> anyClickedBool'],['ui_dropdown','ui_dropdown(dropdownTable) -> changedBool'],['__tc_ui_flush_overlay','__tc_ui_flush_overlay() — internal overlay flush'],['_init','_init() — optional; called once after build'],['_update','_update() — called every frame'],['_draw','_draw() — called every frame']
+]);
 function getCodeFileViewState(index){
   const key=String(index|0);
   if(!state.codeViewByFile[key]) state.codeViewByFile[key]={scrollTop:0,scrollLeft:0};
@@ -1444,6 +1453,59 @@ function stepCodeSearchMatch(direction){
 }
 function getCurrentCodeFile(){ ensureProjectData(); state.currentCodeFile=clamp(state.currentCodeFile,0,state.appProject.codeFiles.length-1); return state.appProject.codeFiles[state.currentCodeFile]; }
 function saveEditorToCurrentCodeFile(){ const f=getCurrentCodeFile(); if(f) f.content=$("codeEditor").value||""; }
+function hideCodeFunctionTooltip(){ $("codeFunctionTooltip")?.classList.remove('show'); }
+function getHoveredCodeWord(event){
+  const editor=$("codeEditor"), shell=$("codeScrollShell");
+  if(!editor||!shell) return '';
+  const rect=editor.getBoundingClientRect();
+  const style=getComputedStyle(editor);
+  const padLeft=parseFloat(style.paddingLeft)||0;
+  const padTop=parseFloat(style.paddingTop)||0;
+  const lineHeight=parseFloat(style.lineHeight)||20;
+  const probe=document.createElement('span');
+  probe.textContent='M';
+  probe.style.position='fixed';
+  probe.style.visibility='hidden';
+  probe.style.fontFamily=style.fontFamily;
+  probe.style.fontSize=style.fontSize;
+  probe.style.fontWeight=style.fontWeight;
+  document.body.appendChild(probe);
+  const charWidth=probe.getBoundingClientRect().width||8;
+  probe.remove();
+  const localX=event.clientX-rect.left-padLeft;
+  const localY=event.clientY-rect.top-padTop;
+  if(localX<0||localY<0) return '';
+  const lineIndex=Math.floor(localY/lineHeight);
+  const column=Math.max(0,Math.floor(localX/charWidth));
+  const lines=String(editor.value||'').split('\n');
+  const line=lines[lineIndex]||'';
+  if(column>line.length+1) return '';
+  let pos=Math.min(column,line.length);
+  if(pos>0&&!/[A-Za-z0-9_]/.test(line.charAt(pos))&&/[A-Za-z0-9_]/.test(line.charAt(pos-1))) pos-=1;
+  if(!/[A-Za-z_]/.test(line.charAt(pos))) return '';
+  let start=pos,end=pos+1;
+  while(start>0&&/[A-Za-z0-9_]/.test(line.charAt(start-1))) start--;
+  while(end<line.length&&/[A-Za-z0-9_]/.test(line.charAt(end))) end++;
+  return line.slice(start,end);
+}
+function updateCodeFunctionTooltip(event){
+  const tip=$("codeFunctionTooltip");
+  if(!tip) return;
+  if(!(window.matchMedia?.('(pointer: fine)').matches)){ hideCodeFunctionTooltip(); return; }
+  const word=getHoveredCodeWord(event);
+  const signature=SYSTEM_FUNCTION_SIGNATURES.get(word);
+  if(!signature){ hideCodeFunctionTooltip(); return; }
+  tip.innerHTML=`<b>${escapeHtml(word)}</b> ${escapeHtml(signature)}`;
+  const margin=12;
+  tip.style.left='0px';
+  tip.style.top='0px';
+  tip.classList.add('show');
+  const rect=tip.getBoundingClientRect();
+  const left=Math.min(window.innerWidth-rect.width-margin, event.clientX+14);
+  const top=Math.min(window.innerHeight-rect.height-margin, event.clientY+18);
+  tip.style.left=`${Math.max(margin,left)}px`;
+  tip.style.top=`${Math.max(margin,top)}px`;
+}
 function renameCurrentCodeFile(){
   const f=getCurrentCodeFile();
   if(!f) return;
@@ -1721,6 +1783,80 @@ function newProject(){ if(!confirm("Are you sure you want to start a new project
 
 function loadAllProjects(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(_){ return {}; } }
 function saveAllProjects(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
+function loadAutoBackup(){ try{ return JSON.parse(localStorage.getItem(BACKUP_KEY)||"null"); }catch(_){ return null; } }
+function saveAutoBackupSnapshot(){
+  if(!state.appProject) return false;
+  try{
+    saveEditorToCurrentCodeFile();
+    const backup={ t:Date.now(), name:state.currentProjectName||'unsaved project', hasSaved:!!state.hasSaved, project:cloneProjectSnapshot(state.appProject) };
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+    return true;
+  }catch(err){
+    console.warn('Auto-backup failed', err);
+    return false;
+  }
+}
+function formatBackupTime(timestamp){
+  const date=new Date(Number(timestamp)||Date.now());
+  const time=date.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  const sameDay=date.toDateString()===new Date().toDateString();
+  return sameDay ? time : `${date.toLocaleDateString()} ${time}`;
+}
+function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={}){
+  state.currentProjectName=name||'';
+  state.hasSaved=!!(hasSaved&&name);
+  state.appProject=cloneProjectSnapshot(project);
+  invalidateEditorRenderCache();
+  ensureProjectData();
+  state.currentMapIndex=0;
+  state.currentLayerIndex=0;
+  resetMapHistory();
+  state.currentSpriteIndex=0;
+  state.currentSpriteFrame=0;
+  state.currentSoundIndex=0;
+  state.currentMusicIndex=0;
+  state.currentCodeFile=0;
+  state.codeSearchOpen=false;
+  state.codeSearchQuery="";
+  state.codeSearchMatches=[];
+  state.codeSearchMatchIndex=-1;
+  state.codeViewByFile={};
+  state.selectedTileId=1;
+  state.selectedPaletteIndex=0;
+  state.palettePage=0;
+  state.spriteFramePage=0;
+  state.spriteListPage=0;
+  state.projectListPage=0;
+  state.mapZoom=1;
+  state.mapOffsetX=0;
+  state.mapOffsetY=0;
+  state.mapAutoCenterPending=true;
+  renderCodeTabs();
+  loadCurrentCodeFileToEditor();
+  syncSpriteUI();
+  drawSpriteEditor();
+  syncMapUIFromProject();
+  refreshSoundUI();
+  drawSoundWaveCanvas();
+  refreshMusicUI();
+  refreshMenuSettingsUI();
+  runtime.syncProject(state.appProject);
+  runtime.reset(getProjectLua());
+  setView('code');
+}
+function loadAutoBackupProject(){
+  const backup=loadAutoBackup();
+  if(!backup||!backup.project){ toast('No auto-save backup is available yet.'); return false; }
+  const when=formatBackupTime(backup.t);
+  if(!confirm(`Are you sure you want to load the auto-save from ${when}? Unsaved changes will be lost.`)) return false;
+  restoreProjectFromSnapshot(backup.project,{name:backup.hasSaved?backup.name:'',hasSaved:backup.hasSaved});
+  toast(`<b>Loaded backup:</b> ${escapeHtml(when)}`);
+  return true;
+}
+function startAutoBackupTimer(){
+  saveAutoBackupSnapshot();
+  setInterval(saveAutoBackupSnapshot, AUTO_BACKUP_INTERVAL_MS);
+}
 function cloneProjectSnapshot(projectLike){
   const fallback=defaultProject();
   if(!projectLike||typeof projectLike!=='object') return fallback;
@@ -1762,46 +1898,7 @@ function refreshProjectList(){
       e.stopPropagation();
       if(!confirm(`Load ${name}? Unsaved changes will be lost.`)) return;
       const p=all[name];
-      state.currentProjectName=name;
-      state.hasSaved=true;
-      state.appProject=cloneProjectSnapshot(p.project);
-      invalidateEditorRenderCache();
-      ensureProjectData();
-      state.currentMapIndex=0;
-      state.currentLayerIndex=0;
-      resetMapHistory();
-      state.currentSpriteIndex=0;
-      state.currentSpriteFrame=0;
-      state.currentSoundIndex=0;
-      state.currentMusicIndex=0;
-      state.currentCodeFile=0;
-      state.codeSearchOpen=false;
-      state.codeSearchQuery="";
-      state.codeSearchMatches=[];
-      state.codeSearchMatchIndex=-1;
-      state.codeViewByFile={};
-      state.selectedTileId=1;
-      state.selectedPaletteIndex=0;
-      state.palettePage=0;
-      state.spriteFramePage=0;
-      state.spriteListPage=0;
-      state.projectListPage=0;
-      state.mapZoom=1;
-      state.mapOffsetX=0;
-      state.mapOffsetY=0;
-      state.mapAutoCenterPending=true;
-      renderCodeTabs();
-      loadCurrentCodeFileToEditor();
-      syncSpriteUI();
-      drawSpriteEditor();
-      syncMapUIFromProject();
-      refreshSoundUI();
-      drawSoundWaveCanvas();
-      refreshMusicUI();
-      refreshMenuSettingsUI();
-      runtime.syncProject(state.appProject);
-      runtime.reset(getProjectLua());
-      setView('code');
+      restoreProjectFromSnapshot(p.project,{name,hasSaved:true});
       setFileMenuOpen(false);
       toast(`<b>Loaded:</b> ${escapeHtml(name)}`);
     };
@@ -2055,7 +2152,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "function pmap(mi,mx,my,sx0,sy0,mw,mh,sl,el){mi=mi==null?0:mi|0;const mapObj=projectRef.maps[mi];if(!mapObj)return;const totalLayers=mapObj.layers.length;mx=mx==null?0:mx|0;my=my==null?0:my|0;sx0=Number(sx0)||0;sy0=Number(sy0)||0;mw=mw==null?projectRef.project.map_w:mw|0;mh=mh==null?projectRef.project.map_h:mh|0;sl=sl==null?0:sl|0;el=el==null?Math.max(0,totalLayers-1):el|0;for(let li=sl;li<=el;li++){const layer=mapObj.layers[li];if(!layer||layer.visible===false)continue;for(let yy=0;yy<mh;yy++)for(let xx=0;xx<mw;xx++){const gx=mx+xx,gy=my+yy;if(gx<0||gy<0||gx>=projectRef.project.map_w||gy>=projectRef.project.map_h)continue;const tid=layer.data[gy][gx]||0,def=projectRef.tileDefs[tid];if(!tid||!def)continue;const wx=sx0+xx*projectRef.project.tile_w,wy=sy0+yy*projectRef.project.tile_h;const x0=sx(wx),y0=sy(wy),x1=sx(wx+projectRef.project.tile_w),y1=sy(wy+projectRef.project.tile_h);const tileW=Math.max(1,x1-x0),tileH=Math.max(1,y1-y0);if(def.bgEnabled!==false){ctx.fillStyle=def.bg||'#444';ctx.fillRect(x0,y0,tileW,tileH)}let sr=parseSpriteRef(def.source||'');if(def.animated){const folderIndex=resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders),folder=folderIndex==null?null:projectRef.spriteFolders[folderIndex],speed=Math.max(0.1,Number(def.animSpeed)||6);if(folder&&folder.frames&&folder.frames.length)sr={folder:folderIndex,frame:Math.floor((performance.now()/1000)*speed)%folder.frames.length};}if(sr){const folder=projectRef.spriteFolders[sr.folder],sp=folder&&folder.frames[sr.frame];if(sp){drawInternalSpriteRuntime(sr,wx,wy,projectRef.project.tile_w/sp.w,projectRef.project.tile_h/sp.h);continue;}}}}}function map(mi,sx0,sy0,layer){mi=mi==null?0:mi|0;const mapObj=projectRef.maps[mi];if(!mapObj)return;const totalLayers=mapObj.layers.length;const sl=layer==null?0:layer|0;const el=layer==null?Math.max(0,totalLayers-1):sl;pmap(mi,0,0,sx0,sy0,projectRef.project.map_w,projectRef.project.map_h,sl,el)}",
     "function attachJoy(root,knob,idx){const R=52,KR=21;function setKnob(nx,ny){knob.style.left='calc(50% + '+(nx*R)+'px)';knob.style.top='calc(50% + '+(ny*R)+'px)';knob.style.marginLeft='-'+KR+'px';knob.style.marginTop='-'+KR+'px';}function update(clientX,clientY){const rect=root.getBoundingClientRect();const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2,dx=clientX-cx,dy=clientY-cy;const len=Math.hypot(dx,dy)||1,m=Math.min(R,len);input.joy[idx].x=clamp((dx/len)*(m/R),-1,1);input.joy[idx].y=clamp((dy/len)*(m/R),-1,1);setKnob(input.joy[idx].x,input.joy[idx].y);}function up(){input.joy[idx].down=false;input.joy[idx].x=0;input.joy[idx].y=0;setKnob(0,0)}root.addEventListener('pointerdown',e=>{root.setPointerCapture(e.pointerId);input.joy[idx].down=true;update(e.clientX,e.clientY);e.preventDefault()});root.addEventListener('pointermove',e=>{if(!input.joy[idx].down)return;update(e.clientX,e.clientY);e.preventDefault()});['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(type=>root.addEventListener(type,e=>{up();e.preventDefault()}));setKnob(0,0);return{reset:up}}",
     "function syncLeftMovementInput(){const mode=(projectRef.settings&&projectRef.settings.movementInput)==='dpad'?'dpad':'left_joystick';if(mode!=='dpad')return;input.joy[0].x=(input.btnDpad[3]?1:0)-(input.btnDpad[2]?1:0);input.joy[0].y=(input.btnDpad[1]?1:0)-(input.btnDpad[0]?1:0)}",
-    "const leftJoy=attachJoy(document.getElementById('joyL'),document.getElementById('knobL'),0),rightJoy=attachJoy(document.getElementById('joyR'),document.getElementById('knobR'),1);document.querySelectorAll('.symbtn').forEach(btn=>{const id=(+btn.dataset.btn)-4;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnFace',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false);e.preventDefault()}))});document.querySelectorAll('.sysbtn').forEach(btn=>{const id=Math.max(0,Math.min(3,(+btn.dataset.btn)-8));btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnSystem',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnSystem',id,false);e.preventDefault()}))});document.querySelectorAll('.dpadBtn').forEach(btn=>{const id=+btn.dataset.dpadBtn;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnDpad',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false);e.preventDefault()}))});['pointerdown','pointermove'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,false);if(type==='pointerdown'){try{c.setPointerCapture(e.pointerId)}catch{}}if(type==='pointerdown'||e.pointerType==='touch')e.preventDefault()},{passive:false}));['pointerup','pointercancel','lostpointercapture'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,true);e.preventDefault()},{passive:false}));c.addEventListener('contextmenu',e=>e.preventDefault());const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3};window.addEventListener('keydown',e=>{if(projectRef.settings&&projectRef.settings.touchOnly)return;const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,true);e.preventDefault()},{passive:false});window.addEventListener('keyup',e=>{if(projectRef.settings&&projectRef.settings.touchOnly)return;const key=movementKeyMap[e.code];if(key==null)return;setBtnSource('btnDpad',key,false);e.preventDefault()},{passive:false});window.addEventListener('blur',()=>{input.btnDpad.fill(0);input.btnFace.fill(0);input.btnSystem.fill(0);input.btn.fill(0);input.btnPrev.fill(0);input.btnp.fill(0);input.mouse.buttons=0;input.mouse.pressed=0;input.mouse.pointers.clear();leftJoy.reset();rightJoy.reset();syncLeftMovementInput()});applyInputModeUI();",
+    "const leftJoy=attachJoy(document.getElementById('joyL'),document.getElementById('knobL'),0),rightJoy=attachJoy(document.getElementById('joyR'),document.getElementById('knobR'),1);document.querySelectorAll('.symbtn').forEach(btn=>{const id=(+btn.dataset.btn)-4;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnFace',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false);e.preventDefault()}))});document.querySelectorAll('.sysbtn').forEach(btn=>{const id=Math.max(0,Math.min(3,(+btn.dataset.btn)-8));btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnSystem',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnSystem',id,false);e.preventDefault()}))});document.querySelectorAll('.dpadBtn').forEach(btn=>{const id=+btn.dataset.dpadBtn;btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId);setBtnSource('btnDpad',id,true);e.preventDefault()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false);e.preventDefault()}))});['pointerdown','pointermove'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,false);if(type==='pointerdown'){try{c.setPointerCapture(e.pointerId)}catch{}}if(type==='pointerdown'||e.pointerType==='touch')e.preventDefault()},{passive:false}));['pointerup','pointercancel','lostpointercapture'].forEach(type=>c.addEventListener(type,e=>{updateMouse(e,true);e.preventDefault()},{passive:false}));c.addEventListener('contextmenu',e=>e.preventDefault());const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3},actionKeyMap={KeyZ:0,KeyX:1,KeyC:2,KeyV:3};window.addEventListener('keydown',e=>{if(projectRef.settings&&projectRef.settings.touchOnly)return;const moveKey=movementKeyMap[e.code],actionKey=actionKeyMap[e.code];if(moveKey!=null){setBtnSource('btnDpad',moveKey,true);e.preventDefault()}if(actionKey!=null){setBtnSource('btnFace',actionKey,true);e.preventDefault()}},{passive:false});window.addEventListener('keyup',e=>{if(projectRef.settings&&projectRef.settings.touchOnly)return;const moveKey=movementKeyMap[e.code],actionKey=actionKeyMap[e.code];if(moveKey!=null){setBtnSource('btnDpad',moveKey,false);e.preventDefault()}if(actionKey!=null){setBtnSource('btnFace',actionKey,false);e.preventDefault()}},{passive:false});window.addEventListener('blur',()=>{input.btnDpad.fill(0);input.btnFace.fill(0);input.btnSystem.fill(0);input.btn.fill(0);input.btnPrev.fill(0);input.btnp.fill(0);input.mouse.buttons=0;input.mouse.pressed=0;input.mouse.pointers.clear();leftJoy.reset();rightJoy.reset();syncLeftMovementInput()});applyInputModeUI();",
     "const { lua,lauxlib,lualib,to_luastring,to_jsstring }=fengari;const L=lauxlib.luaL_newstate();lualib.luaL_openlibs(L);function push(n,fn){lua.lua_pushjsfunction(L,fn);lua.lua_setglobal(L,to_luastring(n))}",
 	    "push('cls',L=>{const argc=lua.lua_gettop(L);if(argc===0){cls();return 0}const clearColor=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));cls(clearColor);return 0});push('camera',L=>{const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0});push('zoom',L=>{const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0;} lua.lua_pushnumber(L, zoom()); return 1});push('clip',L=>{const argc=lua.lua_gettop(L); if(argc===0){ clip(); return 0;} clip(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4)); return 0;});push('color',L=>{const readColorArg=i=>lua.lua_isnoneornil(L,i)?undefined:lua.lua_tonumber(L,i);lua.lua_pushstring(L,to_luastring(String(color(readColorArg(1),readColorArg(2),readColorArg(3)))));return 1});push('pset',L=>{const argc=lua.lua_gettop(L);pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?(lua.lua_isnumber(L,3)?lua.lua_tonumber(L,3):to_jsstring(lua.lua_tolstring(L,3))):undefined);return 0});push('pget',L=>{lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)));return 1});push('line',L=>{const argc=lua.lua_gettop(L);line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?(lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):to_jsstring(lua.lua_tolstring(L,5))):undefined);return 0});push('rect',L=>{const argc=lua.lua_gettop(L);rect(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?(lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):to_jsstring(lua.lua_tolstring(L,5))):undefined);return 0});push('rectfill',L=>{const argc=lua.lua_gettop(L);rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?(lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):to_jsstring(lua.lua_tolstring(L,5))):undefined);return 0});push('circ',L=>{const argc=lua.lua_gettop(L);circ(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?(lua.lua_isnumber(L,4)?lua.lua_tonumber(L,4):to_jsstring(lua.lua_tolstring(L,4))):undefined);return 0});push('circfill',L=>{const argc=lua.lua_gettop(L);circfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?(lua.lua_isnumber(L,4)?lua.lua_tonumber(L,4):to_jsstring(lua.lua_tolstring(L,4))):undefined);return 0});push('print',L=>{const argc=lua.lua_gettop(L);const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));const args=[];for(let i=1;i<=argc;i++)args.push(readArg(i));print(...args);return 0});push('print_',L=>{const argc=lua.lua_gettop(L);const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));const args=[];for(let i=1;i<=argc;i++)args.push(readArg(i));print(...args);return 0});push('default_font',L=>{const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i)));default_font(readArg(1),readArg(2),readArg(3));return 0});push('default_controls',L=>{const raw=lua.lua_gettop(L)>=1?(lua.lua_isnumber(L,1)?String(lua.lua_tonumber(L,1)):to_jsstring(lua.lua_tolstring(L,1))):null;lua.lua_pushstring(L,to_luastring(default_controls(raw)));return 1});push('spr',L=>{const source=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));const flip=lua.lua_gettop(L)>=4?!!lua.lua_toboolean(L,4):false;spr(source,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),flip);return 0});push('sspr',L=>{const source=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));const readPercent=i=>lua.lua_gettop(L)>=i&&lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):0;const center=lua.lua_gettop(L)>=6?!!lua.lua_toboolean(L,6):false;const flip=lua.lua_gettop(L)>=7?!!lua.lua_toboolean(L,7):false;sspr(source,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),readPercent(4),readPercent(5),center,flip);return 0});push('r_spr',L=>{const source=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));const angle=lua.lua_gettop(L)>=4?lua.lua_tonumber(L,4):0;const flip=lua.lua_gettop(L)>=5?!!lua.lua_toboolean(L,5):false;r_spr(source,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),angle,flip);return 0});push('animate',L=>{const ref=lua.lua_isnumber(L,1)?String(lua.lua_tointeger(L,1)):to_jsstring(lua.lua_tolstring(L,1));animate(ref,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4));return 0});push('mget',L=>{lua.lua_pushinteger(L,mget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0));return 1});push('mset',L=>{mset(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2),lua.lua_tointeger(L,3),lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tointeger(L,5):0);return 0});push('fget',L=>{lua.lua_pushboolean(L,fget(lua.lua_tointeger(L,1),lua.lua_tointeger(L,2))?1:0);return 1});push('solid',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('wall',L=>{lua.lua_pushboolean(L,solid(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):undefined,lua.lua_gettop(L)>=4?lua.lua_tointeger(L,4):0)?1:0);return 1});push('map',L=>{const argc=lua.lua_gettop(L);map(argc>=1?lua.lua_tointeger(L,1):0,argc>=2?lua.lua_tonumber(L,2):0,argc>=3?lua.lua_tonumber(L,3):0,argc>=4?lua.lua_tointeger(L,4):undefined);return 0});push('pmap',L=>{pmap(lua.lua_gettop(L)>=1?lua.lua_tointeger(L,1):0,lua.lua_gettop(L)>=2?lua.lua_tointeger(L,2):0,lua.lua_gettop(L)>=3?lua.lua_tointeger(L,3):0,lua.lua_gettop(L)>=4?lua.lua_tonumber(L,4):0,lua.lua_gettop(L)>=5?lua.lua_tonumber(L,5):0,lua.lua_gettop(L)>=6?lua.lua_tointeger(L,6):undefined,lua.lua_gettop(L)>=7?lua.lua_tointeger(L,7):undefined,lua.lua_gettop(L)>=8?lua.lua_tointeger(L,8):undefined,lua.lua_gettop(L)>=9?lua.lua_tointeger(L,9):undefined);return 0});push('btn',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btn[i]?1:0);return 1});push('btnp',L=>{const raw=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1));const i=normalizeButtonIndex(raw);lua.lua_pushboolean(L,i>=0&&input.btnp[i]?1:0);return 1});push('mouse',L=>{lua.lua_pushinteger(L,input.mouse.x|0);lua.lua_pushinteger(L,input.mouse.y|0);lua.lua_pushinteger(L,input.mouse.buttons|0);lua.lua_pushinteger(L,input.mouse.pressed|0);return 4});push('joyx',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].x:0);return 1});push('joyy',L=>{const j=lua.lua_tointeger(L,1);lua.lua_pushnumber(L,input.joy[j]?input.joy[j].y:0);return 1});push('message_box',L=>{window.alert(to_jsstring(lua.lua_tolstring(L,1)));lua.lua_pushboolean(L,1);return 1});push('confirm_box',L=>{lua.lua_pushboolean(L,window.confirm(to_jsstring(lua.lua_tolstring(L,1)))?1:0);return 1});push('entry_box',L=>{const value=window.prompt(to_jsstring(lua.lua_tolstring(L,1)),lua.lua_gettop(L)>=2?to_jsstring(lua.lua_tolstring(L,2)):'' );if(value==null){lua.lua_pushboolean(L,0);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('save_data',L=>{const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):'';let value='';if(lua.lua_gettop(L)>=2){value=lua.lua_isnumber(L,2)?String(lua.lua_tonumber(L,2)):to_jsstring(lua.lua_tolstring(L,2));}lua.lua_pushboolean(L,saveData(key,value)?1:0);return 1});push('load_data',L=>{const key=lua.lua_gettop(L)>=1?to_jsstring(lua.lua_tolstring(L,1)):'';const value=loadData(key);if(value==null){lua.lua_pushnil(L);return 1}lua.lua_pushstring(L,to_luastring(String(value)));return 1});push('ui_box',()=>0);push('abs',L=>{lua.lua_pushnumber(L,Math.abs(lua.lua_tonumber(L,1)));return 1});push('flr',L=>{lua.lua_pushinteger(L,Math.floor(lua.lua_tonumber(L,1)));return 1});push('upper',L=>{let text='';if(lua.lua_gettop(L)>=1&&!lua.lua_isnoneornil(L,1)){if(lua.lua_isboolean(L,1))text=lua.lua_toboolean(L,1)?'true':'false';else if(lua.lua_isnumber(L,1))text=String(lua.lua_tonumber(L,1));else{const raw=lua.lua_tolstring(L,1);text=raw?to_jsstring(raw):'';}}lua.lua_pushstring(L,to_luastring(String(text).toUpperCase()));return 1});",
 	    "lua.lua_newtable(L);lua.lua_pushinteger(L,projectRef.project.tile_w);lua.lua_setfield(L,-2,to_luastring('tile_w'));lua.lua_pushinteger(L,projectRef.project.tile_h);lua.lua_setfield(L,-2,to_luastring('tile_h'));lua.lua_pushinteger(L,projectRef.project.map_w);lua.lua_setfield(L,-2,to_luastring('map_w'));lua.lua_pushinteger(L,projectRef.project.map_h);lua.lua_setfield(L,-2,to_luastring('map_h'));lua.lua_setglobal(L,to_luastring('project'));",
@@ -2630,8 +2727,8 @@ function draw_studio_screen(mx, my)
   rectfill(260, 46, 430, 76, 14)
   print("trycode studio", 20, 64, 38, text_color)
   print("tap / click for particles", 12, 64, 68, text_color)
-  print("press a / enter to edit name", 12, 64, 86, text_color)
-  print("press y / tab to switch screens", 12, 64, 102, text_color)
+  print("press a / z to edit name", 12, 64, 86, text_color)
+  print("press y / v to switch screens", 12, 64, 102, text_color)
 
   rectfill(40, 142, 212, 236, dark_style and 2 or 6)
   draw_box_outline(40, 142, 172, 94, 10)
@@ -2656,8 +2753,8 @@ function draw_preview_screen(mx, my)
   print("preview screen", 22, 44, 40, text_color)
   print(name.." is testing the scene.", 14, 44, 72, text_color)
   print("click to explode particles", 14, 44, 96, text_color)
-  print("press x for a message", 14, 44, 116, text_color)
-  print("press y / tab to return", 14, 44, 136, sub_color)
+  print("press b / x for a message", 14, 44, 116, text_color)
+  print("press y / v to return", 14, 44, 136, sub_color)
   rectfill(284, 56, 424, 196, 14)
   draw_box_outline(284, 56, 140, 140, 7)
   line(312, 166, mx, my, 10)
@@ -2680,7 +2777,7 @@ function _update()
   update_particles()
 
   if screen == "studio" then
-    if not pending_name and not pending_switch and (btnp("a") or keyp("enter")) then
+    if not pending_name and not pending_switch and (btnp("a") or keyp("z")) then
       pending_name = true
     end
 
@@ -2697,7 +2794,7 @@ function _update()
       if message_box("hello "..name.."!", "message box") then
         showing_greeting = false
       end
-    elseif not pending_switch and (btnp("y") or keyp("tab")) then
+    elseif not pending_switch and (btnp("y") or keyp("v")) then
       pending_switch = true
     end
   else
@@ -2705,9 +2802,9 @@ function _update()
       if message_box(name.." is exploring the preview screen.", "message box") then
         showing_status = false
       end
-    elseif btnp("x") or keyp("space") then
+    elseif btnp("x") or keyp("c") then
       showing_status = true
-    elseif not pending_switch and (btnp("y") or keyp("tab")) then
+    elseif not pending_switch and (btnp("y") or keyp("v")) then
       pending_switch = true
     end
   end
@@ -3174,7 +3271,7 @@ function update_player()
     player.anim = 0
   end
 
-  if player.grounded and (btnp("a") or keyp("space") or keyp("up")) then
+  if player.grounded and (btnp("a") or keyp("z") or keyp("up")) then
     player.vy = -4.8
     player.grounded = false
   end
@@ -3235,11 +3332,11 @@ function draw_pause_overlay()
   print("paused", 20, 192, 54, color(255, 247, 232))
   print("controls", 14, 190, 84, color(255, 247, 232))
   print("left stick / d-pad : move", 12, 106, 108, color(255, 247, 232))
-  print("a / up / space : jump", 12, 106, 126, color(255, 247, 232))
+  print("z / a / up : jump", 12, 106, 126, color(255, 247, 232))
   print("b or x : hold sprint", 12, 106, 144, color(255, 247, 232))
   print("select : toggle sprint", 12, 106, 162, color(255, 247, 232))
   print("start : pause/resume", 12, 106, 180, color(255, 247, 232))
-  print("press start to continue", 12, 126, 206, color(255, 247, 232))
+  print("press z to continue", 12, 126, 206, color(255, 247, 232))
 end
 
 function draw_particles()
@@ -3262,7 +3359,7 @@ function draw_menu()
   print("mushroom run", 28, 128, 58, color(255, 247, 232))
   print("a tiny platformer demo for trycode", 14, 98, 98, color(255, 247, 232))
   print("run, jump, collect coins, and reach the banner", 14, 74, 124, color(255, 247, 232))
-  print("press any button to start", 16, 118, 168, color(255, 247, 232))
+  print("press z / any button to start", 16, 118, 168, color(255, 247, 232))
   spr("0a", 92, 152)
   animate(4, 344, 154, 8)
 end
@@ -3275,7 +3372,7 @@ function draw_win()
   color(255, 247, 232)
   print("course clear", 28, 138, 74, color(255, 247, 232))
   print("coins collected "..best_score, 16, 142, 118, color(255, 247, 232))
-  print("press any button to play again", 16, 118, 154, color(255, 247, 232))
+  print("press z / any button to play again", 16, 118, 154, color(255, 247, 232))
   draw_particles()
 end
 
@@ -3470,7 +3567,7 @@ function update_menu()
     menu_index -= 1
     if menu_index < 1 then menu_index = #menu_items end
   end
-  if btnp("a") or keyp("enter") then
+  if btnp("a") or keyp("z") then
     if menu_index == 1 then
       screen = "game"
       reset_game_screen()
@@ -3538,7 +3635,7 @@ function _update()
     update_menu()
   elseif screen == "controls" or screen == "about" or screen == "pause" then
     update_controls_like_screen()
-    if screen == "pause" and (btnp("x") or keyp("enter")) then
+    if screen == "pause" and (btnp("x") or keyp("c")) then
       screen = "game"
     end
   else
@@ -3567,7 +3664,7 @@ function draw_controls()
   print("r_spr(0,...,angle,flip)", 14, 92, 160, 7)
   print("sin/cosin animate background", 14, 92, 184, 7)
   print("add/del used in note bubbles", 14, 92, 208, 7)
-  print("press b to go back", 14, 132, 228, 14)
+  print("press x / b to go back", 14, 112, 228, 14)
 end
 
 function draw_about()
@@ -3576,7 +3673,7 @@ function draw_about()
   print("this example uses clear, readable", 14, 86, 96, 15)
   print("state screens with simple if blocks.", 14, 86, 120, 15)
   print("no tricky compact patterns.", 14, 86, 144, 15)
-  print("press b to go back", 14, 132, 214, 13)
+  print("press x / b to go back", 14, 112, 214, 13)
 end
 
 function draw_game()
@@ -3593,7 +3690,7 @@ function draw_game()
 
   print("left: spr flip", 12, 20, 20, 14)
   print("right stick: r_spr heading", 12, 266, 20, 14)
-  print("x pause  b menu", 12, 174, 244, 7)
+  print("c/x pause  x/b menu", 12, 154, 244, 7)
 
   local y = 214
   for n in all(notes) do
@@ -3606,7 +3703,7 @@ function draw_pause()
   draw_game()
   rectfill(130, 92, 350, 178, 13)
   print("paused", 20, 194, 118, 7)
-  print("press x to resume", 14, 164, 148, 7)
+  print("press c / x to resume", 14, 138, 148, 7)
 end
 
 function _draw()
@@ -3927,7 +4024,7 @@ end
 function _update()
   if state == "title" then
     title_t += 1
-    if btnp("a") or keyp("enter") then start_game() end
+    if btnp("a") or keyp("z") then start_game() end
     return
   end
 
@@ -3937,7 +4034,7 @@ function _update()
   end
 
   if state == "game_over" then
-    if btnp("a") or keyp("enter") then
+    if btnp("a") or keyp("z") then
       state = "title"
     end
   end
@@ -3950,14 +4047,14 @@ function draw_title()
   print("tetronimoes puzzle block falling", 14, 102, 106, 10)
   print("line completion + rotation + points", 14, 96, 130, 11)
   print("persistent high score board", 14, 116, 154, 14)
-  print("press a / enter", 16, 164, 198, 7)
+  print("press z / a", 16, 176, 198, 7)
 end
 
 function draw_game_over()
   rectfill(96, 92, 384, 184, 13)
   print("game over", 20, 178, 116, 7)
   print("score "..score, 14, 186, 144, 7)
-  print("press a to return", 14, 152, 166, 7)
+  print("press z / a to return", 14, 136, 166, 7)
 end
 
 function _draw()
@@ -8069,7 +8166,7 @@ function makeRuntime(){
   window.addEventListener('resize',resizeDisplay);
   function getImg(file){ if(!file||isEmojiLike(file)||isSpriteIndexLike(file)) return null; if(!assets[file]){ const img=new Image(); img.src=file; assets[file]={img,loaded:false}; img.onload=()=>assets[file].loaded=true; img.onerror=()=>assets[file].loaded=false; } return assets[file]; }
   function attachJoy(rootId,knobId,idx){ const root=$(rootId), knob=$(knobId); function getRadius(){ const rect=root.getBoundingClientRect(); return Math.max(1,Math.min(rect.width,rect.height)/2); } function setKnob(nx,ny){ const R=getRadius(); knob.style.left=`calc(50% + ${nx*R}px)`; knob.style.top=`calc(50% + ${ny*R}px)`; knob.style.transform='translate(-50%,-50%)'; } function updateFromClient(clientX,clientY){ const rect=root.getBoundingClientRect(); const R=getRadius(); const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2, dx=clientX-cx, dy=clientY-cy; const len=Math.hypot(dx,dy)||1, m=Math.min(R,len), nx=(dx/len)*(m/R), ny=(dy/len)*(m/R); input.touchJoy[idx].x=clamp(nx,-1,1); input.touchJoy[idx].y=clamp(ny,-1,1); setKnob(nx,ny); recomputeVirtualInput(); } function up(){input.touchJoy[idx].down=false; input.touchJoy[idx].x=0; input.touchJoy[idx].y=0; setKnob(0,0); recomputeVirtualInput(); } root.addEventListener('pointerdown',e=>{root.setPointerCapture(e.pointerId); input.touchJoy[idx].down=true; updateFromClient(e.clientX,e.clientY); e.preventDefault();}); root.addEventListener('pointermove',e=>{ if(!input.touchJoy[idx].down) return; updateFromClient(e.clientX,e.clientY); e.preventDefault(); }); ['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(type=>root.addEventListener(type,e=>{up(); e.preventDefault();})); setKnob(0,0); return { reset:up }; }
-  const leftJoy=attachJoy('joyL','knobL',0), rightJoy=attachJoy('joyR','knobR',1); document.querySelectorAll('.symbtn').forEach(btn=>{ const id=(parseInt(btn.dataset.btn,10)||4)-4; btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnFace',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false); e.preventDefault();})); }); document.querySelectorAll('.sysbtn').forEach(btn=>{ const raw=parseInt(btn.dataset.btn,10)||10; const id=Math.max(0,Math.min(3,raw-8)); btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnSystem',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnSystem',id,false); e.preventDefault();})); }); document.querySelectorAll('.dpadBtn').forEach(btn=>{ const id=parseInt(btn.dataset.dpadBtn,10)||0; btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnDpad',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false); e.preventDefault();})); }); const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3}; window.addEventListener('keydown',e=>{ if(!shouldCaptureRuntimeKeyboard(e)) return; eventKeyNames(e).forEach(name=>keyDown.add(name)); if(!e.repeat) eventKeyNames(e).forEach(name=>keyPressed.add(name)); if(projectRef.settings&&projectRef.settings.touchOnly) return; const key=movementKeyMap[e.code]; if(key!=null){ setBtnSource('btnDpad',key,true); e.preventDefault(); } },{passive:false}); window.addEventListener('keyup',e=>{ if(!shouldCaptureRuntimeKeyboard(e)) return; eventKeyNames(e).forEach(name=>keyDown.delete(name)); if(projectRef.settings&&projectRef.settings.touchOnly) return; const key=movementKeyMap[e.code]; if(key!=null){ setBtnSource('btnDpad',key,false); e.preventDefault(); } },{passive:false});
+  const leftJoy=attachJoy('joyL','knobL',0), rightJoy=attachJoy('joyR','knobR',1); document.querySelectorAll('.symbtn').forEach(btn=>{ const id=(parseInt(btn.dataset.btn,10)||4)-4; btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnFace',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnFace',id,false); e.preventDefault();})); }); document.querySelectorAll('.sysbtn').forEach(btn=>{ const raw=parseInt(btn.dataset.btn,10)||10; const id=Math.max(0,Math.min(3,raw-8)); btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnSystem',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnSystem',id,false); e.preventDefault();})); }); document.querySelectorAll('.dpadBtn').forEach(btn=>{ const id=parseInt(btn.dataset.dpadBtn,10)||0; btn.addEventListener('pointerdown',e=>{btn.setPointerCapture(e.pointerId); setBtnSource('btnDpad',id,true); e.preventDefault();}); ['pointerup','pointercancel','lostpointercapture'].forEach(type=>btn.addEventListener(type,e=>{setBtnSource('btnDpad',id,false); e.preventDefault();})); }); const movementKeyMap={ArrowUp:0,KeyW:0,ArrowDown:1,KeyS:1,ArrowLeft:2,KeyA:2,ArrowRight:3,KeyD:3}; const actionKeyMap={KeyZ:0,KeyX:1,KeyC:2,KeyV:3}; window.addEventListener('keydown',e=>{ if(!shouldCaptureRuntimeKeyboard(e)) return; eventKeyNames(e).forEach(name=>keyDown.add(name)); if(!e.repeat) eventKeyNames(e).forEach(name=>keyPressed.add(name)); if(projectRef.settings&&projectRef.settings.touchOnly) return; const moveKey=movementKeyMap[e.code], actionKey=actionKeyMap[e.code]; if(moveKey!=null){ setBtnSource('btnDpad',moveKey,true); e.preventDefault(); } if(actionKey!=null){ setBtnSource('btnFace',actionKey,true); e.preventDefault(); } },{passive:false}); window.addEventListener('keyup',e=>{ if(!shouldCaptureRuntimeKeyboard(e)) return; eventKeyNames(e).forEach(name=>keyDown.delete(name)); if(projectRef.settings&&projectRef.settings.touchOnly) return; const moveKey=movementKeyMap[e.code], actionKey=actionKeyMap[e.code]; if(moveKey!=null){ setBtnSource('btnDpad',moveKey,false); e.preventDefault(); } if(actionKey!=null){ setBtnSource('btnFace',actionKey,false); e.preventDefault(); } },{passive:false});
   ['pointerdown','pointermove'].forEach(type=>canvas.addEventListener(type,e=>{ updateMouseFromPointer(e,false); if(type==='pointerdown'){ try{ canvas.setPointerCapture(e.pointerId); }catch{} if(dialogState.active&&dialogState.active.kind==='entry'&&dialogState.active.inputRect){ const pos=clientToMouse(e.clientX,e.clientY); if(pointInRect(pos.x,pos.y,dialogState.active.inputRect)) focusDialogKeyboardInput(); } } if(type==='pointerdown' || e.pointerType==='touch') e.preventDefault(); },{passive:false}));
   ['pointerup','pointercancel','lostpointercapture'].forEach(type=>canvas.addEventListener(type,e=>{ updateMouseFromPointer(e,true); e.preventDefault(); },{passive:false}));
   canvas.addEventListener('contextmenu',e=>e.preventDefault());
@@ -8571,6 +8668,7 @@ function wireUI(){
   bindClick("btnExportHtml",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.html'); });
   bindClick("btnExportCodeTxt",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('code.txt'); });
   bindClick("btnMenuLoadProjects",e=>{ e.stopPropagation(); refreshProjectList(); setLoadPanelOpen(true); });
+  bindClick("btnLoadBackup",e=>{ e.stopPropagation(); setFileMenuOpen(false); loadAutoBackupProject(); });
   bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); closeLoadPanel(); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
   bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
@@ -8799,7 +8897,10 @@ function wireUI(){
     }
   });
   bind("codeEditor",'input',()=>{ state.lastEdited='code'; saveEditorToCurrentCodeFile(); applyCodeSearchState({keepIndex:true}); updateCodeLineNumbers(); clearTimeout(state.codeDebounce); state.codeDebounce=setTimeout(()=>{ if(state.syncLock) return; runtime.setLua(getProjectLua()); },180); });
-  bind("codeEditor",'scroll',()=>{ transferEditorScrollToShell(); saveCurrentCodeViewState(); });
+  bind("codeEditor",'scroll',()=>{ transferEditorScrollToShell(); saveCurrentCodeViewState(); hideCodeFunctionTooltip(); });
+  bind("codeEditor",'mousemove',updateCodeFunctionTooltip);
+  bind("codeEditor",'mouseleave',hideCodeFunctionTooltip);
+  bind("codeEditor",'blur',hideCodeFunctionTooltip);
   bind("codeScrollShell",'scroll',()=>{ resetCodePaneScroll(); saveCurrentCodeViewState(); });
   bindClick("toggleCodeSearchBtn",()=>{ state.codeSearchOpen=!state.codeSearchOpen; const bar=$("codeSearchBar"), btn=$("toggleCodeSearchBtn"), input=$("codeSearchInput"); if(bar) bar.classList.toggle("hidden",!state.codeSearchOpen); if(btn) btn.classList.toggle("active",state.codeSearchOpen); if(state.codeSearchOpen&&input){ input.value=state.codeSearchQuery||""; input.focus({preventScroll:true}); input.select(); } if(!state.codeSearchOpen){ state.codeSearchQuery=""; applyCodeSearchState(); updateCodeLineNumbers(); } });
   bind("codeSearchInput",'input',()=>{ state.codeSearchQuery=$("codeSearchInput")?.value||""; applyCodeSearchState({scrollToMatch:true}); updateCodeLineNumbers(); });
@@ -8945,6 +9046,7 @@ function bootRuntimeIntoEditor(){
 runtime=createRuntimeFallback('Runtime is still starting.');
 bootEditorShell();
 bootRuntimeIntoEditor();
+startAutoBackupTimer();
 })();
 </script>
 </body>
