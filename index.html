@@ -8460,6 +8460,7 @@ function makeRuntime(){
     push('cls',L=>{ const argc=lua.lua_gettop(L); if(argc===0){ cls(); return 0; } const clearColor=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1)); cls(clearColor); return 0; });
     push('camera',L=>{ const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0; });
     push('zoom',L=>{ const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0; } lua.lua_pushnumber(L, zoom()); return 1;});
+    push('clip',L=>{ const argc=lua.lua_gettop(L); if(argc===0){ clip(); return 0; } clip(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4)); return 0; });
     push('color',L=>{ const readColorArg=i=>lua.lua_isnoneornil(L,i)?undefined:lua.lua_tonumber(L,i); lua.lua_pushstring(L,to_luastring(String(color(readColorArg(1),readColorArg(2),readColorArg(3))))); return 1;});
     push('pal',L=>{ const argc=lua.lua_gettop(L); if(argc===0){ pal(); return 0; } const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); pal(readArg(1),argc>=2?readArg(2):null); return 0; });
     push('pset',L=>{ const argc=lua.lua_gettop(L); pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?(lua.lua_isnumber(L,3)?lua.lua_tonumber(L,3):to_jsstring(lua.lua_tolstring(L,3))):undefined); return 0;});
