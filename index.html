@@ -6374,7 +6374,7 @@ function loadZeldaLikeTopdownRpgExampleProject(){
     7:{source:"",flags:{0:true},bg:"#8b5a2b"},
     8:{source:"",flags:{0:false},bg:"#8ad7ff"}
   };
-  p.settings.movementInput='left_joystick';
+  p.settings.movementInput='dpad';
   p.settings.displayMode='normal';
   const spriteFromArt=(rows,paletteMap)=>{
     const sprite=makeSprite(16,16);
@@ -6540,7 +6540,7 @@ function clamp(v, lo, hi)
 end
 
 function _init()
-  default_controls("left_joystick")
+  default_controls("dpad")
   zoom(2)
   setup_enemies()
 end
