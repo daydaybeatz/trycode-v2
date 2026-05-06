@@ -1622,12 +1622,17 @@ function renderCodeHighlight(){
   inner.innerHTML=String(ed.value||"").split(/\n/).map(highlightLuaLine).join("\n");
 }
 function expandLuaShorthand(source){
+  const shorthand=/([A-Za-z_][A-Za-z0-9_\.]*)(\s*)([+\-*\/])=(\s*)(.*?)(?=(\s+\bend\b|\s*;|\s*$))/g;
   return String(source||"").split(/\r?\n/).map(line=>{
     const {code, comment}=splitLuaLineComment(line);
-    const m=code.match(/^(\s*)([A-Za-z_][A-Za-z0-9_\.]*)(\s*)([+\-*\/])=(\s*)(.*\S)\s*$/);
-    if(!m) return line;
-    const [,indent,name,,op,,rhs]=m;
-    return `${indent}${name} = ${name} ${op} (${rhs})${comment}`;
+    let changed=false;
+    const expanded=code.replace(shorthand,(match,name,_leftSpace,op,_rightSpace,rhs)=>{
+      const value=rhs.trim();
+      if(!value) return match;
+      changed=true;
+      return `${name} = ${name} ${op} (${value})`;
+    });
+    return changed ? `${expanded}${comment}` : line;
   }).join("\n");
 }
 function parseIncludeTarget(line){
