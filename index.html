@@ -6334,11 +6334,557 @@ end`}];
   finalizeExampleProjectLoad();
 }
 
+
+function loadZeldaLikeTopdownRpgExampleProject(){
+  finishNewProject();
+  const p=state.appProject;
+  p.project.tile_w=16;
+  p.project.tile_h=16;
+  p.project.map_w=40;
+  p.project.map_h=30;
+  p.palette=[...DEFAULT_PALETTE];
+  p.palette[1]="#5fbf69";
+  p.palette[2]="#2f7d46";
+  p.palette[3]="#7d4f2a";
+  p.palette[4]="#3f2a18";
+  p.palette[5]="#ffd447";
+  p.palette[6]="#ef476f";
+  p.palette[7]="#fff7e8";
+  p.palette[8]="#2d5a8a";
+  p.palette[9]="#8ad7ff";
+  p.palette[10]="#b7b7c9";
+  p.palette[11]="#5b657a";
+  p.palette[12]="#e05f2f";
+  p.palette[13]="#263238";
+  p.palette[14]="#b31f24";
+  p.palette[15]="#352012";
+  p.tileDefs={
+    0:makeBlankTileDef(),
+    1:{source:"",flags:{0:false},bg:"#5fbf69"},
+    2:{source:"",flags:{0:true},bg:"#2f7d46"},
+    3:{source:"",flags:{0:true},bg:"#7d4f2a"},
+    4:{source:"",flags:{0:false},bg:"#3f2a18"},
+    5:{source:"",flags:{0:false},bg:"#ffd447"},
+    6:{source:"",flags:{0:false},bg:"#ef476f"},
+    7:{source:"",flags:{0:true},bg:"#8b5a2b"},
+    8:{source:"",flags:{0:false},bg:"#8ad7ff"}
+  };
+  p.settings.movementInput='left_joystick';
+  p.settings.displayMode='normal';
+  const spriteFromArt=(rows,paletteMap)=>{
+    const sprite=makeSprite(16,16);
+    for(let y=0;y<16;y++){
+      const row=rows[y]||"................";
+      for(let x=0;x<16;x++){
+        const ch=row[x]||'.';
+        sprite.pixels[y][x]=Object.prototype.hasOwnProperty.call(paletteMap,ch)?paletteMap[ch]:-1;
+      }
+    }
+    return sprite;
+  };
+  p.spriteFolders=[
+    {frames:[
+      spriteFromArt([
+        "................",
+        ".....22222......",
+        "....277772......",
+        "....277772......",
+        ".....22222......",
+        "......777.......",
+        "....8888888.....",
+        "...887888788....",
+        "...888888888....",
+        ".....33333......",
+        ".....3...3......",
+        "....33...33.....",
+        "....3.....3.....",
+        "...33.....33....",
+        "................",
+        "................"
+      ],{'.':-1,'2':2,'7':7,'8':8,'3':3}),
+      spriteFromArt([
+        "................",
+        ".....22222......",
+        "....277772......",
+        "....277772......",
+        ".....22222......",
+        "......777.......",
+        "....8888888.....",
+        "...887888788....",
+        "...888888888....",
+        ".....33333......",
+        "....33...33.....",
+        "...33.....33....",
+        "....3.....3.....",
+        ".....3...3......",
+        "................",
+        "................"
+      ],{'.':-1,'2':2,'7':7,'8':8,'3':3})
+    ]},
+    {frames:[spriteFromArt([
+      "................",
+      "................",
+      "....666..666....",
+      "...6616666166...",
+      "..666666666666..",
+      ".66666666666666.",
+      ".66667666676666.",
+      "..666666666666..",
+      "...6666666666...",
+      "....66....66....",
+      "...66......66...",
+      "..66........66..",
+      "................",
+      "................",
+      "................",
+      "................"
+    ],{'.':-1,'6':12,'1':15,'7':7})]},
+    {frames:[spriteFromArt([
+      "................",
+      ".....aaaaa......",
+      "....a7777a......",
+      "....a7a7a.......",
+      ".....aaaa.......",
+      "......77........",
+      "....aaaaaa......",
+      "...aa7aa7aa.....",
+      "....aaaaaa......",
+      ".....7777.......",
+      ".....7..7.......",
+      "....77..77......",
+      "...77....77.....",
+      "................",
+      "................",
+      "................"
+    ],{'.':-1,'a':10,'7':7})]},
+    {frames:[spriteFromArt([
+      "................",
+      ".....44444......",
+      "....477774......",
+      "....477774......",
+      ".....44444......",
+      "......777.......",
+      "....9999999.....",
+      "....9979799.....",
+      "....9999999.....",
+      ".....44444......",
+      ".....4...4......",
+      "....44...44.....",
+      "................",
+      "................",
+      "................",
+      "................"
+    ],{'.':-1,'4':4,'7':7,'9':9})]},
+    {frames:[spriteFromArt([
+      "................",
+      "................",
+      "......aaaa......",
+      ".....aaaaaa.....",
+      ".....a111a......",
+      ".....a111a......",
+      ".....aaaaa......",
+      "......333.......",
+      ".......3........",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ],{'.':-1,'a':13,'1':11,'3':3})]},
+    {frames:[spriteFromArt([
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "..777777777777..",
+      ".7aaaaaaaaaaaa7.",
+      "..777777777777..",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................",
+      "................"
+    ],{'.':-1,'7':7,'a':4})]}
+  ];
+  p.codeFiles=[{name:"main.lua",tabTheme:11,content:`-- Zelda-like topdown RPG example
+-- Controls: d-pad or left stick to move.
+-- A = sword, B = bow, X = place bomb, Y = talk to the villager.
+-- This stays simple on purpose: small tables, plain loops, and clear helper functions.
+
+player = {x=72, y=96, w=12, h=14, speed=1.55, dir="down", flip=false, health=3, coins=0}
+map_id = 0
+cam_x = 0
+cam_y = 0
+sword = {active=false, timer=0, combo=0, box={x=0,y=0,w=0,h=0}}
+arrows = {}
+bombs = {}
+particles = {}
+enemies = {}
+npc = {map=0, x=144, y=112, text="Old Man: the cracked stump fears bombs. Doorways lead between maps."}
+message = "collect coins, fight monsters, and find the doorway"
+hit_timer = 0
+
+function clamp(v, lo, hi)
+  return math.max(lo, math.min(hi, v))
+end
+
+function _init()
+  default_controls("left_joystick")
+  zoom(2)
+  setup_enemies()
+end
+
+-- Read both d-pad buttons and the left joystick.
+function axis(neg_btn, pos_btn, joy_value)
+  local v = 0
+  if btn(neg_btn) then v -= 1 end
+  if btn(pos_btn) then v += 1 end
+  if abs(joy_value) > 0.2 then v += joy_value end
+  return clamp(v, -1, 1)
+end
+
+function center_of(o)
+  return o.x + 8, o.y + 8
+end
+
+function actor_box(x, y)
+  return {x=x + 2, y=y + 2, w=12, h=13}
+end
+
+function boxes_touch(a, b)
+  return a.x < b.x + b.w and a.x + a.w > b.x and a.y < b.y + b.h and a.y + a.h > b.y
+end
+
+-- Wall collision samples all four corners with the engine wall() helper.
+function can_stand(x, y)
+  local b = actor_box(x, y)
+  return not wall(b.x, b.y, 1, map_id)
+    and not wall(b.x + b.w, b.y, 1, map_id)
+    and not wall(b.x, b.y + b.h, 1, map_id)
+    and not wall(b.x + b.w, b.y + b.h, 1, map_id)
+end
+
+function move_actor(o, dx, dy)
+  if dx ~= 0 and can_stand(o.x + dx, o.y) then o.x += dx end
+  if dy ~= 0 and can_stand(o.x, o.y + dy) then o.y += dy end
+end
+
+function setup_enemies()
+  enemies = {}
+  add(enemies, {kind="crab", map=0, x=240, y=104, start_x=208, start_y=88, max_x=288, max_y=152, vx=0.7, vy=0, health=2, touch=0})
+  add(enemies, {kind="skeleton", map=0, x=432, y=288, health=3, touch=0})
+  add(enemies, {kind="crab", map=1, x=176, y=176, start_x=144, start_y=144, max_x=248, max_y=224, vx=0.8, vy=0, health=2, touch=0})
+  add(enemies, {kind="skeleton", map=1, x=448, y=128, health=3, touch=0})
+end
+
+function start_sword()
+  sword.active = true
+  sword.timer = 12
+  sword.combo = (sword.combo % 3) + 1
+  sfx(0, false)
+end
+
+function sword_box()
+  local x = player.x
+  local y = player.y
+  local size = 14 + sword.combo * 3
+  if player.dir == "left" then return {x=x - size, y=y + 2, w=size, h=12} end
+  if player.dir == "right" then return {x=x + 14, y=y + 2, w=size, h=12} end
+  if player.dir == "up" then return {x=x + 2, y=y - size, w=12, h=size} end
+  return {x=x + 2, y=y + 14, w=12, h=size}
+end
+
+function shoot_arrow()
+  local dx = 0
+  local dy = 0
+  if player.dir == "left" then dx = -3.4 end
+  if player.dir == "right" then dx = 3.4 end
+  if player.dir == "up" then dy = -3.4 end
+  if player.dir == "down" then dy = 3.4 end
+  add(arrows, {map=map_id, x=player.x + 6, y=player.y + 6, dx=dx, dy=dy, life=80})
+  sfx(1, false)
+end
+
+function place_bomb()
+  add(bombs, {map=map_id, x=flr((player.x + 8) / 16) * 16, y=flr((player.y + 8) / 16) * 16, timer=95})
+  message = "bomb placed"
+end
+
+function hurt_player()
+  if hit_timer > 0 then return end
+  player.health -= 1
+  hit_timer = 60
+  message = "ouch! hearts left: "..player.health
+  if player.health <= 0 then
+    player.health = 3
+    player.x = 72
+    player.y = 96
+    map_id = 0
+    message = "try again - health restored"
+    setup_enemies()
+  end
+end
+
+function hit_enemy(enemy, damage)
+  enemy.health -= damage
+  for i=1,6 do
+    add(particles, {x=enemy.x+8, y=enemy.y+8, dx=rnd(2)-1, dy=rnd(2)-1, life=18, col=12})
+  end
+  if enemy.health <= 0 then
+    del(enemies, enemy)
+    add(particles, {x=enemy.x+8, y=enemy.y+8, dx=0, dy=-0.5, life=35, col=5})
+    message = "monster defeated"
+  end
+end
+
+function update_player()
+  local dx = axis("left", "right", joyx(0)) * player.speed
+  local dy = axis("up", "down", joyy(0)) * player.speed
+  if abs(dx) > abs(dy) then
+    if dx < 0 then player.dir = "left" player.flip = true end
+    if dx > 0 then player.dir = "right" player.flip = false end
+  elseif dy ~= 0 then
+    if dy < 0 then player.dir = "up" end
+    if dy > 0 then player.dir = "down" end
+  end
+  move_actor(player, dx, dy)
+  if btnp("a") then start_sword() end
+  if btnp("b") then shoot_arrow() end
+  if btnp("x") then place_bomb() end
+  if btnp("y") then talk_to_npc() end
+end
+
+function talk_to_npc()
+  if map_id == npc.map and distance(player, npc) < 34 then
+    message_box(npc.text, "villager")
+    message = "the villager shared a clue"
+  else
+    message = "no one is close enough to talk"
+  end
+end
+
+-- Pickups live directly on the map layer so mget() and mset() are easy to demonstrate.
+function collect_tile()
+  local tx = flr((player.x + 8) / 16)
+  local ty = flr((player.y + 8) / 16)
+  local tile = mget(tx, ty, 1, map_id)
+  if tile == 5 then
+    player.coins += 1
+    mset(tx, ty, 0, 1, map_id)
+    message = "coin collected! total: "..player.coins
+  end
+  if tile == 6 then
+    player.health = clamp(player.health + 1, 0, 3)
+    mset(tx, ty, 0, 1, map_id)
+    message = "heart restored"
+  end
+  if tile == 4 then travel_maps() end
+end
+
+function travel_maps()
+  if map_id == 0 then
+    map_id = 1
+    player.x = 74
+    player.y = 78
+    message = "entered the beach map"
+  else
+    map_id = 0
+    player.x = 514
+    player.y = 386
+    message = "returned to the forest map"
+  end
+end
+
+function update_sword()
+  if not sword.active then return end
+  sword.timer -= 1
+  sword.box = sword_box()
+  for enemy in all(enemies) do
+    if enemy.map == map_id and boxes_touch(sword.box, actor_box(enemy.x, enemy.y)) then
+      hit_enemy(enemy, sword.combo)
+    end
+  end
+  if sword.timer <= 0 then sword.active = false end
+end
+
+function update_arrows()
+  for arrow in all(arrows) do
+    arrow.x += arrow.dx
+    arrow.y += arrow.dy
+    arrow.life -= 1
+    if wall(arrow.x, arrow.y, 1, arrow.map) or arrow.life <= 0 then
+      del(arrows, arrow)
+    else
+      for enemy in all(enemies) do
+        if enemy.map == arrow.map and boxes_touch({x=arrow.x,y=arrow.y,w=6,h=6}, actor_box(enemy.x, enemy.y)) then
+          hit_enemy(enemy, 1)
+          del(arrows, arrow)
+        end
+      end
+    end
+  end
+end
+
+function explode_bomb(bomb)
+  for i=1,18 do
+    add(particles, {x=bomb.x+8, y=bomb.y+8, dx=rnd(4)-2, dy=rnd(4)-2, life=24, col=12})
+  end
+  local tx = flr((bomb.x + 8) / 16)
+  local ty = flr((bomb.y + 8) / 16)
+  for yy=ty-1,ty+1 do
+    for xx=tx-1,tx+1 do
+      if mget(xx, yy, 1, bomb.map) == 7 then mset(xx, yy, 0, 1, bomb.map) end
+    end
+  end
+  for enemy in all(enemies) do
+    if enemy.map == bomb.map and distance(enemy, bomb) < 46 then hit_enemy(enemy, 3) end
+  end
+end
+
+function update_bombs()
+  for bomb in all(bombs) do
+    bomb.timer -= 1
+    if bomb.timer <= 0 then
+      explode_bomb(bomb)
+      del(bombs, bomb)
+    end
+  end
+end
+
+function update_enemies()
+  for enemy in all(enemies) do
+    if enemy.map == map_id then
+      if enemy.kind == "crab" then
+        enemy.x += enemy.vx
+        enemy.y += enemy.vy
+        if enemy.x > enemy.max_x then enemy.vx = 0 enemy.vy = 0.7 end
+        if enemy.y > enemy.max_y then enemy.vx = -0.7 enemy.vy = 0 end
+        if enemy.x < enemy.start_x then enemy.vx = 0 enemy.vy = -0.7 end
+        if enemy.y < enemy.start_y then enemy.vx = 0.7 enemy.vy = 0 end
+      else
+        local dx = player.x - enemy.x
+        local dy = player.y - enemy.y
+        local d = math.max(1, distance(player, enemy))
+        local speed = 0.85
+        move_actor(enemy, dx / d * speed, dy / d * speed)
+      end
+      if boxes_touch(actor_box(player.x, player.y), actor_box(enemy.x, enemy.y)) then hurt_player() end
+    end
+  end
+end
+
+function update_particles()
+  for p in all(particles) do
+    p.x += p.dx
+    p.y += p.dy
+    p.life -= 1
+    if p.life <= 0 then del(particles, p) end
+  end
+end
+
+function _update()
+  if hit_timer > 0 then hit_timer -= 1 end
+  update_player()
+  collect_tile()
+  update_sword()
+  update_arrows()
+  update_bombs()
+  update_enemies()
+  update_particles()
+  cam_x = clamp(player.x - 120, 0, 400)
+  cam_y = clamp(player.y - 68, 0, 344)
+end
+
+function draw_world()
+  cls(1)
+  camera(cam_x, cam_y)
+  map(map_id)
+  if map_id == npc.map then spr(3, npc.x, npc.y) end
+  for bomb in all(bombs) do if bomb.map == map_id then spr(4, bomb.x, bomb.y) end end
+  for arrow in all(arrows) do
+    if arrow.map == map_id then
+      r_spr(5, arrow.x, arrow.y, math.atan(arrow.dy, arrow.dx))
+    end
+  end
+  for enemy in all(enemies) do
+    if enemy.map == map_id then
+      if enemy.kind == "crab" then spr(1, enemy.x, enemy.y) else spr(2, enemy.x, enemy.y) end
+    end
+  end
+  if abs(joyx(0)) > 0.2 or abs(joyy(0)) > 0.2 or btn("up") or btn("down") or btn("left") or btn("right") then
+    animate(0, player.x, player.y, 7)
+  else
+    spr(0, player.x, player.y, player.flip)
+  end
+  if sword.active then
+    rectfill(sword.box.x, sword.box.y, sword.box.x + sword.box.w, sword.box.y + sword.box.h, color(255,247,232))
+    rect(sword.box.x, sword.box.y, sword.box.x + sword.box.w, sword.box.y + sword.box.h, 5)
+  end
+  for p in all(particles) do circfill(p.x, p.y, 2, p.col) end
+  camera()
+end
+
+function draw_hud()
+  clip(0, 0, 240, 38)
+  rectfill(0, 0, 240, 38, color(32,24,16))
+  clip()
+  for i=1,3 do
+    local c = 11
+    if i <= player.health then c = 6 end
+    circfill(12 + i * 16, 14, 6, c)
+    circfill(18 + i * 16, 14, 6, c)
+    rectfill(8 + i * 16, 15, 22 + i * 16, 27, c)
+  end
+  circfill(104, 18, 6, 5)
+  print("x "..player.coins, 12, 116, 11, 7)
+  print("map "..(map_id + 1), 12, 178, 11, 9)
+  print(message, 10, 8, 246, 7, 15)
+end
+
+function _draw()
+  draw_world()
+  draw_hud()
+end`}];
+  p.maps=[makeEmptyMap("forest",p.project.map_w,p.project.map_h),makeEmptyMap("beach",p.project.map_w,p.project.map_h)];
+  p.maps.forEach((mapObj,mapIndex)=>{
+    const ground=mapObj.layers[0];
+    const walls=mapObj.layers[1];
+    for(let y=0;y<p.project.map_h;y++){
+      for(let x=0;x<p.project.map_w;x++){
+        const border=x===0||y===0||x===p.project.map_w-1||y===p.project.map_h-1;
+        ground.data[y][x]=mapIndex===0?1:8;
+        walls.data[y][x]=border?2:0;
+      }
+    }
+  });
+  const forest=p.maps[0];
+  const beach=p.maps[1];
+  for(let x=5;x<33;x+=4) forest.layers[1].data[6][x]=3;
+  for(let y=8;y<24;y++) forest.layers[1].data[y][20]=y===15?0:3;
+  [[7,8],[13,12],[29,9],[32,18],[12,23]].forEach(([x,y])=>{ forest.layers[1].data[y][x]=5; });
+  [[16,9],[31,22]].forEach(([x,y])=>{ forest.layers[1].data[y][x]=6; });
+  [[23,15],[24,15],[25,15]].forEach(([x,y])=>{ forest.layers[1].data[y][x]=7; });
+  forest.layers[1].data[24][34]=4;
+  for(let x=8;x<35;x++) beach.layers[1].data[7][x]=(x===31?4:2);
+  for(let y=8;y<24;y+=3) beach.layers[1].data[y][12]=2;
+  [[9,9],[16,13],[26,18],[34,23]].forEach(([x,y])=>{ beach.layers[1].data[y][x]=5; });
+  [[22,11],[30,25]].forEach(([x,y])=>{ beach.layers[1].data[y][x]=6; });
+  [[18,20],[19,20],[20,20]].forEach(([x,y])=>{ beach.layers[1].data[y][x]=7; });
+  finalizeExampleProjectLoad();
+}
+
 function getExampleProjects(){
   return [
     {id:'collision',category:'games',name:'Scrolling Wall Collision',description:'Separate button + joystick movement, wall checks, map scrolling with camera(), and btnp() zoom controls.',loader:loadExampleProject},
     {id:'2048-particles',category:'games',name:'2048 Clone + Particles',description:'Grid-based 2048 clone with merge particles, score tracking, and persistent high score via save_data()/load_data().',loader:load2048ParticlesExampleProject},
     {id:'flappy-high-score',category:'games',name:'Flappy Bird Clone',description:'Arcade flappy bird style game with obstacle pipes, restart flow, and persistent high score storage.',loader:loadFlappyHighScoreExampleProject},
+    {id:'zelda-like-topdown-rpg',category:'games',name:'Zelda-like Topdown RPG',description:'Readable topdown RPG starter with animated player, sword combo, bombs, bow arrows, patrol and chasing enemies, two maps, door travel, pickups, NPC dialog, coins, hearts, and wall collisions.',loader:loadZeldaLikeTopdownRpgExampleProject},
     {id:'include-function-check',category:'logic',name:'Include + Utility Function Check',description:'Two-file project that validates include, cls(color()), add(), rnd(), print(), and for e in all(list) do loops.',loader:loadIncludeFunctionCheckExampleProject},
     {id:'note-app-save-load',category:'logic',name:'Note App Save + Load',description:'Simple note manager using entry_box() and save_data()/load_data() for persistent notes.',loader:loadNotesSaveLoadExampleProject},
     {id:'menu-screen-swap',category:'ui examples',name:'Basic Menu + Screen Swap',description:'Simple readable menu/game/pause screen flow with dpad/left-stick movement, right-stick r_spr() aiming, spr flip, sin/cosin motion, and add()/del() notes.',loader:loadMenuScreenSwapExampleProject},
