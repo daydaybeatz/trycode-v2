@@ -6522,7 +6522,7 @@ function loadZeldaLikeTopdownRpgExampleProject(){
 -- A = sword, B = bow, X = place bomb, Y = talk to the villager.
 -- This stays simple on purpose: small tables, plain loops, and clear helper functions.
 
-player = {x=72, y=96, w=12, h=14, speed=1.55, dir="down", flip=false, health=3, coins=0}
+player = {x=64, y=96, w=12, h=14, speed=1.55, dir="down", flip=false, health=3, coins=0}
 map_id = 0
 cam_x = 0
 cam_y = 0
@@ -6628,7 +6628,7 @@ function hurt_player()
   message = "ouch! hearts left: "..player.health
   if player.health <= 0 then
     player.health = 3
-    player.x = 72
+    player.x = 64
     player.y = 96
     map_id = 0
     message = "try again - health restored"
