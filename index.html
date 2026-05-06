@@ -6802,8 +6802,10 @@ function _update()
   update_bombs()
   update_enemies()
   update_particles()
-  cam_x = clamp(player.x - 120, 0, 400)
-  cam_y = clamp(player.y - 68, 0, 344)
+  -- camera() expects the world coordinate to keep at the center of the play-view.
+  -- Clamp that center so the 40x30 tile map still fills the visible area at zoom(2).
+  cam_x = clamp(player.x + 8, 120, 520)
+  cam_y = clamp(player.y + 8, 68, 412)
 end
 
 function draw_world()
