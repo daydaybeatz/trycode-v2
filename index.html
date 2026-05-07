@@ -1296,7 +1296,7 @@ const DOC_CATEGORY_ORDER = [
 
 function getDocCategory(signature){
   const sig=String(signature||"").toLowerCase();
-  if(sig==="_init()"||sig==="_update()"||sig==="_draw()"||sig==="tick()") return "main callbacks";
+  if(sig==="_init()"||sig==="_update()"||sig==="_draw()"||sig==="_tick()") return "main callbacks";
   if(sig.startsWith("btn(")||sig.startsWith("btnp(")||sig.startsWith("mouse(")||sig.startsWith("joyx(")||sig.startsWith("joyy(")) return "controls";
   if(sig.startsWith("camera(")||sig.startsWith("map(")||sig.startsWith("pmap(")||sig.startsWith("mget(")||sig.startsWith("mset(")||sig.startsWith("fget(")||sig.startsWith("solid(")||sig.startsWith("wall(")) return "map";
   if(sig.startsWith("distance(")||sig.startsWith("abs(")||sig.startsWith("flr(")||sig.startsWith("sin(")||sig.startsWith("rnd(")||sig.startsWith("sub(")||sig.startsWith("upper(")) return "math";
@@ -1324,7 +1324,7 @@ const CODE_API_DOCS = [
   makeDoc("_init()", "Runs once when the program starts or resets.", [], ["function _init()\n  x = 32\n  y = 24\nend"], "Create starting values, tables, or level state here."),
   makeDoc("_update()", "Runs once per frame for movement and gameplay logic.", [], ["function _update()\n  if btn(0) then y -= 1 end\nend"], "Read input, update positions, and trigger sounds here."),
   makeDoc("_draw()", "Runs once per frame after _update() to render the screen.", [], ["function _draw()\n  cls()\n  print(\"hello\", nil, 8, 8, color(0,0,0), color(255,255,255))\nend"], "Clear the screen first, then call camera(), map(), spr(), print(), or shape functions."),
-  makeDoc("tick()", "Optional combined frame callback. When defined, tick() runs once per frame instead of _update() and _draw().", [], ["function _init()\n  x = 32\nend\n\nfunction tick()\n  if btn(3) then x += 1 end\n  cls()\n  spr(0, x, 40)\nend"], "Use tick() when you want movement/game logic and drawing in one function. Do not define _update()/_draw() at the same time unless you want tick() to take priority."),
+  makeDoc("_tick()", "Optional combined frame callback. When defined, _tick() runs once per frame instead of _update() and _draw().", [], ["function _init()\n  x = 32\nend\n\nfunction _tick()\n  if btn(3) then x += 1 end\n  cls()\n  spr(0, x, 40)\nend"], "Use _tick() when you want movement/game logic and drawing in one function. Do not define _update()/_draw() at the same time unless you want _tick() to take priority."),
   makeDoc("btn(i_or_name)", "Returns true while a d-pad or face button is held.", [["i_or_name", "Use 0-3 or up/down/left/right for directions, and 4-7 or a/b/x/y for face buttons."]], ["if btn(2) then x -= 1 end","if btn(\"right\") then x += 1 end","if btn(\"a\") then jump() end"], "Use this for held input, such as continuous walking or charging."),
   makeDoc("btnp(i_or_name)", "Returns true only on the frame a button becomes pressed.", [["i_or_name", "Same button names and indices as btn()."]], ["if btnp(4) then zoom(2) end","if btnp(5) then zoom(1) end","if btnp(\"b\") then sfx(0, false) end"], "Use this for single-trigger actions like toggles, menus, zoom changes, or sound effects."),
   makeDoc("mouse()", "Returns mouse or touch state as mx, my, mb, mbr.", [], ["local mx,my,mb,mbr = mouse()","if (mb & 1) ~= 0 then print(mx..\",\"..my, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "mx and my are screen coordinates. mb is the current button bitmask, and mbr is the newly pressed button bitmask for that frame. Touch input maps to button 1."),
@@ -1472,9 +1472,9 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['ui_dropdown','ui_dropdown(dropdownTable) -> toggledBool'],
   ['__tc_ui_flush_overlay','__tc_ui_flush_overlay() -> changedBool — internal dropdown overlay flush'],
   ['_init','_init() — optional; called once after build'],
-  ['tick','tick() — optional combined update/draw frame callback; takes priority'],
-  ['_update','_update() — called every frame before _draw when tick is not defined'],
-  ['_draw','_draw() — called every frame after _update when tick is not defined']
+  ['_tick','_tick() — optional combined update/draw frame callback; takes priority'],
+  ['_update','_update() — called every frame before _draw when _tick is not defined'],
+  ['_draw','_draw() — called every frame after _update when _tick is not defined']
 ]);
 function getCodeFileViewState(index){
   const key=String(index|0);
@@ -1735,7 +1735,7 @@ function codeTokenHtml(cls,value){ return `<span class="${cls}">${escapeHtml(val
 function highlightLuaLine(line){
   const {code, comment}=splitLuaLineComment(line);
   const keywords=new Set(["function","local","if","then","elseif","else","end","for","in","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
-  const builtins=new Set(["_init","tick","_update","_draw","print","print_","cls","camera","map","pmap","spr","sspr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","clock","abs","flr","sin","cosin","tan","rnd","sub","tostr","upper","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","pairs"]);
+  const builtins=new Set(["_init","_tick","_update","_draw","print","print_","cls","camera","map","pmap","spr","sspr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","clock","abs","flr","sin","cosin","tan","rnd","sub","tostr","upper","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","pairs"]);
   let html="";
   const regex=/(\b\d+(?:\.\d+)?\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*|==|~=|<=|>=|\.\.\.|\.\.|[+\-*\/%#=<>]+)/g;
   let last=0, match;
@@ -2242,7 +2242,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "lua.lua_getglobal(L,to_luastring('_init'));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e)}}else lua.lua_pop(L,1);",
     "function callMaybe(name){lua.lua_getglobal(L,to_luastring(name));if(lua.lua_isfunction(L,-1)){if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){const e=to_jsstring(lua.lua_tostring(L,-1));console.error(e);showErr(e);return false;}return true;}lua.lua_pop(L,1);return true;}",
     "function hasLuaFn(name){lua.lua_getglobal(L,to_luastring(name));const ok=lua.lua_isfunction(L,-1);lua.lua_pop(L,1);return ok;}",
-    "function tick(){for(let i=0;i<input.btn.length;i++){input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0;input.btnPrev[i]=input.btn[i]}if(hasLuaFn('tick')){if(!callMaybe('tick'))return;}else{if(!callMaybe('_update'))return;if(!callMaybe('_draw'))return;}if(!callMaybe('__tc_ui_flush_overlay'))return;input.mouse.pressed=0;requestAnimationFrame(tick)}tick();",
+    "function tick(){for(let i=0;i<input.btn.length;i++){input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0;input.btnPrev[i]=input.btn[i]}if(hasLuaFn('_tick')){if(!callMaybe('_tick'))return;}else{if(!callMaybe('_update'))return;if(!callMaybe('_draw'))return;}if(!callMaybe('__tc_ui_flush_overlay'))return;input.mouse.pressed=0;requestAnimationFrame(tick)}tick();",
     "})();",
   ].join('\n');
 }
@@ -8833,7 +8833,7 @@ function makeRuntime(){
   function reset(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
-  function callFrameCallbacks(){ if(hasLuaFunction('tick')) return callMaybe('tick'); return callMaybe('_update') && callMaybe('_draw'); }
+  function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
   requestAnimationFrame(tick); resizeDisplay(); return {setLua,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
