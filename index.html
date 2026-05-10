@@ -569,6 +569,8 @@
 <div class="toast" id="toast"></div>
 <div class="codeFunctionTooltip" id="codeFunctionTooltip" role="tooltip"></div>
 <input type="file" id="importProjectZipInput" accept=".zip,application/zip" style="display:none">
+<input type="file" id="musicFileBrowseInput" accept="audio/*,.mp3,.wav,.ogg,.m4a" style="display:none">
+<input type="file" id="musicRelinkFilesInput" accept="audio/*,.mp3,.wav,.ogg,.m4a" multiple style="display:none">
 
 <script>
 (() => {
@@ -1021,7 +1023,7 @@ end
 `;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,pendingMusicRelinkIndexes:[],spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
 const SPRITE_IMPORT_MAX_WIDTH=960;
 const SPRITE_IMPORT_MAX_HEIGHT=540;
 const PRESET_PALETTE_PAGES = [
@@ -1062,7 +1064,7 @@ function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
 function makeSound(){ return {name:"",wave:"square",length:0.3,volume:0.6,pitch:440,attack:0.01,decay:0.08,sustain:0.6,release:0.1,wavetable:Array.from({length:64},()=>0)}; }
-function makeMusic(){ return {name:"",file:"",fileName:"",fileData:"",loop:true}; }
+function makeMusic(){ return {name:"",file:"",fileName:"",fileAddress:"",fileData:"",fileMissing:false,loop:true}; }
 function makeBlankTileDef(){ return {source:"",flags:{0:false},bg:"#000000",bgEnabled:false,animated:false,animFolder:0,animSpeed:6}; }
 function ensurePalettePages(p){
   if(!Array.isArray(p.palette)) p.palette=[];
@@ -1270,8 +1272,11 @@ function ensureProjectData(){
     if(m.loop==null) m.loop=true;
     if(!m.file) m.file="";
     m.fileName=String(m.fileName||'');
+    m.fileAddress=String(m.fileAddress||m.sourcePath||m.sourceAddress||m.fileName||'');
     m.fileData=String(m.fileData||'');
     if(!m.file && m.fileData) m.file=m.fileData;
+    if(String(m.file||'').startsWith('blob:') && !m.fileData){ m.file=''; m.fileMissing=true; }
+    m.fileMissing=!!m.fileMissing || musicTrackNeedsRelink(m);
   });
   p.tileDefs=p.tileDefs||{};
   p.tileDefs[0]={...makeBlankTileDef(),...(p.tileDefs[0]||{})};
@@ -1926,6 +1931,7 @@ function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={}){
   runtime.syncProject(state.appProject);
   runtime.reset(getProjectLua());
   setView('code');
+  promptRelinkMissingMusicFiles('loaded project');
 }
 function loadAutoBackupProject(){
   const backup=loadAutoBackup();
@@ -1940,10 +1946,18 @@ function startAutoBackupTimer(){
   saveAutoBackupSnapshot();
   setInterval(saveAutoBackupSnapshot, AUTO_BACKUP_INTERVAL_MS);
 }
-function cloneProjectSnapshot(projectLike){
+function cloneProjectSnapshot(projectLike, options={}){
   const fallback=defaultProject();
   if(!projectLike||typeof projectLike!=='object') return fallback;
   const clone=JSON.parse(JSON.stringify(projectLike));
+  if(options.stripMusicData && Array.isArray(clone.music)){
+    clone.music.forEach(track=>{
+      if(!track) return;
+      track.fileData='';
+      if(String(track.file||'').startsWith('data:')) track.file='';
+      if(track.fileName || track.fileAddress) track.fileMissing=true;
+    });
+  }
   if(!Array.isArray(clone.palette)) clone.palette=[...fallback.palette];
   else clone.palette=clone.palette.slice();
   return clone;
@@ -2125,10 +2139,19 @@ function persistProjectSnapshot(name){
   state.currentProjectName=name;
   state.hasSaved=true;
   all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject) };
-  saveAllProjects(all);
+  let savedWithMusicData=true;
+  try{
+    saveAllProjects(all);
+  }catch(err){
+    console.warn('Project save with embedded music failed; saving relinkable music references instead.', err);
+    all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject,{stripMusicData:true}) };
+    saveAllProjects(all);
+    savedWithMusicData=false;
+  }
   refreshProjectList();
   updateCodeLineNumbers();
-  toast(`<b>Saved:</b> ${escapeHtml(name)}`);
+  if(savedWithMusicData) toast(`<b>Saved:</b> ${escapeHtml(name)}`);
+  else toast(`<b>Saved:</b> ${escapeHtml(name)}<br>Music files were too large for browser storage. Their names were saved so you can re-link them when loading.`);
 }
 function saveProject(forcePrompt=true){
   saveEditorToCurrentCodeFile();
@@ -2411,6 +2434,7 @@ async function importProjectZip(file){
     runtime.reset(getProjectLua());
     setView('code');
     toast(`<b>Imported project:</b> ${escapeHtml(file.name||'project.zip')}`);
+    promptRelinkMissingMusicFiles('imported project');
   }catch(err){
     console.error(err);
     toast(`<b>Import failed:</b> ${escapeHtml(err?.message||String(err))}`);
@@ -8239,29 +8263,31 @@ function refreshMusicList(){
       label.className='musicRowLabel';
       label.textContent=getDisplayNameWithIndex(i,m.name);
       main.appendChild(label);
-      if(i===state.currentMusicIndex){
+      if(i===state.currentMusicIndex || isCleared){
         const actions=document.createElement('div');
         actions.className='musicRowActions';
         const browseBtn=document.createElement('button');
         browseBtn.className='uiBtn';
         browseBtn.type='button';
         browseBtn.textContent='Import';
-        browseBtn.onclick=(e)=>{ e.stopPropagation(); $("musicFileBrowseInput")?.click(); };
-        const loopSelect=document.createElement('select');
-        loopSelect.className='uiBtn';
-        loopSelect.style.padding='4px 6px';
-        loopSelect.innerHTML='<option value="true">loop: true</option><option value="false">loop: false</option>';
-        loopSelect.value=String(m.loop!==false);
-        loopSelect.onclick=e=>e.stopPropagation();
-        loopSelect.onchange=(e)=>{ e.stopPropagation(); m.loop=e.target.value==="true"; refreshMusicUI(); };
-        const deleteBtn=document.createElement('button');
-        deleteBtn.className='uiBtn destructive';
-        deleteBtn.type='button';
-        deleteBtn.textContent='Clr';
-        deleteBtn.onclick=(e)=>{ e.stopPropagation(); clearMusicSlot(i); };
+        browseBtn.onclick=(e)=>{ e.stopPropagation(); chooseMusicFileForTrack(i); };
         actions.appendChild(browseBtn);
-        actions.appendChild(loopSelect);
-        actions.appendChild(deleteBtn);
+        if(i===state.currentMusicIndex){
+          const loopSelect=document.createElement('select');
+          loopSelect.className='uiBtn';
+          loopSelect.style.padding='4px 6px';
+          loopSelect.innerHTML='<option value="true">loop: true</option><option value="false">loop: false</option>';
+          loopSelect.value=String(m.loop!==false);
+          loopSelect.onclick=e=>e.stopPropagation();
+          loopSelect.onchange=(e)=>{ e.stopPropagation(); m.loop=e.target.value==="true"; refreshMusicUI(); };
+          const deleteBtn=document.createElement('button');
+          deleteBtn.className='uiBtn destructive';
+          deleteBtn.type='button';
+          deleteBtn.textContent='Clr';
+          deleteBtn.onclick=(e)=>{ e.stopPropagation(); clearMusicSlot(i); };
+          actions.appendChild(loopSelect);
+          actions.appendChild(deleteBtn);
+        }
         main.appendChild(actions);
       }
       row.appendChild(main);
@@ -8284,7 +8310,90 @@ function clearMusicSlot(index){
   else refreshMusicList();
   runtime.syncProject(state.appProject);
 }
-function refreshMusicUI(){ const m=currentMusic(); refreshMusicList(); $("musicFileLabel").textContent=m.fileName||m.file||"No file selected"; }
+function getMusicFileAddress(file){ return String(file?.webkitRelativePath || file?.name || '').trim(); }
+function getMusicTrackLabel(m){ return String(m?.fileAddress || m?.fileName || m?.name || '').trim(); }
+function musicTrackNeedsRelink(m){
+  if(!m) return false;
+  const fileData=String(m.fileData||'').trim();
+  const file=String(m.file||'').trim();
+  if(fileData || (file && !file.startsWith('blob:'))) return false;
+  return !!(m.fileMissing || m.fileAddress || m.fileName);
+}
+function getMissingMusicTrackIndexes(){ return (state.appProject.music||[]).map((m,i)=>musicTrackNeedsRelink(m)?i:-1).filter(i=>i>=0); }
+function refreshMusicUI(){ const m=currentMusic(); refreshMusicList(); $("musicFileLabel").textContent=m.fileName||m.fileAddress||m.file||"No file selected"; }
+function chooseMusicFileForTrack(index){
+  const input=$("musicFileBrowseInput");
+  if(!input || !state.appProject.music[index]) return;
+  state.currentMusicIndex=index;
+  closeListRename();
+  refreshMusicUI();
+  input.dataset.trackIndex=String(index);
+  input.value='';
+  input.click();
+}
+function importMusicFileToTrack(index,file){
+  const m=state.appProject.music[index];
+  if(!m || !file) return;
+  if(m.file && m.file.startsWith('blob:')){ try{ URL.revokeObjectURL(m.file); }catch{} }
+  const reader=new FileReader();
+  reader.onload=()=>{
+    m.fileData=typeof reader.result==='string'?reader.result:'';
+    m.file=m.fileData;
+    m.fileName=file.name||'';
+    m.fileAddress=getMusicFileAddress(file);
+    m.fileSize=Number(file.size)||0;
+    m.fileType=String(file.type||'');
+    m.fileLastModified=Number(file.lastModified)||0;
+    m.fileMissing=false;
+    state.currentMusicIndex=index;
+    refreshMusicUI();
+    try{ runtime.syncProject(state.appProject); }catch{}
+  };
+  reader.onerror=()=>toast('<b>Import failed:</b> Could not read audio file.');
+  reader.readAsDataURL(file);
+}
+function findRelinkFileForTrack(track, files, used){
+  const wantedName=String(track?.fileName||'').toLowerCase();
+  const wantedSize=Number(track?.fileSize)||0;
+  let match=files.find(file=>!used.has(file) && wantedName && String(file.name||'').toLowerCase()===wantedName && (!wantedSize || Number(file.size)===wantedSize));
+  if(match) return match;
+  match=files.find(file=>!used.has(file) && wantedName && String(file.name||'').toLowerCase()===wantedName);
+  return match||null;
+}
+function relinkMissingMusicTracks(fileList, indexes=state.pendingMusicRelinkIndexes||[]){
+  const files=Array.from(fileList||[]);
+  const pending=(indexes&&indexes.length?indexes:getMissingMusicTrackIndexes()).filter(i=>state.appProject.music[i]);
+  const used=new Set();
+  let linked=0;
+  pending.forEach((trackIndex, order)=>{
+    const track=state.appProject.music[trackIndex];
+    const file=findRelinkFileForTrack(track, files, used) || (pending.length===files.length ? files[order] : null);
+    if(!file || used.has(file)) return;
+    used.add(file);
+    importMusicFileToTrack(trackIndex,file);
+    linked+=1;
+  });
+  state.pendingMusicRelinkIndexes=[];
+  if(linked) toast(`<b>Re-linking music:</b> ${linked} file${linked===1?'':'s'} selected.`);
+  else toast('<b>No matching music files selected.</b> Choose the original audio file names to re-link tracks.');
+}
+function promptRelinkMissingMusicFiles(reason='project'){
+  const missing=getMissingMusicTrackIndexes();
+  if(!missing.length) return;
+  const labels=missing.slice(0,4).map(i=>`${i}: ${getMusicTrackLabel(state.appProject.music[i])||'unnamed track'}`).join('\n');
+  const more=missing.length>4?`\n…and ${missing.length-4} more`:'';
+  const ok=confirm(`This ${reason} has music tracks that need their original audio files re-linked. Browsers do not allow apps to reopen local music files by saved path alone, so please confirm the saved locations by selecting the files again.\n\n${labels}${more}\n\nSelect the original audio file${missing.length===1?'':'s'} now?`);
+  if(!ok){
+    toast(`<b>Music needs re-linking:</b> ${missing.length} track${missing.length===1?'':'s'} missing audio files.`);
+    refreshMusicUI();
+    return;
+  }
+  const input=$("musicRelinkFilesInput");
+  if(!input) return;
+  state.pendingMusicRelinkIndexes=missing;
+  input.value='';
+  input.click();
+}
 function updateCurrentMusicFromUI(){}
 function drawMusicPreview(){}
 
@@ -9296,19 +9405,16 @@ function wireUI(){
   bind("musicFileBrowseInput",'change',e=>{
     const input=e.target;
     const file=input?.files?.[0];
-    if(!file) return;
-    const m=currentMusic();
-    if(m.file && m.file.startsWith('blob:')){ try{ URL.revokeObjectURL(m.file); }catch{} }
-    const reader=new FileReader();
-    reader.onload=()=>{
-      m.fileData=typeof reader.result==='string'?reader.result:'';
-      m.file=m.fileData;
-      m.fileName=file.name||'';
-      refreshMusicUI();
-    };
-    reader.onerror=()=>toast('<b>Import failed:</b> Could not read audio file.');
-    reader.readAsDataURL(file);
+    if(!file){ if(input) input.value=''; return; }
+    const index=Number.parseInt(input?.dataset?.trackIndex ?? String(state.currentMusicIndex),10);
+    importMusicFileToTrack(Number.isInteger(index)?index:state.currentMusicIndex,file);
     input.value='';
+  });
+  bind("musicRelinkFilesInput",'change',e=>{
+    const input=e.target;
+    const files=input?.files;
+    if(files?.length) relinkMissingMusicTracks(files);
+    if(input) input.value='';
   });
   bindClick("stopMusicBtn",()=>stopMusicPlayback());
   bind("codeEditor",'keydown',e=>{
