@@ -290,6 +290,10 @@
     /* single-panel sound/music layout */
     #soundView,#musicView{grid-template-columns:1fr !important;}
     #soundView .mainPane,#musicView .mainPane{display:none !important;}
+    @media (min-width: 901px){
+      #soundView,#musicView{display:block;overflow:auto;padding:10px;}
+      #soundView .sidebar,#musicView .sidebar{width:min(720px,calc(100vw - 64px));max-width:720px;margin:0 auto;}
+    }
 
     .menuToggleRow{padding:0 6px 10px}
     .menuToggleLabel{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e3,#f0d7a2);color:var(--ink);font-size:12px;font-weight:700;box-shadow:0 3px 0 #c08b52;cursor:pointer}
@@ -1058,7 +1062,7 @@ const previewImages = {};
 const editorRenderCache = { sprites:new Map(), tiles:new Map() };
 const spriteHistory = { undo: [], redo: [] };
 const mapHistory = { undo: [], redo: [] };
-let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicTimer = null, currentMusicSignature = null;
+let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicTimer = null, currentMusicSignature = null, currentMusicRequestId = 0;
 function ctxAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
 function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++) row.push(-1); pixels.push(row);} return {w,h,pixels}; }
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
@@ -1112,7 +1116,8 @@ function ensureSpriteFolderView(folder){
   const mode=String(raw.gridMode||'auto').toLowerCase();
   const allowed=['off','auto','1','2','4','8','16','32','64'];
   const gridMode=allowed.includes(mode)?mode:'auto';
-  folder.view={zoom,offsetX,offsetY,gridMode};
+  const scrollInitialized=raw.scrollInitialized===true;
+  folder.view={zoom,offsetX,offsetY,gridMode,scrollInitialized};
   return folder.view;
 }
 function currentSpriteView(){ return ensureSpriteFolderView(currentSpriteFolder()); }
@@ -1354,7 +1359,7 @@ const CODE_API_DOCS = [
   makeDoc("spr(indexOrSource, x, y, flip)", "Draws a sprite folder frame, sprite reference such as 0a, or image source.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."],["flip", "Optional true/false horizontal flip. Defaults to false."]], ["spr(0, 40, 20)","spr(\"0b\", 56, 20, true)"], "Sprite folder indices draw frame a by default. Set flip=true to mirror horizontally."),
   makeDoc("sspr(indexOrSource, x, y, w, h, center, flip)", "Draws a scaled sprite using percentage multipliers for width/height.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."],["w", "Width percentage multiplier where 0 means normal size, positive grows, and negative shrinks."],["h", "Height percentage multiplier where 0 means normal size, positive grows, and negative shrinks."],["center", "Optional true/false. When true, x/y act as the sprite center while scaling."],["flip", "Optional true/false horizontal flip. Defaults to false."]], ["sspr(0, 40, 20, 0, 0)","sspr(\"0b\", 56, 20, 25, 25)","sspr(0, player.x, player.y, 100, 100, true, player.flip)"], "Scaling is intentionally aggressive now: 0 is normal, +100 is ~10x size, and -100 becomes nearly invisible."),
   makeDoc("r_spr(indexOrSource, x, y, angle, flip)", "Draws a sprite rotated by angle (degrees), with optional horizontal flip.", [["indexOrSource", "A sprite folder index like 0, or a string like \"0b\"."],["x", "Destination x."],["y", "Destination y."],["angle", "Rotation angle in degrees, around the sprite center."],["flip", "Optional true/false horizontal flip. Defaults to false."]], ["r_spr(0, 40, 20, 45)","r_spr(\"0b\", player_x, player_y, heading, true)"], "Use this for Pico-8-style custom rotation helpers. x/y remain the sprite's top-left anchor."),
-  makeDoc("animate(ref, x, y, speed)", "Draws a sprite folder and cycles through its frames automatically.", [["ref", "Folder index or ref such as \"0a\"."],["x", "Destination x."],["y", "Destination y."],["speed", "Frames per second style speed value."]], ["animate(0, 80, 40, 6)","animate(\"0a\", player_x, player_y, 8)"], "Use this when a sprite folder contains several frames."),
+  makeDoc("animate(ref, x, y, speed)", "Draws a sprite folder and cycles through its frames automatically. Passing a sprite folder/index chooses that folder and automatically animates through every frame inside it, so animate(1, x, y, spd) plays folder 1 frames such as 1a, 1b, 1c, and so on.", [["ref", "Folder index such as 1, or a specific sprite ref such as \"1a\". Numeric refs animate the whole folder."],["x", "Destination x."],["y", "Destination y."],["speed", "Frames per second style speed value."]], ["animate(1, x, y, spd)","animate(0, 80, 40, 6)","animate(\"0a\", player_x, player_y, 8)"], "Use this when a sprite folder contains several frames named by frame letter, such as 1a, 1b, and 1c."),
   makeDoc('print(text, fontsize, x, y, color, outlineColor, font)', 'Draws text with explicit font size and optional fill/outline colors and font family. Inside text, Lua control escapes like \\8, \\10, or \\19 switch the fill color to that palette index for following characters.', [['text', 'Any value converted to text. Embedded control characters 0-31 act as palette color changes.'],['fontsize', 'Font size in pixels. Pass nil or "nil" for the default size 12.'],['x', 'Screen/world x position.'],['y', 'Screen/world y position.'],['color', 'Fill color string, palette index, color() result, nil, or "nil". nil/"nil" uses current draw color (default black).'],['outlineColor', 'Outline color string, palette index, color() result, nil, or "nil". nil/"nil" means no outline.'],['font', 'Optional font family string. nil or "nil" uses the default print font from File menu settings.']], ['print("score", nil, 8, 8, color(0,0,0), color(255,255,255), nil)','print("$\\10"..cash.." @ $\\19"..bill, 14, 8, 20)','print("alert", 16, 8, 32, color(255,247,232), color(111,61,32), "Merriweather")'], 'Preferred order is print(text, fontsize, x, y, color, outlineColor, font). Older print argument layouts are still supported for compatibility.'),
   makeDoc("Fonts", "Available font names you can pass to print(..., font).", [], ["Press Start 2P","Orbitron","Rajdhani","Inter","Merriweather","Playfair Display"], "If print() receives nil/no font, it uses the default print font selected in the File menu."),
   makeDoc("rectfill(x, y, w, h)", "Draws a filled rectangle using width and height.", [["x", "Left position."],["y", "Top position."],["w", "Width."],["h", "Height."]], ["rectfill(8, 8, 16, 10)"], "Use four arguments for width/height mode."),
@@ -7631,6 +7636,12 @@ function drawSpriteEditor(){
   }
   const spriteCanvas=getEditorSpriteCanvas({folder:state.currentSpriteIndex,frame:state.currentSpriteFrame});
   if(spriteCanvas) ctx.drawImage(spriteCanvas, drawX, drawY, drawW, drawH);
+  const wrap=$("spriteCanvasWrap");
+  if(wrap && !view.scrollInitialized && wrap.clientWidth>0 && wrap.clientHeight>0){
+    wrap.scrollLeft=Math.max(0, drawX + drawW/2 - wrap.clientWidth/2);
+    wrap.scrollTop=Math.max(0, drawY + drawH/2 - wrap.clientHeight/2);
+    view.scrollInitialized=true;
+  }
   if(showGrid){
     const totalW=s.w*z;
     const totalH=s.h*z;
@@ -8176,7 +8187,19 @@ async function previewSound(index,loop=false){ const snd=state.appProject.sounds
 
 function refreshMusicWaveOptions(){ const sel=$("musicWaveInput"), cur=currentMusic().wave; const builtins=["sine","square","sawtooth","triangle"]; sel.innerHTML=''; builtins.forEach(w=>{ const o=document.createElement('option'); o.value=w; o.textContent=w; sel.appendChild(o); }); state.appProject.sounds.forEach((s,i)=>{ const o=document.createElement('option'); o.value='sfx:'+i; o.textContent='sfx '+i; sel.appendChild(o); }); sel.value = [...sel.options].some(o=>o.value===cur) ? cur : 'square'; }
 function refreshCustomScaleUI(){ const wrap=$("musicCustomScaleWrap"), keys=$("musicCustomScaleKeys"), m=currentMusic(); wrap.style.display = m.scale==='custom' ? 'block' : 'none'; keys.innerHTML=''; const labels=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; for(let i=0;i<12;i++){ const b=document.createElement('button'); b.className='miniKey'+(m.customNotes.includes(i)?' active':''); b.textContent=labels[i]; b.onclick=(e)=>{ e.preventDefault(); const arr=m.customNotes; const idx=arr.indexOf(i); if(idx>=0) arr.splice(idx,1); else arr.push(i); arr.sort((a,b)=>a-b); if(!arr.length) arr.push(0); refreshCustomScaleUI();  }; keys.appendChild(b); } }
-function stopMusicPlayback(){ if(currentMusicTimer){ clearInterval(currentMusicTimer); clearTimeout(currentMusicTimer); currentMusicTimer=null; } currentMusicNodes.forEach(n=>{ try{n.stop&&n.stop();}catch{} try{n.disconnect&&n.disconnect();}catch{} }); currentMusicNodes=[]; if(currentMusicSource){ try{currentMusicSource.pause&&currentMusicSource.pause();}catch{} try{currentMusicSource.currentTime=0;}catch{} try{currentMusicSource.stop&&currentMusicSource.stop();}catch{} currentMusicSource=null; } currentMusicSignature=null; }
+function stopMusicPlayback(options={}){
+  if(options.invalidate!==false) currentMusicRequestId++;
+  if(currentMusicTimer){ clearInterval(currentMusicTimer); clearTimeout(currentMusicTimer); currentMusicTimer=null; }
+  currentMusicNodes.forEach(n=>{ try{n.stop&&n.stop();}catch{} try{n.disconnect&&n.disconnect();}catch{} });
+  currentMusicNodes=[];
+  if(currentMusicSource){
+    try{currentMusicSource.pause&&currentMusicSource.pause();}catch{}
+    try{currentMusicSource.currentTime=0;}catch{}
+    try{currentMusicSource.stop&&currentMusicSource.stop();}catch{}
+    currentMusicSource=null;
+  }
+  currentMusicSignature=null;
+}
 async function playMusicEntry(src, action="play", loop=true){
   const normalizedAction=String(action??'play').trim().toLowerCase();
   if(normalizedAction==="stop"){ stopMusicPlayback(); return; }
@@ -8186,17 +8209,24 @@ async function playMusicEntry(src, action="play", loop=true){
   if(currentMusicSignature===requestSignature){
     return;
   }
-  stopMusicPlayback();
+  const requestId=++currentMusicRequestId;
+  stopMusicPlayback({invalidate:false});
   currentMusicSignature=requestSignature;
   const ac=ctxAudio();
   try{ await ac.resume(); }catch{}
+  if(requestId!==currentMusicRequestId) return;
+  const startAudio=(audio)=>{
+    if(requestId!==currentMusicRequestId) return;
+    currentMusicSource=audio;
+    audio.onended=()=>{ if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } };
+    audio.play().catch(()=>{ if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } });
+  };
   if(typeof src==="string" && !/^\d+$/.test(src)){
     const byName=(state.appProject.music||[]).find(m=>m && (m.fileName===src || m.name===src));
     const resolved=(byName&& (byName.fileData||byName.file)) || src;
     const audio=new Audio(resolved);
     audio.loop=loop==null ? !!byName?.loop : normalizedLoop;
-    audio.play().catch(()=>{});
-    currentMusicSource=audio;
+    startAudio(audio);
     return;
   }
   const idx = typeof src==="number" ? src : parseInt(String(src||"0"),10);
@@ -8204,8 +8234,7 @@ async function playMusicEntry(src, action="play", loop=true){
   if(!m || (!m.file && !m.fileData)){ currentMusicSignature=null; return; }
   const audio=new Audio(m.fileData||m.file);
   audio.loop=loop==null ? !!m.loop : normalizedLoop;
-  audio.play().catch(()=>{});
-  currentMusicSource=audio;
+  startAudio(audio);
 }
 function refreshSoundList(){
   const wrap=$("soundList"); wrap.innerHTML="";
@@ -9118,6 +9147,10 @@ function wireUI(){
   bindClick("logicBtn",(e)=>{ e.stopPropagation(); updateLogicButton(); setView("code"); resetToolbar(); });
   bindClick("graphicsBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('graphics'); });
   bindClick("soundBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('sound'); });
+  bind("tabsWrap", "click", e=>{
+    if(e.target.closest('button')) return;
+    resetToolbar();
+  });
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); setView('runtime'); resetToolbar(); });
   const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ $("importFormatRow")?.classList.add('hidden'); $("exportFormatRow")?.classList.add('hidden'); closeLoadPanel(); } };
   bindClick("fileBtn",e=>{ e.stopPropagation(); const isOpen=$("menu")?.classList.contains('open'); setFileMenuOpen(!isOpen); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
