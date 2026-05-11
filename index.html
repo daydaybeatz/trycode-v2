@@ -9147,9 +9147,14 @@ function wireUI(){
   bindClick("logicBtn",(e)=>{ e.stopPropagation(); updateLogicButton(); setView("code"); resetToolbar(); });
   bindClick("graphicsBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('graphics'); });
   bindClick("soundBtn",(e)=>{ e.stopPropagation(); openToolbarGroup('sound'); });
-  bind("tabsWrap", "click", e=>{
+  function resetToolbarFromBlankArea(e){
     if(e.target.closest('button')) return;
+    if(e.type==='pointerdown') e.preventDefault();
     resetToolbar();
+  }
+  ["tabsWrap","toolbarBase","toolbarSub"].forEach(id=>{
+    bind(id, "pointerdown", resetToolbarFromBlankArea);
+    bind(id, "click", resetToolbarFromBlankArea);
   });
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); setView('runtime'); resetToolbar(); });
   const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ $("importFormatRow")?.classList.add('hidden'); $("exportFormatRow")?.classList.add('hidden'); closeLoadPanel(); } };
