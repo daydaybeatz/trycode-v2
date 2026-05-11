@@ -1386,7 +1386,7 @@ const CODE_API_DOCS = [
   makeDoc("foreach(list, fn)", "Calls a function once for each value in an array-style table.", [["list", "Array-style table."],["fn", "Function that receives value and index."]], ["foreach(stars, function(star, i)\n  star.y += 1\nend)"], "Use it for quick setup or cleanup passes when you do not need a full for loop."),
   makeDoc("pairs(table)", "Lua's built-in key/value iterator for tables with named fields.", [["table", "Any Lua table."]], ["for key, value in pairs(player) do\n  print(key, nil, 8, 8, color(0,0,0), color(255,255,255))\nend"], "Use pairs() when you want both keys and values, especially for settings or dictionaries."),
   makeDoc("sfx(index, loop)", "Plays a sound effect.", [["index", "Sound index to play."],["loop", "Optional true/false loop flag."]], ["sfx(0, false)"], "Trigger it with btnp() for one-shot sounds."),
-  makeDoc("music(indexOrFile, action, loop)", "Plays generated music by index or an imported file by name.", [["indexOrFile", "Music index like 0, a file name string, or \"stop\" to stop playback."],["action", "Usually \"play\" or \"stop\"."],["loop", "true or false."]], ["music(0, \"play\", true)","music(\"song.ogg\", \"play\", true)","music(\"stop\")","music(0, \"stop\")"], "Start music in _init() or when the level changes, and call music(\"stop\") to stop current playback."),
+  makeDoc("music(indexOrFile, action, loop)", "Plays generated music by index or an imported file by name.", [["indexOrFile", "Music index like 0, a file name string, or \"stop\" to stop playback. Leave empty to stop playback."],["action", "Usually \"play\" or \"stop\"."],["loop", "true or false."]], ["music(0, \"play\", true)","music(\"song.ogg\", \"play\", true)","music() -- stop current track","music(\"stop\")","music(0, \"stop\")"], "Start music in _init() or when the level changes, and call music() or music(\"stop\") to stop current playback."),
   makeDoc("message_box(message, title)", "Shows a lightweight OK dialog in the runtime.", [["message", "Text shown in the dialog body."],["title", "Optional heading text."]], ["if btnp(\"a\") then message_box(\"hello!\", \"notice\") end"], "This opens an on-screen modal that works with mouse and touch. Use default_box(\"message\", {...}) to restyle only message boxes."),
   makeDoc("confirm_box(message, title)", "Shows a yes/no style dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["title", "Optional heading text."]], ["default_box(\"confirm\", {bg=color(27,35,64), text=color(255,247,232)})","local answer = confirm_box(\"quit game?\", \"confirm\")","if answer == true then quit = true end"], "Call it every frame while waiting. It returns true for OK, false for Cancel, and nil until the player chooses. Call default_box(\"confirm\") with no style table to reset confirm boxes back to the built-in defaults."),
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
@@ -1453,7 +1453,7 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['flr','flr(n) -> integer'],
   ['upper','upper(text) -> string'],
   ['sfx','sfx(index, [loop=false])'],
-  ['music','music(sourceOrCommand, [action="play"], [loop=true]) — music("stop") stops playback'],
+  ['music','music(sourceOrCommand, [action="play"], [loop=true]) — music() or music("stop") stops playback'],
   ['add','add(list, value) -> value'],
   ['del','del(list, value) -> value or nil'],
   ['deli','deli(list, [index=#list]) -> removedValue or nil'],
@@ -8183,10 +8183,11 @@ async function playMusicEntry(src, action="play", loop=true){
   const normalizedLoop=!!loop;
   const normalizedSource=(typeof src==="number"&&Number.isFinite(src))?src:String(src??"0").trim();
   const requestSignature=`${normalizedSource}|${normalizedAction}|${normalizedLoop?'1':'0'}`;
-  if(currentMusicSignature===requestSignature && currentMusicSource){
+  if(currentMusicSignature===requestSignature){
     return;
   }
   stopMusicPlayback();
+  currentMusicSignature=requestSignature;
   const ac=ctxAudio();
   try{ await ac.resume(); }catch{}
   if(typeof src==="string" && !/^\d+$/.test(src)){
@@ -8196,17 +8197,15 @@ async function playMusicEntry(src, action="play", loop=true){
     audio.loop=loop==null ? !!byName?.loop : normalizedLoop;
     audio.play().catch(()=>{});
     currentMusicSource=audio;
-    currentMusicSignature=requestSignature;
     return;
   }
   const idx = typeof src==="number" ? src : parseInt(String(src||"0"),10);
   const m = state.appProject.music[idx];
-  if(!m || (!m.file && !m.fileData)) return;
+  if(!m || (!m.file && !m.fileData)){ currentMusicSignature=null; return; }
   const audio=new Audio(m.fileData||m.file);
   audio.loop=loop==null ? !!m.loop : normalizedLoop;
   audio.play().catch(()=>{});
   currentMusicSource=audio;
-  currentMusicSignature=requestSignature;
 }
 function refreshSoundList(){
   const wrap=$("soundList"); wrap.innerHTML="";
@@ -9075,7 +9074,7 @@ function makeRuntime(){
     push('flr',L=>{ lua.lua_pushinteger(L,Math.floor(lua.lua_tonumber(L,1))); return 1;});
     push('upper',L=>{ let text=''; if(lua.lua_gettop(L)>=1&&!lua.lua_isnoneornil(L,1)){ if(lua.lua_isboolean(L,1)) text=lua.lua_toboolean(L,1)?'true':'false'; else if(lua.lua_isnumber(L,1)) text=String(lua.lua_tonumber(L,1)); else { const raw=lua.lua_tolstring(L,1); text=raw?to_jsstring(raw):''; } } lua.lua_pushstring(L,to_luastring(String(text).toUpperCase())); return 1;});
     push('sfx',L=>{ if(suppressAudio) return 0; const idx=lua.lua_tointeger(L,1); const loop=lua.lua_toboolean(L,2); sfxPlay(idx,!!loop); return 0;});
-    push('music',L=>{ if(suppressAudio) return 0; const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const src=readArg(1); const srcText=String(src??'').trim().toLowerCase(); if(argc<=1&&srcText==='stop'){ musicPlay(0,'stop',false); return 0; } const action=String((argc>=2?readArg(2):'play')??'play').trim().toLowerCase()||'play'; const loop=argc>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
+    push('music',L=>{ if(suppressAudio) return 0; const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); if(argc===0){ musicPlay(0,'stop',false); return 0; } const src=readArg(1); const srcText=String(src??'').trim().toLowerCase(); if(argc<=1&&srcText==='stop'){ musicPlay(0,'stop',false); return 0; } const action=String((argc>=2?readArg(2):'play')??'play').trim().toLowerCase()||'play'; const loop=argc>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
     const helperStatus=lauxlib.luaL_dostring(L,to_luastring(LUA_RUNTIME_HELPERS));
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); cls(); return; }
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
