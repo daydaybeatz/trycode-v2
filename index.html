@@ -10,19 +10,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:wght@400;700&family=Orbitron:wght@500;700&family=Playfair+Display:wght@500;700&family=Press+Start+2P&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#f7eed2;
-      --paper:#fff7e8;
-      --panel:#f3e2bb;
-      --panel2:#e7d09b;
-      --line:#6f3d20;
-      --shadow:#ad7b44;
-      --ink:#352012;
-      --accent:#b31f24;
-      --accent2:#e05f2f;
-      --blue:#2d5a8a;
-      --green:#56874f;
-      --cream:#fff5df;
-      --danger:#8a1c1c;
+      --bg:#dbe5d0;
+      --paper:#edf2df;
+      --panel:#c7d8c2;
+      --panel2:#aebfb5;
+      --line:#506f66;
+      --shadow:#7f9585;
+      --ink:#20332d;
+      --accent:#577f77;
+      --accent2:#89a99f;
+      --blue:#527f8a;
+      --green:#6f9278;
+      --cream:#f4f6e8;
+      --danger:#4f756f;
     }
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;background:linear-gradient(180deg,#c13930 0 22px,#f3e0b0 22px 100%);font-family:"Trebuchet MS",Verdana,sans-serif;color:var(--ink);overscroll-behavior:none}
@@ -295,6 +295,73 @@
       #soundView .sidebar,#musicView .sidebar{width:min(720px,calc(100vw - 64px));max-width:720px;margin:0 auto;}
     }
 
+
+    body:not(.dark-mode){background:linear-gradient(90deg,#e1ead5 0 17%,#cbdcc7 17% 34%,#aebfb5 34% 51%,#c1d3bd 51% 68%,#a6bbb5 68% 85%,#eef2d8 85% 100%)}
+    body:not(.dark-mode) .topbar{background:linear-gradient(180deg,#dfe9d5,#bdcec6);border-bottom-color:#506f66;box-shadow:inset 0 -3px 0 #91a99f}
+    body:not(.dark-mode) .brand{background:linear-gradient(180deg,#7d9f95,#587b73);color:#f7faee;text-shadow:1px 1px 0 #2d4a44;box-shadow:0 4px 0 #49665e}
+    body:not(.dark-mode) .tab,
+    body:not(.dark-mode) .fileBtn,
+    body:not(.dark-mode) .uiBtn,
+    body:not(.dark-mode) .mbtn,
+    body:not(.dark-mode) .smallbtn,
+    body:not(.dark-mode) .loadExampleBtn{background:linear-gradient(180deg,#f4f6e8,#c5d6c3);border-color:#506f66;color:#20332d;box-shadow:0 4px 0 #7f9585}
+    body:not(.dark-mode) .tab.active,
+    body:not(.dark-mode) .uiBtn.active{background:linear-gradient(180deg,#f8faed,#d8e6ce);border-color:#577f77;color:#355f58;box-shadow:0 4px 0 #55766e,0 0 0 2px rgba(255,255,255,.48) inset}
+    body:not(.dark-mode) .tab.cat-logic,
+    body:not(.dark-mode) .uiBtn.cat-logic,
+    body:not(.dark-mode) .mbtn.cat-logic{background:linear-gradient(180deg,#c9ddd4,#9fbab3);border-color:#4f716d;color:#1f3734;box-shadow:0 4px 0 #5f7e77}
+    body:not(.dark-mode) .tab.cat-graphics,
+    body:not(.dark-mode) .uiBtn.cat-graphics,
+    body:not(.dark-mode) .mbtn.cat-graphics{background:linear-gradient(180deg,#d8e8cf,#acc9a9);border-color:#55755a;color:#243a28;box-shadow:0 4px 0 #6f896f}
+    body:not(.dark-mode) .tab.cat-sound,
+    body:not(.dark-mode) .uiBtn.cat-sound,
+    body:not(.dark-mode) .mbtn.cat-sound{background:linear-gradient(180deg,#eef0d2,#cbd2ae);border-color:#66745a;color:#323a28;box-shadow:0 4px 0 #7f8a6c}
+    body:not(.dark-mode) .panelSkin,
+    body:not(.dark-mode) .codeView{background:linear-gradient(180deg,#edf2df,#cbdcc7);box-shadow:inset 0 0 0 3px rgba(255,255,255,.42),0 6px 0 #7f9585}
+    body:not(.dark-mode) .pane,
+    body:not(.dark-mode) .spritePanelPreview,
+    body:not(.dark-mode) .tileBtn,
+    body:not(.dark-mode) .itemRow,
+    body:not(.dark-mode) .strokeStepper,
+    body:not(.dark-mode) .miniKey,
+    body:not(.dark-mode) .menuToggleLabel{background:linear-gradient(180deg,#f4f6e8,#c5d6c3);box-shadow:0 3px 0 #91a99f}
+    body:not(.dark-mode) .field label{color:#49665e}
+    body:not(.dark-mode) .sidebar input,
+    body:not(.dark-mode) .sidebar select,
+    body:not(.dark-mode) .sidebar textarea,
+    body:not(.dark-mode) .menuSettingRow select,
+    body:not(.dark-mode) .runtimeDialogInput{background:#f7faed;color:#20332d}
+    body:not(.dark-mode) .docsSection,
+    body:not(.dark-mode) .menuCard,
+    body:not(.dark-mode) .menuLoadPanel,
+    body:not(.dark-mode) .toast{background:linear-gradient(180deg,#edf2df,#c5d6c3);box-shadow:0 6px 0 #7f9585}
+    body:not(.dark-mode) .docsSection h3{background:linear-gradient(180deg,#7d9f95,#587b73);color:#f7faee;text-shadow:1px 1px 0 #2d4a44}
+    body:not(.dark-mode) .docCode{background:#243830;color:#edf6dc}
+    body:not(.dark-mode) .codeEditorSurface{background:#243830}
+    body:not(.dark-mode) .codeLineNumbers{background:#1d2f29;color:#9db6a7;border-right-color:rgba(255,255,255,.12)}
+    body:not(.dark-mode) .codeHighlight{color:#edf6dc}
+    body:not(.dark-mode) .code textarea.code{caret-color:#edf6dc}
+    body:not(.dark-mode) .code textarea.code::selection{background:rgba(192,218,199,.28)}
+    body:not(.dark-mode) .tok-comment{color:#8fa493}
+    body:not(.dark-mode) .tok-keyword{color:#dcefa8;font-weight:700}
+    body:not(.dark-mode) .tok-builtin{color:#9ed5d3}
+    body:not(.dark-mode) .tok-function{color:#b9e7ae}
+    body:not(.dark-mode) .tok-number{color:#e9c785}
+    body:not(.dark-mode) .tok-string{color:#efb1b0}
+    body:not(.dark-mode) .tok-operator{color:#d9e6cf}
+    body:not(.dark-mode) .tok-identifier{color:#edf6dc}
+    body:not(.dark-mode) .codeFunctionTooltip{background:linear-gradient(180deg,#f7faed,#c5d6c3);box-shadow:0 5px 0 rgba(65,85,77,.42)}
+    .attachedPane{margin:0 0 10px 0;background:linear-gradient(180deg,#eef4e5,#cadcc8)}
+    .splitView:not(.sidebar-hidden) .canvasWrap{filter:grayscale(.65) opacity(.55);pointer-events:none}
+    .splitView:not(.sidebar-hidden) .canvasWrap::after{content:'';position:absolute;inset:0;background:rgba(80,93,88,.34);z-index:30;pointer-events:auto;border-radius:12px}
+    .splitView:not(.sidebar-hidden) .overlayTools,
+    .splitView:not(.sidebar-hidden) .spriteSecondaryTools,
+    .splitView:not(.sidebar-hidden) .edgePalette,
+    .splitView:not(.sidebar-hidden) .animPreviewBar,
+    .splitView:not(.sidebar-hidden) .mapLayerNavControl,
+    .splitView:not(.sidebar-hidden) #mapCombineSelectedBtn,
+    .splitView:not(.sidebar-hidden) #mapDeleteSelectedBtn{display:none !important}
+
     .menuToggleRow{padding:0 6px 10px}
     .menuToggleLabel{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e3,#f0d7a2);color:var(--ink);font-size:12px;font-weight:700;box-shadow:0 3px 0 #c08b52;cursor:pointer}
     .menuToggleInput{appearance:none;-webkit-appearance:none;width:52px;height:30px;border:3px solid var(--line);border-radius:999px;background:linear-gradient(180deg,#ead5aa,#d6b67a);box-shadow:inset 0 0 0 2px rgba(111,61,32,.14);position:relative;cursor:pointer;transition:background .15s ease,border-color .15s ease}
@@ -482,15 +549,17 @@
     <div class="view" id="view-sounds">
       <div class="splitView" id="soundView">
         <div class="sidebar panelSkin">
-          <div class="pane"><h4>SOUNDS</h4><div class="formRow"><button class="mbtn" id="addSoundBtn">Add Sound</button></div><div class="soundList" id="soundList"></div></div>
-          <div class="pane"><h4>SETTINGS</h4>
-            <div class="formRow"><div class="field"><label>Wave</label><select id="soundWaveInput"><option>sine</option><option>square</option><option>sawtooth</option><option>triangle</option><option>noise</option><option>wavetable</option></select></div><div class="field"><label>Length (sec)</label><input id="soundLengthInput" type="number" step="0.05" min="0.05" value="0.3"></div></div>
-            <div class="formRow"><div class="field"><label>Volume</label><input id="soundVolumeInput" type="number" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Pitch Hz</label><input id="soundPitchInput" type="number" min="20" value="440"></div></div>
-            <div class="formRow"><div class="field"><label>Attack</label><input id="soundAttackInput" type="number" step="0.01" min="0" value="0.01"></div><div class="field"><label>Decay</label><input id="soundDecayInput" type="number" step="0.01" min="0" value="0.08"></div></div>
-            <div class="formRow"><div class="field"><label>Sustain</label><input id="soundSustainInput" type="number" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Release</label><input id="soundReleaseInput" type="number" step="0.01" min="0" value="0.1"></div></div>
-            <div class="formRow"><button class="mbtn" id="previewSoundBtn">Preview</button></div>
+          <div class="pane"><h4>SOUNDS</h4><div class="formRow"><button class="mbtn" id="addSoundBtn">Add Sound</button></div>
+            <div class="pane attachedPane"><h4>SETTINGS</h4>
+              <div class="formRow"><div class="field"><label>Wave</label><select id="soundWaveInput"><option>sine</option><option>square</option><option>sawtooth</option><option>triangle</option><option>noise</option><option>wavetable</option></select></div><div class="field"><label>Length (sec)</label><input id="soundLengthInput" type="number" step="0.05" min="0.05" value="0.3"></div></div>
+              <div class="formRow"><div class="field"><label>Volume</label><input id="soundVolumeInput" type="number" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Pitch Hz</label><input id="soundPitchInput" type="number" min="20" value="440"></div></div>
+              <div class="formRow"><div class="field"><label>Attack</label><input id="soundAttackInput" type="number" step="0.01" min="0" value="0.01"></div><div class="field"><label>Decay</label><input id="soundDecayInput" type="number" step="0.01" min="0" value="0.08"></div></div>
+              <div class="formRow"><div class="field"><label>Sustain</label><input id="soundSustainInput" type="number" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Release</label><input id="soundReleaseInput" type="number" step="0.01" min="0" value="0.1"></div></div>
+              <div class="formRow"><button class="mbtn" id="previewSoundBtn">Preview</button></div>
+            </div>
+            <div class="pane attachedPane"><h4>PITCH SEQUENCER</h4><canvas class="waveCanvas" id="soundWaveCanvas" width="800" height="240"></canvas></div>
+            <div class="soundList" id="soundList"></div><div class="pageRow compact" id="soundListPagerRow"><button class="uiBtn" id="soundListPrevBtn">&lt;</button><div class="docDesc" id="soundListPageLabel">1 / 1</div><button class="uiBtn" id="soundListNextBtn">&gt;</button></div>
           </div>
-          <div class="pane"><h4>PITCH SEQUENCER</h4><canvas class="waveCanvas" id="soundWaveCanvas" width="800" height="240"></canvas></div>
         </div>
         
       </div>
@@ -499,8 +568,9 @@
     <div class="view" id="view-music">
       <div class="splitView" id="musicView">
         <div class="sidebar panelSkin">
-          <div class="pane"><h4>MUSIC</h4><div class="formRow"><button class="mbtn" id="addMusicBtn">Add Music</button></div><div class="musicList" id="musicList"></div></div>
-          <div class="pane"><h4>AUDIO FILE</h4><div class="formRow"><div class="field"><label>Selected Track</label><div class="docDesc" id="musicFileLabel">No file selected</div></div></div><div class="formRow" style="margin-top:8px"><button class="mbtn" id="playMusicBtn">Play</button><button class="mbtn" id="stopMusicBtn">Stop</button></div>
+          <div class="pane"><h4>MUSIC</h4><div class="formRow"><button class="mbtn" id="addMusicBtn">Add Music</button></div>
+            <div class="pane attachedPane"><h4>AUDIO FILE</h4><div class="formRow"><div class="field"><label>Selected Track</label><div class="docDesc" id="musicFileLabel">No file selected</div></div></div><div class="formRow" style="margin-top:8px"><button class="mbtn" id="importMusicBtn">Import</button><button class="mbtn" id="playMusicBtn">Play</button><button class="mbtn" id="stopMusicBtn">Stop</button></div></div>
+            <div class="musicList" id="musicList"></div><div class="pageRow compact" id="musicListPagerRow"><button class="uiBtn" id="musicListPrevBtn">&lt;</button><div class="docDesc" id="musicListPageLabel">1 / 1</div><button class="uiBtn" id="musicListNextBtn">&gt;</button></div>
           </div>
         </div>
         
@@ -1027,7 +1097,9 @@ end
 `;
 const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,spriteListPage:0,projectListPage:0,pendingMusicRelinkIndexes:[],spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
+const SOUND_LIST_PAGE_SIZE = 5;
+const MUSIC_LIST_PAGE_SIZE = 5;
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,soundListPage:0,musicListPage:0,projectListPage:0,pendingMusicRelinkIndexes:[],spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
 const SPRITE_IMPORT_MAX_WIDTH=960;
 const SPRITE_IMPORT_MAX_HEIGHT=540;
 const PRESET_PALETTE_PAGES = [
@@ -1062,7 +1134,7 @@ const previewImages = {};
 const editorRenderCache = { sprites:new Map(), tiles:new Map() };
 const spriteHistory = { undo: [], redo: [] };
 const mapHistory = { undo: [], redo: [] };
-let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicTimer = null, currentMusicSignature = null, currentMusicRequestId = 0;
+let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicRequestId = 0;
 function ctxAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
 function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++) row.push(-1); pixels.push(row);} return {w,h,pixels}; }
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
@@ -8196,12 +8268,17 @@ function stopMusicPlayback(options={}){
   if(currentMusicTimer){ clearInterval(currentMusicTimer); clearTimeout(currentMusicTimer); currentMusicTimer=null; }
   currentMusicNodes.forEach(n=>{ try{n.stop&&n.stop();}catch{} try{n.disconnect&&n.disconnect();}catch{} });
   currentMusicNodes=[];
-  if(currentMusicSource){
-    try{currentMusicSource.pause&&currentMusicSource.pause();}catch{}
-    try{currentMusicSource.currentTime=0;}catch{}
-    try{currentMusicSource.stop&&currentMusicSource.stop();}catch{}
-    currentMusicSource=null;
-  }
+  const audioToStop=new Set(currentMusicElements);
+  if(currentMusicSource) audioToStop.add(currentMusicSource);
+  audioToStop.forEach(audio=>{
+    try{ audio.onended=null; }catch{}
+    try{ audio.pause&&audio.pause(); }catch{}
+    try{ audio.currentTime=0; }catch{}
+    try{ audio.stop&&audio.stop(); }catch{}
+    try{ if(audio.removeAttribute){ audio.removeAttribute('src'); audio.load?.(); } }catch{}
+  });
+  currentMusicElements.clear();
+  currentMusicSource=null;
   currentMusicSignature=null;
 }
 async function playMusicEntry(src, action="play", loop=true){
@@ -8220,10 +8297,11 @@ async function playMusicEntry(src, action="play", loop=true){
   try{ await ac.resume(); }catch{}
   if(requestId!==currentMusicRequestId) return;
   const startAudio=(audio)=>{
-    if(requestId!==currentMusicRequestId) return;
+    if(requestId!==currentMusicRequestId){ try{ audio.pause(); }catch{} return; }
     currentMusicSource=audio;
-    audio.onended=()=>{ if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } };
-    audio.play().catch(()=>{ if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } });
+    currentMusicElements.add(audio);
+    audio.onended=()=>{ currentMusicElements.delete(audio); if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } };
+    audio.play().catch(()=>{ currentMusicElements.delete(audio); if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } });
   };
   if(typeof src==="string" && !/^\d+$/.test(src)){
     const byName=(state.appProject.music||[]).find(m=>m && (m.fileName===src || m.name===src));
@@ -8241,8 +8319,15 @@ async function playMusicEntry(src, action="play", loop=true){
   startAudio(audio);
 }
 function refreshSoundList(){
-  const wrap=$("soundList"); wrap.innerHTML="";
-  state.appProject.sounds.forEach((s,i)=>{
+  const wrap=$("soundList");
+  if(!wrap) return;
+  wrap.innerHTML="";
+  const total=state.appProject.sounds.length;
+  const pages=Math.max(1,Math.ceil(total/SOUND_LIST_PAGE_SIZE));
+  state.soundListPage=clamp(state.soundListPage||0,0,pages-1);
+  const startIndex=state.soundListPage*SOUND_LIST_PAGE_SIZE;
+  state.appProject.sounds.slice(startIndex,startIndex+SOUND_LIST_PAGE_SIZE).forEach((s,offset)=>{
+    const i=startIndex+offset;
     const row=document.createElement('div');
     const def=makeSound();
     const isCleared=s.wave===def.wave && Number(s.length)===def.length && Number(s.volume)===def.volume && Number(s.pitch)===def.pitch && Number(s.attack)===def.attack && Number(s.decay)===def.decay && Number(s.sustain)===def.sustain && Number(s.release)===def.release && Array.isArray(s.wavetable) && s.wavetable.every(v=>(v||0)===0);
@@ -8264,6 +8349,10 @@ function refreshSoundList(){
     };
     wrap.appendChild(row);
   });
+  const pager=$("soundListPagerRow");
+  const label=$("soundListPageLabel");
+  if(pager) pager.classList.toggle('hidden', pages<=1);
+  if(label) label.textContent=`${state.soundListPage+1} / ${pages}`;
 }
 function clearSoundSlot(index){
   const snd=state.appProject.sounds[index];
@@ -8279,10 +8368,17 @@ function clearSoundSlot(index){
 }
 function refreshSoundUI(){ const s=currentSound(); refreshSoundList(); $("soundWaveInput").value=s.wave; $("soundLengthInput").value=s.length; $("soundVolumeInput").value=s.volume; $("soundPitchInput").value=s.pitch; $("soundAttackInput").value=s.attack; $("soundDecayInput").value=s.decay; $("soundSustainInput").value=s.sustain; $("soundReleaseInput").value=s.release; }
 function updateCurrentSoundFromUI(){ const s=currentSound(); s.wave=$("soundWaveInput").value; s.length=parseFloat($("soundLengthInput").value)||0.3; s.volume=parseFloat($("soundVolumeInput").value)||0.6; s.pitch=parseFloat($("soundPitchInput").value)||440; s.attack=parseFloat($("soundAttackInput").value)||0.01; s.decay=parseFloat($("soundDecayInput").value)||0.08; s.sustain=parseFloat($("soundSustainInput").value)||0.6; s.release=parseFloat($("soundReleaseInput").value)||0.1; }
-function drawSoundWaveCanvas(){ const c=$("soundWaveCanvas"), ctx=c.getContext('2d'), s=currentSound(); ctx.clearRect(0,0,c.width,c.height); ctx.fillStyle='#fff7e8'; ctx.fillRect(0,0,c.width,c.height); ctx.strokeStyle='#6f3d20'; ctx.lineWidth=3; ctx.strokeRect(0,0,c.width,c.height); ctx.strokeStyle='rgba(111,61,32,0.35)'; ctx.beginPath(); ctx.moveTo(0,c.height/2); ctx.lineTo(c.width,c.height/2); ctx.stroke(); ctx.beginPath(); ctx.moveTo(0,c.height/2); for(let i=0;i<s.wavetable.length;i++){ const x=(i/Math.max(1,s.wavetable.length-1))*c.width; const y=(1-((s.wavetable[i]+1)/2))*c.height; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.strokeStyle='#b31f24'; ctx.lineWidth=4; ctx.stroke(); }
+function drawSoundWaveCanvas(){ const c=$("soundWaveCanvas"), ctx=c.getContext('2d'), s=currentSound(); const styles=getComputedStyle(document.documentElement); const paper=styles.getPropertyValue('--paper').trim()||'#edf2df'; const line=styles.getPropertyValue('--line').trim()||'#506f66'; const accent=styles.getPropertyValue('--accent').trim()||'#577f77'; ctx.clearRect(0,0,c.width,c.height); ctx.fillStyle=paper; ctx.fillRect(0,0,c.width,c.height); ctx.strokeStyle=line; ctx.lineWidth=3; ctx.strokeRect(0,0,c.width,c.height); ctx.strokeStyle=line; ctx.globalAlpha=0.35; ctx.beginPath(); ctx.moveTo(0,c.height/2); ctx.lineTo(c.width,c.height/2); ctx.stroke(); ctx.globalAlpha=1; ctx.beginPath(); ctx.moveTo(0,c.height/2); for(let i=0;i<s.wavetable.length;i++){ const x=(i/Math.max(1,s.wavetable.length-1))*c.width; const y=(1-((s.wavetable[i]+1)/2))*c.height; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.strokeStyle=accent; ctx.lineWidth=4; ctx.stroke(); }
 function refreshMusicList(){
-  const wrap=$("musicList"); wrap.innerHTML="";
-  state.appProject.music.forEach((m,i)=>{
+  const wrap=$("musicList");
+  if(!wrap) return;
+  wrap.innerHTML="";
+  const total=state.appProject.music.length;
+  const pages=Math.max(1,Math.ceil(total/MUSIC_LIST_PAGE_SIZE));
+  state.musicListPage=clamp(state.musicListPage||0,0,pages-1);
+  const startIndex=state.musicListPage*MUSIC_LIST_PAGE_SIZE;
+  state.appProject.music.slice(startIndex,startIndex+MUSIC_LIST_PAGE_SIZE).forEach((m,offset)=>{
+    const i=startIndex+offset;
     const row=document.createElement('div');
     const isCleared=!m.file && !m.fileData && !m.fileName;
     row.className='itemRow'+(i===state.currentMusicIndex?' active':'')+(isCleared?' cleared':'');
@@ -8331,6 +8427,10 @@ function refreshMusicList(){
     };
     wrap.appendChild(row);
   });
+  const pager=$("musicListPagerRow");
+  const label=$("musicListPageLabel");
+  if(pager) pager.classList.toggle('hidden', pages<=1);
+  if(label) label.textContent=`${state.musicListPage+1} / ${pages}`;
 }
 function clearMusicSlot(index){
   const track=state.appProject.music[index];
@@ -9438,10 +9538,16 @@ function wireUI(){
   }));
   bind("spriteCanvasWrap",'touchmove',e=>e.preventDefault(),{passive:false});
   bind("spriteCanvasWrap",'wheel',e=>{ e.preventDefault(); zoomSpriteAtPoint((getSpriteDisplayZoom()||1)+(e.deltaY<0?2:-2), e.clientX, e.clientY); },{passive:false});
-  bindClick("addSoundBtn",()=>{ state.appProject.sounds.push(makeSound()); state.currentSoundIndex=state.appProject.sounds.length-1; refreshSoundUI(); drawSoundWaveCanvas(); });
+  bindClick("addSoundBtn",()=>{ state.appProject.sounds.push(makeSound()); state.currentSoundIndex=state.appProject.sounds.length-1; state.soundListPage=Math.floor(state.currentSoundIndex/SOUND_LIST_PAGE_SIZE); refreshSoundUI(); drawSoundWaveCanvas(); });
+  bindClick("soundListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.sounds?.length||0)/SOUND_LIST_PAGE_SIZE)); state.soundListPage=(state.soundListPage-1+pages)%pages; closeListRename(); refreshSoundList(); });
+  bindClick("soundListNextBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.sounds?.length||0)/SOUND_LIST_PAGE_SIZE)); state.soundListPage=(state.soundListPage+1)%pages; closeListRename(); refreshSoundList(); });
   ["soundWaveInput","soundLengthInput","soundVolumeInput","soundPitchInput","soundAttackInput","soundDecayInput","soundSustainInput","soundReleaseInput"].forEach(id=>bind(id,'input',()=>{ updateCurrentSoundFromUI(); drawSoundWaveCanvas(); })); bindClick("previewSoundBtn",async()=>{ try{ await ctxAudio().resume(); }catch{} previewSound(state.currentSoundIndex,false); });
   let soundDraw=false; bind("soundWaveCanvas",'pointerdown',e=>{ soundDraw=true; e.preventDefault(); writeWavePoint(e); }); bind("soundWaveCanvas",'pointermove',e=>{ if(soundDraw){ e.preventDefault(); writeWavePoint(e); }}); window.addEventListener('pointerup',()=>soundDraw=false);
-  bindClick("addMusicBtn",()=>{ state.appProject.music.push(makeMusic()); state.currentMusicIndex=state.appProject.music.length-1; refreshMusicUI();  });
+  bindClick("addMusicBtn",()=>{ state.appProject.music.push(makeMusic()); state.currentMusicIndex=state.appProject.music.length-1; state.musicListPage=Math.floor(state.currentMusicIndex/MUSIC_LIST_PAGE_SIZE); refreshMusicUI();  });
+
+  bindClick("musicListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.music?.length||0)/MUSIC_LIST_PAGE_SIZE)); state.musicListPage=(state.musicListPage-1+pages)%pages; closeListRename(); refreshMusicList(); });
+  bindClick("musicListNextBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.music?.length||0)/MUSIC_LIST_PAGE_SIZE)); state.musicListPage=(state.musicListPage+1)%pages; closeListRename(); refreshMusicList(); });
+  bindClick("importMusicBtn",()=>chooseMusicFileForTrack(state.currentMusicIndex));
 
   bind("musicFileBrowseInput",'change',e=>{
     const input=e.target;
