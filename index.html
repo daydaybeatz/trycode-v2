@@ -78,7 +78,7 @@
     .codeFileTab.drop-before{box-shadow:inset 3px 0 0 rgba(255,255,255,.9),0 3px 0 rgba(92,57,31,.55)}
     .codeFileTab.drop-after{box-shadow:inset -3px 0 0 rgba(255,255,255,.9),0 3px 0 rgba(92,57,31,.55)}
     .codeScrollShell{--code-font-size:14px;--code-line-height:20px;--code-font-family:Consolas,"SFMono-Regular","Cascadia Mono","Liberation Mono",Menlo,monospace;--code-font-weight:400;--code-pad-y:14px;--code-pad-left:14px;--code-pad-right:14px;flex:1 1 auto;min-height:0;overflow:auto;scrollbar-gutter:stable both-edges;padding:0;overscroll-behavior:contain;border-radius:20px;background:linear-gradient(180deg,#3a2b20,#241912);box-shadow:inset 0 0 0 3px rgba(255,240,203,.08)}
-    .codeEditorWrap{display:inline-block;min-height:100%;min-width:100%;width:fit-content}
+    .codeEditorWrap{display:block;min-height:100%;min-width:100%;width:max-content}
     .codeEditorSurface{display:grid;grid-template-columns:minmax(36px,max-content) max-content;align-items:start;min-height:100%;border:4px solid var(--line);border-radius:18px;background:#2d2319;box-shadow:inset 0 0 0 3px #5b4a3b;overflow:hidden;min-width:100%;width:max-content;position:relative}
     .codeEditorPane{position:relative;min-height:100%;min-width:0}
     .codeLineNumbers{position:sticky;left:0;align-self:stretch;background:linear-gradient(180deg,#443629,#36291f);color:#bda88d;text-align:right;user-select:none;overflow:hidden;z-index:1;border-right:1px solid rgba(255,255,255,.08)}
@@ -7135,7 +7135,7 @@ function setView(name){
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $("view-"+name).classList.add('active');
-  if(name==="code") requestAnimationFrame(()=>$("codeEditor").focus({preventScroll:true}));
+  if(name==="code") requestAnimationFrame(()=>{ updateCodeLineNumbers(); $("codeEditor").focus({preventScroll:true}); });
   if(name==="sprites") drawSpriteEditor();
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
   if(name==="music") { refreshMusicUI();  }
@@ -7508,15 +7508,8 @@ function getSpriteCanvasMetrics(){
   const sprite=currentSprite();
   const z=getSpriteDisplayZoom();
   const wrap=$("spriteCanvasWrap");
-  const view=currentSpriteView();
-  const minWidth=wrap?wrap.clientWidth:0;
-  const minHeight=wrap?wrap.clientHeight:0;
-  const dynamicOffsetX=Math.abs(view.offsetX||0);
-  const dynamicOffsetY=Math.abs(view.offsetY||0);
-  const panRoomX=Math.max(minWidth*3, z*32, dynamicOffsetX+minWidth);
-  const panRoomY=Math.max(minHeight*3, z*32, dynamicOffsetY+minHeight);
-  const width=Math.max(256, minWidth*4, Math.ceil(sprite.w*z + panRoomX*2));
-  const height=Math.max(256, minHeight*4, Math.ceil(sprite.h*z + panRoomY*2));
+  const width=Math.max(1,wrap?.clientWidth||sprite.w*z||256);
+  const height=Math.max(1,wrap?.clientHeight||sprite.h*z||256);
   return {sprite, z, width, height, baseX:Math.floor((width-sprite.w*z)/2), baseY:Math.floor((height-sprite.h*z)/2)};
 }
 function refreshSpriteFrames(){
@@ -7636,12 +7629,6 @@ function drawSpriteEditor(){
   }
   const spriteCanvas=getEditorSpriteCanvas({folder:state.currentSpriteIndex,frame:state.currentSpriteFrame});
   if(spriteCanvas) ctx.drawImage(spriteCanvas, drawX, drawY, drawW, drawH);
-  const wrap=$("spriteCanvasWrap");
-  if(wrap && !view.scrollInitialized && wrap.clientWidth>0 && wrap.clientHeight>0){
-    wrap.scrollLeft=Math.max(0, drawX + drawW/2 - wrap.clientWidth/2);
-    wrap.scrollTop=Math.max(0, drawY + drawH/2 - wrap.clientHeight/2);
-    view.scrollInitialized=true;
-  }
   if(showGrid){
     const totalW=s.w*z;
     const totalH=s.h*z;
@@ -7701,7 +7688,24 @@ function spriteFloodFill(x,y,from,to){ const s=currentSprite(); if(x<0||y<0||x>=
 function spriteCoordsFromEvent(e){ const canvas=$("spriteCanvas"), rect=canvas.getBoundingClientRect(); const scaleX=canvas.width/rect.width, scaleY=canvas.height/rect.height; const px=(e.clientX-rect.left)*scaleX, py=(e.clientY-rect.top)*scaleY; const {baseX,baseY,z}=getSpriteCanvasMetrics(); const view=currentSpriteView(); return {x:Math.floor((px-(baseX+view.offsetX))/z), y:Math.floor((py-(baseY+view.offsetY))/z)}; }
 function forEachLinePoint(x0,y0,x1,y1,fn){ let dx=Math.abs(x1-x0), sx=x0<x1?1:-1, dy=-Math.abs(y1-y0), sy=y0<y1?1:-1, err=dx+dy; while(true){ fn(x0,y0); if(x0===x1 && y0===y1) break; const e2=2*err; if(e2>=dy){ err+=dy; x0+=sx; } if(e2<=dx){ err+=dx; y0+=sy; } } }
 function forEachRectPoint(start,end,filled,fn){ const minX=Math.min(start.x,end.x), maxX=Math.max(start.x,end.x), minY=Math.min(start.y,end.y), maxY=Math.max(start.y,end.y); for(let y=minY;y<=maxY;y++) for(let x=minX;x<=maxX;x++){ if(!filled && x>minX && x<maxX && y>minY && y<maxY) continue; fn(x,y); } }
-function forEachCirclePoint(start,end,filled,fn){ const minX=Math.min(start.x,end.x), maxX=Math.max(start.x,end.x), minY=Math.min(start.y,end.y), maxY=Math.max(start.y,end.y); const cx=(minX+maxX)/2, cy=(minY+maxY)/2; const rx=Math.max(0.5,(maxX-minX+1)/2), ry=Math.max(0.5,(maxY-minY+1)/2); for(let y=minY;y<=maxY;y++) for(let x=minX;x<=maxX;x++){ const nx=(x+0.5-cx)/rx, ny=(y+0.5-cy)/ry; const dist=(nx*nx)+(ny*ny); if(filled){ if(dist<=1) fn(x,y); }else if(dist<=1.08 && dist>=0.68) fn(x,y); } }
+function forEachCirclePoint(start,end,filled,fn){
+  const dx=end.x-start.x, dy=end.y-start.y;
+  const diameter=Math.max(Math.abs(dx),Math.abs(dy))+1;
+  const stepX=dx<0?-1:1, stepY=dy<0?-1:1;
+  const minX=stepX<0?start.x-diameter+1:start.x;
+  const minY=stepY<0?start.y-diameter+1:start.y;
+  const maxX=minX+diameter-1, maxY=minY+diameter-1;
+  const centerX=minX+diameter/2, centerY=minY+diameter/2;
+  const radius=diameter/2;
+  const outer=radius*radius;
+  const inner=Math.max(0,(radius-1)*(radius-1));
+  for(let y=minY;y<=maxY;y++) for(let x=minX;x<=maxX;x++){
+    const px=x+0.5-centerX, py=y+0.5-centerY;
+    const dist=(px*px)+(py*py);
+    if(filled){ if(dist<=outer) fn(x,y); }
+    else if(dist<=outer && dist>=inner) fn(x,y);
+  }
+}
 function forEachShapePoint(kind,start,end,filled,fn){ if(!start||!end) return; if(kind==='rect') return forEachRectPoint(start,end,filled,fn); if(kind==='circ') return forEachCirclePoint(start,end,filled,fn); return forEachLinePoint(start.x,start.y,end.x,end.y,fn); }
 function paintSpriteBrush(x,y,mode,width=Math.max(1,state.spriteLineWidth||1)){
   const s=currentSprite();
