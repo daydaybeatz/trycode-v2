@@ -2028,6 +2028,9 @@ async function putMusicAsset(track){
   if(handle) baseRecord.fileHandle=handle;
   const writeRecord=record=>new Promise(resolve=>{
     const tx=db.transaction('music','readwrite');
+    const handle=getMusicFileHandle(track);
+    const record={key,data:track.fileData,fileName:track.fileName||'',fileAddress:track.fileAddress||'',filePath:track.filePath||track.fileAddress||'',fileSize:Number(track.fileSize)||0,fileType:track.fileType||'',fileLastModified:Number(track.fileLastModified)||0,updatedAt:Date.now()};
+    if(handle) record.fileHandle=handle;
     try{
       tx.objectStore('music').put(record);
     }catch(err){
@@ -2065,8 +2068,37 @@ async function hydrateMissingMusicFromDb(project=state.appProject){
     if(!musicTrackNeedsRelink(track)) return;
     const asset=await getMusicAsset(track.musicStorageKey||getMusicStorageKey(track));
     if(!asset) return;
-    const didRestore=await restoreMusicTrackFromAsset(track, asset, {requestPermission:true});
-    if(didRestore) restored+=1;
+    let data=asset.data||'';
+    if(!data && asset.fileHandle){
+      try{
+        const granted=await verifyMusicFileHandlePermission(asset.fileHandle, true);
+        if(granted){
+          const file=await asset.fileHandle.getFile();
+          data=await readMusicFileAsDataUrl(file);
+          track.fileName=file.name||asset.fileName||track.fileName||'';
+          track.fileAddress=asset.filePath||asset.fileAddress||track.fileName;
+          track.filePath=asset.filePath||asset.fileAddress||track.fileAddress||track.fileName;
+          track.fileSize=Number(file.size)||Number(asset.fileSize)||0;
+          track.fileType=String(file.type||asset.fileType||'');
+          track.fileLastModified=Number(file.lastModified)||Number(asset.fileLastModified)||0;
+        }
+      }catch(err){ console.warn('Music file handle restore failed', err); }
+    }
+    if(!data) return;
+    track.fileData=data;
+    track.file=data;
+    track.fileName=track.fileName||asset.fileName||'';
+    track.filePath=track.filePath||asset.filePath||asset.fileAddress||track.fileName;
+    track.fileAddress=track.fileAddress||track.filePath||track.fileName;
+    track.fileSize=Number(track.fileSize)||Number(asset.fileSize)||0;
+    track.fileType=track.fileType||asset.fileType||'';
+    track.fileLastModified=Number(track.fileLastModified)||Number(asset.fileLastModified)||0;
+    track.musicStorageKey=asset.key||track.musicStorageKey||'';
+    track.fileHandleKey=track.fileHandleKey||asset.key||'';
+    if(asset.fileHandle) setMusicFileHandle(track, asset.fileHandle);
+    track.fileMissing=false;
+    restored+=1;
+    if(asset.fileHandle && data!==asset.data) putMusicAsset(track).catch(err=>console.warn('Music asset save failed', err));
   }));
   if(restored){
     ensureProjectData();
