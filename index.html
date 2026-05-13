@@ -7227,7 +7227,7 @@ function centerMapEditorView(closeup=true){
 function setView(name){
   const previousView=state.activeView;
   state.activeView=name;
-  if(previousView==="runtime" && name!=="runtime"){
+  if((previousView==="runtime" || previousView==="music") && name!==previousView){
     stopMusicPlayback();
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -8306,9 +8306,10 @@ function stopMusicPlayback(options={}){
   currentMusicSource=null;
   currentMusicSignature=null;
 }
-async function playMusicEntry(src, action="play", loop=true){
+async function playMusicEntry(src, action="play", loop=true, project=state.appProject){
   const normalizedAction=String(action??'play').trim().toLowerCase();
   if(normalizedAction==="stop"){ stopMusicPlayback(); return; }
+  const musicList=project?.music||[];
   const normalizedLoop=!!loop;
   const normalizedSource=(typeof src==="number"&&Number.isFinite(src))?src:String(src??"0").trim();
   const requestSignature=`${normalizedSource}|${normalizedAction}|${normalizedLoop?'1':'0'}`;
@@ -8318,30 +8319,32 @@ async function playMusicEntry(src, action="play", loop=true){
   const requestId=++currentMusicRequestId;
   stopMusicPlayback({invalidate:false});
   currentMusicSignature=requestSignature;
-  const ac=ctxAudio();
-  try{ await ac.resume(); }catch{}
-  if(requestId!==currentMusicRequestId) return;
   const startAudio=(audio)=>{
     if(requestId!==currentMusicRequestId){ try{ audio.pause(); }catch{} return; }
     currentMusicSource=audio;
     currentMusicElements.add(audio);
     audio.onended=()=>{ currentMusicElements.delete(audio); if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } };
-    audio.play().catch(()=>{ currentMusicElements.delete(audio); if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } });
+    const playPromise=audio.play();
+    if(playPromise&&typeof playPromise.catch==='function'){
+      playPromise.catch(()=>{ currentMusicElements.delete(audio); if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } });
+    }
   };
   if(typeof src==="string" && !/^\d+$/.test(src)){
-    const byName=(state.appProject.music||[]).find(m=>m && (m.fileName===src || m.name===src));
+    const byName=musicList.find(m=>m && (m.fileName===src || m.name===src));
     const resolved=(byName&& (byName.fileData||byName.file)) || src;
     const audio=new Audio(resolved);
     audio.loop=loop==null ? !!byName?.loop : normalizedLoop;
     startAudio(audio);
+    try{ await ctxAudio().resume(); }catch{}
     return;
   }
   const idx = typeof src==="number" ? src : parseInt(String(src||"0"),10);
-  const m = state.appProject.music[idx];
+  const m = musicList[idx];
   if(!m || (!m.file && !m.fileData)){ currentMusicSignature=null; return; }
   const audio=new Audio(m.fileData||m.file);
   audio.loop=loop==null ? !!m.loop : normalizedLoop;
   startAudio(audio);
+  try{ await ctxAudio().resume(); }catch{}
 }
 function refreshSoundList(){
   const wrap=$("soundList");
@@ -9112,7 +9115,7 @@ function makeRuntime(){
     pmap(mapIndex,0,0,sx0,sy0,projectRef.project.map_w,projectRef.project.map_h,startLayer,endLayer);
   }
   function sfxPlay(index, loop=false){ previewSound(index, loop); }
-  function musicPlay(src, action='play', loop=true){ playMusicEntry(src, action, loop); }
+  function musicPlay(src, action='play', loop=true){ playMusicEntry(src, action, loop, projectRef); }
   const getFengariApi=()=>{
     const root=(typeof window!=='undefined'&&window)||globalThis;
     return root.fengari || root.fengariWeb?.fengari || root.Fengari?.fengari || null;
