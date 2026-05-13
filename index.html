@@ -1165,7 +1165,7 @@ function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
 function makeSound(){ return {name:"",wave:"square",length:0.3,volume:0.6,pitch:440,attack:0.01,decay:0.08,sustain:0.6,release:0.1,wavetable:Array.from({length:64},()=>0)}; }
-function makeMusic(){ return {name:"",file:"",fileName:"",fileAddress:"",fileData:"",musicStorageKey:"",fileMissing:false,loop:true}; }
+function makeMusic(){ return {name:"",file:"",fileName:"",fileAddress:"",filePath:"",fileData:"",musicStorageKey:"",fileHandleKey:"",fileMissing:false,loop:true}; }
 function makeBlankTileDef(){ return {source:"",flags:{0:false},bg:"#000000",bgEnabled:false,animated:false,animFolder:0,animSpeed:6}; }
 function ensurePalettePages(p){
   if(!Array.isArray(p.palette)) p.palette=[];
@@ -1374,7 +1374,9 @@ function ensureProjectData(){
     if(m.loop==null) m.loop=true;
     if(!m.file) m.file="";
     m.fileName=String(m.fileName||'');
-    m.fileAddress=String(m.fileAddress||m.sourcePath||m.sourceAddress||m.fileName||'');
+    m.filePath=String(m.filePath||m.sourcePath||m.sourceAddress||m.fileAddress||m.fileName||'');
+    m.fileAddress=String(m.fileAddress||m.filePath||m.fileName||'');
+    m.fileHandleKey=String(m.fileHandleKey||'');
     m.musicStorageKey=String(m.musicStorageKey||'');
     m.fileData=String(m.fileData||'');
     if(m.fileData && !m.musicStorageKey) m.musicStorageKey=getMusicStorageKey(m);
@@ -1994,25 +1996,52 @@ function openMusicAssetDb(){
   return musicDbPromise;
 }
 function getMusicStorageKey(track){
-  const name=String(track?.fileName||track?.fileAddress||'track').trim()||'track';
+  const name=String(track?.filePath||track?.fileAddress||track?.fileName||'track').trim()||'track';
   const size=Number(track?.fileSize)||0;
   const modified=Number(track?.fileLastModified)||0;
   const type=String(track?.fileType||'audio');
   const safe=name.replace(/[^a-z0-9._-]+/gi,'_').slice(0,96);
   return String(track?.musicStorageKey||`music:${safe}:${size}:${modified}:${type}`);
 }
+function setMusicFileHandle(track, handle){
+  if(!track || !handle) return;
+  Object.defineProperty(track, '__musicFileHandle', {value:handle, configurable:true, writable:true, enumerable:false});
+}
+function getMusicFileHandle(track){ return track?.__musicFileHandle || null; }
+async function verifyMusicFileHandlePermission(handle, request=false){
+  if(!handle || typeof handle.queryPermission!=='function') return false;
+  const options={mode:'read'};
+  if(await handle.queryPermission(options)==='granted') return true;
+  if(request && typeof handle.requestPermission==='function') return (await handle.requestPermission(options))==='granted';
+  return false;
+}
 async function putMusicAsset(track){
-  if(!track || !track.fileData) return false;
+  if(!track) return false;
+  const handle=getMusicFileHandle(track);
+  if(!track.fileData && !handle) return false;
   const db=await openMusicAssetDb();
   if(!db) return false;
   const key=getMusicStorageKey(track);
   track.musicStorageKey=key;
-  return new Promise(resolve=>{
+  track.fileHandleKey=track.fileHandleKey||key;
+  const baseRecord={key,fileName:track.fileName||'',fileAddress:track.fileAddress||'',filePath:track.filePath||track.fileAddress||'',fileSize:Number(track.fileSize)||0,fileType:track.fileType||'',fileLastModified:Number(track.fileLastModified)||0,updatedAt:Date.now()};
+  if(handle) baseRecord.fileHandle=handle;
+  const writeRecord=record=>new Promise(resolve=>{
     const tx=db.transaction('music','readwrite');
-    tx.objectStore('music').put({key,data:track.fileData,fileName:track.fileName||'',fileAddress:track.fileAddress||'',fileSize:Number(track.fileSize)||0,fileType:track.fileType||'',fileLastModified:Number(track.fileLastModified)||0,updatedAt:Date.now()});
+    try{
+      tx.objectStore('music').put(record);
+    }catch(err){
+      console.warn('Music asset save failed', err);
+      resolve(false);
+      return;
+    }
     tx.oncomplete=()=>resolve(true);
     tx.onerror=()=>{ console.warn('Music asset save failed', tx.error); resolve(false); };
   });
+  const withData={...baseRecord,data:track.fileData||''};
+  if(await writeRecord(withData)) return true;
+  if(handle && track.fileData) return writeRecord({...baseRecord,data:''});
+  return false;
 }
 async function getMusicAsset(key){
   if(!key) return null;
@@ -2035,17 +2064,9 @@ async function hydrateMissingMusicFromDb(project=state.appProject){
   await Promise.all(tracks.map(async track=>{
     if(!musicTrackNeedsRelink(track)) return;
     const asset=await getMusicAsset(track.musicStorageKey||getMusicStorageKey(track));
-    if(!asset?.data) return;
-    track.fileData=asset.data;
-    track.file=asset.data;
-    track.fileName=track.fileName||asset.fileName||'';
-    track.fileAddress=track.fileAddress||asset.fileAddress||track.fileName;
-    track.fileSize=Number(track.fileSize)||Number(asset.fileSize)||0;
-    track.fileType=track.fileType||asset.fileType||'';
-    track.fileLastModified=Number(track.fileLastModified)||Number(asset.fileLastModified)||0;
-    track.musicStorageKey=asset.key||track.musicStorageKey||'';
-    track.fileMissing=false;
-    restored+=1;
+    if(!asset) return;
+    const didRestore=await restoreMusicTrackFromAsset(track, asset, {requestPermission:true});
+    if(didRestore) restored+=1;
   }));
   if(restored){
     ensureProjectData();
@@ -2054,6 +2075,72 @@ async function hydrateMissingMusicFromDb(project=state.appProject){
     toast(`<b>Restored music:</b> ${restored} track${restored===1?'':'s'} reloaded from browser storage.`);
   }
   return restored;
+}
+async function restoreMusicTrackFromAsset(track, asset, {requestPermission=false}={}){
+  if(!track || !asset) return false;
+  let data=asset.data||'';
+  if(!data && asset.fileHandle){
+    try{
+      const granted=await verifyMusicFileHandlePermission(asset.fileHandle, requestPermission);
+      if(granted){
+        const file=await asset.fileHandle.getFile();
+        data=await readMusicFileAsDataUrl(file);
+        track.fileName=file.name||asset.fileName||track.fileName||'';
+        track.fileAddress=asset.filePath||asset.fileAddress||track.fileName;
+        track.filePath=asset.filePath||asset.fileAddress||track.fileAddress||track.fileName;
+        track.fileSize=Number(file.size)||Number(asset.fileSize)||0;
+        track.fileType=String(file.type||asset.fileType||'');
+        track.fileLastModified=Number(file.lastModified)||Number(asset.fileLastModified)||0;
+      }
+    }catch(err){ console.warn('Music file handle restore failed', err); }
+  }
+  if(!data) return false;
+  track.fileData=data;
+  track.file=data;
+  track.fileName=track.fileName||asset.fileName||'';
+  track.filePath=track.filePath||asset.filePath||asset.fileAddress||track.fileName;
+  track.fileAddress=track.fileAddress||track.filePath||track.fileName;
+  track.fileSize=Number(track.fileSize)||Number(asset.fileSize)||0;
+  track.fileType=track.fileType||asset.fileType||'';
+  track.fileLastModified=Number(track.fileLastModified)||Number(asset.fileLastModified)||0;
+  track.musicStorageKey=asset.key||track.musicStorageKey||'';
+  track.fileHandleKey=track.fileHandleKey||asset.key||'';
+  if(asset.fileHandle) setMusicFileHandle(track, asset.fileHandle);
+  track.fileMissing=false;
+  if(asset.fileHandle && data!==asset.data) putMusicAsset(track).catch(err=>console.warn('Music asset save failed', err));
+  return true;
+}
+function restoreProjectMusicAccess(reason='project'){
+  const missing=getMissingMusicTrackIndexes();
+  if(!missing.length){
+    hydrateMissingMusicFromDb(state.appProject).catch(err=>console.warn('Music restore failed', err));
+    return;
+  }
+  if(!window.showOpenFilePicker){
+    hydrateMissingMusicFromDb(state.appProject).then(()=>promptRelinkMissingMusicFiles(reason));
+    return;
+  }
+  const labels=missing.slice(0,4).map(i=>`${i}: ${getMusicTrackLabel(state.appProject.music[i])||'unnamed track'}`).join('<br>');
+  const more=missing.length>4?`<br>…and ${missing.length-4} more`:'';
+  toast(`<b>Music permission needed:</b> choose the saved audio file${missing.length===1?'':'s'} now.<br>${labels}${more}`);
+  let pickerPromise;
+  try{
+    pickerPromise=window.showOpenFilePicker({
+      multiple:true,
+      types:[{description:'Audio files', accept:{'audio/*':['.mp3','.wav','.ogg','.m4a']}}]
+    });
+  }catch(err){
+    console.warn('Music permission picker failed', err);
+    hydrateMissingMusicFromDb(state.appProject).then(()=>promptRelinkMissingMusicFiles(reason));
+    return;
+  }
+  pickerPromise
+    .then(handles=>relinkMissingMusicHandles(handles, missing))
+    .catch(err=>{
+      if(err?.name==='AbortError') return;
+      console.warn('Music permission picker failed', err);
+      hydrateMissingMusicFromDb(state.appProject).then(()=>promptRelinkMissingMusicFiles(reason));
+    });
 }
 function loadAutoBackup(){ try{ return JSON.parse(localStorage.getItem(BACKUP_KEY)||"null"); }catch(_){ return null; } }
 function saveAutoBackupSnapshot(){
@@ -2122,7 +2209,7 @@ function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={}){
   runtime.syncProject(state.appProject);
   runtime.reset(getProjectLua());
   setView('code');
-  hydrateMissingMusicFromDb(state.appProject).then(()=>promptRelinkMissingMusicFiles('loaded project'));
+  restoreProjectMusicAccess('loaded project');
 }
 function loadAutoBackupProject(){
   const backup=loadAutoBackup();
@@ -2146,7 +2233,8 @@ function cloneProjectSnapshot(projectLike, options={}){
       if(!track) return;
       track.fileData='';
       if(String(track.file||'').startsWith('data:')) track.file='';
-      if(track.fileName || track.fileAddress) track.fileMissing=true;
+      track.filePath=track.filePath||track.fileAddress||track.fileName||'';
+      if(track.fileName || track.fileAddress || track.filePath) track.fileMissing=true;
     });
   }
   if(!Array.isArray(clone.palette)) clone.palette=[...fallback.palette];
@@ -2626,7 +2714,7 @@ async function importProjectZip(file){
     runtime.reset(getProjectLua());
     setView('code');
     toast(`<b>Imported project:</b> ${escapeHtml(file.name||'project.zip')}`);
-    promptRelinkMissingMusicFiles('imported project');
+    restoreProjectMusicAccess('imported project');
   }catch(err){
     console.error(err);
     toast(`<b>Import failed:</b> ${escapeHtml(err?.message||String(err))}`);
@@ -8570,8 +8658,16 @@ function clearMusicSlot(index){
   else refreshMusicList();
   runtime.syncProject(state.appProject);
 }
-function getMusicFileAddress(file){ return String(file?.webkitRelativePath || file?.name || '').trim(); }
-function getMusicTrackLabel(m){ return String(m?.fileAddress || m?.fileName || m?.name || '').trim(); }
+function getMusicFileAddress(file, handle=null){ return String(file?.webkitRelativePath || file?.path || handle?.name || file?.name || '').trim(); }
+function readMusicFileAsDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(typeof reader.result==='string'?reader.result:'');
+    reader.onerror=()=>reject(reader.error||new Error('Could not read audio file.'));
+    reader.readAsDataURL(file);
+  });
+}
+function getMusicTrackLabel(m){ return String(m?.filePath || m?.fileAddress || m?.fileName || m?.name || '').trim(); }
 function musicTrackNeedsRelink(m){
   if(!m) return false;
   const fileData=String(m.fileData||'').trim();
@@ -8580,39 +8676,55 @@ function musicTrackNeedsRelink(m){
   return !!(m.fileMissing || m.fileAddress || m.fileName);
 }
 function getMissingMusicTrackIndexes(){ return (state.appProject.music||[]).map((m,i)=>musicTrackNeedsRelink(m)?i:-1).filter(i=>i>=0); }
-function refreshMusicUI(){ const m=currentMusic(); refreshMusicList(); $("musicFileLabel").textContent=m.fileName||m.fileAddress||m.file||"No file selected"; }
-function chooseMusicFileForTrack(index){
+function refreshMusicUI(){ const m=currentMusic(); refreshMusicList(); $("musicFileLabel").textContent=m.filePath||m.fileAddress||m.fileName||m.file||"No file selected"; }
+async function chooseMusicFileForTrack(index){
   const input=$("musicFileBrowseInput");
-  if(!input || !state.appProject.music[index]) return;
+  if(!state.appProject.music[index]) return;
   state.currentMusicIndex=index;
   closeListRename();
   refreshMusicUI();
+  if(window.showOpenFilePicker){
+    try{
+      const [handle]=await window.showOpenFilePicker({
+        multiple:false,
+        types:[{description:'Audio files', accept:{'audio/*':['.mp3','.wav','.ogg','.m4a']}}]
+      });
+      if(!handle) return;
+      const file=await handle.getFile();
+      importMusicFileToTrack(index,file,{fileHandle:handle,fileAddress:getMusicFileAddress(file,handle)});
+      return;
+    }catch(err){
+      if(err?.name==='AbortError') return;
+      console.warn('File picker unavailable, falling back to file input.', err);
+    }
+  }
+  if(!input) return;
   input.dataset.trackIndex=String(index);
   input.value='';
   input.click();
 }
-function importMusicFileToTrack(index,file){
+function importMusicFileToTrack(index,file,options={}){
   const m=state.appProject.music[index];
   if(!m || !file) return;
   if(m.file && m.file.startsWith('blob:')){ try{ URL.revokeObjectURL(m.file); }catch{} }
-  const reader=new FileReader();
-  reader.onload=()=>{
-    m.fileData=typeof reader.result==='string'?reader.result:'';
+  readMusicFileAsDataUrl(file).then(data=>{
+    m.fileData=data;
     m.file=m.fileData;
     m.fileName=file.name||'';
-    m.fileAddress=getMusicFileAddress(file);
+    m.filePath=String(options.fileAddress || getMusicFileAddress(file, options.fileHandle) || m.fileName || '').trim();
+    m.fileAddress=m.filePath;
     m.fileSize=Number(file.size)||0;
     m.fileType=String(file.type||'');
     m.fileLastModified=Number(file.lastModified)||0;
     m.musicStorageKey=getMusicStorageKey(m);
+    m.fileHandleKey=m.musicStorageKey;
+    if(options.fileHandle) setMusicFileHandle(m, options.fileHandle);
     m.fileMissing=false;
     putMusicAsset(m).catch(err=>console.warn('Music asset save failed', err));
     state.currentMusicIndex=index;
     refreshMusicUI();
     try{ runtime.syncProject(state.appProject); }catch{}
-  };
-  reader.onerror=()=>toast('<b>Import failed:</b> Could not read audio file.');
-  reader.readAsDataURL(file);
+  }).catch(()=>toast('<b>Import failed:</b> Could not read audio file.'));
 }
 function findRelinkFileForTrack(track, files, used){
   const wantedName=String(track?.fileName||'').toLowerCase();
@@ -8638,6 +8750,31 @@ function relinkMissingMusicTracks(fileList, indexes=state.pendingMusicRelinkInde
   state.pendingMusicRelinkIndexes=[];
   if(linked) toast(`<b>Re-linking music:</b> ${linked} file${linked===1?'':'s'} selected.`);
   else toast('<b>No matching music files selected.</b> Choose the original audio file names to re-link tracks.');
+}
+async function relinkMissingMusicHandles(handleList, indexes=state.pendingMusicRelinkIndexes||[]){
+  const handles=Array.from(handleList||[]);
+  const records=[];
+  for(const handle of handles){
+    try{
+      if(await verifyMusicFileHandlePermission(handle, true)) records.push({handle,file:await handle.getFile()});
+    }catch(err){ console.warn('Music handle read failed', err); }
+  }
+  const files=records.map(r=>r.file);
+  const pending=(indexes&&indexes.length?indexes:getMissingMusicTrackIndexes()).filter(i=>state.appProject.music[i]);
+  const used=new Set();
+  let linked=0;
+  pending.forEach((trackIndex, order)=>{
+    const track=state.appProject.music[trackIndex];
+    const file=findRelinkFileForTrack(track, files, used) || (pending.length===files.length ? files[order] : null);
+    if(!file || used.has(file)) return;
+    const record=records.find(r=>r.file===file);
+    used.add(file);
+    importMusicFileToTrack(trackIndex,file,{fileHandle:record?.handle,fileAddress:getMusicFileAddress(file,record?.handle)});
+    linked+=1;
+  });
+  state.pendingMusicRelinkIndexes=[];
+  if(linked) toast(`<b>Music access granted:</b> ${linked} file${linked===1?'':'s'} linked.`);
+  else toast('<b>No matching music files selected.</b> Choose the original audio file names to grant access.');
 }
 function promptRelinkMissingMusicFiles(reason='project'){
   const missing=getMissingMusicTrackIndexes();
