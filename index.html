@@ -9160,6 +9160,7 @@ function makeRuntime(){
   let lua, lauxlib, lualib, to_luastring, to_jsstring;
   function pushProjectTable(){ lua.lua_newtable(L); lua.lua_pushinteger(L,projectRef.project.tile_w); lua.lua_setfield(L,-2,to_luastring('tile_w')); lua.lua_pushinteger(L,projectRef.project.tile_h); lua.lua_setfield(L,-2,to_luastring('tile_h')); lua.lua_pushinteger(L,projectRef.project.map_w); lua.lua_setfield(L,-2,to_luastring('map_w')); lua.lua_pushinteger(L,projectRef.project.map_h); lua.lua_setfield(L,-2,to_luastring('map_h')); lua.lua_pushinteger(L,projectRef.maps.length); lua.lua_setfield(L,-2,to_luastring('map_count')); lua.lua_pushinteger(L,projectRef.spriteFolders.length); lua.lua_setfield(L,-2,to_luastring('sprite_count')); lua.lua_pushinteger(L,projectRef.sounds.length); lua.lua_setfield(L,-2,to_luastring('sound_count')); lua.lua_pushinteger(L,projectRef.music.length); lua.lua_setfield(L,-2,to_luastring('music_count')); lua.lua_setglobal(L,to_luastring('project')); }
   function build(code, options={}){
+    if(rebuildTimer){ clearTimeout(rebuildTimer); rebuildTimer=0; }
     lastCode=code||'';
     const suppressAudio=!!options.suppressAudio;
     builtOk=false;
@@ -9237,7 +9238,7 @@ function makeRuntime(){
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); cls(); return; }
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
-  function setLua(code){ pendingCode=code||''; lastCode=pendingCode; clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode,{suppressAudio:true}),80); }
+  function setLua(code){ pendingCode=code||''; lastCode=pendingCode; if(rebuildTimer) clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode,{suppressAudio:true}),80); }
   function rerun(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function reset(codeOverride){ build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
