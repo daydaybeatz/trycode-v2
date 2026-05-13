@@ -1165,7 +1165,7 @@ function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
 function makeSound(){ return {name:"",wave:"square",length:0.3,volume:0.6,pitch:440,attack:0.01,decay:0.08,sustain:0.6,release:0.1,wavetable:Array.from({length:64},()=>0)}; }
-function makeMusic(){ return {name:"",file:"",fileName:"",fileAddress:"",fileData:"",fileMissing:false,loop:true}; }
+function makeMusic(){ return {name:"",file:"",fileName:"",fileAddress:"",fileData:"",musicStorageKey:"",fileMissing:false,loop:true}; }
 function makeBlankTileDef(){ return {source:"",flags:{0:false},bg:"#000000",bgEnabled:false,animated:false,animFolder:0,animSpeed:6}; }
 function ensurePalettePages(p){
   if(!Array.isArray(p.palette)) p.palette=[];
@@ -1375,7 +1375,9 @@ function ensureProjectData(){
     if(!m.file) m.file="";
     m.fileName=String(m.fileName||'');
     m.fileAddress=String(m.fileAddress||m.sourcePath||m.sourceAddress||m.fileName||'');
+    m.musicStorageKey=String(m.musicStorageKey||'');
     m.fileData=String(m.fileData||'');
+    if(m.fileData && !m.musicStorageKey) m.musicStorageKey=getMusicStorageKey(m);
     if(!m.file && m.fileData) m.file=m.fileData;
     if(String(m.file||'').startsWith('blob:') && !m.fileData){ m.file=''; m.fileMissing=true; }
     m.fileMissing=!!m.fileMissing || musicTrackNeedsRelink(m);
@@ -1973,13 +1975,100 @@ function newProject(){ if(!confirm("Are you sure you want to start a new project
 
 function loadAllProjects(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(_){ return {}; } }
 function saveAllProjects(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
+const MUSIC_DB_NAME='trycode_music_assets';
+const MUSIC_DB_VERSION=1;
+let musicDbPromise=null;
+function openMusicAssetDb(){
+  if(!('indexedDB' in window)) return Promise.resolve(null);
+  if(!musicDbPromise){
+    musicDbPromise=new Promise((resolve,reject)=>{
+      const req=indexedDB.open(MUSIC_DB_NAME,MUSIC_DB_VERSION);
+      req.onupgradeneeded=()=>{
+        const db=req.result;
+        if(!db.objectStoreNames.contains('music')) db.createObjectStore('music',{keyPath:'key'});
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||new Error('Could not open music asset storage.'));
+    }).catch(err=>{ console.warn('Music asset storage unavailable', err); return null; });
+  }
+  return musicDbPromise;
+}
+function getMusicStorageKey(track){
+  const name=String(track?.fileName||track?.fileAddress||'track').trim()||'track';
+  const size=Number(track?.fileSize)||0;
+  const modified=Number(track?.fileLastModified)||0;
+  const type=String(track?.fileType||'audio');
+  const safe=name.replace(/[^a-z0-9._-]+/gi,'_').slice(0,96);
+  return String(track?.musicStorageKey||`music:${safe}:${size}:${modified}:${type}`);
+}
+async function putMusicAsset(track){
+  if(!track || !track.fileData) return false;
+  const db=await openMusicAssetDb();
+  if(!db) return false;
+  const key=getMusicStorageKey(track);
+  track.musicStorageKey=key;
+  return new Promise(resolve=>{
+    const tx=db.transaction('music','readwrite');
+    tx.objectStore('music').put({key,data:track.fileData,fileName:track.fileName||'',fileAddress:track.fileAddress||'',fileSize:Number(track.fileSize)||0,fileType:track.fileType||'',fileLastModified:Number(track.fileLastModified)||0,updatedAt:Date.now()});
+    tx.oncomplete=()=>resolve(true);
+    tx.onerror=()=>{ console.warn('Music asset save failed', tx.error); resolve(false); };
+  });
+}
+async function getMusicAsset(key){
+  if(!key) return null;
+  const db=await openMusicAssetDb();
+  if(!db) return null;
+  return new Promise(resolve=>{
+    const tx=db.transaction('music','readonly');
+    const req=tx.objectStore('music').get(key);
+    req.onsuccess=()=>resolve(req.result||null);
+    req.onerror=()=>{ console.warn('Music asset load failed', req.error); resolve(null); };
+  });
+}
+async function persistProjectMusicAssets(project=state.appProject){
+  const tracks=Array.isArray(project?.music)?project.music:[];
+  await Promise.all(tracks.map(track=>putMusicAsset(track)));
+}
+async function hydrateMissingMusicFromDb(project=state.appProject){
+  const tracks=Array.isArray(project?.music)?project.music:[];
+  let restored=0;
+  await Promise.all(tracks.map(async track=>{
+    if(!musicTrackNeedsRelink(track)) return;
+    const asset=await getMusicAsset(track.musicStorageKey||getMusicStorageKey(track));
+    if(!asset?.data) return;
+    track.fileData=asset.data;
+    track.file=asset.data;
+    track.fileName=track.fileName||asset.fileName||'';
+    track.fileAddress=track.fileAddress||asset.fileAddress||track.fileName;
+    track.fileSize=Number(track.fileSize)||Number(asset.fileSize)||0;
+    track.fileType=track.fileType||asset.fileType||'';
+    track.fileLastModified=Number(track.fileLastModified)||Number(asset.fileLastModified)||0;
+    track.musicStorageKey=asset.key||track.musicStorageKey||'';
+    track.fileMissing=false;
+    restored+=1;
+  }));
+  if(restored){
+    ensureProjectData();
+    refreshMusicUI();
+    try{ runtime.syncProject(state.appProject); }catch{}
+    toast(`<b>Restored music:</b> ${restored} track${restored===1?'':'s'} reloaded from browser storage.`);
+  }
+  return restored;
+}
 function loadAutoBackup(){ try{ return JSON.parse(localStorage.getItem(BACKUP_KEY)||"null"); }catch(_){ return null; } }
 function saveAutoBackupSnapshot(){
   if(!state.appProject) return false;
   try{
     saveEditorToCurrentCodeFile();
+    persistProjectMusicAssets(state.appProject).catch(err=>console.warn('Auto-backup music asset save failed', err));
     const backup={ t:Date.now(), name:state.currentProjectName||'unsaved project', hasSaved:!!state.hasSaved, project:cloneProjectSnapshot(state.appProject) };
-    localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+    try{
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+    }catch(err){
+      console.warn('Auto-backup with embedded music failed; saving relinkable music references instead.', err);
+      backup.project=cloneProjectSnapshot(state.appProject,{stripMusicData:true});
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+    }
     return true;
   }catch(err){
     console.warn('Auto-backup failed', err);
@@ -2033,7 +2122,7 @@ function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={}){
   runtime.syncProject(state.appProject);
   runtime.reset(getProjectLua());
   setView('code');
-  promptRelinkMissingMusicFiles('loaded project');
+  hydrateMissingMusicFromDb(state.appProject).then(()=>promptRelinkMissingMusicFiles('loaded project'));
 }
 function loadAutoBackupProject(){
   const backup=loadAutoBackup();
@@ -2236,7 +2325,8 @@ function importCodeTxtBundle(fileName, content){
   runtime.setLua(getProjectLua());
   toast(`<b>Imported code bundle:</b> ${escapeHtml(fileName)} (${importedCount} files)`);
 }
-function persistProjectSnapshot(name){
+async function persistProjectSnapshot(name){
+  await persistProjectMusicAssets(state.appProject);
   const all=loadAllProjects();
   state.currentProjectName=name;
   state.hasSaved=true;
@@ -2253,15 +2343,15 @@ function persistProjectSnapshot(name){
   refreshProjectList();
   updateCodeLineNumbers();
   if(savedWithMusicData) toast(`<b>Saved:</b> ${escapeHtml(name)}`);
-  else toast(`<b>Saved:</b> ${escapeHtml(name)}<br>Music files were too large for browser storage. Their names were saved so you can re-link them when loading.`);
+  else toast(`<b>Saved:</b> ${escapeHtml(name)}<br>Music files were too large for the project list, so audio data was saved in browser asset storage and their names were kept for re-linking if needed.`);
 }
-function saveProject(forcePrompt=true){
+async function saveProject(forcePrompt=true){
   saveEditorToCurrentCodeFile();
   const defaultName=state.currentProjectName||'project_1';
   const shouldPrompt=forcePrompt || !state.hasSaved || !state.currentProjectName;
   const name=shouldPrompt ? promptForProjectName('Save project as:', defaultName) : state.currentProjectName;
   if(!name) return false;
-  persistProjectSnapshot(name);
+  await persistProjectSnapshot(name);
   return true;
 }
 function toggleCodeEditorLineComments(){
@@ -8346,7 +8436,11 @@ async function playMusicEntry(src, action="play", loop=true, project=state.appPr
   }
   const idx = typeof src==="number" ? src : parseInt(String(src||"0"),10);
   const m = musicList[idx];
-  if(!m || (!m.file && !m.fileData)){ currentMusicSignature=null; return; }
+  if(!m || (!m.file && !m.fileData)){
+    currentMusicSignature=null;
+    if(musicTrackNeedsRelink(m)) toast('<b>Music file unavailable:</b> Save/load restored the title, but the audio data still needs to be re-linked.');
+    return;
+  }
   const audio=new Audio(m.fileData||m.file);
   audio.loop=loop==null ? !!m.loop : normalizedLoop;
   startAudio(audio);
@@ -8510,7 +8604,9 @@ function importMusicFileToTrack(index,file){
     m.fileSize=Number(file.size)||0;
     m.fileType=String(file.type||'');
     m.fileLastModified=Number(file.lastModified)||0;
+    m.musicStorageKey=getMusicStorageKey(m);
     m.fileMissing=false;
+    putMusicAsset(m).catch(err=>console.warn('Music asset save failed', err));
     state.currentMusicIndex=index;
     refreshMusicUI();
     try{ runtime.syncProject(state.appProject); }catch{}
