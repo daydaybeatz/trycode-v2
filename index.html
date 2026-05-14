@@ -594,7 +594,7 @@
       <div class="splitView" id="musicView">
         <div class="sidebar panelSkin">
           <div class="pane"><h4>MUSIC</h4><div class="formRow"><button class="mbtn" id="addMusicBtn">Add Music</button></div>
-            <div class="pane attachedPane"><h4>AUDIO FILE</h4><div class="formRow"><div class="field"><label>Selected Track</label><div class="docDesc" id="musicFileLabel">No file selected</div></div></div><div class="formRow" style="margin-top:8px"><button class="mbtn" id="importMusicBtn">Import</button><button class="mbtn" id="playMusicBtn">Play</button><button class="mbtn" id="stopMusicBtn">Stop</button></div></div>
+            <div class="pane attachedPane"><h4>AUDIO FILE</h4><div class="formRow"><div class="field"><label>Selected Track</label><div class="docDesc" id="musicFileLabel">No file selected</div></div></div><div class="formRow" style="margin-top:8px"><button class="mbtn" id="importMusicBtn">Import</button><button class="mbtn" id="relinkMusicBtn">Re-link</button><button class="mbtn" id="playMusicBtn">Play</button><button class="mbtn" id="stopMusicBtn">Stop</button></div></div>
             <div class="musicList" id="musicList"></div><div class="pageRow compact" id="musicListPagerRow"><button class="uiBtn" id="musicListPrevBtn">&lt;</button><div class="docDesc" id="musicListPageLabel">1 / 1</div><button class="uiBtn" id="musicListNextBtn">&gt;</button></div>
           </div>
         </div>
@@ -2143,36 +2143,7 @@ async function restoreMusicTrackFromAsset(track, asset, {requestPermission=false
   return true;
 }
 function restoreProjectMusicAccess(reason='project'){
-  const missing=getMissingMusicTrackIndexes();
-  if(!missing.length){
-    hydrateMissingMusicFromDb(state.appProject).catch(err=>console.warn('Music restore failed', err));
-    return;
-  }
-  if(!window.showOpenFilePicker){
-    hydrateMissingMusicFromDb(state.appProject).then(()=>promptRelinkMissingMusicFiles(reason));
-    return;
-  }
-  const labels=missing.slice(0,4).map(i=>`${i}: ${getMusicTrackLabel(state.appProject.music[i])||'unnamed track'}`).join('<br>');
-  const more=missing.length>4?`<br>…and ${missing.length-4} more`:'';
-  toast(`<b>Music permission needed:</b> choose the saved audio file${missing.length===1?'':'s'} now.<br>${labels}${more}`);
-  let pickerPromise;
-  try{
-    pickerPromise=window.showOpenFilePicker({
-      multiple:true,
-      types:[{description:'Audio files', accept:{'audio/*':['.mp3','.wav','.ogg','.m4a']}}]
-    });
-  }catch(err){
-    console.warn('Music permission picker failed', err);
-    hydrateMissingMusicFromDb(state.appProject).then(()=>promptRelinkMissingMusicFiles(reason));
-    return;
-  }
-  pickerPromise
-    .then(handles=>relinkMissingMusicHandles(handles, missing))
-    .catch(err=>{
-      if(err?.name==='AbortError') return;
-      console.warn('Music permission picker failed', err);
-      hydrateMissingMusicFromDb(state.appProject).then(()=>promptRelinkMissingMusicFiles(reason));
-    });
+  hydrateMissingMusicFromDb(state.appProject).catch(err=>console.warn('Music restore failed', err));
 }
 function loadAutoBackup(){ try{ return JSON.parse(localStorage.getItem(BACKUP_KEY)||"null"); }catch(_){ return null; } }
 function saveAutoBackupSnapshot(){
@@ -8783,6 +8754,39 @@ function relinkMissingMusicTracks(fileList, indexes=state.pendingMusicRelinkInde
   if(linked) toast(`<b>Re-linking music:</b> ${linked} file${linked===1?'':'s'} selected.`);
   else toast('<b>No matching music files selected.</b> Choose the original audio file names to re-link tracks.');
 }
+function getMusicRelinkTargetIndexes(){
+  const missing=getMissingMusicTrackIndexes();
+  if(missing.length) return missing;
+  const index=state.currentMusicIndex;
+  const track=state.appProject.music?.[index];
+  if(track && (track.fileName || track.fileAddress || track.filePath)) return [index];
+  return [];
+}
+async function relinkMusicFilesFromPanel(){
+  const indexes=getMusicRelinkTargetIndexes();
+  if(!indexes.length){
+    toast('<b>No music files need re-linking.</b> Import a music file first, or load a project with missing music.');
+    return;
+  }
+  state.pendingMusicRelinkIndexes=indexes;
+  if(window.showOpenFilePicker){
+    try{
+      const handles=await window.showOpenFilePicker({
+        multiple:true,
+        types:[{description:'Audio files', accept:{'audio/*':['.mp3','.wav','.ogg','.m4a']}}]
+      });
+      await relinkMissingMusicHandles(handles, indexes);
+      return;
+    }catch(err){
+      if(err?.name==='AbortError') return;
+      console.warn('Music re-link picker failed, falling back to file input.', err);
+    }
+  }
+  const input=$("musicRelinkFilesInput");
+  if(!input) return;
+  input.value='';
+  input.click();
+}
 async function relinkMissingMusicHandles(handleList, indexes=state.pendingMusicRelinkIndexes||[]){
   const handles=Array.from(handleList||[]);
   const records=[];
@@ -9848,6 +9852,7 @@ function wireUI(){
   bindClick("musicListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.music?.length||0)/MUSIC_LIST_PAGE_SIZE)); state.musicListPage=(state.musicListPage-1+pages)%pages; closeListRename(); refreshMusicList(); });
   bindClick("musicListNextBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.music?.length||0)/MUSIC_LIST_PAGE_SIZE)); state.musicListPage=(state.musicListPage+1)%pages; closeListRename(); refreshMusicList(); });
   bindClick("importMusicBtn",()=>chooseMusicFileForTrack(state.currentMusicIndex));
+  bindClick("relinkMusicBtn",()=>relinkMusicFilesFromPanel());
 
   bind("musicFileBrowseInput",'change',e=>{
     const input=e.target;
