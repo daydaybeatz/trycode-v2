@@ -1158,7 +1158,7 @@ const previewImages = {};
 const editorRenderCache = { sprites:new Map(), tiles:new Map() };
 const spriteHistory = { undo: [], redo: [] };
 const mapHistory = { undo: [], redo: [] };
-let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignature = null, currentMusicRequestId = 0;
+let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
 function ctxAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
 function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++) row.push(-1); pixels.push(row);} return {w,h,pixels}; }
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
@@ -8400,8 +8400,26 @@ async function previewSound(index,loop=false){ const snd=state.appProject.sounds
 
 function refreshMusicWaveOptions(){ const sel=$("musicWaveInput"), cur=currentMusic().wave; const builtins=["sine","square","sawtooth","triangle"]; sel.innerHTML=''; builtins.forEach(w=>{ const o=document.createElement('option'); o.value=w; o.textContent=w; sel.appendChild(o); }); state.appProject.sounds.forEach((s,i)=>{ const o=document.createElement('option'); o.value='sfx:'+i; o.textContent='sfx '+i; sel.appendChild(o); }); sel.value = [...sel.options].some(o=>o.value===cur) ? cur : 'square'; }
 function refreshCustomScaleUI(){ const wrap=$("musicCustomScaleWrap"), keys=$("musicCustomScaleKeys"), m=currentMusic(); wrap.style.display = m.scale==='custom' ? 'block' : 'none'; keys.innerHTML=''; const labels=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; for(let i=0;i<12;i++){ const b=document.createElement('button'); b.className='miniKey'+(m.customNotes.includes(i)?' active':''); b.textContent=labels[i]; b.onclick=(e)=>{ e.preventDefault(); const arr=m.customNotes; const idx=arr.indexOf(i); if(idx>=0) arr.splice(idx,1); else arr.push(i); arr.sort((a,b)=>a-b); if(!arr.length) arr.push(0); refreshCustomScaleUI();  }; keys.appendChild(b); } }
+function musicRequestSignature(src, action="play", loop=true){
+  const normalizedAction=String(action??'play').trim().toLowerCase();
+  const normalizedLoop=!!loop;
+  const normalizedSource=(typeof src==="number"&&Number.isFinite(src))?src:String(src??"0").trim();
+  return `${normalizedSource}|${normalizedAction}|${normalizedLoop?'1':'0'}`;
+}
+function suppressMusicRequest(src, action="play", loop=true){
+  currentMusicSuppressedSignatures.add(musicRequestSignature(src, action, loop));
+}
+function suppressMusicPlaybackForTrack(index, track){
+  [true,false].forEach(loop=>{
+    suppressMusicRequest(index, 'play', loop);
+    const fileName=String(track?.fileName||'').trim();
+    const name=String(track?.name||'').trim();
+    if(fileName) suppressMusicRequest(fileName, 'play', loop);
+    if(name) suppressMusicRequest(name, 'play', loop);
+  });
+}
 function stopMusicPlayback(options={}){
-  if(options.suppressCurrent&&currentMusicSignature) currentMusicSuppressedSignature=currentMusicSignature;
+  if(options.suppressCurrent&&currentMusicSignature) currentMusicSuppressedSignatures.add(currentMusicSignature);
   if(options.invalidate!==false) currentMusicRequestId++;
   if(currentMusicTimer){ clearInterval(currentMusicTimer); clearTimeout(currentMusicTimer); currentMusicTimer=null; }
   currentMusicNodes.forEach(n=>{ try{n.stop&&n.stop();}catch{} try{n.disconnect&&n.disconnect();}catch{} });
@@ -8424,10 +8442,9 @@ async function playMusicEntry(src, action="play", loop=true, project=state.appPr
   if(normalizedAction==="stop"){ stopMusicPlayback(); return; }
   const musicList=project?.music||[];
   const normalizedLoop=!!loop;
-  const normalizedSource=(typeof src==="number"&&Number.isFinite(src))?src:String(src??"0").trim();
-  const requestSignature=`${normalizedSource}|${normalizedAction}|${normalizedLoop?'1':'0'}`;
-  if(options.force) currentMusicSuppressedSignature=null;
-  if(!options.force&&currentMusicSuppressedSignature===requestSignature){
+  const requestSignature=musicRequestSignature(src, normalizedAction, normalizedLoop);
+  if(options.force) currentMusicSuppressedSignatures.clear();
+  if(!options.force&&currentMusicSuppressedSignatures.has(requestSignature)){
     return;
   }
   if(currentMusicSignature===requestSignature){
@@ -8436,7 +8453,7 @@ async function playMusicEntry(src, action="play", loop=true, project=state.appPr
   const requestId=++currentMusicRequestId;
   stopMusicPlayback({invalidate:false});
   currentMusicSignature=requestSignature;
-  currentMusicSuppressedSignature=null;
+  currentMusicSuppressedSignatures.delete(requestSignature);
   const startAudio=(audio)=>{
     if(requestId!==currentMusicRequestId){ try{ audio.pause(); }catch{} return; }
     currentMusicSource=audio;
@@ -8666,6 +8683,7 @@ function importMusicFileToTrack(index,file){
     putMusicAsset(m).catch(err=>console.warn('Music asset save failed', err));
     state.currentMusicIndex=index;
     refreshMusicUI();
+    suppressMusicPlaybackForTrack(index, m);
     try{ runtime.syncProject(state.appProject); }catch{}
     toast(`<b>Music imported:</b> ${escapeHtml(m.fileName)} saved in browser storage.`);
   }).catch(err=>toast(`<b>Import failed:</b> ${escapeHtml(err?.message||'Could not read audio file.')}`));
@@ -9358,8 +9376,8 @@ function makeRuntime(){
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
   function setLua(code){ pendingCode=code||''; lastCode=pendingCode; if(rebuildTimer) clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode,{suppressAudio:true}),80); }
-  function rerun(codeOverride){ currentMusicSuppressedSignature=null; build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
-  function reset(codeOverride){ currentMusicSuppressedSignature=null; build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
+  function rerun(codeOverride){ currentMusicSuppressedSignatures.clear(); build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
+  function reset(codeOverride){ currentMusicSuppressedSignatures.clear(); build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
