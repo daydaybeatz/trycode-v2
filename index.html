@@ -1138,6 +1138,7 @@ function createRuntimeFallback(message){
   const text=String(message||'Runtime unavailable. The editor shell is still available.');
   return {
     setLua(){},
+    loadEditor(){},
     rerun(){ setLastRunError(text); },
     reset(){ setLastRunError(text); },
     resizeDisplay(){},
@@ -1963,7 +1964,7 @@ function finishNewProject(){
   drawSpriteEditor();
   syncMapUIFromProject();
   runtime.syncProject(state.appProject);
-  runtime.reset(getProjectLua());
+  runtime.loadEditor(getProjectLua());
   const toolbarBase = $("toolbarBase");
   const toolbarSub = $("toolbarSub");
   if(toolbarBase && toolbarSub){ toolbarSub.style.display = "none"; toolbarSub.innerHTML = ""; toolbarBase.style.display = "flex"; }
@@ -2184,7 +2185,7 @@ async function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={})
   await restoreProjectMusicAccess('loaded project',{toast:false});
   refreshMusicUI();
   runtime.syncProject(state.appProject);
-  runtime.reset(getProjectLua());
+  runtime.loadEditor(getProjectLua());
   setView('code');
 }
 async function loadAutoBackupProject(){
@@ -2712,7 +2713,7 @@ async function importProjectZip(file){
     await restoreProjectMusicAccess('imported project',{toast:false});
     refreshMusicUI();
     runtime.syncProject(state.appProject);
-    runtime.reset(getProjectLua());
+    runtime.loadEditor(getProjectLua());
     setView('code');
     toast(`<b>Imported project:</b> ${escapeHtml(file.name||'project.zip')}`);
   }catch(err){
@@ -9467,13 +9468,14 @@ function makeRuntime(){
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
   function setLua(code){ pendingCode=code||''; lastCode=pendingCode; if(rebuildTimer) clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode,{suppressAudio:true}),80); }
+  function loadEditor(codeOverride){ currentMusicSuppressedSignatures.clear(); build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:''),{suppressAudio:true}); }
   function rerun(codeOverride){ currentMusicSuppressedSignatures.clear(); build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function reset(codeOverride){ currentMusicSuppressedSignatures.clear(); build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -9545,11 +9547,11 @@ function wireUI(){
   bindClick("btnLoadBackup",e=>{ e.stopPropagation(); setFileMenuOpen(false); loadAutoBackupProject(); });
   bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); closeLoadPanel(); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
-  bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
+  bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
   bind("resolutionSelect",'change',()=>{ ensureProjectData(); const value=String($("resolutionSelect")?.value||'').trim(); state.appProject.settings.displayMode=['normal','hd_2x','hd_3x','hd_4x','mobile_fullscreen'].includes(value)?value:'normal'; runtime.syncProject(state.appProject); runtime.resizeDisplay(); });
   bindClick("projectListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage-1+pages)%pages; refreshProjectList(); });
   bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
-  bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); runtime.syncProject(state.appProject); runtime.reset(getProjectLua()); });
+  bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
   bind("darkModeToggle",'change',()=>{ ensureProjectData(); state.appProject.settings.darkMode=!!$("darkModeToggle")?.checked; applyThemeUI(); });
   bindClick("runBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); });
   bindClick("resetBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.reset(code); });
@@ -9992,8 +9994,7 @@ function bootRuntimeIntoEditor(){
   runtime=nextRuntime;
   try{
     runtime.syncProject(state.appProject);
-    runtime.setLua(getProjectLua());
-    runtime.reset(getProjectLua());
+    runtime.loadEditor(getProjectLua());
     setLastRunError('');
   }catch(err){
     const message=`Runtime sync failed after editor startup: ${err?.message||String(err)}`;
