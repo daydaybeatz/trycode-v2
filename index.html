@@ -7405,9 +7405,11 @@ function centerMapEditorView(closeup=true){
 }
 function setView(name){
   const previousView=state.activeView;
+  const leavingRuntime=previousView==="runtime" && name!=="runtime";
+  const leavingMusicEditor=previousView==="music" && name!=="music";
   state.activeView=name;
-  if((previousView==="runtime" || previousView==="music") && name!==previousView){
-    stopMusicPlayback();
+  if(leavingRuntime || leavingMusicEditor){
+    stopMusicPlayback({suppressCurrent:leavingRuntime});
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $("view-"+name).classList.add('active');
@@ -9341,7 +9343,15 @@ function makeRuntime(){
     pmap(mapIndex,0,0,sx0,sy0,projectRef.project.map_w,projectRef.project.map_h,startLayer,endLayer);
   }
   function sfxPlay(index, loop=false){ previewSound(index, loop); }
-  function musicPlay(src, action='play', loop=true){ playMusicEntry(src, action, loop, projectRef); }
+  function musicPlay(src, action='play', loop=true){
+    const normalizedAction=String(action??'play').trim().toLowerCase();
+    if(normalizedAction==='stop'){
+      playMusicEntry(src, action, loop, projectRef);
+      return;
+    }
+    if(state.activeView!=='runtime') return;
+    playMusicEntry(src, action, loop, projectRef);
+  }
   const getFengariApi=()=>{
     const root=(typeof window!=='undefined'&&window)||globalThis;
     return root.fengari || root.fengariWeb?.fengari || root.Fengari?.fengari || null;
@@ -9516,7 +9526,7 @@ function wireUI(){
     bind(id, "pointerdown", resetToolbarFromBlankArea);
     bind(id, "click", resetToolbarFromBlankArea);
   });
-  bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); setView('runtime'); resetToolbar(); });
+  bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); setView('runtime'); runtime.setLua(code); runtime.rerun(code); resetToolbar(); });
   const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ $("importFormatRow")?.classList.add('hidden'); $("exportFormatRow")?.classList.add('hidden'); closeLoadPanel(); } };
   bindClick("fileBtn",e=>{ e.stopPropagation(); const isOpen=$("menu")?.classList.contains('open'); setFileMenuOpen(!isOpen); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
   const toggleMenuSection=(id)=>$(id)?.classList.toggle('open');
@@ -9929,9 +9939,9 @@ function wireUI(){
     if((e.ctrlKey||e.metaKey) && !e.altKey && !e.shiftKey && key==='r'){
       e.preventDefault();
       const code=getProjectLua();
+      setView('runtime');
       runtime.setLua(code);
       runtime.rerun(code);
-      setView('runtime');
       resetToolbar();
       applyRuntimeUiHiddenState();
       return;
