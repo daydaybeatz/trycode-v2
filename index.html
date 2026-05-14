@@ -1164,7 +1164,7 @@ function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
 function makeSound(){ return {name:"",wave:"square",length:0.3,volume:0.6,pitch:440,attack:0.01,decay:0.08,sustain:0.6,release:0.1,wavetable:Array.from({length:64},()=>0)}; }
-function makeMusic(){ return {name:"",file:"",fileName:"",fileData:"",musicStorageKey:"",loop:true}; }
+function makeMusic(){ return {name:"",file:"",fileName:"",fileData:"",musicStorageKey:"",audioId:"",loop:true}; }
 function makeBlankTileDef(){ return {source:"",flags:{0:false},bg:"#000000",bgEnabled:false,animated:false,animFolder:0,animSpeed:6}; }
 function ensurePalettePages(p){
   if(!Array.isArray(p.palette)) p.palette=[];
@@ -1373,12 +1373,14 @@ function ensureProjectData(){
     if(m.loop==null) m.loop=true;
     if(!m.file) m.file="";
     m.fileName=String(m.fileName||'');
-    m.musicStorageKey=String(m.musicStorageKey||'');
+    m.audioId=String(m.audioId||m.audio_id||m.musicStorageKey||'');
+    m.musicStorageKey=String(m.musicStorageKey||m.audioId||'');
     m.fileName=String(m.fileName||m.filePath||m.fileAddress||m.sourcePath||m.sourceAddress||'');
     m.fileData=String(m.fileData||'');
     if(!m.fileData && String(m.file||'').startsWith('data:')) m.fileData=String(m.file);
     if(m.fileData && !m.musicStorageKey) m.musicStorageKey=getMusicStorageKey(m);
-    m.file=m.fileData||'';
+    if(m.musicStorageKey && !m.audioId) m.audioId=m.musicStorageKey;
+    if(!String(m.file||'').startsWith('blob:') && !String(m.file||'').startsWith('data:')) m.file='';
     delete m.filePath;
     delete m.fileAddress;
     delete m.fileHandleKey;
@@ -1996,25 +1998,70 @@ function openMusicAssetDb(){
   return musicDbPromise;
 }
 function getMusicStorageKey(track){
-  const name=String(track?.fileName||'track').trim()||'track';
-  const size=Number(track?.fileSize)||0;
-  const modified=Number(track?.fileLastModified)||0;
-  const type=String(track?.fileType||'audio/ogg');
-  const safe=name.replace(/[^a-z0-9._-]+/gi,'_').slice(0,96);
-  return String(track?.musicStorageKey||`music:${safe}:${size}:${modified}:${type}`);
+  if(track?.audioId) return String(track.audioId);
+  if(track?.musicStorageKey) return String(track.musicStorageKey);
+  const stamp=Date.now().toString(36);
+  const random=Math.random().toString(36).slice(2,10);
+  return `audio_${stamp}_${random}`;
+}
+async function dataUrlToBlob(dataUrl){
+  const value=String(dataUrl||'');
+  if(!value.startsWith('data:')) return null;
+  const response=await fetch(value);
+  return response.blob();
+}
+function getMusicAssetKey(track){
+  return String(track?.audioId||track?.musicStorageKey||'');
+}
+function getMusicTrackPlayableSource(track){
+  return String(track?.musicObjectUrl||track?.file||track?.fileData||'');
+}
+function revokeMusicTrackObjectUrl(track){
+  const url=track?.musicObjectUrl;
+  if(url && String(url).startsWith('blob:')){
+    try{ URL.revokeObjectURL(url); }catch{}
+  }
+  if(track && track.file===url) track.file='';
+  if(track) track.musicObjectUrl='';
+}
+async function getMusicTrackBlob(track){
+  if(!track) return null;
+  if(track.musicBlob instanceof Blob) return track.musicBlob;
+  if(track.fileBlob instanceof Blob) return track.fileBlob;
+  if(track.audioBlob instanceof Blob) return track.audioBlob;
+  if(track.fileData) return dataUrlToBlob(track.fileData);
+  if(String(track.file||'').startsWith('data:')) return dataUrlToBlob(track.file);
+  return null;
+}
+function attachMusicBlobToTrack(track, blob, asset={}){
+  if(!track || !(blob instanceof Blob)) return false;
+  revokeMusicTrackObjectUrl(track);
+  track.musicBlob=blob;
+  track.musicObjectUrl=URL.createObjectURL(blob);
+  track.file=track.musicObjectUrl;
+  track.fileData='';
+  track.fileName=track.fileName||asset.fileName||'';
+  track.fileSize=Number(track.fileSize)||Number(asset.fileSize)||Number(blob.size)||0;
+  track.fileType=track.fileType||asset.fileType||blob.type||'audio/ogg';
+  track.fileLastModified=Number(track.fileLastModified)||Number(asset.fileLastModified)||Date.now();
+  track.audioId=asset.key||asset.audioId||track.audioId||track.musicStorageKey||'';
+  track.musicStorageKey=track.audioId||track.musicStorageKey||'';
+  return true;
 }
 async function putMusicAsset(track){
-  if(!track?.fileData) return false;
+  const blob=await getMusicTrackBlob(track);
+  if(!track || !(blob instanceof Blob)) return false;
   const db=await openMusicAssetDb();
   if(!db) return false;
   const key=getMusicStorageKey(track);
+  track.audioId=key;
   track.musicStorageKey=key;
   const record={
     key,
-    data:track.fileData,
+    blob,
     fileName:track.fileName||'',
-    fileSize:Number(track.fileSize)||0,
-    fileType:track.fileType||'audio/ogg',
+    fileSize:Number(track.fileSize)||Number(blob.size)||0,
+    fileType:track.fileType||blob.type||'audio/ogg',
     fileLastModified:Number(track.fileLastModified)||0,
     updatedAt:Date.now()
   };
@@ -2046,33 +2093,29 @@ async function persistProjectMusicAssets(project=state.appProject){
   const tracks=Array.isArray(project?.music)?project.music:[];
   await Promise.all(tracks.map(track=>putMusicAsset(track)));
 }
-async function hydrateMissingMusicFromDb(project=state.appProject){
+async function restoreMusicTrackFromDb(track){
+  if(!track || getMusicTrackPlayableSource(track)) return false;
+  const key=getMusicAssetKey(track);
+  if(!key) return false;
+  const asset=await getMusicAsset(key);
+  const blob=(asset?.blob instanceof Blob) ? asset.blob : await dataUrlToBlob(asset?.data||'');
+  if(!(blob instanceof Blob)) return false;
+  return attachMusicBlobToTrack(track, blob, asset);
+}
+async function hydrateMissingMusicFromDb(project=state.appProject, options={}){
   const tracks=Array.isArray(project?.music)?project.music:[];
-  let restored=0;
-  await Promise.all(tracks.map(async track=>{
-    if(!track || track.fileData || !track.musicStorageKey) return;
-    const asset=await getMusicAsset(track.musicStorageKey);
-    const data=asset?.data||'';
-    if(!data) return;
-    track.fileData=data;
-    track.file=data;
-    track.fileName=track.fileName||asset.fileName||'';
-    track.fileSize=Number(track.fileSize)||Number(asset.fileSize)||0;
-    track.fileType=track.fileType||asset.fileType||'audio/ogg';
-    track.fileLastModified=Number(track.fileLastModified)||Number(asset.fileLastModified)||0;
-    track.musicStorageKey=asset.key||track.musicStorageKey||'';
-    restored+=1;
-  }));
+  const results=await Promise.all(tracks.map(track=>restoreMusicTrackFromDb(track)));
+  const restored=results.filter(Boolean).length;
   if(restored){
     ensureProjectData();
-    refreshMusicUI();
+    if(options.refreshUi!==false) refreshMusicUI();
     try{ runtime.syncProject(state.appProject); }catch{}
-    toast(`<b>Restored music:</b> ${restored} track${restored===1?'':'s'} loaded from browser storage.`);
+    if(options.toast!==false) toast(`<b>Restored music:</b> ${restored} track${restored===1?'':'s'} loaded from browser storage.`);
   }
   return restored;
 }
-function restoreProjectMusicAccess(reason='project'){
-  hydrateMissingMusicFromDb(state.appProject).catch(err=>console.warn('Music restore failed', err));
+function restoreProjectMusicAccess(reason='project', options={}){
+  return hydrateMissingMusicFromDb(state.appProject, options).catch(err=>{ console.warn('Music restore failed', err); return 0; });
 }
 function loadAutoBackup(){ try{ return JSON.parse(localStorage.getItem(BACKUP_KEY)||"null"); }catch(_){ return null; } }
 function saveAutoBackupSnapshot(){
@@ -2080,11 +2123,11 @@ function saveAutoBackupSnapshot(){
   try{
     saveEditorToCurrentCodeFile();
     persistProjectMusicAssets(state.appProject).catch(err=>console.warn('Auto-backup music asset save failed', err));
-    const backup={ t:Date.now(), name:state.currentProjectName||'unsaved project', hasSaved:!!state.hasSaved, project:cloneProjectSnapshot(state.appProject) };
+    const backup={ t:Date.now(), name:state.currentProjectName||'unsaved project', hasSaved:!!state.hasSaved, project:cloneProjectSnapshot(state.appProject,{stripMusicData:true}) };
     try{
       localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
     }catch(err){
-      console.warn('Auto-backup with embedded music failed; saving browser-stored music references instead.', err);
+      console.warn('Auto-backup save failed.', err);
       backup.project=cloneProjectSnapshot(state.appProject,{stripMusicData:true});
       localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
     }
@@ -2100,7 +2143,7 @@ function formatBackupTime(timestamp){
   const sameDay=date.toDateString()===new Date().toDateString();
   return sameDay ? time : `${date.toLocaleDateString()} ${time}`;
 }
-function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={}){
+async function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={}){
   state.currentProjectName=name||'';
   state.hasSaved=!!(hasSaved&&name);
   state.appProject=cloneProjectSnapshot(project);
@@ -2138,17 +2181,18 @@ function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={}){
   drawSoundWaveCanvas();
   refreshMusicUI();
   refreshMenuSettingsUI();
+  await restoreProjectMusicAccess('loaded project',{toast:false});
+  refreshMusicUI();
   runtime.syncProject(state.appProject);
   runtime.reset(getProjectLua());
   setView('code');
-  restoreProjectMusicAccess('loaded project');
 }
-function loadAutoBackupProject(){
+async function loadAutoBackupProject(){
   const backup=loadAutoBackup();
   if(!backup||!backup.project){ toast('No auto-save backup is available yet.'); return false; }
   const when=formatBackupTime(backup.t);
   if(!confirm(`Are you sure you want to load the auto-save from ${when}? Unsaved changes will be lost.`)) return false;
-  restoreProjectFromSnapshot(backup.project,{name:backup.hasSaved?backup.name:'',hasSaved:backup.hasSaved});
+  await restoreProjectFromSnapshot(backup.project,{name:backup.hasSaved?backup.name:'',hasSaved:backup.hasSaved});
   toast(`<b>Loaded backup:</b> ${escapeHtml(when)}`);
   return true;
 }
@@ -2160,11 +2204,20 @@ function cloneProjectSnapshot(projectLike, options={}){
   const fallback=defaultProject();
   if(!projectLike||typeof projectLike!=='object') return fallback;
   const clone=JSON.parse(JSON.stringify(projectLike));
-  if(options.stripMusicData && Array.isArray(clone.music)){
+  if(Array.isArray(clone.music)){
     clone.music.forEach(track=>{
       if(!track) return;
-      track.fileData='';
-      if(String(track.file||'').startsWith('data:')) track.file='';
+      track.audioId=String(track.audioId||track.musicStorageKey||'');
+      track.musicStorageKey=String(track.musicStorageKey||track.audioId||'');
+      if(options.stripMusicData){
+        track.fileData='';
+        if(String(track.file||'').startsWith('data:') || String(track.file||'').startsWith('blob:')) track.file='';
+      }
+      delete track.audio_id;
+      delete track.musicBlob;
+      delete track.fileBlob;
+      delete track.audioBlob;
+      delete track.musicObjectUrl;
       delete track.filePath;
       delete track.fileAddress;
       delete track.fileHandleKey;
@@ -2204,11 +2257,11 @@ function refreshProjectList(){
     const loadBtn=document.createElement('button');
     loadBtn.className='smallbtn';
     loadBtn.textContent='Load';
-    loadBtn.onclick=(e)=>{
+    loadBtn.onclick=async (e)=>{
       e.stopPropagation();
       if(!confirm(`Load ${name}? Unsaved changes will be lost.`)) return;
       const p=all[name];
-      restoreProjectFromSnapshot(p.project,{name,hasSaved:true});
+      await restoreProjectFromSnapshot(p.project,{name,hasSaved:true});
       setFileMenuOpen(false);
       toast(`<b>Loaded:</b> ${escapeHtml(name)}`);
     };
@@ -2352,20 +2405,12 @@ async function persistProjectSnapshot(name){
   const all=loadAllProjects();
   state.currentProjectName=name;
   state.hasSaved=true;
-  all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject) };
-  let savedWithMusicData=true;
-  try{
-    saveAllProjects(all);
-  }catch(err){
-    console.warn('Project save with embedded music failed; saving browser-stored music references instead.', err);
-    all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject,{stripMusicData:true}) };
-    saveAllProjects(all);
-    savedWithMusicData=false;
-  }
+  all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject,{stripMusicData:true}) };
+  saveAllProjects(all);
   refreshProjectList();
   updateCodeLineNumbers();
-  if(savedWithMusicData) toast(`<b>Saved:</b> ${escapeHtml(name)}`);
-  else toast(`<b>Saved:</b> ${escapeHtml(name)}<br>Music data was saved in browser asset storage to keep the project list small.`);
+  const hasMusicAssets=(state.appProject.music||[]).some(track=>getMusicAssetKey(track));
+  toast(hasMusicAssets ? `<b>Saved:</b> ${escapeHtml(name)}<br>Imported music is saved as browser audio blobs, not local file links.` : `<b>Saved:</b> ${escapeHtml(name)}`);
 }
 async function saveProject(forcePrompt=true){
   saveEditorToCurrentCodeFile();
@@ -2494,7 +2539,7 @@ async function exportHTML(){
   if(!exportName) return;
   const exportFilename=makeProjectFilename(exportName);
   try{
-    const projectJson = JSON.stringify(state.appProject);
+    const projectJson = JSON.stringify(await embedMusicBlobsAsDataUrls(state.appProject));
     const codeJson = JSON.stringify(getProjectLua());
     const fengariSource = await getExportFengariSource();
     const runtimeJs = buildExportRuntimeSource(projectJson, codeJson);
@@ -2539,20 +2584,30 @@ async function exportProjectZip(){
   const exportFilename=makeProjectFilename(exportName);
   try{
     const JSZip=await ensureJsZipLoaded();
+    await persistProjectMusicAssets(state.appProject);
+    const exportProject=cloneProjectSnapshot(state.appProject,{stripMusicData:true});
     const zip=new JSZip();
-    (state.appProject.codeFiles||[]).forEach(file=>{
+    (exportProject.codeFiles||[]).forEach(file=>{
       const name=String(file.name||'file.lua').trim()||'file.lua';
       zip.file(`lua/${name}`, String(file.content||''));
     });
-    zip.file('sprites/sprite_folders.json', JSON.stringify(state.appProject.spriteFolders||[], null, 2));
-    zip.file('maps/maps.json', JSON.stringify(state.appProject.maps||[], null, 2));
-    zip.file('music/music.json', JSON.stringify(state.appProject.music||[], null, 2));
-    zip.file('sounds/sounds.json', JSON.stringify(state.appProject.sounds||[], null, 2));
-    zip.file('palette/palette.json', JSON.stringify(state.appProject.palette||[], null, 2));
-    zip.file('tiles/tile_defs.json', JSON.stringify(state.appProject.tileDefs||{}, null, 2));
-    zip.file('settings/settings.json', JSON.stringify(state.appProject.settings||{}, null, 2));
-    zip.file('project/project.json', JSON.stringify(state.appProject.project||{}, null, 2));
-    zip.file('project/full_project.json', JSON.stringify(state.appProject||{}, null, 2));
+    for(const track of (state.appProject.music||[])){
+      const key=getMusicAssetKey(track);
+      const blob=await getMusicTrackBlob(track) || (await getMusicAsset(key))?.blob;
+      if(key && blob instanceof Blob){
+        const safeKey=key.replace(/[^a-z0-9._-]+/gi,'_');
+        zip.file(`music/assets/${safeKey}.ogg`, blob);
+      }
+    }
+    zip.file('sprites/sprite_folders.json', JSON.stringify(exportProject.spriteFolders||[], null, 2));
+    zip.file('maps/maps.json', JSON.stringify(exportProject.maps||[], null, 2));
+    zip.file('music/music.json', JSON.stringify(exportProject.music||[], null, 2));
+    zip.file('sounds/sounds.json', JSON.stringify(exportProject.sounds||[], null, 2));
+    zip.file('palette/palette.json', JSON.stringify(exportProject.palette||[], null, 2));
+    zip.file('tiles/tile_defs.json', JSON.stringify(exportProject.tileDefs||{}, null, 2));
+    zip.file('settings/settings.json', JSON.stringify(exportProject.settings||{}, null, 2));
+    zip.file('project/project.json', JSON.stringify(exportProject.project||{}, null, 2));
+    zip.file('project/full_project.json', JSON.stringify(exportProject||{}, null, 2));
     const blob=await zip.generateAsync({type:'blob'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a'); a.href=url; a.download=exportFilename+'.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
@@ -2644,11 +2699,22 @@ async function importProjectZip(file){
     drawSoundWaveCanvas();
     refreshMusicUI();
     refreshMenuSettingsUI();
+    for(const track of (state.appProject.music||[])){
+      const key=getMusicAssetKey(track);
+      if(!key) continue;
+      const safeKey=key.replace(/[^a-z0-9._-]+/gi,'_');
+      const entry=zip.file(`music/assets/${safeKey}.ogg`);
+      if(!entry) continue;
+      const blob=await entry.async('blob');
+      attachMusicBlobToTrack(track, blob, {key,fileName:track.fileName,fileSize:blob.size,fileType:blob.type||track.fileType||'audio/ogg',fileLastModified:track.fileLastModified});
+      await putMusicAsset(track);
+    }
+    await restoreProjectMusicAccess('imported project',{toast:false});
+    refreshMusicUI();
     runtime.syncProject(state.appProject);
     runtime.reset(getProjectLua());
     setView('code');
     toast(`<b>Imported project:</b> ${escapeHtml(file.name||'project.zip')}`);
-    restoreProjectMusicAccess('imported project');
   }catch(err){
     console.error(err);
     toast(`<b>Import failed:</b> ${escapeHtml(err?.message||String(err))}`);
@@ -8466,7 +8532,13 @@ async function playMusicEntry(src, action="play", loop=true, project=state.appPr
   };
   if(typeof src==="string" && !/^\d+$/.test(src)){
     const byName=musicList.find(m=>m && (m.fileName===src || m.name===src));
-    const resolved=(byName&& (byName.fileData||byName.file)) || src;
+    if(byName) await restoreMusicTrackFromDb(byName);
+    const resolved=byName ? getMusicTrackPlayableSource(byName) : src;
+    if(byName && !resolved){
+      currentMusicSignature=null;
+      toast(`<b>Music unavailable:</b> ${escapeHtml(getMusicTrackLabel(byName)||'This track')} is saved in the project but its audio data could not be restored. Re-import the .ogg file once to repair it.`);
+      return;
+    }
     const audio=new Audio(resolved);
     audio.loop=loop==null ? !!byName?.loop : normalizedLoop;
     startAudio(audio);
@@ -8475,12 +8547,14 @@ async function playMusicEntry(src, action="play", loop=true, project=state.appPr
   }
   const idx = typeof src==="number" ? src : parseInt(String(src||"0"),10);
   const m = musicList[idx];
-  if(!m || (!m.file && !m.fileData)){
+  if(m) await restoreMusicTrackFromDb(m);
+  if(!m || !getMusicTrackPlayableSource(m)){
     currentMusicSignature=null;
-    toast('<b>Music unavailable:</b> Import a tiny .ogg file for this track.');
+    const label=getMusicTrackLabel(m);
+    toast(label ? `<b>Music unavailable:</b> ${escapeHtml(label)} is saved in this slot, but its audio data could not be restored. Re-import the .ogg file once to repair it.` : '<b>Music unavailable:</b> Import a tiny .ogg file for this track.');
     return;
   }
-  const audio=new Audio(m.fileData||m.file);
+  const audio=new Audio(getMusicTrackPlayableSource(m));
   audio.loop=loop==null ? !!m.loop : normalizedLoop;
   startAudio(audio);
   try{ await ctxAudio().resume(); }catch{}
@@ -8603,6 +8677,7 @@ function clearMusicSlot(index){
   const track=state.appProject.music[index];
   if(!track) return;
   if(!confirm(`Clear track ${index}?`)) return;
+  revokeMusicTrackObjectUrl(track);
   const blank=makeMusic();
   state.appProject.music[index]={...blank,name:track.name||""};
   if(state.currentMusicIndex===index) refreshMusicUI();
@@ -8616,6 +8691,20 @@ function readMusicFileAsDataUrl(file){
     reader.onerror=()=>reject(reader.error||new Error('Could not read audio file.'));
     reader.readAsDataURL(file);
   });
+}
+async function embedMusicBlobsAsDataUrls(project){
+  const clone=cloneProjectSnapshot(project,{stripMusicData:true});
+  const sourceTracks=Array.isArray(project?.music)?project.music:[];
+  const cloneTracks=Array.isArray(clone.music)?clone.music:[];
+  await Promise.all(cloneTracks.map(async (track,i)=>{
+    const source=sourceTracks[i];
+    const blob=await getMusicTrackBlob(source) || (await getMusicAsset(getMusicAssetKey(source)))?.blob;
+    if(!(blob instanceof Blob)) return;
+    const data=await readMusicFileAsDataUrl(blob);
+    track.fileData=data;
+    track.file=data;
+  }));
+  return clone;
 }
 function getMusicTrackLabel(m){ return String(m?.fileName || m?.name || '').trim(); }
 function musicTrackNeedsImport(m){ return !!(m && (m.fileName || m.musicStorageKey) && !m.fileData && !m.file); }
@@ -8656,36 +8745,38 @@ async function normalizeImportedMusicFile(file){
   if(type && type!=='audio/ogg' && type!=='application/ogg' && !name.endsWith('.ogg')){
     throw new Error('Please import a tiny .ogg music file.');
   }
-  const data=await readMusicFileAsDataUrl(file);
   return {
-    data,
+    blob:file,
     fileName:importedMusicFileName(file),
     fileSize:Number(file?.size)||0,
-    fileType:'audio/ogg',
+    fileType:type||'audio/ogg',
     fileLastModified:Number(file?.lastModified)||Date.now()
   };
 }
 function importMusicFileToTrack(index,file){
   const m=state.appProject.music[index];
   if(!m || !file) return;
-  normalizeImportedMusicFile(file).then(asset=>{
-    m.fileData=asset.data;
-    m.file=m.fileData;
+  normalizeImportedMusicFile(file).then(async asset=>{
+    revokeMusicTrackObjectUrl(m);
+    m.fileData='';
+    m.file='';
     m.fileName=asset.fileName;
     m.fileSize=asset.fileSize;
     m.fileType=asset.fileType;
     m.fileLastModified=asset.fileLastModified;
-    m.musicStorageKey=getMusicStorageKey(m);
+    m.audioId=getMusicStorageKey({...m,musicStorageKey:'',audioId:''});
+    m.musicStorageKey=m.audioId;
+    attachMusicBlobToTrack(m, asset.blob, {key:m.audioId,fileName:m.fileName,fileSize:m.fileSize,fileType:m.fileType,fileLastModified:m.fileLastModified});
     delete m.filePath;
     delete m.fileAddress;
     delete m.fileHandleKey;
     delete m.fileMissing;
-    putMusicAsset(m).catch(err=>console.warn('Music asset save failed', err));
+    const saved=await putMusicAsset(m);
     state.currentMusicIndex=index;
     refreshMusicUI();
     suppressMusicPlaybackForTrack(index, m);
     try{ runtime.syncProject(state.appProject); }catch{}
-    toast(`<b>Music imported:</b> ${escapeHtml(m.fileName)} saved in browser storage.`);
+    toast(saved ? `<b>Music imported:</b> ${escapeHtml(m.fileName)} saved in browser storage.` : `<b>Music imported:</b> ${escapeHtml(m.fileName)} is playable now, but browser storage could not save it for reopening.`);
   }).catch(err=>toast(`<b>Import failed:</b> ${escapeHtml(err?.message||'Could not read audio file.')}`));
 }
 function updateCurrentMusicFromUI(){}
