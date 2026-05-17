@@ -533,8 +533,6 @@
         <div class="tabs" id="toolbarSub" style="display:none"></div>
       </div>
       <div class="topbarRuntimeControls hidden" id="topbarRuntimeControls">
-        <button class="fileBtn" id="runBtn">Run</button>
-        <button class="fileBtn" id="resetBtn">Reset</button>
         <button class="fileBtn runtimeHideBtn" id="runtimeHideBtn">Hide</button>
       </div>
       <button class="fileBtn" id="fileBtn">Menu</button>
@@ -1134,6 +1132,16 @@ const PRESET_PALETTE_PAGES = [
 ];
 const DEFAULT_PALETTE = PRESET_PALETTE_PAGES.flat();
 let runtime;
+let runtimeUiHidden=false;
+function applyRuntimeUiHiddenState(){
+  const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
+  if(!canHide) runtimeUiHidden=false;
+  document.body.classList.toggle('runtime-ui-hidden', runtimeUiHidden && canHide);
+  const hideBtn=$("runtimeHideBtn");
+  if(hideBtn) hideBtn.classList.toggle('hidden', !canHide);
+  if(hideBtn) hideBtn.textContent=runtimeUiHidden?'Show':'Hide';
+  if(state.activeView==='runtime' && runtime) runtime.resizeDisplay();
+}
 function createRuntimeFallback(message){
   const text=String(message||'Runtime unavailable. The editor shell is still available.');
   return {
@@ -8533,6 +8541,33 @@ async function playMusicEntry(src, action="play", loop=true, project=state.appPr
       playPromise.catch(()=>{ currentMusicElements.delete(audio); if(currentMusicSource===audio){ currentMusicSource=null; currentMusicSignature=null; } });
     }
   };
+  const startDecodedAudio=async(source,audioLoop)=>{
+    if(typeof fetch!=='function') return false;
+    try{
+      const ac=ctxAudio();
+      try{ await ac.resume(); }catch{}
+      const response=await fetch(source);
+      if(!response.ok && !String(source).startsWith('data:')) return false;
+      const data=await response.arrayBuffer();
+      if(requestId!==currentMusicRequestId) return true;
+      const buffer=await ac.decodeAudioData(data.slice(0));
+      if(requestId!==currentMusicRequestId) return true;
+      const node=ac.createBufferSource();
+      node.buffer=buffer;
+      node.loop=!!audioLoop;
+      node.connect(ac.destination);
+      currentMusicSource=node;
+      currentMusicNodes.push(node);
+      node.onended=()=>{
+        currentMusicNodes=currentMusicNodes.filter(n=>n!==node);
+        if(currentMusicSource===node){ currentMusicSource=null; currentMusicSignature=null; }
+      };
+      node.start(0);
+      return true;
+    }catch(_){
+      return false;
+    }
+  };
   if(typeof src==="string" && !/^\d+$/.test(src)){
     const byName=musicList.find(m=>m && (m.fileName===src || m.name===src));
     if(byName) await restoreMusicTrackFromDb(byName);
@@ -8542,8 +8577,10 @@ async function playMusicEntry(src, action="play", loop=true, project=state.appPr
       toast(`<b>Music unavailable:</b> ${escapeHtml(getMusicTrackLabel(byName)||'This track')} is saved in the project but its audio data could not be restored. Re-import the .ogg file once to repair it.`);
       return;
     }
+    const audioLoop=loop==null ? !!byName?.loop : normalizedLoop;
+    if(await startDecodedAudio(resolved, audioLoop)) return;
     const audio=new Audio(resolved);
-    audio.loop=loop==null ? !!byName?.loop : normalizedLoop;
+    audio.loop=audioLoop;
     startAudio(audio);
     try{ await ctxAudio().resume(); }catch{}
     return;
@@ -8557,8 +8594,11 @@ async function playMusicEntry(src, action="play", loop=true, project=state.appPr
     toast(label ? `<b>Music unavailable:</b> ${escapeHtml(label)} is saved in this slot, but its audio data could not be restored. Re-import the .ogg file once to repair it.` : '<b>Music unavailable:</b> Import a tiny .ogg file for this track.');
     return;
   }
-  const audio=new Audio(getMusicTrackPlayableSource(m));
-  audio.loop=loop==null ? !!m.loop : normalizedLoop;
+  const playableSource=getMusicTrackPlayableSource(m);
+  const audioLoop=loop==null ? !!m.loop : normalizedLoop;
+  if(await startDecodedAudio(playableSource, audioLoop)) return;
+  const audio=new Audio(playableSource);
+  audio.loop=audioLoop;
   startAudio(audio);
   try{ await ctxAudio().resume(); }catch{}
 }
@@ -9526,7 +9566,28 @@ function wireUI(){
     bind(id, "pointerdown", resetToolbarFromBlankArea);
     bind(id, "click", resetToolbarFromBlankArea);
   });
-  bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); const code=getProjectLua(); setView('runtime'); runtime.setLua(code); runtime.rerun(code); resetToolbar(); });
+  function primeRuntimeAudioForUserGesture(){
+    try{
+      const ac=ctxAudio();
+      ac.resume?.();
+      const osc=ac.createOscillator();
+      const gain=ac.createGain();
+      gain.gain.setValueAtTime(0, ac.currentTime);
+      osc.connect(gain).connect(ac.destination);
+      osc.start(ac.currentTime);
+      osc.stop(ac.currentTime+0.01);
+    }catch(_){}
+  }
+  function runRuntimeFromEditor(mode='rerun'){
+    primeRuntimeAudioForUserGesture();
+    const code=getProjectLua();
+    setView('runtime');
+    if(mode==='reset') runtime.reset(code);
+    else runtime.rerun(code);
+    resetToolbar();
+    if(typeof applyRuntimeUiHiddenState==='function') applyRuntimeUiHiddenState();
+  }
+  bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); runRuntimeFromEditor('rerun'); });
   const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ $("importFormatRow")?.classList.add('hidden'); $("exportFormatRow")?.classList.add('hidden'); closeLoadPanel(); } };
   bindClick("fileBtn",e=>{ e.stopPropagation(); const isOpen=$("menu")?.classList.contains('open'); setFileMenuOpen(!isOpen); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
   const toggleMenuSection=(id)=>$(id)?.classList.toggle('open');
@@ -9563,8 +9624,6 @@ function wireUI(){
   bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
   bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
   bind("darkModeToggle",'change',()=>{ ensureProjectData(); state.appProject.settings.darkMode=!!$("darkModeToggle")?.checked; applyThemeUI(); });
-  bindClick("runBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.rerun(code); });
-  bindClick("resetBtn",()=>{ const code=getProjectLua(); runtime.setLua(code); runtime.reset(code); });
   function syncSidebarToggleButton(buttonId, viewId){ const btn=$(buttonId), view=$(viewId); if(!btn||!view) return; const hidden=view.classList.contains('sidebar-hidden'); btn.textContent=hidden?'>':'<'; btn.setAttribute('aria-expanded', hidden?'false':'true'); btn.title=hidden?'Open panel':'Close panel'; }
   bindClick("toggleMapSidebarBtn",()=>{
     const mapView=$("mapView");
@@ -9918,16 +9977,6 @@ function wireUI(){
   });
   bind("spriteAnimSpeedInput",'input',()=>{ state.spriteAnimSpeed=Math.max(1,parseFloat($("spriteAnimSpeedInput")?.value)||6); updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
 
-  let runtimeUiHidden=false;
-  const applyRuntimeUiHiddenState=()=>{
-    const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
-    if(!canHide) runtimeUiHidden=false;
-    document.body.classList.toggle('runtime-ui-hidden', runtimeUiHidden && canHide);
-    const hideBtn=$("runtimeHideBtn");
-    if(hideBtn) hideBtn.classList.toggle('hidden', !canHide);
-    if(hideBtn) hideBtn.textContent=runtimeUiHidden?'Show':'Hide';
-    if(state.activeView==='runtime') runtime.resizeDisplay();
-  };
   bindClick('runtimeHideBtn',()=>{
     if(state.activeView!=='runtime' || !window.matchMedia('(min-width: 901px)').matches) return;
     runtimeUiHidden=!runtimeUiHidden;
@@ -9938,12 +9987,7 @@ function wireUI(){
     const key=String(e.key||'').toLowerCase();
     if((e.ctrlKey||e.metaKey) && !e.altKey && !e.shiftKey && key==='r'){
       e.preventDefault();
-      const code=getProjectLua();
-      setView('runtime');
-      runtime.setLua(code);
-      runtime.rerun(code);
-      resetToolbar();
-      applyRuntimeUiHiddenState();
+      runRuntimeFromEditor('rerun');
       return;
     }
     const isEscapeKey=(key==='escape' || key==='esc');
