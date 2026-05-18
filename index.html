@@ -1335,7 +1335,7 @@ function goToCodeLine(lineNumber){
   let start=0;
   for(let i=0;i<targetLine-1;i++) start += lines[i].length + 1;
   const end=start+Math.max(0, lines[targetLine-1]?.length||0);
-  editor.focus({preventScroll:true});
+  focusIfAppropriate(editor);
   editor.setSelectionRange(start,end);
   const metrics=getComputedStyle(editor);
   const lineHeight=parseFloat(metrics.lineHeight)||18;
@@ -1352,6 +1352,13 @@ function gotoLastRunErrorLine(){
 }
 async function copyTextToClipboard(text){ const value=String(text||""); if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(value); return true; } const area=document.createElement('textarea'); area.value=value; area.setAttribute('readonly','readonly'); area.style.position='fixed'; area.style.opacity='0'; area.style.pointerEvents='none'; document.body.appendChild(area); area.select(); const ok=document.execCommand('copy'); area.remove(); return ok; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function focusIfAppropriate(el,{allowWhenHidden=false}={}){
+  if(!el||typeof el.focus!=='function') return false;
+  if(!allowWhenHidden && document.visibilityState==='hidden') return false;
+  if(document.activeElement===el) return true;
+  try{ el.focus({preventScroll:true}); return document.activeElement===el; }
+  catch{ try{ el.focus(); return document.activeElement===el; }catch{ return false; } }
+}
 function isImageLike(s){ return /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(String(s||"")); }
 function isEmojiLike(s){ return false; }
 function isSpriteIndexLike(s){ return /^\d+$/.test(String(s||"").trim()); }
@@ -1638,7 +1645,7 @@ function applyCodeSearchState({keepIndex=false,scrollToMatch=false,selectMatch=f
     if(ed&&shell){
       const target=matches[state.codeSearchMatchIndex];
       if(selectMatch){
-        ed.focus({preventScroll:true});
+        focusIfAppropriate(ed);
         ed.setSelectionRange(target.start,target.end);
       }
       const before=source.slice(0,target.start);
@@ -1981,7 +1988,7 @@ function finishNewProject(){
   state.activeView = "";
   requestAnimationFrame(()=>{
     setView("code");
-    setTimeout(()=>{ try{ $("codeEditor").focus({preventScroll:true}); }catch{} }, 40);
+    setTimeout(()=>{ focusIfAppropriate($("codeEditor")); }, 40);
   });
 }
 function newProject(){ if(!confirm("Are you sure you want to start a new project? Unsaved changes will be lost.")) return; finishNewProject(); }
@@ -7434,7 +7441,7 @@ function setView(name){
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $("view-"+name).classList.add('active');
-  if(name==="code") requestAnimationFrame(()=>{ updateCodeLineNumbers(); $("codeEditor").focus({preventScroll:true}); });
+  if(name==="code") requestAnimationFrame(()=>{ updateCodeLineNumbers(); focusIfAppropriate($("codeEditor")); });
   if(name==="sprites") drawSpriteEditor();
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
   if(name==="music") { refreshMusicUI();  }
