@@ -7437,6 +7437,11 @@ function centerMapEditorView(closeup=true){
   return true;
 }
 function setView(name){
+  const targetView=$("view-"+name);
+  if(!targetView){
+    console.warn(`Unknown view requested: ${name}`);
+    return false;
+  }
   const previousView=state.activeView;
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
   const leavingMusicEditor=previousView==="music" && name!=="music";
@@ -7445,7 +7450,7 @@ function setView(name){
     stopMusicPlayback({suppressCurrent:leavingRuntime});
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-  $("view-"+name).classList.add('active');
+  targetView.classList.add('active');
   if(name==="code") requestAnimationFrame(()=>{ updateCodeLineNumbers(); focusIfAppropriate($("codeEditor")); });
   if(name==="sprites") drawSpriteEditor();
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
@@ -8501,8 +8506,41 @@ async function previewSound(index,loop=false){ const snd=state.appProject.sounds
  const osc=ac.createOscillator(); const gain=ac.createGain(); osc.type=(snd.wave==="wavetable"?"sine":snd.wave); gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(snd.volume,now+snd.attack); gain.gain.linearRampToValueAtTime(snd.volume*snd.sustain,now+snd.attack+snd.decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+snd.release); const base=snd.pitch; for(let i=0;i<steps;i++){ const seq=snd.wavetable[i]||0; const semis=seq*12; const freq=base*Math.pow(2,semis/12); osc.frequency.setValueAtTime(freq, now+i*stepDur); }
  osc.connect(gain); gain.connect(ac.destination); osc.start(now); if(!loop) osc.stop(now+len+snd.release+0.02); }
 
-function refreshMusicWaveOptions(){ const sel=$("musicWaveInput"), cur=currentMusic().wave; const builtins=["sine","square","sawtooth","triangle"]; sel.innerHTML=''; builtins.forEach(w=>{ const o=document.createElement('option'); o.value=w; o.textContent=w; sel.appendChild(o); }); state.appProject.sounds.forEach((s,i)=>{ const o=document.createElement('option'); o.value='sfx:'+i; o.textContent='sfx '+i; sel.appendChild(o); }); sel.value = [...sel.options].some(o=>o.value===cur) ? cur : 'square'; }
-function refreshCustomScaleUI(){ const wrap=$("musicCustomScaleWrap"), keys=$("musicCustomScaleKeys"), m=currentMusic(); wrap.style.display = m.scale==='custom' ? 'block' : 'none'; keys.innerHTML=''; const labels=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; for(let i=0;i<12;i++){ const b=document.createElement('button'); b.className='miniKey'+(m.customNotes.includes(i)?' active':''); b.textContent=labels[i]; b.onclick=(e)=>{ e.preventDefault(); const arr=m.customNotes; const idx=arr.indexOf(i); if(idx>=0) arr.splice(idx,1); else arr.push(i); arr.sort((a,b)=>a-b); if(!arr.length) arr.push(0); refreshCustomScaleUI();  }; keys.appendChild(b); } }
+function refreshMusicWaveOptions(){
+  const sel=$("musicWaveInput");
+  if(!sel) return;
+  const m=currentMusic()||{};
+  const cur=m.wave||'square';
+  const builtins=["sine","square","sawtooth","triangle"];
+  sel.innerHTML='';
+  builtins.forEach(w=>{ const o=document.createElement('option'); o.value=w; o.textContent=w; sel.appendChild(o); });
+  (state.appProject?.sounds||[]).forEach((s,i)=>{ const o=document.createElement('option'); o.value='sfx:'+i; o.textContent='sfx '+i; sel.appendChild(o); });
+  sel.value = [...sel.options].some(o=>o.value===cur) ? cur : 'square';
+}
+function refreshCustomScaleUI(){
+  const wrap=$("musicCustomScaleWrap"), keys=$("musicCustomScaleKeys");
+  if(!wrap||!keys) return;
+  const m=currentMusic()||{};
+  if(!Array.isArray(m.customNotes)) m.customNotes=[0];
+  wrap.style.display = m.scale==='custom' ? 'block' : 'none';
+  keys.innerHTML='';
+  const labels=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  for(let i=0;i<12;i++){
+    const b=document.createElement('button');
+    b.className='miniKey'+(m.customNotes.includes(i)?' active':'');
+    b.textContent=labels[i];
+    b.onclick=(e)=>{
+      e.preventDefault();
+      const arr=m.customNotes;
+      const idx=arr.indexOf(i);
+      if(idx>=0) arr.splice(idx,1); else arr.push(i);
+      arr.sort((a,b)=>a-b);
+      if(!arr.length) arr.push(0);
+      refreshCustomScaleUI();
+    };
+    keys.appendChild(b);
+  }
+}
 function musicRequestSignature(src, action="play", loop=true){
   const normalizedAction=String(action??'play').trim().toLowerCase();
   const normalizedLoop=!!loop;
@@ -8887,21 +8925,26 @@ function makeRuntime(){
   const normalizeButtonIndex=value=>{ if(typeof value==='number'&&Number.isFinite(value)){ const i=value|0; return i>=0&&i<12?i:-1; } const s=String(value??'').trim().toLowerCase(); if(!s) return -1; if(/^(?:[0-9]|1[01])$/.test(s)) return parseInt(s,10); return Object.prototype.hasOwnProperty.call(BUTTON_ALIASES,s)?BUTTON_ALIASES[s]:-1; };
   const normalizeKeyName=value=>{ const s=String(value??'').trim().toLowerCase(); if(!s) return ''; const aliases={spacebar:'space',' ':'space',esc:'escape',return:'enter',ctrl:'ctrl',control:'ctrl',left:'left',right:'right',up:'up',down:'down'}; return aliases[s]||s; };
   const eventKeyNames=e=>{ const names=new Set(); const key=normalizeKeyName(e.key); if(key) names.add(key); const code=String(e.code||''); if(/^Key[A-Z]$/.test(code)) names.add(code.slice(3).toLowerCase()); else if(/^Digit\d$/.test(code)) names.add(code.slice(5)); else if(/^Numpad\d$/.test(code)) names.add(code.slice(6)); const codeMap={Space:['space'],Tab:['tab'],Enter:['enter'],Escape:['escape'],Backspace:['backspace'],Delete:['delete'],Insert:['insert'],Home:['home'],End:['end'],PageUp:['pageup'],PageDown:['pagedown'],ArrowUp:['up'],ArrowDown:['down'],ArrowLeft:['left'],ArrowRight:['right'],Minus:['-'],Equal:['='],BracketLeft:['['],BracketRight:[']'],Backslash:['\\'],Semicolon:[';'],Quote:["'"],Comma:[','],Period:['.'],Slash:['/'],Backquote:['`'],ControlLeft:['lctrl','ctrl'],ControlRight:['rctrl','ctrl'],ShiftLeft:['lshift','shift'],ShiftRight:['rshift','shift'],AltLeft:['lalt','alt'],AltRight:['ralt','alt'],MetaLeft:['lmeta','meta'],MetaRight:['rmeta','meta']}; (codeMap[code]||[]).forEach(name=>names.add(name)); if(/^F\d{1,2}$/.test(code)) names.add(code.toLowerCase()); return names; };
+  const isHtmlElement=target=>{
+    if(!target || typeof target!=='object') return false;
+    if(typeof HTMLElement==='function') return target instanceof HTMLElement;
+    return typeof target.tagName==='string';
+  };
   const isEditableRuntimeTarget=target=>{
-    if(!(target instanceof HTMLElement)) return false;
+    if(!isHtmlElement(target)) return false;
     if(target.isContentEditable) return true;
-    const tag=target.tagName;
+    const tag=String(target.tagName||'').toUpperCase();
     return tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
   };
   const isInactiveViewEditableTarget=target=>{
     if(!isEditableRuntimeTarget(target)) return false;
-    const targetView=target.closest('.view');
+    const targetView=typeof target.closest==='function' ? target.closest('.view') : null;
     return !!(targetView && !targetView.classList.contains('active'));
   };
   const shouldCaptureRuntimeKeyboard=e=>{
     if(state.activeView!=='runtime' || dialogState.active) return false;
     const target=e.target;
-    if(!(target instanceof HTMLElement)) return true;
+    if(!isHtmlElement(target)) return true;
     if(!isEditableRuntimeTarget(target)) return true;
     return isInactiveViewEditableTarget(target);
   };
@@ -9588,7 +9631,21 @@ function makeRuntime(){
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
-  const bind=(id,type,handler,options)=>{ const el=$(id); if(!el) return null; el.addEventListener(type,handler,options); return el; };
+  const handleUiError=(id,type,err)=>{
+    const message=`UI handler failed for ${id || 'unknown'} ${type}: ${err?.message||String(err)}`;
+    console.error(message, err);
+    setLastRunError(message);
+    try{ toast(`<b>UI error:</b> ${escapeHtml(err?.message||String(err))}`); }catch(_){ }
+  };
+  const bind=(id,type,handler,options)=>{
+    const el=$(id);
+    if(!el) return null;
+    el.addEventListener(type,event=>{
+      try{ handler(event); }
+      catch(err){ handleUiError(id,type,err); }
+    },options);
+    return el;
+  };
   const bindClick=(id,handler)=>bind(id,'click',handler);
   function colorizeToolbarButton(btn, group){ if(btn) btn.classList.add('cat-'+group); }
   colorizeToolbarButton($("logicBtn"), 'logic');
@@ -10096,15 +10153,29 @@ function wireUI(){
 }
 function writeWavePoint(e){ const c=$("soundWaveCanvas"), rect=c.getBoundingClientRect(); const x=((e.clientX-rect.left)/rect.width)*c.width; const y=((e.clientY-rect.top)/rect.height)*c.height; const idx=Math.max(0,Math.min(63,Math.floor((x/c.width)*64))); currentSound().wavetable[idx]=clamp(1-(y/c.height)*2,-1,1); drawSoundWaveCanvas(); }
 function bootEditorShell(){
-  buildDocs();
-  ensureProjectData();
-  syncResponsiveUI();
-  wireUI();
-  renderCodeTabs();
-  finishNewProject();
-  applyThemeUI();
-  refreshProjectList();
-  runEditorAnimationFrame();
+  const bootErrors=[];
+  const bootStep=(label,fn,{critical=false}={})=>{
+    try{ return fn(); }
+    catch(err){
+      const message=`${label}: ${err?.message||String(err)}`;
+      bootErrors.push(message);
+      console.error(`Editor startup step failed (${label})`, err);
+      if(critical) throw err;
+      return null;
+    }
+  };
+  bootStep('build docs',()=>buildDocs());
+  bootStep('project data',()=>ensureProjectData(),{critical:true});
+  bootStep('responsive UI',()=>syncResponsiveUI());
+  bootStep('wire UI',()=>wireUI(),{critical:true});
+  bootStep('render code tabs',()=>renderCodeTabs());
+  bootStep('new project setup',()=>finishNewProject());
+  bootStep('theme UI',()=>applyThemeUI());
+  bootStep('project list',()=>refreshProjectList());
+  bootStep('editor animation frame',()=>runEditorAnimationFrame());
+  if(bootErrors.length){
+    setLastRunError(`Editor recovered from startup issue(s):\n${bootErrors.join('\n')}`);
+  }
 }
 function bootRuntimeIntoEditor(){
   const nextRuntime=initRuntime();
