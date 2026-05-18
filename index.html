@@ -1135,18 +1135,24 @@ const PRESET_PALETTE_PAGES = [
 const DEFAULT_PALETTE = PRESET_PALETTE_PAGES.flat();
 let runtime;
 let runtimeUiHidden=false;
+let runtimeInitRetryTimer=0;
+function canUseHiddenRuntimeUi(){
+  try{ return !!(window.matchMedia && window.matchMedia('(min-width: 901px)').matches); }
+  catch(_){ return false; }
+}
 function applyRuntimeUiHiddenState(){
-  const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
+  const canHide=state.activeView==='runtime' && canUseHiddenRuntimeUi();
   if(!canHide) runtimeUiHidden=false;
   document.body.classList.toggle('runtime-ui-hidden', runtimeUiHidden && canHide);
   const hideBtn=$("runtimeHideBtn");
   if(hideBtn) hideBtn.classList.toggle('hidden', !canHide);
   if(hideBtn) hideBtn.textContent=runtimeUiHidden?'Show':'Hide';
-  if(state.activeView==='runtime' && runtime) runtime.resizeDisplay();
+  if(state.activeView==='runtime' && runtime) runtime.resizeDisplay?.();
 }
 function createRuntimeFallback(message){
   const text=String(message||'Runtime unavailable. The editor shell is still available.');
   return {
+    isFallback:true,
     setLua(){},
     loadEditor(){},
     rerun(){ setLastRunError(text); },
@@ -1157,7 +1163,9 @@ function createRuntimeFallback(message){
 }
 function initRuntime(){
   try{
-    return makeRuntime();
+    const nextRuntime=makeRuntime();
+    if(nextRuntime) nextRuntime.isFallback=false;
+    return nextRuntime;
   }catch(err){
     const message=`Runtime failed to initialize: ${err?.message||String(err)}`;
     console.error(message, err);
@@ -10099,7 +10107,7 @@ function wireUI(){
   bind("spriteAnimSpeedInput",'input',()=>{ state.spriteAnimSpeed=Math.max(1,parseFloat($("spriteAnimSpeedInput")?.value)||6); updateSpriteFrameStatus(); drawSpriteAnimPreview(); });
 
   bindClick('runtimeHideBtn',()=>{
-    if(state.activeView!=='runtime' || !window.matchMedia('(min-width: 901px)').matches) return;
+    if(state.activeView!=='runtime' || !canUseHiddenRuntimeUi()) return;
     runtimeUiHidden=!runtimeUiHidden;
     applyRuntimeUiHiddenState();
   });
@@ -10150,6 +10158,7 @@ function wireUI(){
   syncSidebarToggleButton("toggleMapSidebarBtn","mapView");
   syncSidebarToggleButton("toggleSpriteSidebarBtn","spriteView");
   syncSpriteCanvasChrome();
+  window.__tryCodePrimaryUiReady=true;
 }
 function writeWavePoint(e){ const c=$("soundWaveCanvas"), rect=c.getBoundingClientRect(); const x=((e.clientX-rect.left)/rect.width)*c.width; const y=((e.clientY-rect.top)/rect.height)*c.height; const idx=Math.max(0,Math.min(63,Math.floor((x/c.width)*64))); currentSound().wavetable[idx]=clamp(1-(y/c.height)*2,-1,1); drawSoundWaveCanvas(); }
 function ensureEditorVisible(){
@@ -10195,23 +10204,78 @@ function bootEditorShell(){
     try{ toast(`<b>Editor recovered:</b> ${escapeHtml(bootErrors[0])}`); }catch(_){ }
   }
 }
-function bootRuntimeIntoEditor(){
+function bootRuntimeIntoEditor({retry=true}={}){
+  if(runtimeInitRetryTimer){
+    clearTimeout(runtimeInitRetryTimer);
+    runtimeInitRetryTimer=0;
+  }
   const nextRuntime=initRuntime();
-  if(!nextRuntime) return;
+  if(!nextRuntime) return false;
   runtime=nextRuntime;
   try{
-    runtime.syncProject(state.appProject);
-    runtime.loadEditor(getProjectLua());
-    setLastRunError('');
+    runtime.syncProject?.(state.appProject);
+    runtime.loadEditor?.(getProjectLua());
+    if(!runtime.isFallback) setLastRunError('');
   }catch(err){
     const message=`Runtime sync failed after editor startup: ${err?.message||String(err)}`;
     console.error(message, err);
     setLastRunError(message);
     runtime=createRuntimeFallback(message);
   }
+  if(runtime.isFallback && retry){
+    runtimeInitRetryTimer=setTimeout(()=>bootRuntimeIntoEditor({retry:false}), 750);
+  }
+  return !runtime.isFallback;
+}
+function installCriticalUiFallbacks(){
+  if(window.__tryCodeCriticalUiFallbacksInstalled) return;
+  window.__tryCodeCriticalUiFallbacksInstalled=true;
+  const runFromEditor=()=>{
+    try{
+      if(!runtime || runtime.isFallback) bootRuntimeIntoEditor({retry:false});
+      setView('runtime');
+      runtime?.rerun?.(getProjectLua());
+      applyRuntimeUiHiddenState();
+    }catch(err){
+      const message=`Run button failed: ${err?.message||String(err)}`;
+      console.error(message, err);
+      setLastRunError(message);
+    }
+  };
+  document.addEventListener('click',event=>{
+    if(window.__tryCodePrimaryUiReady) return;
+    const target=event.target?.closest?.('button,#fileBtn');
+    if(!target) return;
+    if(target.dataset.tcHandled==='1') return;
+    const id=target.id;
+    if(id==='runTitleBtn'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      runFromEditor();
+    }else if(id==='logicBtn'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setView('code');
+    }else if(id==='graphicsBtn'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setView('sprites');
+    }else if(id==='soundBtn'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      setView('sounds');
+    }else if(id==='fileBtn'){
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      $('menu')?.classList.toggle('open');
+      $('menuBackdrop')?.classList.toggle('open');
+      try{ refreshProjectList(); refreshMenuSettingsUI(); }catch(err){ console.error('Fallback file menu refresh failed', err); }
+    }
+  }, true);
 }
 runtime=createRuntimeFallback('Runtime is still starting.');
 bootEditorShell();
+installCriticalUiFallbacks();
 bootRuntimeIntoEditor();
 startAutoBackupTimer();
 })();
