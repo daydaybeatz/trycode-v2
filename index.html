@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>TRY_CODE_FC_V43</title>
-  <script src="https://unpkg.com/fengari-web/dist/fengari-web.js"></script>
+  <script src="https://unpkg.com/fengari-web/dist/fengari-web.js" async crossorigin="anonymous"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:wght@400;700&family=Orbitron:wght@500;700&family=Playfair+Display:wght@500;700&family=Press+Start+2P&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
@@ -9426,9 +9426,21 @@ function makeRuntime(){
     const existing=[...document.querySelectorAll('script[src]')].find(el=>el.src===src);
     if(existing && existing.dataset.tcLoaded==='1'){ resolve(true); return; }
     const script=existing||document.createElement('script');
-    const onLoad=()=>{ script.dataset.tcLoaded='1'; cleanup(); resolve(true); };
-    const onError=()=>{ cleanup(); reject(new Error(`Failed to load ${src}`)); };
-    const cleanup=()=>{ script.removeEventListener('load',onLoad); script.removeEventListener('error',onError); };
+    let settled=false;
+    const settle=(fn,value)=>{
+      if(settled) return;
+      settled=true;
+      cleanup();
+      fn(value);
+    };
+    const onLoad=()=>{ script.dataset.tcLoaded='1'; settle(resolve,true); };
+    const onError=()=>settle(reject,new Error(`Failed to load ${src}`));
+    const timeout=setTimeout(()=>settle(reject,new Error(`Timed out loading ${src}`)),12000);
+    const cleanup=()=>{
+      clearTimeout(timeout);
+      script.removeEventListener('load',onLoad);
+      script.removeEventListener('error',onError);
+    };
     script.addEventListener('load',onLoad,{once:true});
     script.addEventListener('error',onError,{once:true});
     if(!existing){
