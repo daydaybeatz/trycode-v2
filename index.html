@@ -10152,29 +10152,47 @@ function wireUI(){
   syncSpriteCanvasChrome();
 }
 function writeWavePoint(e){ const c=$("soundWaveCanvas"), rect=c.getBoundingClientRect(); const x=((e.clientX-rect.left)/rect.width)*c.width; const y=((e.clientY-rect.top)/rect.height)*c.height; const idx=Math.max(0,Math.min(63,Math.floor((x/c.width)*64))); currentSound().wavetable[idx]=clamp(1-(y/c.height)*2,-1,1); drawSoundWaveCanvas(); }
+function ensureEditorVisible(){
+  if(!state.appProject){
+    try{ state.appProject=defaultProject(); ensureProjectData(); }catch(err){ console.error('Unable to create fallback project during startup recovery.', err); }
+  }
+  try{
+    const codeEditor=$("codeEditor");
+    const current=getCurrentCodeFile?.();
+    if(codeEditor && current && !codeEditor.value) codeEditor.value=current.content||"";
+  }catch(err){ console.error('Unable to restore editor contents during startup recovery.', err); }
+  const codeView=$("view-code");
+  if(codeView){
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    codeView.classList.add('active');
+    state.activeView='code';
+  }
+}
 function bootEditorShell(){
   const bootErrors=[];
-  const bootStep=(label,fn,{critical=false}={})=>{
+  const bootStep=(label,fn)=>{
     try{ return fn(); }
     catch(err){
       const message=`${label}: ${err?.message||String(err)}`;
       bootErrors.push(message);
       console.error(`Editor startup step failed (${label})`, err);
-      if(critical) throw err;
       return null;
     }
   };
   bootStep('build docs',()=>buildDocs());
-  bootStep('project data',()=>ensureProjectData(),{critical:true});
+  bootStep('project data',()=>ensureProjectData());
   bootStep('responsive UI',()=>syncResponsiveUI());
-  bootStep('wire UI',()=>wireUI(),{critical:true});
+  bootStep('wire UI',()=>wireUI());
   bootStep('render code tabs',()=>renderCodeTabs());
   bootStep('new project setup',()=>finishNewProject());
   bootStep('theme UI',()=>applyThemeUI());
   bootStep('project list',()=>refreshProjectList());
   bootStep('editor animation frame',()=>runEditorAnimationFrame());
+  ensureEditorVisible();
   if(bootErrors.length){
-    setLastRunError(`Editor recovered from startup issue(s):\n${bootErrors.join('\n')}`);
+    const message=`Editor recovered from startup issue(s):\n${bootErrors.join('\n')}`;
+    console.warn(message);
+    try{ toast(`<b>Editor recovered:</b> ${escapeHtml(bootErrors[0])}`); }catch(_){ }
   }
 }
 function bootRuntimeIntoEditor(){
