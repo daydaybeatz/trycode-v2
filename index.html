@@ -1132,7 +1132,15 @@ const PRESET_PALETTE_PAGES = [
   ["#10141f","#1b2735","#2b3a4d","#3f5f45","#577a52","#8aa05c","#c7cba4","#f0f2d8","#402a2c","#6a3f35","#925d3f","#b5854f","#d2a86d","#e0c590","#8f3f71","#c96b9a"],
   ["#1a1110","#3b241f","#5a3a2e","#7b523f","#9a6950","#b98268","#d29b7d","#e8b791","#f2c7a5","#f7d5b5","#f9dfc3","#fbe7d0","#fcefe1","#c96a6a","#8f4f7a","#5d5d7a"]
 ];
-const DEFAULT_PALETTE = PRESET_PALETTE_PAGES.flat();
+function flattenPalettePages(pages){
+  const out=[];
+  for(let i=0;i<pages.length;i++){
+    const page=pages[i]||[];
+    for(let j=0;j<page.length;j++) out.push(page[j]);
+  }
+  return out;
+}
+const DEFAULT_PALETTE = flattenPalettePages(PRESET_PALETTE_PAGES);
 let runtime;
 let runtimeUiHidden=false;
 let runtimeInitRetryTimer=0;
@@ -10295,11 +10303,30 @@ function installCriticalUiFallbacks(){
     }
   }, true);
 }
+function reportStartupFailure(label, err){
+  const message=`${label}: ${err?.message||String(err)}`;
+  console.error(message, err);
+  try{ setLastRunError(message); }catch(_){ }
+  return message;
+}
 runtime=createRuntimeFallback('Runtime is still starting.');
-bootEditorShell();
 installCriticalUiFallbacks();
-bootRuntimeIntoEditor();
-startAutoBackupTimer();
+try{
+  bootEditorShell();
+}catch(err){
+  reportStartupFailure('Editor startup failed', err);
+  try{ ensureEditorVisible(); }catch(recoveryErr){ reportStartupFailure('Editor startup recovery failed', recoveryErr); }
+}
+try{
+  bootRuntimeIntoEditor();
+}catch(err){
+  runtime=createRuntimeFallback(reportStartupFailure('Runtime startup failed', err));
+}
+try{
+  startAutoBackupTimer();
+}catch(err){
+  reportStartupFailure('Auto-backup startup failed', err);
+}
 })();
 </script>
 </body>
