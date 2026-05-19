@@ -1361,16 +1361,38 @@ function gotoLastRunErrorLine(){
 }
 async function copyTextToClipboard(text){ const value=String(text||""); if(navigator.clipboard?.writeText){ await navigator.clipboard.writeText(value); return true; } const area=document.createElement('textarea'); area.value=value; area.setAttribute('readonly','readonly'); area.style.position='fixed'; area.style.opacity='0'; area.style.pointerEvents='none'; document.body.appendChild(area); area.select(); const ok=document.execCommand('copy'); area.remove(); return ok; }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-function focusIfAppropriate(el,{allowWhenHidden=false}={}){
+function focusIfAppropriate(el,{allowWhenHidden=false, requireVisible=true}={}){
   if(!el||typeof el.focus!=='function') return false;
   if(!allowWhenHidden && document.visibilityState==='hidden') return false;
+  if(requireVisible){
+    const rects=typeof el.getClientRects==='function'?el.getClientRects():null;
+    if(rects && rects.length===0) return false;
+  }
   if(document.activeElement===el) return true;
   try{ el.focus({preventScroll:true}); return document.activeElement===el; }
   catch{ try{ el.focus(); return document.activeElement===el; }catch{ return false; } }
 }
+function isFocusPreservingTarget(target){
+  if(!(target instanceof HTMLElement)) return false;
+  const targetView=target.closest('.view');
+  if(targetView && !targetView.classList.contains('active')) return false;
+  if(target.isContentEditable) return true;
+  const tag=target.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return true;
+  return !!target.closest('#menu,.runtimeDialogCard');
+}
 function focusRuntimeViewport(){
   if(state.activeView!=="runtime") return false;
+  if(isFocusPreservingTarget(document.activeElement)) return false;
   return focusIfAppropriate($("screen"),{allowWhenHidden:true}) || focusIfAppropriate($("screenStage"),{allowWhenHidden:true});
+}
+function scheduleRuntimeViewportFocus(delay=0){
+  const run=()=>{
+    if(state.activeView!=="runtime") return;
+    focusRuntimeViewport();
+  };
+  if(delay>0) setTimeout(run, delay);
+  else requestAnimationFrame(run);
 }
 function isImageLike(s){ return /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(String(s||"")); }
 function isEmojiLike(s){ return false; }
@@ -7484,9 +7506,9 @@ function setView(name){
   }
   if(name==="runtime"){
     runtime.resizeDisplay();
-    focusRuntimeViewport();
-    requestAnimationFrame(()=>{ runtime.resizeDisplay(); focusRuntimeViewport(); });
-    setTimeout(()=>{ runtime.resizeDisplay(); focusRuntimeViewport(); },80);
+    scheduleRuntimeViewportFocus();
+    requestAnimationFrame(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
+    setTimeout(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); },80);
   }
   if(name==="docs") buildDocs();
   refreshTopbarRuntimeControls();
@@ -9709,12 +9731,12 @@ function wireUI(){
     if(mode==='reset') runtime.reset(code);
     else runtime.rerun(code);
     resetToolbar();
-    focusRuntimeViewport();
+    scheduleRuntimeViewportFocus();
     if(typeof applyRuntimeUiHiddenState==='function') applyRuntimeUiHiddenState();
   }
   ["pointerdown","mousedown","touchstart","click"].forEach(type=>{
-    $("screen")?.addEventListener(type,()=>focusRuntimeViewport(),{passive:true});
-    $("screenStage")?.addEventListener(type,()=>focusRuntimeViewport(),{passive:true});
+    $("screen")?.addEventListener(type,()=>scheduleRuntimeViewportFocus(),{passive:true});
+    $("screenStage")?.addEventListener(type,()=>scheduleRuntimeViewportFocus(),{passive:true});
   });
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); runRuntimeFromEditor('rerun'); });
   const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ $("importFormatRow")?.classList.add('hidden'); $("exportFormatRow")?.classList.add('hidden'); closeLoadPanel(); } };
