@@ -1389,18 +1389,10 @@ function isFocusPreservingTarget(target){
   if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT') return true;
   return !!target.closest('#menu,.runtimeDialogCard');
 }
-function safeFocusRuntimeViewport(){
-  const canvas=$("screen");
-  const stage=$("screenStage");
-  const app=canvas||stage;
-  if(!app) return false;
-  if(!app.hasAttribute('tabindex')) app.setAttribute('tabindex','0');
-  return focusIfAppropriate(app,{allowWhenHidden:true}) || (stage?focusIfAppropriate(stage,{allowWhenHidden:true}):false);
-}
 function focusRuntimeViewport(){
   if(state.activeView!=="runtime") return false;
   if(isFocusPreservingTarget(document.activeElement)) return false;
-  return safeFocusRuntimeViewport();
+  return focusIfAppropriate($("screen"),{allowWhenHidden:true}) || focusIfAppropriate($("screenStage"),{allowWhenHidden:true});
 }
 function scheduleRuntimeViewportFocus(delay=0){
   const run=()=>{
@@ -7521,10 +7513,10 @@ function setView(name){
     });
   }
   if(name==="runtime"){
-    if(runtime && typeof runtime.resizeDisplay==='function') runtime.resizeDisplay();
+    runtime.resizeDisplay();
     scheduleRuntimeViewportFocus();
-    requestAnimationFrame(()=>{ if(runtime && typeof runtime.resizeDisplay==='function') runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
-    setTimeout(()=>{ if(runtime && typeof runtime.resizeDisplay==='function') runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); },80);
+    requestAnimationFrame(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
+    setTimeout(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); },80);
   }
   if(name==="docs") buildDocs();
   refreshTopbarRuntimeControls();
@@ -9750,17 +9742,9 @@ function wireUI(){
     scheduleRuntimeViewportFocus();
     if(typeof applyRuntimeUiHiddenState==='function') applyRuntimeUiHiddenState();
   }
-  const focusRuntimeFromInteraction=event=>{
-    const target=event?.target;
-    if(target instanceof HTMLElement){
-      const tag=target.tagName;
-      if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'||tag==='BUTTON'||target.isContentEditable) return;
-    }
-    scheduleRuntimeViewportFocus();
-  };
-  ['pointerdown','click'].forEach(type=>{
-    $("screen")?.addEventListener(type,focusRuntimeFromInteraction,{passive:true});
-    $("screenStage")?.addEventListener(type,focusRuntimeFromInteraction,{passive:true});
+  ["pointerdown","mousedown","touchstart","click"].forEach(type=>{
+    $("screen")?.addEventListener(type,()=>scheduleRuntimeViewportFocus(),{passive:true});
+    $("screenStage")?.addEventListener(type,()=>scheduleRuntimeViewportFocus(),{passive:true});
   });
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); runRuntimeFromEditor('rerun'); });
   const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ $("importFormatRow")?.classList.add('hidden'); $("exportFormatRow")?.classList.add('hidden'); closeLoadPanel(); } };
@@ -10335,7 +10319,6 @@ try{
 }
 try{
   bootRuntimeIntoEditor();
-  requestAnimationFrame(()=>{ if(state.activeView==='runtime') safeFocusRuntimeViewport(); });
 }catch(err){
   runtime=createRuntimeFallback(reportStartupFailure('Runtime startup failed', err));
 }
