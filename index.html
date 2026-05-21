@@ -329,82 +329,83 @@
 
 
     body:not(.dark-mode){
-      --bg:#4f8049;
-      --paper:#9fbc78;
-      --panel:#72975b;
-      --panel2:#4f8049;
-      --line:#0b3811;
-      --shadow:#315d2b;
-      --ink:#092b0d;
-      --accent:#e9f4c4;
-      --accent2:#cbe89d;
-      --blue:#658f59;
-      --green:#3f7137;
-      --cream:#f1f7d8;
-      --danger:#123f18;
-      background:linear-gradient(140deg,#d9e9bf 0%,#bfd9a1 42%,#9fc27f 100%)
+      /* "Day" theme: slightly darker + less neon-green, with more varied accents */
+      --bg:#6f8467;
+      --paper:#f1efe3;
+      --panel:#c9d0b7;
+      --panel2:#aab69b;
+      --line:#2f4a3f;
+      --shadow:#4f6b5f;
+      --ink:#173028;
+      --accent:#3f6f7a;   /* teal */
+      --accent2:#b08a5a;  /* ochre */
+      --blue:#4d6f9b;     /* slate-blue */
+      --green:#4f7a59;    /* muted green */
+      --cream:#fbf6e7;
+      --danger:#7a3f38;   /* rust */
+      background:linear-gradient(140deg,#e1e0d6 0%,#c9d0b7 42%,#aab69b 100%)
     }
-    body:not(.dark-mode) .topbar{background:linear-gradient(180deg,#eef6d5 0 52%,#c9e2ab 52% 100%);border-bottom-color:#0b3811;box-shadow:inset 0 -4px 0 #315d2b}
-    body:not(.dark-mode) .brand{background:linear-gradient(180deg,#e9f4c4,#9fbc78);color:#0b3811;text-shadow:1px 1px 0 #f1f7d8;box-shadow:0 4px 0 #315d2b;border-color:#0b3811}
+    body:not(.dark-mode) .topbar{background:linear-gradient(180deg,#f1efe3 0 52%,#c9d0b7 52% 100%);border-bottom-color:var(--line);box-shadow:inset 0 -4px 0 var(--shadow)}
+    body:not(.dark-mode) .brand{background:linear-gradient(180deg,#7aa6b2,#3f6f7a);color:#0b1f22;text-shadow:1px 1px 0 rgba(251,246,231,.85);box-shadow:0 4px 0 var(--shadow);border-color:var(--line)}
     body:not(.dark-mode) .tab,
     body:not(.dark-mode) .fileBtn,
     body:not(.dark-mode) .uiBtn,
     body:not(.dark-mode) .mbtn,
     body:not(.dark-mode) .smallbtn,
-    body:not(.dark-mode) .loadExampleBtn{background:linear-gradient(180deg,#d6ebb6,#7fa862);border-color:#0b3811;color:#092b0d;box-shadow:0 4px 0 #315d2b;border-radius:4px}
+    body:not(.dark-mode) .loadExampleBtn{background:linear-gradient(180deg,#e7e3d5,#b9c3aa);border-color:var(--line);color:var(--ink);box-shadow:0 4px 0 var(--shadow);border-radius:4px}
     body:not(.dark-mode) .tab.active,
-    body:not(.dark-mode) .uiBtn.active{background:linear-gradient(180deg,#f1f7d8,#cbe89d);border-color:#0b3811;color:#0b3811;box-shadow:0 4px 0 #244b23,0 0 0 2px rgba(9,43,13,.2) inset}
+    body:not(.dark-mode) .uiBtn.active{background:linear-gradient(180deg,#fbf6e7,#d9d7c7);border-color:var(--line);color:var(--ink);box-shadow:0 4px 0 #2a3f35,0 0 0 2px rgba(23,48,40,.14) inset}
     body:not(.dark-mode) .tab.cat-logic,
     body:not(.dark-mode) .uiBtn.cat-logic,
-    body:not(.dark-mode) .mbtn.cat-logic{background:linear-gradient(180deg,#9fbc78,#5f8c4b);border-color:#0b3811;color:#092b0d;box-shadow:0 4px 0 #244b23}
+    body:not(.dark-mode) .mbtn.cat-logic{background:linear-gradient(180deg,#7aa6b2,#3f6f7a);border-color:var(--line);color:#0b1f22;box-shadow:0 4px 0 #2a3f35}
     body:not(.dark-mode) .tab.cat-graphics,
     body:not(.dark-mode) .uiBtn.cat-graphics,
-    body:not(.dark-mode) .mbtn.cat-graphics{background:linear-gradient(180deg,#cbe89d,#86a968);border-color:#0b3811;color:#092b0d;box-shadow:0 4px 0 #315d2b}
+    body:not(.dark-mode) .mbtn.cat-graphics{background:linear-gradient(180deg,#d8b07a,#b08a5a);border-color:var(--line);color:#2a1c10;box-shadow:0 4px 0 #2a3f35}
     body:not(.dark-mode) .tab.cat-sound,
     body:not(.dark-mode) .uiBtn.cat-sound,
-    body:not(.dark-mode) .mbtn.cat-sound{background:linear-gradient(180deg,#e9f4c4,#9fbc78);border-color:#0b3811;color:#092b0d;box-shadow:0 4px 0 #315d2b}
+    body:not(.dark-mode) .mbtn.cat-sound{background:linear-gradient(180deg,#9fb1e1,#4d6f9b);border-color:var(--line);color:#0f1f35;box-shadow:0 4px 0 #2a3f35}
     body:not(.dark-mode) .panelSkin,
-    body:not(.dark-mode) .codeView{background:linear-gradient(180deg,#a7c684,#678c52);box-shadow:inset 0 0 0 3px rgba(241,247,216,.34),0 6px 0 #244b23;border-color:#0b3811;border-radius:6px}
+    body:not(.dark-mode) .codeView{background:linear-gradient(180deg,#cfd3c3,#8fa295);box-shadow:inset 0 0 0 3px rgba(251,246,231,.32),0 6px 0 #2a3f35;border-color:var(--line);border-radius:6px}
     body:not(.dark-mode) .pane,
     body:not(.dark-mode) .spritePanelPreview,
     body:not(.dark-mode) .tileBtn,
     body:not(.dark-mode) .itemRow,
     body:not(.dark-mode) .strokeStepper,
     body:not(.dark-mode) .miniKey,
-    body:not(.dark-mode) .menuToggleLabel{background:linear-gradient(180deg,#d2e8b1,#7ca260);box-shadow:0 3px 0 #315d2b;border-color:#0b3811}
-    body:not(.dark-mode) .field label{color:#123f18}
+    body:not(.dark-mode) .menuToggleLabel{background:linear-gradient(180deg,#e7e3d5,#b9c3aa);box-shadow:0 3px 0 var(--shadow);border-color:var(--line)}
+    body:not(.dark-mode) .field label{color:var(--ink)}
     body:not(.dark-mode) .sidebar input,
     body:not(.dark-mode) .sidebar select,
     body:not(.dark-mode) .sidebar textarea,
     body:not(.dark-mode) .menuSettingRow select,
-    body:not(.dark-mode) .runtimeDialogInput{background:#e9f4c4;color:#092b0d;border-color:#0b3811}
+    body:not(.dark-mode) .runtimeDialogInput{background:#f1efe3;color:var(--ink);border-color:var(--line)}
     body:not(.dark-mode) .docsSection,
     body:not(.dark-mode) .menuCard,
     body:not(.dark-mode) .menuLoadPanel,
-    body:not(.dark-mode) .toast{background:linear-gradient(180deg,#accb89,#62844e);box-shadow:0 6px 0 #244b23;border-color:#0b3811;border-radius:6px}
-    body:not(.dark-mode) .menuSection{border-color:rgba(11,56,17,.65);background:rgba(203,232,157,.18)}
-    body:not(.dark-mode) .menuSectionHeader{background:linear-gradient(180deg,#edf6d6,#a7c684);border-color:#0b3811;color:#092b0d;border-radius:4px}
-    body:not(.dark-mode) .menuToggleInput{background:linear-gradient(180deg,#9fbc78,#4f8049);border-color:#0b3811}
-    body:not(.dark-mode) .menuToggleInput::after{background:linear-gradient(180deg,#f1f7d8,#cbe89d);box-shadow:0 2px 0 rgba(9,43,13,.3)}
-    body:not(.dark-mode) .menuToggleInput:checked{background:linear-gradient(180deg,#e9f4c4,#72975b);border-color:#0b3811}
-    body:not(.dark-mode) .docsSection h3{background:linear-gradient(180deg,#123f18,#0b3811);color:#f1f7d8;text-shadow:1px 1px 0 #092b0d}
-    body:not(.dark-mode) .docCode{background:#4f8049;color:#f1f7d8}
-    body:not(.dark-mode) .codeScrollShell{background:#315d2b;box-shadow:inset 0 0 0 3px rgba(241,247,216,.18);border-radius:6px}
-    body:not(.dark-mode) .codeEditorSurface{background:#4f8049;box-shadow:inset 0 0 0 3px rgba(11,56,17,.38);border-color:#0b3811;border-radius:4px}
-    body:not(.dark-mode) .codeLineNumbers{background:#315d2b;color:#cbe89d;border-right-color:rgba(11,56,17,.7)}
-    body:not(.dark-mode) .codeHighlight{color:#f1f7d8}
-    body:not(.dark-mode) .code textarea.code{caret-color:#f1f7d8}
-    body:not(.dark-mode) .code textarea.code::selection{background:rgba(203,232,157,.34)}
-    body:not(.dark-mode) .tok-comment{color:#a8c08e}
-    body:not(.dark-mode) .tok-keyword{color:#fff9df;font-weight:700}
-    body:not(.dark-mode) .tok-builtin{color:#9dd8ff}
-    body:not(.dark-mode) .tok-function{color:#ffd37f}
-    body:not(.dark-mode) .tok-number{color:#ffbe95}
-    body:not(.dark-mode) .tok-string{color:#ff9bc6}
-    body:not(.dark-mode) .tok-operator{color:#f6ffe9}
-    body:not(.dark-mode) .tok-identifier{color:#e9f4d0}
-    body:not(.dark-mode) .codeFunctionTooltip{background:linear-gradient(180deg,#e9f4c4,#9fbc78);box-shadow:0 5px 0 rgba(9,43,13,.42);border-color:#0b3811}
-    body:not(.dark-mode) .attachedPane{background:linear-gradient(180deg,#9fbc78,#5f8c4b);border-color:#0b3811}
+    body:not(.dark-mode) .toast{background:linear-gradient(180deg,#e7e3d5,#b9c3aa);box-shadow:0 6px 0 #2a3f35;border-color:var(--line);border-radius:6px}
+    body:not(.dark-mode) .menuSection{border-color:rgba(47,74,63,.55);background:rgba(77,111,155,.08)}
+    body:not(.dark-mode) .menuSectionHeader{background:linear-gradient(180deg,#fbf6e7,#d9d7c7);border-color:var(--line);color:var(--ink);border-radius:4px}
+    body:not(.dark-mode) .menuToggleInput{background:linear-gradient(180deg,#cfd3c3,#8fa295);border-color:var(--line)}
+    body:not(.dark-mode) .menuToggleInput::after{background:linear-gradient(180deg,#fbf6e7,#e1ddd0);box-shadow:0 2px 0 rgba(23,48,40,.22)}
+    body:not(.dark-mode) .menuToggleInput:checked{background:linear-gradient(180deg,#7aa6b2,#3f6f7a);border-color:var(--line)}
+    body:not(.dark-mode) .docsSection h3{background:linear-gradient(180deg,#3f6f7a,#2f4a3f);color:#fbf6e7;text-shadow:1px 1px 0 rgba(11,31,34,.6)}
+    body:not(.dark-mode) .docCode{background:#2a3f35;color:#fbf6e7}
+    body:not(.dark-mode) .codeScrollShell{background:#2a3f35;box-shadow:inset 0 0 0 3px rgba(251,246,231,.14);border-radius:6px}
+    body:not(.dark-mode) .codeEditorSurface{background:#31473d;box-shadow:inset 0 0 0 3px rgba(47,74,63,.35);border-color:var(--line);border-radius:4px}
+    body:not(.dark-mode) .codeLineNumbers{background:#2a3f35;color:#d9d7c7;border-right-color:rgba(47,74,63,.65)}
+    body:not(.dark-mode) .codeHighlight{color:#fbf6e7}
+    body:not(.dark-mode) .code textarea.code{caret-color:#fbf6e7}
+    body:not(.dark-mode) .code textarea.code::selection{background:rgba(122,166,178,.22)}
+    body:not(.dark-mode) .tok-comment{color:#9cb3a7}
+    body:not(.dark-mode) .tok-keyword{color:#fbf6e7;font-weight:700}
+    body:not(.dark-mode) .tok-builtin{color:#b9d7ff}
+    body:not(.dark-mode) .tok-function{color:#f6c27a}
+    body:not(.dark-mode) .tok-number{color:#f1b08a}
+    body:not(.dark-mode) .tok-string{color:#f0a6c5}
+    body:not(.dark-mode) .tok-operator{color:#fbf6e7}
+    body:not(.dark-mode) .tok-identifier{color:#e6efe6}
+    body:not(.dark-mode) .codeFunctionTooltip{background:linear-gradient(180deg,#fbf6e7,#d9d7c7);box-shadow:0 5px 0 rgba(42,63,53,.42);border-color:var(--line)}
+    body:not(.dark-mode) .attachedPane{background:linear-gradient(180deg,#c9d0b7,#8fa295);border-color:var(--line)}
     .attachedPane{margin:0 0 10px 0;background:linear-gradient(180deg,#eef4e5,#cadcc8)}
     .splitView:not(.sidebar-hidden) .canvasWrap{filter:grayscale(.65) opacity(.55);pointer-events:none}
     .splitView:not(.sidebar-hidden) .canvasWrap::after{content:'';position:absolute;inset:0;background:rgba(80,93,88,.34);z-index:30;pointer-events:auto;border-radius:12px}
@@ -742,14 +743,31 @@ const SCALE_MAP = {
   pentatonic:[0,2,4,7,9],
   dorian:[0,2,3,5,7,9,10]
 };
-const FILE_TAB_THEMES = [
-  { base: "#89b8ff", deep: "#4c84d7", border: "#234979", text: "#10243d" },
-  { base: "#f39be8", deep: "#cc62bf", border: "#7f2f73", text: "#34152f" },
-  { base: "#bea4ff", deep: "#8364d8", border: "#4a3485", text: "#1f163d" },
-  { base: "#7ec5ff", deep: "#4c93d5", border: "#24547f", text: "#10273d" },
-  { base: "#ff9dcd", deep: "#d7679d", border: "#8a3961", text: "#351422" },
-  { base: "#c7a2ff", deep: "#8e69dc", border: "#593a90", text: "#24163c" }
+const FILE_TAB_THEMES_LIGHT = [
+  { base: "#b9c3aa", deep: "#8fa295", border: "#2f4a3f", text: "#173028" }, // sage
+  { base: "#d9d7c7", deep: "#b9c3aa", border: "#2f4a3f", text: "#173028" }, // linen
+  { base: "#7aa6b2", deep: "#3f6f7a", border: "#224349", text: "#0b1f22" }, // teal
+  { base: "#9fb1e1", deep: "#4d6f9b", border: "#22364f", text: "#0f1f35" }, // slate-blue
+  { base: "#d8b07a", deep: "#b08a5a", border: "#4b3a22", text: "#2a1c10" }, // ochre
+  { base: "#d3a1a7", deep: "#9b5b66", border: "#4a2a31", text: "#271316" }, // dusty rose
+  { base: "#c7b8e8", deep: "#7a66b6", border: "#3b2e67", text: "#1d1738" }, // lavender
+  { base: "#b7c7d8", deep: "#6f8399", border: "#2b3a4a", text: "#121e29" }  // steel
 ];
+const FILE_TAB_THEMES_DARK = [
+  { base: "#2a3655", deep: "#1b2541", border: "#4f628a", text: "#e9eefb" }, // indigo
+  { base: "#3b2a3f", deep: "#231627", border: "#9a70b2", text: "#f7ecff" }, // plum
+  { base: "#203a4a", deep: "#122331", border: "#59d0c2", text: "#dcfff9" }, // teal
+  { base: "#3a2430", deep: "#231420", border: "#ff8fa3", text: "#fff0f3" }, // rose
+  { base: "#2d2b3f", deep: "#19172a", border: "#79a7ff", text: "#e9eefb" }, // violet-blue
+  { base: "#3a321f", deep: "#241d10", border: "#f7b267", text: "#fff4e7" }, // amber
+  { base: "#1f3a2f", deep: "#102419", border: "#67c9a7", text: "#eafff6" }, // green-teal
+  { base: "#3a2b22", deep: "#231711", border: "#f6c07d", text: "#fff5ea" }  // warm
+];
+const FILE_TAB_THEME_COUNT = FILE_TAB_THEMES_LIGHT.length;
+function getFileTabThemes(){
+  const isDark = !!document.body && document.body.classList.contains("dark-mode");
+  return isDark ? FILE_TAB_THEMES_DARK : FILE_TAB_THEMES_LIGHT;
+}
 const PRINT_FONTS = ["Press Start 2P","Orbitron","Rajdhani","Inter","Merriweather","Playfair Display"];
 const PRINT_FONT_STYLESHEET_HREF = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:wght@400;700&family=Orbitron:wght@500;700&family=Playfair+Display:wght@500;700&family=Press+Start+2P&family=Rajdhani:wght@500;700&display=swap';
 const DEFAULT_PRINT_FONT = 'Press Start 2P';
@@ -759,7 +777,7 @@ function normalizePrintFontName(value){
   return PRINT_FONTS.includes(raw)?raw:DEFAULT_PRINT_FONT;
 }
 const EXAMPLES = {
-  blank:`function _init()\nend\n\nfunction _update()\nend\n\nfunction _draw()\n  cls()\nend`
+  blank:`function _init()\nend\n\nfunction _tick()\n  cls()\nend`
 };
 const LUA_RUNTIME_HELPERS = `local __tc_builtin_pairs = pairs
 
@@ -1251,7 +1269,7 @@ function ensurePalettePages(p){
   }
 }
 function seedSpriteDemo(sp){ for(let y=0;y<sp.h;y++){ for(let x=0;x<sp.w;x++){ sp.pixels[y][x]=1; } } for(let y=2;y<14;y++){ for(let x=2;x<14;x++){ sp.pixels[y][x]=5; } } for(let y=4;y<12;y++){ for(let x=4;x<12;x++){ sp.pixels[y][x]=7; } } for(let y=5;y<8;y++){ for(let x=4;x<7;x++) sp.pixels[y][x]=15; for(let x=9;x<12;x++) sp.pixels[y][x]=15; } for(let y=9;y<12;y++){ for(let x=5;x<11;x++) sp.pixels[y][x]=10; } for(let x=5;x<11;x++){ sp.pixels[8][x]=15; } return sp; }
-function defaultProject(){ return {project:{tile_w:16,tile_h:16,map_w:32,map_h:32},settings:{movementInput:'left_joystick',displayMode:'normal',defaultPrintFont:DEFAULT_PRINT_FONT,darkMode:false},palette:[...DEFAULT_PALETTE],spriteFolders:[{frames:[makeSprite(16,16)]}],sounds:[makeSound()],music:[makeMusic()],codeFiles:[{name:"main.lua",content:EXAMPLES.blank,tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}],tileDefs:{0:makeBlankTileDef(),1:{source:"",flags:{0:false},bg:"#2f855a",bgEnabled:true,animated:false,animFolder:0,animSpeed:6},2:{source:"",flags:{0:true},bg:"#4a5568",bgEnabled:true,animated:false,animFolder:0,animSpeed:6},3:{source:"",flags:{0:false},bg:"#8b5cf6",bgEnabled:true,animated:false,animFolder:0,animSpeed:6}},maps:[makeEmptyMap("0",32,32)]}; }
+function defaultProject(){ return {project:{tile_w:16,tile_h:16,map_w:32,map_h:32},settings:{movementInput:'left_joystick',displayMode:'normal',defaultPrintFont:DEFAULT_PRINT_FONT,darkMode:true},palette:[...DEFAULT_PALETTE],spriteFolders:[{frames:[makeSprite(16,16)]}],sounds:[makeSound()],music:[makeMusic()],codeFiles:[{name:"main.lua",content:EXAMPLES.blank,tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}],tileDefs:{0:makeBlankTileDef(),1:{source:"",flags:{0:false},bg:"#2f855a",bgEnabled:true,animated:false,animFolder:0,animSpeed:6},2:{source:"",flags:{0:true},bg:"#4a5568",bgEnabled:true,animated:false,animFolder:0,animSpeed:6},3:{source:"",flags:{0:false},bg:"#8b5cf6",bgEnabled:true,animated:false,animFolder:0,animSpeed:6}},maps:[makeEmptyMap("0",32,32)]}; }
 function currentMap(){ return state.appProject.maps[state.currentMapIndex]; }
 function currentLayers(){ return currentMap().layers; }
 function currentSpriteFolder(){ return state.appProject.spriteFolders[state.currentSpriteIndex]; }
@@ -1475,8 +1493,8 @@ function ensureProjectData(){
   if(!p.sounds?.length) p.sounds=[makeSound()];
   if(!p.music?.length) p.music=[makeMusic()];
   if(!p.maps?.length) p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
-  if(!p.codeFiles?.length) p.codeFiles=[{name:"main.lua",content:EXAMPLES.blank,tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}];
-  p.codeFiles=p.codeFiles.map((f,i)=>({name:(f&&f.name)||`file${i+1}.lua`,content:(f&&f.content)||"",tabTheme:Number.isInteger(f&&f.tabTheme)?f.tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}));
+  if(!p.codeFiles?.length) p.codeFiles=[{name:"main.lua",content:EXAMPLES.blank,tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}];
+  p.codeFiles=p.codeFiles.map((f,i)=>({name:(f&&f.name)||`file${i+1}.lua`,content:(f&&f.content)||"",tabTheme:Number.isInteger(f&&f.tabTheme)?f.tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}));
   p.spriteFolders.forEach(folder=>{ if(!folder.frames?.length) folder.frames=[makeSprite(16,16)]; folder.frames=folder.frames.slice(0,26); folder.frames.forEach(s=>{ s.w=Math.max(1,s.w|0); s.h=Math.max(1,s.h|0); if(!Array.isArray(s.pixels)) s.pixels=[]; s.pixels.length=s.h; for(let y=0;y<s.h;y++){ if(!Array.isArray(s.pixels[y])) s.pixels[y]=[]; s.pixels[y].length=s.w; for(let x=0;x<s.w;x++) if(s.pixels[y][x]==null) s.pixels[y][x]=-1; } }); folder.name=String(folder.name||''); ensureSpriteFolderView(folder); });
   p.sounds.forEach(s=>{ s.name=String(s.name||''); if(!Array.isArray(s.wavetable)) s.wavetable=Array.from({length:64},()=>0); while(s.wavetable.length<64) s.wavetable.push(0); s.wavetable=s.wavetable.slice(0,64); });
   p.music.forEach(m=>{
@@ -1857,7 +1875,8 @@ function renderCodeTabs(){
   const clearDropHints=()=>bar.querySelectorAll('.drop-before,.drop-after').forEach(el=>el.classList.remove('drop-before','drop-after'));
   state.appProject.codeFiles.forEach((f,i)=>{
     const b=document.createElement("button");
-    const theme=FILE_TAB_THEMES[(Number.isInteger(f.tabTheme)?f.tabTheme:0)%FILE_TAB_THEMES.length];
+    const themes=getFileTabThemes();
+    const theme=themes[(Number.isInteger(f.tabTheme)?f.tabTheme:0)%themes.length];
     b.className="codeFileTab"+(i===state.currentCodeFile?" active":"");
     b.textContent=codeTabLabel(f.name); b.title=f.name;
     b.style.setProperty("--tab-base", theme.base); b.style.setProperty("--tab-deep", theme.deep); b.style.setProperty("--tab-border", theme.border); b.style.setProperty("--tab-text", theme.text);
@@ -2065,7 +2084,7 @@ function finishNewProject(){
   state.appProject = defaultProject();
   invalidateEditorRenderCache();
   ensureProjectData();
-  state.appProject.codeFiles = [{name:"main.lua", content: EXAMPLES.blank, tabTheme: Math.floor(Math.random()*FILE_TAB_THEMES.length)}];
+  state.appProject.codeFiles = [{name:"main.lua", content: EXAMPLES.blank, tabTheme: Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}];
   refreshMenuSettingsUI();
   renderCodeTabs();
   loadCurrentCodeFileToEditor();
@@ -2423,6 +2442,7 @@ function refreshProjectList(){
 function applyThemeUI(){
   ensureProjectData();
   document.body.classList.toggle('dark-mode', !!state.appProject.settings.darkMode);
+  renderCodeTabs();
   drawSpriteEditor();
   drawMapEditor();
 }
@@ -2451,7 +2471,7 @@ function importCodeFile(file){
       state.appProject.codeFiles[existingIndex].content=content;
       state.currentCodeFile=existingIndex;
     }else{
-      state.appProject.codeFiles.push({name:targetName,content,tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)});
+      state.appProject.codeFiles.push({name:targetName,content,tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)});
       state.currentCodeFile=state.appProject.codeFiles.length-1;
     }
     renderCodeTabs();
@@ -2501,7 +2521,7 @@ function importCodeTxtBundle(fileName, content){
     state.appProject.codeFiles.push({
       name:uniqueName,
       content:section.lines.join('\n'),
-      tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)
+      tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)
     });
     importedCount+=1;
   });
@@ -2771,7 +2791,7 @@ async function importProjectZip(file){
       const importedCodeFiles=[];
       for(const fileEntry of codeFiles){
         const content=await fileEntry.entry.async('string');
-        importedCodeFiles.push({name:fileEntry.name, content, tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)});
+        importedCodeFiles.push({name:fileEntry.name, content, tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)});
       }
       importedProject={
         project,
@@ -2955,7 +2975,7 @@ function loadExampleProject(){
   p.music=[{file:"song.ogg",loop:true}];
   p.settings.movementInput='left_joystick';
   p.settings.displayMode='normal';
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`x=64
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`x=64
 y=64
 speed=1.35
 deadzone=0.2
@@ -3140,7 +3160,7 @@ function loadUiMouseExampleProject(){
   p.palette[12]="#86b1ff";
   p.palette[13]="#b31f24";
   p.palette[14]="#f7b267";
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`name = "friend"
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`name = "friend"
 screen = "studio"
 dark_style = false
 particles = {}
@@ -3607,7 +3627,7 @@ function loadPosterShowcaseExampleProject(){
   p.music=[makeMusic()];
   p.settings.movementInput='dpad';
   p.settings.displayMode='normal';
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`state = "menu"
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`state = "menu"
 player = {}
 particles = {}
 pickups = {}
@@ -4598,7 +4618,7 @@ function loadUiFunctionsExampleProject(){
   p.tileDefs={0:makeBlankTileDef()};
   p.settings.movementInput='none';
   p.settings.displayMode='normal';
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- UI FUNCTIONS/buttons, lists and dropdowns
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`-- UI FUNCTIONS/buttons, lists and dropdowns
 -- difficulty: easy
 
 team_a={"ava","ben","cara"}
@@ -6064,7 +6084,7 @@ function load2048ParticlesExampleProject(){
   p.tileDefs={0:makeBlankTileDef()};
   p.settings.movementInput='dpad';
   p.settings.displayMode='normal';
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`board = {}
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`board = {}
 particles = {}
 move_lock = false
 score = 0
@@ -6299,7 +6319,7 @@ function loadNotesSaveLoadExampleProject(){
   p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
   p.tileDefs={0:makeBlankTileDef()};
   p.settings.movementInput='none';
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`notes = {}
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`notes = {}
 selected = 1
 status = "tap add to open onscreen keyboard"
 pending_add = false
@@ -6467,7 +6487,7 @@ function loadFlappyHighScoreExampleProject(){
   p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
   p.tileDefs={0:makeBlankTileDef()};
   p.settings.movementInput='dpad';
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`bird = {x=90, y=120, vy=0}
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`bird = {x=90, y=120, vy=0}
 pipes = {}
 score = 0
 high_score = 0
@@ -6577,7 +6597,7 @@ end`}];
 function loadCrosswordPuzzleExampleProject(){
   finishNewProject();
   const p=state.appProject;
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- CROSSWORD PUZZLE (docs example)
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`-- CROSSWORD PUZZLE (docs example)
 -- Features shown: word amount (3/5/10), word length (3/4/5/6), timed or non-timed,
 -- pause that hides board, click-select whole words for points, persistent timed high score,
 -- and regenerated word tables for replay value.
@@ -6742,7 +6762,7 @@ end`}];
 function loadTenSumExampleProject(){
   finishNewProject();
   const p=state.appProject;
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- TEN-SUM (docs example)
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`-- TEN-SUM (docs example)
 -- Features shown: 10x10 or 20x20 board, 60 second timer,
 -- line selection + rectangle selection, scoring by selected square count, persistent high score.
 
@@ -6827,7 +6847,7 @@ end`}];
 function loadConveyItExampleProject(){
   finishNewProject();
   const p=state.appProject;
-  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length),content:`-- CONVEY IT (docs example)
+  p.codeFiles=[{name:"main.lua",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT),content:`-- CONVEY IT (docs example)
 -- Single letters move along a conveyor. Click/select letters to form 3-letter words.
 -- Completing a 3-letter word gives a point and removes those letters.
 -- Missed letters fall off and break. Persistent high score included.
@@ -9968,7 +9988,7 @@ function wireUI(){
   bindClick("spriteOnionBtn",()=>{ const order=["off","previousframe","nextframe"]; const idx=order.indexOf(String(state.spriteOnionMode||"off")); state.spriteOnionMode=order[(idx+1)%order.length]; updateSpriteOnionButton(); drawSpriteEditor(); });
   bindClick("spriteClearBtn",clearCurrentSpriteFrame); const adjustSpriteFolderFrames=(delta)=>{ const folder=currentSpriteFolder(); const n=Math.max(1,Math.min(26,folder.frames.length+delta)); if(n===folder.frames.length) return; while(folder.frames.length<n) folder.frames.push(makeSprite(currentSprite().w,currentSprite().h)); while(folder.frames.length>n){ const removedFrame=folder.frames[folder.frames.length-1]; if(!isSpriteFrameEmpty(removedFrame) && !confirm(`Remove frame ${spriteFrameName(folder.frames.length-1)}? This frame is not empty.`)) return; folder.frames.pop(); } invalidateEditorRenderCache(); state.currentSpriteFrame=Math.min(state.currentSpriteFrame, folder.frames.length-1); syncSpriteUI(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); }; bindClick("spriteFolderMinusBtn",()=>adjustSpriteFolderFrames(-1)); bindClick("spriteFolderPlusBtn",()=>adjustSpriteFolderFrames(1));
   bindClick("spriteAnimPreviewToggleBtn",()=>{ state.spriteAnimPreviewVisible=!(state.spriteAnimPreviewVisible!==false); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); });
-  bindClick("addCodeTabBtn",()=>{ saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); const name=prompt("New file name:",`file${state.appProject.codeFiles.length+1}.lua`); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some(f=>f.name===trimmed)){ alert("A file with that name already exists."); return; } state.appProject.codeFiles.push({name:trimmed,content:"",tabTheme:Math.floor(Math.random()*FILE_TAB_THEMES.length)}); state.currentCodeFile=state.appProject.codeFiles.length-1; renderCodeTabs(); loadCurrentCodeFileToEditor(); });
+  bindClick("addCodeTabBtn",()=>{ saveEditorToCurrentCodeFile(); saveCurrentCodeViewState(); const name=prompt("New file name:",`file${state.appProject.codeFiles.length+1}.lua`); if(!name) return; const trimmed=name.trim(); if(!trimmed) return; if(state.appProject.codeFiles.some(f=>f.name===trimmed)){ alert("A file with that name already exists."); return; } state.appProject.codeFiles.push({name:trimmed,content:"",tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}); state.currentCodeFile=state.appProject.codeFiles.length-1; renderCodeTabs(); loadCurrentCodeFileToEditor(); });
   bindClick("deleteCodeTabBtn",deleteCurrentCodeFile);
   bindClick("copyRuntimeErrorBtn",copyLastRunError);
   bindClick("gotoRuntimeErrorBtn",gotoLastRunErrorLine);
@@ -10291,14 +10311,6 @@ startAutoBackupTimer();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
 
 
 
