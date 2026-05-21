@@ -37,6 +37,37 @@
     body.runtime-ui-hidden .views{position:fixed;inset:0}
     body.runtime-ui-hidden #view-runtime .runtimeView{inset:0;padding:0;border:none;border-radius:0;box-shadow:none;background:#000}
     body.runtime-ui-hidden #view-runtime .screenStage{inset:0;border:none;border-radius:0;box-shadow:none;background:#000}
+
+    body.dark-mode .tab,
+    body.dark-mode .fileBtn,
+    body.dark-mode .uiBtn,
+    body.dark-mode .mbtn,
+    body.dark-mode .smallbtn,
+    body.dark-mode .loadExampleBtn,
+    body.dark-mode .panelSkin,
+    body.dark-mode .codeView,
+    body.dark-mode .pane,
+    body.dark-mode .itemRow,
+    body.dark-mode .tileBtn,
+    body.dark-mode .spritePanelPreview,
+    body.dark-mode .strokeStepper,
+    body.dark-mode .menuToggleLabel,
+    body.dark-mode .menuSection,
+    body.dark-mode .menuSectionHeader,
+    body.dark-mode .menuLoadPanel,
+    body.dark-mode .codeScrollShell,
+    body.dark-mode .codeEditorSurface,
+    body.dark-mode .codeSearchInput,
+    body.dark-mode .sidebar input,
+    body.dark-mode .sidebar select,
+    body.dark-mode .sidebar textarea{border-radius:4px}
+    body.dark-mode .menuToggleInput,
+    body.dark-mode .menuToggleInput::after,
+    body.dark-mode .joy,
+    body.dark-mode .joy .knob,
+    body.dark-mode .symbtn,
+    body.dark-mode .dpadBtn,
+    body.dark-mode .sysbtn{border-radius:6px}
     @media (max-width: 900px){
       .runtimeHideBtn{display:none !important}
     }
@@ -311,19 +342,16 @@
       --green:#3f7137;
       --cream:#f1f7d8;
       --danger:#123f18;
-      background:
-        repeating-linear-gradient(0deg,rgba(9,43,13,.12) 0 2px,transparent 2px 6px),
-        repeating-linear-gradient(90deg,rgba(241,247,216,.1) 0 8px,transparent 8px 24px),
-        linear-gradient(90deg,#3f7137 0 18%,#5f8c4b 18% 36%,#86a968 36% 54%,#4f8049 54% 72%,#72975b 72% 90%,#cbe89d 90% 100%)
+      background:linear-gradient(140deg,#d9e9bf 0%,#bfd9a1 42%,#9fc27f 100%)
     }
-    body:not(.dark-mode) .topbar{background:repeating-linear-gradient(90deg,rgba(11,56,17,.18) 0 4px,transparent 4px 8px),linear-gradient(180deg,#f1f7d8 0 48%,#cbe89d 48% 100%);border-bottom-color:#0b3811;box-shadow:inset 0 -4px 0 #315d2b}
+    body:not(.dark-mode) .topbar{background:linear-gradient(180deg,#eef6d5 0 52%,#c9e2ab 52% 100%);border-bottom-color:#0b3811;box-shadow:inset 0 -4px 0 #315d2b}
     body:not(.dark-mode) .brand{background:linear-gradient(180deg,#e9f4c4,#9fbc78);color:#0b3811;text-shadow:1px 1px 0 #f1f7d8;box-shadow:0 4px 0 #315d2b;border-color:#0b3811}
     body:not(.dark-mode) .tab,
     body:not(.dark-mode) .fileBtn,
     body:not(.dark-mode) .uiBtn,
     body:not(.dark-mode) .mbtn,
     body:not(.dark-mode) .smallbtn,
-    body:not(.dark-mode) .loadExampleBtn{background:repeating-linear-gradient(45deg,rgba(11,56,17,.1) 0 3px,transparent 3px 7px),linear-gradient(180deg,#cbe89d,#72975b);border-color:#0b3811;color:#092b0d;box-shadow:0 4px 0 #315d2b;border-radius:4px}
+    body:not(.dark-mode) .loadExampleBtn{background:linear-gradient(180deg,#d6ebb6,#7fa862);border-color:#0b3811;color:#092b0d;box-shadow:0 4px 0 #315d2b;border-radius:4px}
     body:not(.dark-mode) .tab.active,
     body:not(.dark-mode) .uiBtn.active{background:linear-gradient(180deg,#f1f7d8,#cbe89d);border-color:#0b3811;color:#0b3811;box-shadow:0 4px 0 #244b23,0 0 0 2px rgba(9,43,13,.2) inset}
     body:not(.dark-mode) .tab.cat-logic,
@@ -336,14 +364,14 @@
     body:not(.dark-mode) .uiBtn.cat-sound,
     body:not(.dark-mode) .mbtn.cat-sound{background:linear-gradient(180deg,#e9f4c4,#9fbc78);border-color:#0b3811;color:#092b0d;box-shadow:0 4px 0 #315d2b}
     body:not(.dark-mode) .panelSkin,
-    body:not(.dark-mode) .codeView{background:repeating-linear-gradient(90deg,rgba(11,56,17,.1) 0 6px,transparent 6px 18px),linear-gradient(180deg,#9fbc78,#5f8c4b);box-shadow:inset 0 0 0 3px rgba(241,247,216,.34),0 6px 0 #244b23;border-color:#0b3811;border-radius:6px}
+    body:not(.dark-mode) .codeView{background:linear-gradient(180deg,#a7c684,#678c52);box-shadow:inset 0 0 0 3px rgba(241,247,216,.34),0 6px 0 #244b23;border-color:#0b3811;border-radius:6px}
     body:not(.dark-mode) .pane,
     body:not(.dark-mode) .spritePanelPreview,
     body:not(.dark-mode) .tileBtn,
     body:not(.dark-mode) .itemRow,
     body:not(.dark-mode) .strokeStepper,
     body:not(.dark-mode) .miniKey,
-    body:not(.dark-mode) .menuToggleLabel{background:repeating-linear-gradient(45deg,rgba(11,56,17,.08) 0 4px,transparent 4px 8px),linear-gradient(180deg,#cbe89d,#72975b);box-shadow:0 3px 0 #315d2b;border-color:#0b3811}
+    body:not(.dark-mode) .menuToggleLabel{background:linear-gradient(180deg,#d2e8b1,#7ca260);box-shadow:0 3px 0 #315d2b;border-color:#0b3811}
     body:not(.dark-mode) .field label{color:#123f18}
     body:not(.dark-mode) .sidebar input,
     body:not(.dark-mode) .sidebar select,
@@ -353,9 +381,9 @@
     body:not(.dark-mode) .docsSection,
     body:not(.dark-mode) .menuCard,
     body:not(.dark-mode) .menuLoadPanel,
-    body:not(.dark-mode) .toast{background:repeating-linear-gradient(0deg,rgba(11,56,17,.12) 0 2px,transparent 2px 7px),repeating-linear-gradient(90deg,rgba(241,247,216,.18) 0 8px,transparent 8px 16px),linear-gradient(180deg,#9fbc78,#5f8c4b);box-shadow:0 6px 0 #244b23;border-color:#0b3811;border-radius:6px}
+    body:not(.dark-mode) .toast{background:linear-gradient(180deg,#accb89,#62844e);box-shadow:0 6px 0 #244b23;border-color:#0b3811;border-radius:6px}
     body:not(.dark-mode) .menuSection{border-color:rgba(11,56,17,.65);background:rgba(203,232,157,.18)}
-    body:not(.dark-mode) .menuSectionHeader{background:repeating-linear-gradient(90deg,rgba(11,56,17,.14) 0 4px,transparent 4px 8px),linear-gradient(180deg,#e9f4c4,#9fbc78);border-color:#0b3811;color:#092b0d;border-radius:4px}
+    body:not(.dark-mode) .menuSectionHeader{background:linear-gradient(180deg,#edf6d6,#a7c684);border-color:#0b3811;color:#092b0d;border-radius:4px}
     body:not(.dark-mode) .menuToggleInput{background:linear-gradient(180deg,#9fbc78,#4f8049);border-color:#0b3811}
     body:not(.dark-mode) .menuToggleInput::after{background:linear-gradient(180deg,#f1f7d8,#cbe89d);box-shadow:0 2px 0 rgba(9,43,13,.3)}
     body:not(.dark-mode) .menuToggleInput:checked{background:linear-gradient(180deg,#e9f4c4,#72975b);border-color:#0b3811}
@@ -367,14 +395,14 @@
     body:not(.dark-mode) .codeHighlight{color:#f1f7d8}
     body:not(.dark-mode) .code textarea.code{caret-color:#f1f7d8}
     body:not(.dark-mode) .code textarea.code::selection{background:rgba(203,232,157,.34)}
-    body:not(.dark-mode) .tok-comment{color:#cbe89d}
-    body:not(.dark-mode) .tok-keyword{color:#f1f7d8;font-weight:700}
-    body:not(.dark-mode) .tok-builtin{color:#dff0b0}
-    body:not(.dark-mode) .tok-function{color:#e9f4c4}
-    body:not(.dark-mode) .tok-number{color:#d8eda4}
-    body:not(.dark-mode) .tok-string{color:#eef7c8}
-    body:not(.dark-mode) .tok-operator{color:#f1f7d8}
-    body:not(.dark-mode) .tok-identifier{color:#f1f7d8}
+    body:not(.dark-mode) .tok-comment{color:#a8c08e}
+    body:not(.dark-mode) .tok-keyword{color:#fff9df;font-weight:700}
+    body:not(.dark-mode) .tok-builtin{color:#9dd8ff}
+    body:not(.dark-mode) .tok-function{color:#ffd37f}
+    body:not(.dark-mode) .tok-number{color:#ffbe95}
+    body:not(.dark-mode) .tok-string{color:#ff9bc6}
+    body:not(.dark-mode) .tok-operator{color:#f6ffe9}
+    body:not(.dark-mode) .tok-identifier{color:#e9f4d0}
     body:not(.dark-mode) .codeFunctionTooltip{background:linear-gradient(180deg,#e9f4c4,#9fbc78);box-shadow:0 5px 0 rgba(9,43,13,.42);border-color:#0b3811}
     body:not(.dark-mode) .attachedPane{background:linear-gradient(180deg,#9fbc78,#5f8c4b);border-color:#0b3811}
     .attachedPane{margin:0 0 10px 0;background:linear-gradient(180deg,#eef4e5,#cadcc8)}
@@ -410,7 +438,7 @@
     #mapCircBtn.circ-outline{background:transparent}
     #spriteRectBtn.rect-outline{background:transparent}
     #spriteCircBtn.circ-outline{background:transparent}
-    body.dark-mode{--bg:#0f1220;--paper:#12182c;--panel:#1b2340;--panel2:#283256;--line:#5f6f98;--shadow:#070b17;--ink:#f6f1df;--accent:#ff6b8f;--accent2:#f7b267;--blue:#86b1ff;--green:#93de86;--cream:#344062;--danger:#ff8a9c;background:linear-gradient(180deg,#05070d 0 20px,#11172a 20px 100%)}
+    body.dark-mode{--bg:#090c14;--paper:#11182a;--panel:#172238;--panel2:#202c46;--line:#4f628a;--shadow:#050812;--ink:#e9eefb;--accent:#7fb3ff;--accent2:#59d0c2;--blue:#79a7ff;--green:#67c9a7;--cream:#2a3655;--danger:#ff8fa3;background:linear-gradient(180deg,#03060f 0 20px,#0c1426 20px 100%)}
     body.dark-mode .topbar{background:linear-gradient(180deg,#4f618d,#39486c);box-shadow:inset 0 -3px 0 #222b46}
     body.dark-mode .brand{background:linear-gradient(180deg,#e55b7a,#8e3851);color:#fff8ef;text-shadow:2px 2px 0 #341521;box-shadow:0 4px 0 #2a1020}
     body.dark-mode .tab,
@@ -493,6 +521,37 @@
     body.dark-mode .codeLineNumbers{background:linear-gradient(180deg,#202946,#151d34);color:#9fb0d9}
     body.dark-mode .codeHighlight{color:#f1f5ff}
     body.dark-mode .tok-identifier{color:#edf2ff}
+
+    body.dark-mode .tab,
+    body.dark-mode .fileBtn,
+    body.dark-mode .uiBtn,
+    body.dark-mode .mbtn,
+    body.dark-mode .smallbtn,
+    body.dark-mode .loadExampleBtn,
+    body.dark-mode .panelSkin,
+    body.dark-mode .codeView,
+    body.dark-mode .pane,
+    body.dark-mode .itemRow,
+    body.dark-mode .tileBtn,
+    body.dark-mode .spritePanelPreview,
+    body.dark-mode .strokeStepper,
+    body.dark-mode .menuToggleLabel,
+    body.dark-mode .menuSection,
+    body.dark-mode .menuSectionHeader,
+    body.dark-mode .menuLoadPanel,
+    body.dark-mode .codeScrollShell,
+    body.dark-mode .codeEditorSurface,
+    body.dark-mode .codeSearchInput,
+    body.dark-mode .sidebar input,
+    body.dark-mode .sidebar select,
+    body.dark-mode .sidebar textarea{border-radius:4px}
+    body.dark-mode .menuToggleInput,
+    body.dark-mode .menuToggleInput::after,
+    body.dark-mode .joy,
+    body.dark-mode .joy .knob,
+    body.dark-mode .symbtn,
+    body.dark-mode .dpadBtn,
+    body.dark-mode .sysbtn{border-radius:6px}
     @media (max-width: 900px){
       .animPreviewBar{
         right:0;
@@ -10232,3 +10291,19 @@ startAutoBackupTimer();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
