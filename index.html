@@ -62,12 +62,7 @@
     body.dark-mode .sidebar select,
     body.dark-mode .sidebar textarea{border-radius:4px}
     body.dark-mode .menuToggleInput,
-    body.dark-mode .menuToggleInput::after,
-    body.dark-mode .joy,
-    body.dark-mode .joy .knob,
-    body.dark-mode .symbtn,
-    body.dark-mode .dpadBtn,
-    body.dark-mode .sysbtn{border-radius:6px}
+    body.dark-mode .menuToggleInput::after{border-radius:6px}
     @media (max-width: 900px){
       .runtimeHideBtn{display:none !important}
     }
@@ -239,10 +234,12 @@
     #screen{image-rendering:pixelated;background:#000;display:block;border-radius:0}
     .runtimeStartOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:34;background:rgba(18,10,6,.48);backdrop-filter:blur(5px)}
     .runtimeStartOverlay.hidden{display:none}
-    .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 16px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
-    .runtimeStartPlayBtn{width:78px;height:78px;border-radius:50%;font-size:30px;line-height:1;padding-left:4px}
-.runtimeStartPlayBtn{display:inline-flex;align-items:center;justify-content:center;padding-left:0}
-.playTriangle{display:block;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:18px solid currentColor;margin-left:3px}
+    .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 16px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
+    .runtimeStartPlaceholder{width:min(100%,440px);padding:10px 12px;border:3px solid #b8baf8;border-radius:6px;background:#7f82d8;font-family:"Press Start 2P","Courier New",monospace;color:#dfe5ff;letter-spacing:.04em;line-height:1.5;text-shadow:0 1px 0 rgba(0,0,0,.28)}
+    .runtimeStartPlaceholderTitle{margin:0 0 8px;font-size:11px;color:#f3f5ff}
+    .runtimeStartPlaceholderLine{margin:4px 0;font-size:10px;word-break:break-word}
+    .runtimeStartPlayBtn{width:78px;height:78px;border-radius:50%;font-size:30px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0;background:linear-gradient(180deg,#f3f0e7,#d9d7c7);border-color:#4f628a;color:#20332d;box-shadow:0 4px 0 #2a3f35}
+    .playTriangle{display:block;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:18px solid currentColor;transform:translateX(2px)}
     .runtimeStartHint{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--danger);text-transform:uppercase}
     .runtimeBar{display:none}
     .runtimeErrorBox{position:absolute;left:16px;top:16px;z-index:35;display:none;max-width:min(420px,calc(100% - 32px));padding:10px 12px;border:3px solid #5f0f10;border-radius:16px;background:rgba(97,16,18,.94);box-shadow:0 6px 0 rgba(42,6,8,.45);color:#fff7ee}
@@ -497,6 +494,10 @@
       background-position:0 0, 0 7px, 7px -7px, -7px 0}
     body.dark-mode .edgePalette{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 3px 0 #0f1528}
     body.dark-mode .screenStage{background:#0b1021;box-shadow:inset 0 0 0 3px rgba(199,208,232,.12)}
+    body.dark-mode .runtimeStartCard{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 6px 0 #0f1528}
+    body.dark-mode .runtimeStartPlayBtn{background:linear-gradient(180deg,#f6c07d,#d07a40);border-color:#ffd4a2;color:#1f1210;box-shadow:0 4px 0 #5a3018}
+    body.dark-mode .runtimeStartHint{color:#f7b7c4}
+    body.dark-mode .runtimeStartPlaceholder{background:#3c43a8;border-color:#b7c0ff;color:#e8ecff}
     body.dark-mode .joy{border-color:#c7d0e8;background:rgba(199,208,232,.1);box-shadow:0 4px 0 rgba(0,0,0,.3)}
     body.dark-mode .joy .knob{border-color:#f4f1e3;background:rgba(241,166,90,.22)}
     body.dark-mode .symbtn,
@@ -683,7 +684,7 @@
 
     <div class="view" id="view-runtime">
       <div class="runtimeView panelSkin">
-        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
+        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><div class="runtimeStartPlaceholder" id="runtimeStartPlaceholder"><p class="runtimeStartPlaceholderTitle">**** TRY-CODE RUNTIME V2 ****</p><p class="runtimeStartPlaceholderLine" id="runtimeStartProjectLine">PROJECT:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartResolutionLine">RESOLUTION:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartControlsLine">ONSCREEN CONTROLS:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartFontLine">DEFAULT FONT:</p><p class="runtimeStartPlaceholderLine">READY.</p></div><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
         <div class="runtimeBar"></div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
           <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><div class="runtimeErrorActions"><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button><button class="uiBtn runtimeErrorGotoBtn" id="gotoRuntimeErrorBtn">Go to</button></div></div>
@@ -7538,6 +7539,33 @@ function getExampleProjects(){
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
+function updateRuntimePausePlaceholder(){
+  const project=state.appProject||{};
+  const settings=project.settings||{};
+  const projectMeta=project.project||{};
+  const normalizeText=value=>String(value??'').trim()||'Unknown';
+  const projectName=normalizeText(project.name||projectMeta.name||'Untitled project');
+  const resolutionLabels={
+    normal:'Normal (480x270)',
+    hd_2x:'2x (960x540)',
+    hd_3x:'3x (1440x810)',
+    hd_4x:'4x (1920x1080)',
+    mobile_fullscreen:'Mobile portrait (270x480)'
+  };
+  const controlsLabels={
+    left_joystick:'Left joystick',
+    dpad:'D-pad',
+    none:'No onscreen controls'
+  };
+  const resolution=resolutionLabels[settings.resolution]||normalizeText(settings.resolution||'Normal (480x270)');
+  const controls=controlsLabels[settings.movementInput]||normalizeText(settings.movementInput||'Left joystick');
+  const font=normalizeText(settings.defaultPrintFont||'Press Start 2P');
+  const setLine=(id,label,value)=>{ const el=$(id); if(el) el.textContent=`${label}: ${value}`; };
+  setLine('runtimeStartProjectLine','PROJECT',projectName);
+  setLine('runtimeStartResolutionLine','RESOLUTION',resolution);
+  setLine('runtimeStartControlsLine','ONSCREEN CONTROLS',controls);
+  setLine('runtimeStartFontLine','DEFAULT FONT',font);
+}
 function centerMapEditorView(closeup=true){
   const wrap=$("mapCanvasWrap");
   if(!wrap || !state.appProject) return false;
@@ -7564,6 +7592,7 @@ function setView(name){
   if(leavingRuntime){
     runtimeStarted=false;
     runtime?.setActive?.(false);
+    updateRuntimePausePlaceholder();
     $("runtimeStartOverlay")?.classList.remove("hidden");
   }
   const leavingMusicEditor=previousView==="music" && name!=="music";
@@ -7597,6 +7626,7 @@ function setView(name){
     });
   }
   if(name==="runtime"){
+    updateRuntimePausePlaceholder();
     $("runtimeStartOverlay")?.classList.toggle("hidden", runtimeStarted);
     runtime?.setActive?.(runtimeStarted);
     runtime.resizeDisplay();
@@ -9804,6 +9834,7 @@ function wireUI(){
     if(state.activeView!=="runtime") return;
     runtimeStarted=false;
     runtime?.setActive?.(false);
+    updateRuntimePausePlaceholder();
     $("runtimeStartOverlay")?.classList.remove("hidden");
   };
   bindTarget(document,'document','visibilitychange',()=>{ if(document.hidden) pauseRuntimePreview(); });
@@ -10363,7 +10394,3 @@ startAutoBackupTimer();
 </script>
 </body>
 </html>
-
-
-
-
