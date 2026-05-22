@@ -2018,15 +2018,15 @@ function renderCodeHighlight(){
   inner.innerHTML=String(ed.value||"").split(/\n/).map(highlightLuaLine).join("\n");
 }
 function expandLuaShorthand(source){
-  const shorthand=/([A-Za-z_][A-Za-z0-9_\.]*)(\s*)([+\-*\/])=(\s*)(.*?)(?=(\s+\bend\b|\s*;|\s*$))/g;
+  const shorthand=/(^|[^A-Za-z0-9_])(\b[A-Za-z_][A-Za-z0-9_\.\[\]"'\(\)]*)(\s*)([+\-*\/])=(\s*)(.*?)(?=(\s+\bend\b|\s*;|\s*$))/g;
   return String(source||"").split(/\r?\n/).map(line=>{
     const {code, comment}=splitLuaLineComment(line);
     let changed=false;
-    const expanded=code.replace(shorthand,(match,name,_leftSpace,op,_rightSpace,rhs)=>{
+    const expanded=code.replace(shorthand,(match,prefix,name,_leftSpace,op,_rightSpace,rhs)=>{
       const value=rhs.trim();
       if(!value) return match;
       changed=true;
-      return `${name} = ${name} ${op} (${value})`;
+      return `${prefix}${name} = ${name} ${op} (${value})`;
     });
     return changed ? `${expanded}${comment}` : line;
   }).join("\n");
@@ -10360,8 +10360,6 @@ startAutoBackupTimer();
 </script>
 </body>
 </html>
-
-
 
 
 
