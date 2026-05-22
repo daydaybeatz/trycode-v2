@@ -9743,10 +9743,11 @@ function makeRuntime(){
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
   function queueBuild(mode='load',codeOverride){
-    const source=(codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'');
+    const source=(codeOverride!=null?codeOverride:lastCode);
+    const resolvedSource=(source!=null&&source!=='')?source:getProjectLua();
     if(mode==='load') currentMusicSuppressedSignatures.clear();
     if(!hasStarted){ pendingRunMode=mode; return; }
-    build(source, mode==='load'?{suppressAudio:true}:undefined);
+    build(resolvedSource, mode==='load'?{suppressAudio:true}:undefined);
   }
   function setActive(nextActive){ runtimeActive=!!nextActive; }
   function startRuntime(mode='run'){
