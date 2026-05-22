@@ -7563,6 +7563,7 @@ function setView(name){
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
   if(leavingRuntime){
     runtimeStarted=false;
+    runtime?.setActive?.(false);
     $("runtimeStartOverlay")?.classList.remove("hidden");
   }
   const leavingMusicEditor=previousView==="music" && name!=="music";
@@ -7597,6 +7598,7 @@ function setView(name){
   }
   if(name==="runtime"){
     $("runtimeStartOverlay")?.classList.toggle("hidden", runtimeStarted);
+    runtime?.setActive?.(runtimeStarted);
     runtime.resizeDisplay();
     scheduleRuntimeViewportFocus();
     requestAnimationFrame(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
