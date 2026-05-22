@@ -241,6 +241,8 @@
     .runtimeStartOverlay.hidden{display:none}
     .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 16px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
     .runtimeStartPlayBtn{width:78px;height:78px;border-radius:50%;font-size:30px;line-height:1;padding-left:4px}
+.runtimeStartPlayBtn{display:inline-flex;align-items:center;justify-content:center;padding-left:0}
+.playTriangle{display:block;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:18px solid currentColor;margin-left:3px}
     .runtimeStartHint{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--danger);text-transform:uppercase}
     .runtimeBar{display:none}
     .runtimeErrorBox{position:absolute;left:16px;top:16px;z-index:35;display:none;max-width:min(420px,calc(100% - 32px));padding:10px 12px;border:3px solid #5f0f10;border-radius:16px;background:rgba(97,16,18,.94);box-shadow:0 6px 0 rgba(42,6,8,.45);color:#fff7ee}
@@ -681,7 +683,7 @@
 
     <div class="view" id="view-runtime">
       <div class="runtimeView panelSkin">
-        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime">▶</button><div class="runtimeStartHint">Click to play</div></div></div></div>
+        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
         <div class="runtimeBar"></div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
           <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><div class="runtimeErrorActions"><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button><button class="uiBtn runtimeErrorGotoBtn" id="gotoRuntimeErrorBtn">Go to</button></div></div>
@@ -7559,6 +7561,10 @@ function setView(name){
   }
   const previousView=state.activeView;
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
+  if(leavingRuntime){
+    runtimeStarted=false;
+    $("runtimeStartOverlay")?.classList.remove("hidden");
+  }
   const leavingMusicEditor=previousView==="music" && name!=="music";
   state.activeView=name;
   if(leavingRuntime || leavingMusicEditor){
@@ -7590,6 +7596,7 @@ function setView(name){
     });
   }
   if(name==="runtime"){
+    $("runtimeStartOverlay")?.classList.toggle("hidden", runtimeStarted);
     runtime.resizeDisplay();
     scheduleRuntimeViewportFocus();
     requestAnimationFrame(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
@@ -9774,7 +9781,6 @@ function wireUI(){
     runtimeStarted=true;
     $('runtimeStartOverlay')?.classList.add('hidden');
     runtime?.startRuntime?.();
-    runtime?.rerun?.();
   });
   function colorizeToolbarButton(btn, group){ if(btn) btn.classList.add('cat-'+group); }
   colorizeToolbarButton($("logicBtn"), 'logic');
