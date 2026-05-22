@@ -504,6 +504,10 @@
     body.dark-mode .joy .knob{border-color:#f4f1e3;background:rgba(241,166,90,.22)}
     body.dark-mode .symbtn,
     body.dark-mode .dpadBtn{border-color:#c7d0e8;background:rgba(79,97,141,.4);color:#f4f1e3;text-shadow:1px 1px 0 #0b1021}
+    body.dark-mode .symbtn,
+    body.dark-mode .dpadBtn,
+    body.dark-mode .sysbtn{border-radius:50%}
+    body.dark-mode .sysbtn{min-width:var(--sys-height);width:var(--sys-height);padding:0}
     body.dark-mode .eyeIcon path,
     body.dark-mode .eyeIcon circle,
     body.dark-mode .eyeIcon line{stroke:#d8e1f4}
@@ -1267,8 +1271,19 @@ const previewImages = {};
 const editorRenderCache = { sprites:new Map(), tiles:new Map() };
 const spriteHistory = { undo: [], redo: [] };
 const mapHistory = { undo: [], redo: [] };
-let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
+let audioCtx = null, audioUnlocked = false, pendingSfxRequests = [], currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
 function ctxAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function flushPendingSfx(){
+  if(!audioUnlocked || !pendingSfxRequests.length) return;
+  const queue=pendingSfxRequests.splice(0,pendingSfxRequests.length);
+  queue.forEach(req=>{ previewSound(req.index, req.loop, true); });
+}
+function unlockEditorAudio(){
+  audioUnlocked=true;
+  try{ ctxAudio().resume(); }catch{}
+  flushPendingSfx();
+}
+['pointerdown','mousedown','touchstart','keydown','click'].forEach(type=>window.addEventListener(type,unlockEditorAudio,{capture:true,passive:true}));
 function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++) row.push(-1); pixels.push(row);} return {w,h,pixels}; }
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
@@ -8669,7 +8684,7 @@ function paintMapCircle(start,end,filled){
   return changed;
 }
 function midiToHz(n){ return 440*Math.pow(2,(n-69)/12); }
-async function previewSound(index,loop=false){ const snd=state.appProject.sounds[index]; if(!snd) return; const ac=ctxAudio(); try{ await ac.resume(); }catch{} const now=ac.currentTime; const len=Math.max(0.05,Number(snd.length)||0.3); const wavetable=Array.isArray(snd.wavetable)?snd.wavetable:Array.from({length:64},()=>0); const steps=Math.max(1,wavetable.length); const stepDur=len/steps; const volume=Number(snd.volume)||0.6; const attack=Math.max(0,Number(snd.attack)||0.01); const decay=Math.max(0,Number(snd.decay)||0.08); const sustain=Math.max(0,Math.min(1,Number(snd.sustain)||0.6)); const release=Math.max(0,Number(snd.release)||0.1); if(snd.wave==="noise"){ const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ const seq=wavetable[Math.floor((i/data.length)*steps)]||0; data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65); } const src=ac.createBufferSource(); const gain=ac.createGain(); src.buffer=buffer; src.loop=!!loop; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+attack); gain.gain.linearRampToValueAtTime(volume*sustain,now+attack+decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+release); src.connect(gain).connect(ac.destination); src.start(now); if(!loop) src.stop(now+len+release+0.02); return; }
+function previewSound(index,loop=false,ignoreLock=false){ const snd=state.appProject.sounds[index]; if(!snd) return; const ac=ctxAudio(); if(!ignoreLock && (ac.state!=="running" || !audioUnlocked)){ pendingSfxRequests.push({index:index|0,loop:!!loop}); return; } try{ ac.resume(); }catch{} const now=ac.currentTime; const len=Math.max(0.05,Number(snd.length)||0.3); const wavetable=Array.isArray(snd.wavetable)?snd.wavetable:Array.from({length:64},()=>0); const steps=Math.max(1,wavetable.length); const stepDur=len/steps; const volume=Number(snd.volume)||0.6; const attack=Math.max(0,Number(snd.attack)||0.01); const decay=Math.max(0,Number(snd.decay)||0.08); const sustain=Math.max(0,Math.min(1,Number(snd.sustain)||0.6)); const release=Math.max(0,Number(snd.release)||0.1); if(snd.wave==="noise"){ const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ const seq=wavetable[Math.floor((i/data.length)*steps)]||0; data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65); } const src=ac.createBufferSource(); const gain=ac.createGain(); src.buffer=buffer; src.loop=!!loop; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+attack); gain.gain.linearRampToValueAtTime(volume*sustain,now+attack+decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+release); src.connect(gain).connect(ac.destination); src.start(now); if(!loop) src.stop(now+len+release+0.02); return; }
  const osc=ac.createOscillator(); const gain=ac.createGain(); osc.type=(snd.wave==="wavetable"?"sine":snd.wave)||"square"; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+attack); gain.gain.linearRampToValueAtTime(volume*sustain,now+attack+decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+release); const base=Number(snd.pitch)||440; for(let i=0;i<steps;i++){ const seq=wavetable[i]||0; const semis=seq*12; const freq=base*Math.pow(2,semis/12); osc.frequency.setValueAtTime(freq, now+i*stepDur); }
  osc.connect(gain); gain.connect(ac.destination); osc.start(now); if(!loop) osc.stop(now+len+release+0.02); }
 
@@ -10192,7 +10207,7 @@ function wireUI(){
   bindClick("addSoundBtn",()=>{ state.appProject.sounds.push(makeSound()); state.currentSoundIndex=state.appProject.sounds.length-1; state.soundListPage=Math.floor(state.currentSoundIndex/SOUND_LIST_PAGE_SIZE); refreshSoundUI(); drawSoundWaveCanvas(); });
   bindClick("soundListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.sounds?.length||0)/SOUND_LIST_PAGE_SIZE)); state.soundListPage=(state.soundListPage-1+pages)%pages; closeListRename(); refreshSoundList(); });
   bindClick("soundListNextBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.sounds?.length||0)/SOUND_LIST_PAGE_SIZE)); state.soundListPage=(state.soundListPage+1)%pages; closeListRename(); refreshSoundList(); });
-  ["soundWaveInput","soundLengthInput","soundVolumeInput","soundPitchInput","soundAttackInput","soundDecayInput","soundSustainInput","soundReleaseInput"].forEach(id=>bind(id,'input',()=>{ updateCurrentSoundFromUI(); drawSoundWaveCanvas(); })); bindClick("previewSoundBtn",async()=>{ try{ await ctxAudio().resume(); }catch{} previewSound(state.currentSoundIndex,false); });
+  ["soundWaveInput","soundLengthInput","soundVolumeInput","soundPitchInput","soundAttackInput","soundDecayInput","soundSustainInput","soundReleaseInput"].forEach(id=>bind(id,'input',()=>{ updateCurrentSoundFromUI(); drawSoundWaveCanvas(); })); bindClick("previewSoundBtn",()=>{ unlockEditorAudio(); previewSound(state.currentSoundIndex,false,true); });
   let soundDraw=false; bind("soundWaveCanvas",'pointerdown',e=>{ soundDraw=true; e.preventDefault(); writeWavePoint(e); }); bind("soundWaveCanvas",'pointermove',e=>{ if(soundDraw){ e.preventDefault(); writeWavePoint(e); }}); window.addEventListener('pointerup',()=>soundDraw=false);
   bindClick("addMusicBtn",()=>{ state.appProject.music.push(makeMusic()); state.currentMusicIndex=state.appProject.music.length-1; state.musicListPage=Math.floor(state.currentMusicIndex/MUSIC_LIST_PAGE_SIZE); refreshMusicUI();  });
 
