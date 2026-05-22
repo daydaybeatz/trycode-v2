@@ -61,6 +61,8 @@
     body.dark-mode .sidebar input,
     body.dark-mode .sidebar select,
     body.dark-mode .sidebar textarea{border-radius:4px}
+    body.dark-mode .strokeStepperBtn,
+    body.dark-mode .runtimeStartPlayBtn{border-radius:999px}
     body.dark-mode .menuToggleInput,
     body.dark-mode .menuToggleInput::after{border-radius:6px}
     @media (max-width: 900px){
@@ -554,6 +556,8 @@
     body.dark-mode .sidebar input,
     body.dark-mode .sidebar select,
     body.dark-mode .sidebar textarea{border-radius:4px}
+    body.dark-mode .strokeStepperBtn,
+    body.dark-mode .runtimeStartPlayBtn{border-radius:999px}
     body.dark-mode .menuToggleInput,
     body.dark-mode .menuToggleInput::after,
     body.dark-mode .joy,
@@ -7557,7 +7561,8 @@ function updateRuntimePausePlaceholder(){
     dpad:'D-pad',
     none:'No onscreen controls'
   };
-  const resolution=resolutionLabels[settings.resolution]||normalizeText(settings.resolution||'Normal (480x270)');
+  const selectedResolution=settings.displayMode||settings.resolution;
+  const resolution=resolutionLabels[selectedResolution]||normalizeText(selectedResolution||'Normal (480x270)');
   const controls=controlsLabels[settings.movementInput]||normalizeText(settings.movementInput||'Left joystick');
   const font=normalizeText(settings.defaultPrintFont||'Press Start 2P');
   const setLine=(id,label,value)=>{ const el=$(id); if(el) el.textContent=`${label}: ${value}`; };
@@ -7603,7 +7608,7 @@ function setView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   targetView.classList.add('active');
   if(name==="code") requestAnimationFrame(()=>{ updateCodeLineNumbers(); focusIfAppropriate($("codeEditor")); });
-  if(name==="sprites") drawSpriteEditor();
+  if(name==="sprites") { drawSpriteEditor(); requestAnimationFrame(()=>drawSpriteEditor()); }
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
   if(name==="music") { refreshMusicUI();  }
   if(name==="map"){
@@ -7975,6 +7980,13 @@ function clearCurrentSpriteFrame(){
   drawMapEditor();
   runtime.syncProject(state.appProject);
 }
+function ensureSpriteViewInitialized(metrics=getSpriteCanvasMetrics()){
+  const view=currentSpriteView();
+  if(view.scrollInitialized) return;
+  view.offsetX=0;
+  view.offsetY=0;
+  view.scrollInitialized=true;
+}
 function getSpriteCanvasMetrics(){
   const sprite=currentSprite();
   const z=getSpriteDisplayZoom();
@@ -8060,6 +8072,7 @@ function drawSpriteEditor(){
   ensureProjectData();
   const canvas=$("spriteCanvas"), ctx=canvas.getContext('2d');
   const metrics=getSpriteCanvasMetrics();
+  ensureSpriteViewInitialized(metrics);
   const {sprite:s, width:cw, height:ch, baseX, baseY, z}=metrics;
   const view=currentSpriteView();
   if(canvas.width!==cw) canvas.width=cw;
@@ -9931,11 +9944,11 @@ function wireUI(){
   bindClick("btnLoadBackup",e=>{ e.stopPropagation(); setFileMenuOpen(false); loadAutoBackupProject(); });
   bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); closeLoadPanel(); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
-  bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
-  bind("resolutionSelect",'change',()=>{ ensureProjectData(); const value=String($("resolutionSelect")?.value||'').trim(); state.appProject.settings.displayMode=['normal','hd_2x','hd_3x','hd_4x','mobile_fullscreen'].includes(value)?value:'normal'; runtime.syncProject(state.appProject); runtime.resizeDisplay(); });
+  bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; updateRuntimePausePlaceholder(); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
+  bind("resolutionSelect",'change',()=>{ ensureProjectData(); const value=String($("resolutionSelect")?.value||'').trim(); state.appProject.settings.displayMode=['normal','hd_2x','hd_3x','hd_4x','mobile_fullscreen'].includes(value)?value:'normal'; updateRuntimePausePlaceholder(); runtime.syncProject(state.appProject); runtime.resizeDisplay(); });
   bindClick("projectListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage-1+pages)%pages; refreshProjectList(); });
   bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
-  bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
+  bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); updateRuntimePausePlaceholder(); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
   bind("darkModeToggle",'change',()=>{ ensureProjectData(); state.appProject.settings.darkMode=!!$("darkModeToggle")?.checked; applyThemeUI(); });
   function syncSidebarToggleButton(buttonId, viewId){ const btn=$(buttonId), view=$(viewId); if(!btn||!view) return; const hidden=view.classList.contains('sidebar-hidden'); btn.textContent=hidden?'>':'<'; btn.setAttribute('aria-expanded', hidden?'false':'true'); btn.title=hidden?'Open panel':'Close panel'; }
   bindClick("toggleMapSidebarBtn",()=>{
