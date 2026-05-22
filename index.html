@@ -563,12 +563,12 @@
     body.dark-mode .strokeStepperBtn,
     body.dark-mode .runtimeStartPlayBtn{border-radius:999px}
     body.dark-mode .menuToggleInput,
-    body.dark-mode .menuToggleInput::after,
+    body.dark-mode .menuToggleInput::after{border-radius:6px}
     body.dark-mode .joy,
     body.dark-mode .joy .knob,
     body.dark-mode .symbtn,
     body.dark-mode .dpadBtn,
-    body.dark-mode .sysbtn{border-radius:6px}
+    body.dark-mode .sysbtn{border-radius:50%}
     @media (max-width: 900px){
       .animPreviewBar{
         right:0;
@@ -8684,7 +8684,7 @@ function paintMapCircle(start,end,filled){
   return changed;
 }
 function midiToHz(n){ return 440*Math.pow(2,(n-69)/12); }
-function previewSound(index,loop=false,ignoreLock=false){ const snd=state.appProject.sounds[index]; if(!snd) return; const ac=ctxAudio(); if(!ignoreLock && (ac.state!=="running" || !audioUnlocked)){ pendingSfxRequests.push({index:index|0,loop:!!loop}); return; } try{ ac.resume(); }catch{} const now=ac.currentTime; const len=Math.max(0.05,Number(snd.length)||0.3); const wavetable=Array.isArray(snd.wavetable)?snd.wavetable:Array.from({length:64},()=>0); const steps=Math.max(1,wavetable.length); const stepDur=len/steps; const volume=Number(snd.volume)||0.6; const attack=Math.max(0,Number(snd.attack)||0.01); const decay=Math.max(0,Number(snd.decay)||0.08); const sustain=Math.max(0,Math.min(1,Number(snd.sustain)||0.6)); const release=Math.max(0,Number(snd.release)||0.1); if(snd.wave==="noise"){ const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ const seq=wavetable[Math.floor((i/data.length)*steps)]||0; data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65); } const src=ac.createBufferSource(); const gain=ac.createGain(); src.buffer=buffer; src.loop=!!loop; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+attack); gain.gain.linearRampToValueAtTime(volume*sustain,now+attack+decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+release); src.connect(gain).connect(ac.destination); src.start(now); if(!loop) src.stop(now+len+release+0.02); return; }
+function previewSound(index,loop=false,ignoreLock=false){ const soundIndex=index|0; const snd=state.appProject.sounds[soundIndex]; if(!snd) return; const ac=ctxAudio(); if(!ignoreLock && (ac.state!=="running" || !audioUnlocked)){ pendingSfxRequests.push({index:soundIndex,loop:!!loop}); return; } try{ ac.resume(); }catch{} const now=ac.currentTime; const len=Math.max(0.05,Number(snd.length)||0.3); const wavetable=Array.isArray(snd.wavetable)?snd.wavetable:Array.from({length:64},()=>0); const steps=Math.max(1,wavetable.length); const stepDur=len/steps; const volume=Number(snd.volume)||0.6; const attack=Math.max(0,Number(snd.attack)||0.01); const decay=Math.max(0,Number(snd.decay)||0.08); const sustain=Math.max(0,Math.min(1,Number(snd.sustain)||0.6)); const release=Math.max(0,Number(snd.release)||0.1); if(snd.wave==="noise"){ const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ const seq=wavetable[Math.floor((i/data.length)*steps)]||0; data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65); } const src=ac.createBufferSource(); const gain=ac.createGain(); src.buffer=buffer; src.loop=!!loop; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+attack); gain.gain.linearRampToValueAtTime(volume*sustain,now+attack+decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+release); src.connect(gain).connect(ac.destination); src.start(now); if(!loop) src.stop(now+len+release+0.02); return; }
  const osc=ac.createOscillator(); const gain=ac.createGain(); osc.type=(snd.wave==="wavetable"?"sine":snd.wave)||"square"; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+attack); gain.gain.linearRampToValueAtTime(volume*sustain,now+attack+decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+release); const base=Number(snd.pitch)||440; for(let i=0;i<steps;i++){ const seq=wavetable[i]||0; const semis=seq*12; const freq=base*Math.pow(2,semis/12); osc.frequency.setValueAtTime(freq, now+i*stepDur); }
  osc.connect(gain); gain.connect(ac.destination); osc.start(now); if(!loop) osc.stop(now+len+release+0.02); }
 
@@ -9655,7 +9655,7 @@ function makeRuntime(){
     const endLayer=layer==null?Math.max(0,totalLayers-1):startLayer;
     pmap(mapIndex,0,0,sx0,sy0,projectRef.project.map_w,projectRef.project.map_h,startLayer,endLayer);
   }
-  function sfxPlay(index, loop=false){ previewSound(index, loop); }
+  function sfxPlay(index, loop=false){ previewSound(index|0, loop); }
   function musicPlay(src, action='play', loop=true){
     const normalizedAction=String(action??'play').trim().toLowerCase();
     if(normalizedAction==='stop'){
