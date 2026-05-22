@@ -9783,12 +9783,28 @@ function wireUI(){
     },options);
     return el;
   };
+  const bindTarget=(el,id,type,handler,options)=>{
+    if(!el) return null;
+    el.addEventListener(type,event=>{
+      try{ handler(event); }
+      catch(err){ handleUiError(id,type,err); }
+    },options);
+    return el;
+  };
   const bindClick=(id,handler)=>bind(id,'click',handler);
   bindClick('runtimeStartPlayBtn',()=>{
     runtimeStarted=true;
     $('runtimeStartOverlay')?.classList.add('hidden');
     runtime?.startRuntime?.();
   });
+  const pauseRuntimePreview=()=>{
+    if(state.activeView!=="runtime") return;
+    runtimeStarted=false;
+    runtime?.setActive?.(false);
+    $("runtimeStartOverlay")?.classList.remove("hidden");
+  };
+  bindTarget(document,'document','visibilitychange',()=>{ if(document.hidden) pauseRuntimePreview(); });
+  bindTarget(window,'window','blur',()=>pauseRuntimePreview());
   function colorizeToolbarButton(btn, group){ if(btn) btn.classList.add('cat-'+group); }
   colorizeToolbarButton($("logicBtn"), 'logic');
   colorizeToolbarButton($("graphicsBtn"), 'graphics');
