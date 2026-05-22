@@ -240,7 +240,8 @@
     .runtimeStartOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:34;background:rgba(18,10,6,.48);backdrop-filter:blur(5px)}
     .runtimeStartOverlay.hidden{display:none}
     .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 16px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
-    .runtimeStartPlayBtn{width:78px;height:78px;border-radius:50%;font-size:30px;line-height:1;padding-left:4px}
+    .runtimeStartPlayBtn{width:78px;height:78px;border-radius:50%;font-size:30px;line-height:1;padding-left:0;display:inline-flex;align-items:center;justify-content:center}
+.playTriangle{display:block;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:18px solid currentColor;margin-left:3px}
     .runtimeStartHint{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--danger);text-transform:uppercase}
     .runtimeBar{display:none}
     .runtimeErrorBox{position:absolute;left:16px;top:16px;z-index:35;display:none;max-width:min(420px,calc(100% - 32px));padding:10px 12px;border:3px solid #5f0f10;border-radius:16px;background:rgba(97,16,18,.94);box-shadow:0 6px 0 rgba(42,6,8,.45);color:#fff7ee}
@@ -681,7 +682,7 @@
 
     <div class="view" id="view-runtime">
       <div class="runtimeView panelSkin">
-        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime">▶</button><div class="runtimeStartHint">Click to play</div></div></div></div>
+        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
         <div class="runtimeBar"></div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
           <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><div class="runtimeErrorActions"><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button><button class="uiBtn runtimeErrorGotoBtn" id="gotoRuntimeErrorBtn">Go to</button></div></div>
@@ -7559,6 +7560,11 @@ function setView(name){
   }
   const previousView=state.activeView;
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
+  if(leavingRuntime){
+    runtimeStarted=false;
+    runtime?.setActive?.(false);
+    $("runtimeStartOverlay")?.classList.remove("hidden");
+  }
   const leavingMusicEditor=previousView==="music" && name!=="music";
   state.activeView=name;
   if(leavingRuntime || leavingMusicEditor){
@@ -7590,6 +7596,8 @@ function setView(name){
     });
   }
   if(name==="runtime"){
+    runtime?.setActive?.(runtimeStarted);
+    $("runtimeStartOverlay")?.classList.toggle("hidden", runtimeStarted);
     runtime.resizeDisplay();
     scheduleRuntimeViewportFocus();
     requestAnimationFrame(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
@@ -9013,7 +9021,7 @@ function makeRuntime(){
     mobile_fullscreen:{w:270,h:480}
   };
   const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
-  let hasStarted=false, pendingRunMode='load';
+  let hasStarted=false, pendingRunMode='load', runtimeActive=false;
   const dialogKeyboardInput=document.createElement('input');
   dialogKeyboardInput.type='text';
   dialogKeyboardInput.autocomplete='off';
@@ -9741,7 +9749,14 @@ function makeRuntime(){
     if(!hasStarted){ pendingRunMode=mode; return; }
     build(source, mode==='load'?{suppressAudio:true}:undefined);
   }
-  function startRuntime(){ if(hasStarted) return; hasStarted=true; queueBuild(pendingRunMode||'load'); }
+  function setActive(nextActive){ runtimeActive=!!nextActive; }
+  function startRuntime(mode='run'){
+    runtimeActive=true;
+    if(hasStarted) return;
+    hasStarted=true;
+    pendingRunMode=mode||pendingRunMode||'run';
+    queueBuild(pendingRunMode||'run');
+  }
   function setLua(code){ pendingCode=code||''; lastCode=pendingCode; if(rebuildTimer) clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>queueBuild('load',pendingCode),80); }
   function loadEditor(codeOverride){ queueBuild('load',codeOverride); }
   function rerun(codeOverride){ queueBuild('run',codeOverride); }
@@ -9749,8 +9764,8 @@ function makeRuntime(){
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(runtimeActive){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -9769,13 +9784,30 @@ function wireUI(){
     },options);
     return el;
   };
+  const bindTarget=(el,id,type,handler,options)=>{
+    if(!el) return null;
+    el.addEventListener(type,event=>{
+      try{ handler(event); }
+      catch(err){ handleUiError(id,type,err); }
+    },options);
+    return el;
+  };
   const bindClick=(id,handler)=>bind(id,'click',handler);
   bindClick('runtimeStartPlayBtn',()=>{
     runtimeStarted=true;
     $('runtimeStartOverlay')?.classList.add('hidden');
-    runtime?.startRuntime?.();
+    runtime?.setActive?.(true);
+    runtime?.startRuntime?.('run');
     runtime?.rerun?.();
   });
+  const pauseRuntimePreview=()=>{
+    if(state.activeView!=="runtime") return;
+    runtimeStarted=false;
+    runtime?.setActive?.(false);
+    $("runtimeStartOverlay")?.classList.remove("hidden");
+  };
+  bindTarget(document,'document','visibilitychange',()=>{ if(document.hidden) pauseRuntimePreview(); });
+  bindTarget(window,'window','blur',()=>pauseRuntimePreview());
   function colorizeToolbarButton(btn, group){ if(btn) btn.classList.add('cat-'+group); }
   colorizeToolbarButton($("logicBtn"), 'logic');
   colorizeToolbarButton($("graphicsBtn"), 'graphics');
@@ -10331,10 +10363,6 @@ startAutoBackupTimer();
 </script>
 </body>
 </html>
-
-
-
-
 
 
 
