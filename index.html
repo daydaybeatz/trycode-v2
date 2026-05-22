@@ -9020,7 +9020,7 @@ function makeRuntime(){
     mobile_fullscreen:{w:270,h:480}
   };
   const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
-  let hasStarted=false, pendingRunMode='load';
+  let hasStarted=false, pendingRunMode='load', runtimeActive=false;
   const dialogKeyboardInput=document.createElement('input');
   dialogKeyboardInput.type='text';
   dialogKeyboardInput.autocomplete='off';
@@ -9748,7 +9748,14 @@ function makeRuntime(){
     if(!hasStarted){ pendingRunMode=mode; return; }
     build(source, mode==='load'?{suppressAudio:true}:undefined);
   }
-  function startRuntime(){ if(hasStarted) return; hasStarted=true; queueBuild(pendingRunMode||'load'); }
+  function setActive(nextActive){ runtimeActive=!!nextActive; }
+  function startRuntime(mode='run'){
+    runtimeActive=true;
+    if(hasStarted) return;
+    hasStarted=true;
+    pendingRunMode=mode||pendingRunMode||'run';
+    queueBuild(pendingRunMode||'run');
+  }
   function setLua(code){ pendingCode=code||''; lastCode=pendingCode; if(rebuildTimer) clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>queueBuild('load',pendingCode),80); }
   function loadEditor(codeOverride){ queueBuild('load',codeOverride); }
   function rerun(codeOverride){ queueBuild('run',codeOverride); }
@@ -9756,8 +9763,8 @@ function makeRuntime(){
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(runtimeActive){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -10337,8 +10344,6 @@ startAutoBackupTimer();
 </script>
 </body>
 </html>
-
-
 
 
 
