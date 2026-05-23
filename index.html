@@ -401,6 +401,7 @@
     body:not(.dark-mode) .codeLineNumbers{background:#2a3f35;color:#d9d7c7;border-right-color:rgba(47,74,63,.65)}
     body:not(.dark-mode) .codeHighlight{color:#fbf6e7}
     body:not(.dark-mode) .code textarea.code{caret-color:#fbf6e7}
+    body:not(.dark-mode) .runtimeStartPlayBtn{background:linear-gradient(180deg,#f1efe3,#d9d7c7);border-color:var(--line);color:#2a3f35;box-shadow:0 4px 0 var(--shadow)}
     body:not(.dark-mode) .code textarea.code::selection{background:rgba(122,166,178,.22)}
     body:not(.dark-mode) .tok-comment{color:#9cb3a7}
     body:not(.dark-mode) .tok-keyword{color:#fbf6e7;font-weight:700}
@@ -2343,6 +2344,7 @@ async function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={})
   refreshMusicUI();
   runtime.syncProject(state.appProject);
   runtime.loadEditor(getProjectLua());
+  updateRuntimePausePlaceholder();
   setView('code');
 }
 async function loadAutoBackupProject(){
@@ -2442,6 +2444,7 @@ function refreshProjectList(){
       delete all[name];
       saveAllProjects(all);
       if(state.currentProjectName===name) state.currentProjectName=next;
+      updateRuntimePausePlaceholder();
       refreshProjectList();
       toast(`<b>Renamed:</b> ${escapeHtml(name)} → ${escapeHtml(next)}`);
     };
@@ -2567,6 +2570,7 @@ async function persistProjectSnapshot(name){
   all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject,{stripMusicData:true}) };
   saveAllProjects(all);
   refreshProjectList();
+  updateRuntimePausePlaceholder();
   updateCodeLineNumbers();
   const hasMusicAssets=(state.appProject.music||[]).some(track=>getMusicAssetKey(track));
   toast(hasMusicAssets ? `<b>Saved:</b> ${escapeHtml(name)}<br>Imported music is saved as browser audio blobs, not local file links.` : `<b>Saved:</b> ${escapeHtml(name)}`);
@@ -7563,7 +7567,7 @@ function updateRuntimePausePlaceholder(){
   const settings=project.settings||{};
   const projectMeta=project.project||{};
   const normalizeText=value=>String(value??'').trim()||'Unknown';
-  const projectName=normalizeText(project.name||projectMeta.name||'Untitled project');
+  const projectName=normalizeText(state.currentProjectName||project.name||projectMeta.name||'Untitled project');
   const resolutionLabels={
     normal:'Normal (480x270)',
     hd_2x:'2x (960x540)',
