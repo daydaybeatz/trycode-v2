@@ -1279,12 +1279,21 @@ function flushPendingSfx(){
   const queue=pendingSfxRequests.splice(0,pendingSfxRequests.length);
   queue.forEach(req=>{ previewSound(req.index, req.loop, true); });
 }
+function ensureEditorAudioRunning(){
+  const ac=ctxAudio();
+  if(!audioUnlocked) return false;
+  if(ac.state==='running') return true;
+  Promise.resolve(ac.resume&&ac.resume()).then(()=>{ if(ac.state==='running') flushPendingSfx(); }).catch(()=>{});
+  return ac.state==='running';
+}
 function unlockEditorAudio(){
   audioUnlocked=true;
-  try{ ctxAudio().resume(); }catch{}
+  ensureEditorAudioRunning();
   flushPendingSfx();
 }
 ['pointerdown','mousedown','touchstart','keydown','click'].forEach(type=>window.addEventListener(type,unlockEditorAudio,{capture:true,passive:true}));
+['focus','pageshow'].forEach(type=>window.addEventListener(type,()=>{ ensureEditorAudioRunning(); },{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') ensureEditorAudioRunning(); },{capture:true,passive:true});
 function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++) row.push(-1); pixels.push(row);} return {w,h,pixels}; }
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
