@@ -1273,7 +1273,14 @@ const editorRenderCache = { sprites:new Map(), tiles:new Map() };
 const spriteHistory = { undo: [], redo: [] };
 const mapHistory = { undo: [], redo: [] };
 let audioCtx = null, audioUnlocked = false, pendingSfxRequests = [], currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
-function ctxAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+function ctxAudio(){
+  const AudioCtor=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtor) throw new Error('Web Audio API is unavailable in this browser.');
+  if(!audioCtx || audioCtx.state==='closed'){
+    audioCtx = new AudioCtor();
+  }
+  return audioCtx;
+}
 function flushPendingSfx(){
   if(!audioUnlocked || !pendingSfxRequests.length) return;
   const queue=pendingSfxRequests.splice(0,pendingSfxRequests.length);
@@ -1292,8 +1299,8 @@ function unlockEditorAudio(){
   flushPendingSfx();
 }
 ['pointerdown','mousedown','touchstart','keydown','click'].forEach(type=>window.addEventListener(type,unlockEditorAudio,{capture:true,passive:true}));
-['focus','pageshow'].forEach(type=>window.addEventListener(type,()=>{ ensureEditorAudioRunning(); },{capture:true,passive:true}));
-document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') ensureEditorAudioRunning(); },{capture:true,passive:true});
+['focus','pageshow'].forEach(type=>window.addEventListener(type,()=>{ unlockEditorAudio(); },{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') unlockEditorAudio(); },{capture:true,passive:true});
 function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++) row.push(-1); pixels.push(row);} return {w,h,pixels}; }
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
