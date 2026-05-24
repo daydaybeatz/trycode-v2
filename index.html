@@ -236,11 +236,11 @@
     #screen{image-rendering:pixelated;background:#000;display:block;border-radius:0}
     .runtimeStartOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:34;background:rgba(18,10,6,.48);backdrop-filter:blur(5px)}
     .runtimeStartOverlay.hidden{display:none}
-    .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 16px;border:3px solid var(--line);border-radius:16px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
-    .runtimeStartPlaceholder{width:min(100%,440px);padding:10px 12px;border:3px solid #b8baf8;border-radius:6px;background:#7f82d8;font-family:"Press Start 2P","Courier New",monospace;color:#dfe5ff;letter-spacing:.04em;line-height:1.5;text-shadow:0 1px 0 rgba(0,0,0,.28)}
-    .runtimeStartPlaceholderTitle{margin:0 0 8px;font-size:11px;color:#f3f5ff}
-    .runtimeStartPlaceholderLine{margin:4px 0;font-size:10px;word-break:break-word}
-    .runtimeStartPlayBtn{width:78px;height:78px;border-radius:50%;font-size:30px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0;background:linear-gradient(180deg,#f3f0e7,#d9d7c7);border-color:#4f628a;color:#20332d;box-shadow:0 4px 0 #2a3f35}
+    .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:13px 14px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
+    .runtimeStartPlaceholder{width:min(100%,420px);padding:10px 12px;border:3px solid #9fa6d8;border-radius:6px;background:#2b2f4f;font-family:"Press Start 2P","Courier New",monospace;color:#dfe5ff;letter-spacing:.04em;line-height:1.45;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+    .runtimeStartPlaceholderTitle{margin:0 0 8px;font-size:10px;color:#f3f5ff}
+    .runtimeStartPlaceholderLine{margin:4px 0;font-size:9px;word-break:break-word}
+    .runtimeStartPlayBtn{width:78px;height:78px;border-radius:50%;font-size:30px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0;background:linear-gradient(180deg,#f3f0e7,#d9d7c7);border-color:var(--line);color:#20332d;box-shadow:0 4px 0 #2a3f35}
     .playTriangle{display:block;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:18px solid currentColor;transform:translateX(2px)}
     .runtimeStartHint{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--danger);text-transform:uppercase}
     .runtimeBar{display:none}
@@ -498,17 +498,15 @@
     body.dark-mode .edgePalette{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 3px 0 #0f1528}
     body.dark-mode .screenStage{background:#0b1021;box-shadow:inset 0 0 0 3px rgba(199,208,232,.12)}
     body.dark-mode .runtimeStartCard{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 6px 0 #0f1528}
-    body.dark-mode .runtimeStartPlayBtn{background:linear-gradient(180deg,#f6c07d,#d07a40);border-color:#ffd4a2;color:#1f1210;box-shadow:0 4px 0 #5a3018}
+    body.dark-mode .runtimeStartPlayBtn{background:linear-gradient(180deg,#f3f0e7,#d9d7c7);border-color:var(--line);color:#1f1210;box-shadow:0 4px 0 #0f1528}
     body.dark-mode .runtimeStartHint{color:#f7b7c4}
-    body.dark-mode .runtimeStartPlaceholder{background:#3c43a8;border-color:#b7c0ff;color:#e8ecff}
+    body.dark-mode .runtimeStartPlaceholder{background:#0a1122;border-color:#6f83b6;color:#e8ecff}
     body.dark-mode .joy{border-color:#c7d0e8;background:rgba(199,208,232,.1);box-shadow:0 4px 0 rgba(0,0,0,.3)}
     body.dark-mode .joy .knob{border-color:#f4f1e3;background:rgba(241,166,90,.22)}
     body.dark-mode .symbtn,
     body.dark-mode .dpadBtn{border-color:#c7d0e8;background:rgba(79,97,141,.4);color:#f4f1e3;text-shadow:1px 1px 0 #0b1021}
     body.dark-mode .symbtn,
-    body.dark-mode .dpadBtn,
-    body.dark-mode .sysbtn{border-radius:50%}
-    body.dark-mode .sysbtn{min-width:var(--sys-height);width:var(--sys-height);padding:0}
+    body.dark-mode .dpadBtn{border-radius:50%}
     body.dark-mode .eyeIcon path,
     body.dark-mode .eyeIcon circle,
     body.dark-mode .eyeIcon line{stroke:#d8e1f4}
@@ -652,10 +650,10 @@
         <div class="sidebar panelSkin">
           <div class="pane"><h4>SOUNDS</h4><div class="formRow"><button class="mbtn" id="addSoundBtn">Add Sound</button></div>
             <div class="pane attachedPane"><h4>SETTINGS</h4>
-              <div class="formRow"><div class="field"><label>Wave</label><select id="soundWaveInput"><option>sine</option><option>square</option><option>sawtooth</option><option>triangle</option><option>noise</option><option>wavetable</option></select></div><div class="field"><label>Length (sec)</label><input id="soundLengthInput" type="number" step="0.05" min="0.05" value="0.3"></div></div>
-              <div class="formRow"><div class="field"><label>Volume</label><input id="soundVolumeInput" type="number" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Pitch Hz</label><input id="soundPitchInput" type="number" min="20" value="440"></div></div>
-              <div class="formRow"><div class="field"><label>Attack</label><input id="soundAttackInput" type="number" step="0.01" min="0" value="0.01"></div><div class="field"><label>Decay</label><input id="soundDecayInput" type="number" step="0.01" min="0" value="0.08"></div></div>
-              <div class="formRow"><div class="field"><label>Sustain</label><input id="soundSustainInput" type="number" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Release</label><input id="soundReleaseInput" type="number" step="0.01" min="0" value="0.1"></div></div>
+              <div class="formRow"><div class="field"><label>Wave</label><select id="soundWaveInput"><option>sine</option><option>square</option><option>sawtooth</option><option>triangle</option><option>noise</option><option>wavetable</option></select></div><div class="field"><label>Length (sec) <span id="soundLengthValue">0.30</span></label><input id="soundLengthInput" type="range" step="0.05" min="0.05" max="2" value="0.3"></div></div>
+              <div class="formRow"><div class="field"><label>Volume <span id="soundVolumeValue">0.60</span></label><input id="soundVolumeInput" type="range" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Pitch Hz <span id="soundPitchValue">440</span></label><input id="soundPitchInput" type="range" min="20" max="2000" step="1" value="440"></div></div>
+              <div class="formRow"><div class="field"><label>Attack <span id="soundAttackValue">0.01</span></label><input id="soundAttackInput" type="range" step="0.01" min="0" max="1" value="0.01"></div><div class="field"><label>Decay <span id="soundDecayValue">0.08</span></label><input id="soundDecayInput" type="range" step="0.01" min="0" max="1" value="0.08"></div></div>
+              <div class="formRow"><div class="field"><label>Sustain <span id="soundSustainValue">0.60</span></label><input id="soundSustainInput" type="range" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Release <span id="soundReleaseValue">0.10</span></label><input id="soundReleaseInput" type="range" step="0.01" min="0" max="2" value="0.1"></div></div>
               <div class="formRow"><button class="mbtn" id="previewSoundBtn">Preview</button></div>
             </div>
             <div class="pane attachedPane"><h4>PITCH SEQUENCER</h4><canvas class="waveCanvas" id="soundWaveCanvas" width="800" height="240"></canvas></div>
@@ -693,7 +691,7 @@
 
     <div class="view" id="view-runtime">
       <div class="runtimeView panelSkin">
-        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><div class="runtimeStartPlaceholder" id="runtimeStartPlaceholder"><p class="runtimeStartPlaceholderTitle">**** TRY-CODE RUNTIME V2 ****</p><p class="runtimeStartPlaceholderLine" id="runtimeStartProjectLine">PROJECT:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartResolutionLine">RESOLUTION:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartControlsLine">ONSCREEN CONTROLS:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartFontLine">DEFAULT FONT:</p><p class="runtimeStartPlaceholderLine">READY.</p></div><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
+        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><div class="runtimeStartPlaceholder" id="runtimeStartPlaceholder"><p class="runtimeStartPlaceholderTitle">**** TRY-CODE CONSOLE ****</p><p class="runtimeStartPlaceholderLine" id="runtimeStartProjectLine">PROJECT:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartResolutionLine">RESOLUTION:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartControlsLine">ONSCREEN CONTROLS:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartFontLine">DEFAULT FONT:</p><p class="runtimeStartPlaceholderLine">BOOT READY.</p></div><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
         <div class="runtimeBar"></div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
           <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><div class="runtimeErrorActions"><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button><button class="uiBtn runtimeErrorGotoBtn" id="gotoRuntimeErrorBtn">Go to</button></div></div>
@@ -1354,7 +1352,9 @@ function ensureSpriteFolderView(folder){
   const allowed=['off','auto','1','2','4','8','16','32','64'];
   const gridMode=allowed.includes(mode)?mode:'auto';
   const scrollInitialized=raw.scrollInitialized===true;
-  folder.view={zoom,offsetX,offsetY,gridMode,scrollInitialized};
+  const lastCanvasW=Number.isFinite(Number(raw.lastCanvasW))?Number(raw.lastCanvasW):0;
+  const lastCanvasH=Number.isFinite(Number(raw.lastCanvasH))?Number(raw.lastCanvasH):0;
+  folder.view={zoom,offsetX,offsetY,gridMode,scrollInitialized,lastCanvasW,lastCanvasH};
   return folder.view;
 }
 function currentSpriteView(){ return ensureSpriteFolderView(currentSpriteFolder()); }
@@ -8017,10 +8017,10 @@ function clearCurrentSpriteFrame(){
 }
 function ensureSpriteViewInitialized(metrics=getSpriteCanvasMetrics()){
   const view=currentSpriteView();
-  if(view.scrollInitialized) return;
-  view.offsetX=0;
-  view.offsetY=0;
-  view.scrollInitialized=true;
+  const shouldInit=!view.scrollInitialized||!Number.isFinite(view.lastCanvasW)||!Number.isFinite(view.lastCanvasH)||view.lastCanvasW<=2||view.lastCanvasH<=2;
+  if(shouldInit){ view.offsetX=0; view.offsetY=0; view.scrollInitialized=true; }
+  view.lastCanvasW=metrics.width;
+  view.lastCanvasH=metrics.height;
 }
 function getSpriteCanvasMetrics(){
   const sprite=currentSprite();
@@ -8916,8 +8916,9 @@ function clearSoundSlot(index){
   }else refreshSoundList();
   runtime.syncProject(state.appProject);
 }
-function refreshSoundUI(){ const s=currentSound(); refreshSoundList(); $("soundWaveInput").value=s.wave; $("soundLengthInput").value=s.length; $("soundVolumeInput").value=s.volume; $("soundPitchInput").value=s.pitch; $("soundAttackInput").value=s.attack; $("soundDecayInput").value=s.decay; $("soundSustainInput").value=s.sustain; $("soundReleaseInput").value=s.release; }
-function updateCurrentSoundFromUI(){ const s=currentSound(); s.wave=$("soundWaveInput").value; s.length=parseFloat($("soundLengthInput").value)||0.3; s.volume=parseFloat($("soundVolumeInput").value)||0.6; s.pitch=parseFloat($("soundPitchInput").value)||440; s.attack=parseFloat($("soundAttackInput").value)||0.01; s.decay=parseFloat($("soundDecayInput").value)||0.08; s.sustain=parseFloat($("soundSustainInput").value)||0.6; s.release=parseFloat($("soundReleaseInput").value)||0.1; }
+function refreshSoundUI(){ const s=currentSound(); refreshSoundList(); $("soundWaveInput").value=s.wave; $("soundLengthInput").value=s.length; $("soundVolumeInput").value=s.volume; $("soundPitchInput").value=s.pitch; $("soundAttackInput").value=s.attack; $("soundDecayInput").value=s.decay; $("soundSustainInput").value=s.sustain; $("soundReleaseInput").value=s.release; updateSoundSliderLabels(); }
+function updateCurrentSoundFromUI(){ const s=currentSound(); s.wave=$("soundWaveInput").value; s.length=parseFloat($("soundLengthInput").value)||0.3; s.volume=parseFloat($("soundVolumeInput").value)||0.6; s.pitch=parseFloat($("soundPitchInput").value)||440; s.attack=parseFloat($("soundAttackInput").value)||0.01; s.decay=parseFloat($("soundDecayInput").value)||0.08; s.sustain=parseFloat($("soundSustainInput").value)||0.6; s.release=parseFloat($("soundReleaseInput").value)||0.1; updateSoundSliderLabels(); }
+function updateSoundSliderLabels(){ const fmt=(n,d)=>Number(n||0).toFixed(d); $("soundLengthValue").textContent=fmt($("soundLengthInput").value,2); $("soundVolumeValue").textContent=fmt($("soundVolumeInput").value,2); $("soundPitchValue").textContent=String(Math.round(Number($("soundPitchInput").value)||0)); $("soundAttackValue").textContent=fmt($("soundAttackInput").value,2); $("soundDecayValue").textContent=fmt($("soundDecayInput").value,2); $("soundSustainValue").textContent=fmt($("soundSustainInput").value,2); $("soundReleaseValue").textContent=fmt($("soundReleaseInput").value,2); }
 function drawSoundWaveCanvas(){ const c=$("soundWaveCanvas"), ctx=c.getContext('2d'), s=currentSound(); const styles=getComputedStyle(document.documentElement); const paper=styles.getPropertyValue('--paper').trim()||'#edf2df'; const line=styles.getPropertyValue('--line').trim()||'#506f66'; const accent=styles.getPropertyValue('--accent').trim()||'#577f77'; ctx.clearRect(0,0,c.width,c.height); ctx.fillStyle=paper; ctx.fillRect(0,0,c.width,c.height); ctx.strokeStyle=line; ctx.lineWidth=3; ctx.strokeRect(0,0,c.width,c.height); ctx.strokeStyle=line; ctx.globalAlpha=0.35; ctx.beginPath(); ctx.moveTo(0,c.height/2); ctx.lineTo(c.width,c.height/2); ctx.stroke(); ctx.globalAlpha=1; ctx.beginPath(); ctx.moveTo(0,c.height/2); for(let i=0;i<s.wavetable.length;i++){ const x=(i/Math.max(1,s.wavetable.length-1))*c.width; const y=(1-((s.wavetable[i]+1)/2))*c.height; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.strokeStyle=accent; ctx.lineWidth=4; ctx.stroke(); }
 function refreshMusicList(){
   const wrap=$("musicList");
