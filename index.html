@@ -313,7 +313,7 @@
     .docSummary{list-style:none;cursor:pointer;padding:12px;display:flex;align-items:center;gap:10px}
     .docSummary::-webkit-details-marker{display:none}
     .docSummary::after{content:'+';margin-left:auto;font-size:16px;font-weight:900;color:var(--accent2)}
-    .docItem[open] .docSummary::after{content:'âˆ’'}
+    .docItem[open] .docSummary::after{content:'\u2212'}
     .docName{font-weight:900;color:var(--danger)}
     .docBody{padding:0 12px 12px}
     .docDesc{font-size:13px;line-height:1.4;margin-top:4px}
@@ -641,7 +641,7 @@
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
           <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteRectBtn">Rect</button><button class="uiBtn" id="spriteCircBtn">Circ</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="strokeStepper" title="Stroke size"><button class="uiBtn strokeStepperBtn" id="spriteLineWidthDownBtn" type="button" aria-label="Decrease stroke size">âˆ’</button><span class="strokeStepperValue" id="spriteLineWidthValue">1</span><button class="uiBtn strokeStepperBtn" id="spriteLineWidthUpBtn" type="button" aria-label="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewTopRow"><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><label class="animPreviewSpeed">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6"></label></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">â–¶ï¸</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteRectBtn">Rect</button><button class="uiBtn" id="spriteCircBtn">Circ</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="strokeStepper" title="Stroke size"><button class="uiBtn strokeStepperBtn" id="spriteLineWidthDownBtn" type="button" aria-label="Decrease stroke size">&#8722;</button><span class="strokeStepperValue" id="spriteLineWidthValue">1</span><button class="uiBtn strokeStepperBtn" id="spriteLineWidthUpBtn" type="button" aria-label="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewTopRow"><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><label class="animPreviewSpeed">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6"></label></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">&#9654;</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div></div></div>
       </div>
     </div>
 
@@ -1688,11 +1688,11 @@ let docsPage = 0;
 let examplesPage = 0;
 const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['cls','cls([color])'],
-  ['camera','camera([x, y]) â€” call with no args to reset to 0,0'],
+  ['camera','camera([x, y]) \u2014 call with no args to reset to 0,0'],
   ['zoom','zoom() -> number; zoom(z, [ox], [oy])'],
-  ['clip','clip([x, y, w, h]) â€” call with no args to clear clipping'],
+  ['clip','clip([x, y, w, h]) \u2014 call with no args to clear clipping'],
   ['color','color([r], [g], [b]) -> string'],
-  ['pal','pal([source, target]) â€” call with no args to reset all remaps'],
+  ['pal','pal([source, target]) \u2014 call with no args to reset all remaps'],
   ['pset','pset(x, y, [color])'],
   ['pget','pget(x, y) -> colorIndex'],
   ['line','line(x0, y0, x1, y1, [color])'],
@@ -1701,7 +1701,7 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['circ','circ(x, y, r, [color])'],
   ['circfill','circfill(x, y, r, [color])'],
   ['print','print(text, fontsize, x, y, [color], [outlineColor], [font])'],
-  ['print_','print_(text, fontsize, x, y, [color], [outlineColor], [font]) â€” alias of print'],
+  ['print_','print_(text, fontsize, x, y, [color], [outlineColor], [font]) \u2014 alias of print'],
   ['default_font','default_font([font], [size], [color])'],
   ['default_controls','default_controls([mode]) -> string'],
   ['spr','spr(indexOrSource, x, y, [flip=false])'],
@@ -1729,13 +1729,13 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['save_data','save_data(slot, values) -> bool'],
   ['load_data','load_data(slot) -> table or nil'],
   ['default_box','default_box(); default_box(styleTable); default_box(kind, styleTable); default_box(kind, x, y, w, h)'],
-  ['ui_box','ui_box() â€” same arguments and behavior as default_box'],
+  ['ui_box','ui_box() \u2014 same arguments and behavior as default_box'],
   ['clock','clock() -> seconds'],
   ['abs','abs(n) -> number'],
   ['flr','flr(n) -> integer'],
   ['upper','upper(text) -> string'],
   ['sfx','sfx(index, [loop=false])'],
-  ['music','music(sourceOrCommand, [action="play"], [loop=true]) â€” music() or music("stop") stops playback'],
+  ['music','music(sourceOrCommand, [action="play"], [loop=true]) \u2014 music() or music("stop") stops playback'],
   ['add','add(list, value) -> value'],
   ['del','del(list, value) -> value or nil'],
   ['deli','deli(list, [index=#list]) -> removedValue or nil'],
@@ -1747,9 +1747,9 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['rnd','rnd([limitOrTable=1]) -> number, item, or nil'],
   ['sub','sub(text, startIndex, [endIndex]) -> string'],
   ['tostr','tostr(value) -> string'],
-  ['distance','distance(a, b) -> number â€” tables with x and y fields'],
-  ['col','col(a, b) -> bool â€” tables with x, y, w, and h fields'],
-  ['col2','col2(a, b) -> bool â€” tables with x, y, and r or radius fields'],
+  ['distance','distance(a, b) -> number \u2014 tables with x and y fields'],
+  ['col','col(a, b) -> bool \u2014 tables with x, y, w, and h fields'],
+  ['col2','col2(a, b) -> bool \u2014 tables with x, y, and r or radius fields'],
   ['mod_value','mod_value(table, key, amount) -> newNumber or nil'],
   ['set_value','set_value(table, key, value) -> value or nil'],
   ['get_value','get_value(table, key) -> value or nil'],
@@ -1759,11 +1759,11 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['ui_button','ui_button(buttonTable) -> clickedBool'],
   ['ui_buttons','ui_buttons(buttonList) -> anyClickedBool'],
   ['ui_dropdown','ui_dropdown(dropdownTable) -> toggledBool'],
-  ['__tc_ui_flush_overlay','__tc_ui_flush_overlay() -> changedBool â€” internal dropdown overlay flush'],
-  ['_init','_init() â€” optional; called once after build'],
-  ['_tick','_tick() â€” optional combined update/draw frame callback; takes priority'],
-  ['_update','_update() â€” called every frame before _draw when _tick is not defined'],
-  ['_draw','_draw() â€” called every frame after _update when _tick is not defined']
+  ['__tc_ui_flush_overlay','__tc_ui_flush_overlay() -> changedBool \u2014 internal dropdown overlay flush'],
+  ['_init','_init() \u2014 optional; called once after build'],
+  ['_tick','_tick() \u2014 optional combined update/draw frame callback; takes priority'],
+  ['_update','_update() \u2014 called every frame before _draw when _tick is not defined'],
+  ['_draw','_draw() \u2014 called every frame after _update when _tick is not defined']
 ]);
 function getCodeFileViewState(index){
   const key=String(index|0);
@@ -2072,7 +2072,7 @@ function parseIncludeTarget(line){
   const raw=String(line||"");
   const stripped=raw.replace(/\s*--.*$/,"").trim();
   if(!stripped) return null;
-  const normalized=stripped.replace(/[â€œâ€]/g,'"').replace(/[â€˜â€™]/g,"'");
+  const normalized=stripped.replace(/[\u201c\u201d]/g,'"').replace(/[\u2018\u2019]/g,"'");
   const quoted=normalized.match(/^(?:#\s*)?include\s*\(?\s*["']([^"']+)["']\s*\)?\s*;?\s*$/i);
   if(quoted) return quoted[1].trim();
   const unquoted=normalized.match(/^(?:#\s*)?include\s*\(?\s*([A-Za-z0-9_\-./]+)\s*\)?\s*;?\s*$/i);
@@ -2462,7 +2462,7 @@ function refreshProjectList(){
       if(state.currentProjectName===name) state.currentProjectName=next;
       updateRuntimePausePlaceholder();
       refreshProjectList();
-      toast(`<b>Renamed:</b> ${escapeHtml(name)} â†’ ${escapeHtml(next)}`);
+      toast(`<b>Renamed:</b> ${escapeHtml(name)} \u2192 ${escapeHtml(next)}`);
     };
     deleteBtn.onclick=(e)=>{
       e.stopPropagation();
@@ -2670,7 +2670,7 @@ function buildExportRuntimeSource(projectJson, codeJson){
     "let camx=0,camy=0,col={r:255,g:255,b:255},lastColorCall=null,viewZoom=1,zoomOffX=0,zoomOffY=0,clipRect=null,palIndexRemap=new Map(),palColorRemap=new Map(),defaultPrintState={font:null,size:null,color:null};const PRINT_FONTS=['Press Start 2P','Orbitron','Rajdhani','Inter','Merriweather','Playfair Display'];const DEFAULT_PRINT_FONT='Press Start 2P';function normalizePrintFontName(value){const raw=String(value??'').trim();if(!raw)return DEFAULT_PRINT_FONT;return PRINT_FONTS.includes(raw)?raw:DEFAULT_PRINT_FONT}",
     "const input={btn:Array(12).fill(0),btnp:Array(12).fill(0),btnPrev:Array(12).fill(0),btnFace:[0,0,0,0],btnDpad:[0,0,0,0],btnSystem:[0,0,0,0],joy:[{x:0,y:0,down:false},{x:0,y:0,down:false}],mouse:{x:0,y:0,buttons:0,pressed:0,pointers:new Map()}};const keyDown=new Set(),keyPressed=new Set();",
     "const persistPrefix=()=>'trycode_runtime_save_export:'+(projectRef.meta&&projectRef.meta.name||'project')+':';function saveData(key,value){const k=String(key??'').trim();if(!k)return false;try{localStorage.setItem(persistPrefix()+k,String(value??''));return true}catch{return false}}function loadData(key){const k=String(key??'').trim();if(!k)return null;try{const v=localStorage.getItem(persistPrefix()+k);return v==null?null:v}catch{return null}}",
-    "let audioCtx=null,currentMusicSource=null,currentMusicNodes=[],currentMusicSignature=null,currentMusicRequestId=0,pendingMusicRequest=null,exportAudioUnlocked=false;function musicRequestSignature(src,action='play',loop=true){const normalizedAction=String(action??'play').trim().toLowerCase();const normalizedLoop=!!loop;const normalizedSource=(typeof src==='number'&&Number.isFinite(src))?src:String(src??'0').trim();return normalizedSource+'|'+normalizedAction+'|'+(normalizedLoop?'1':'0')}function ctxAudio(){if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();return audioCtx}function stopMusic(){currentMusicRequestId++;pendingMusicRequest=null;if(currentMusicSource){try{currentMusicSource.onended=null}catch{}try{currentMusicSource.pause&&currentMusicSource.pause()}catch{}try{currentMusicSource.stop&&currentMusicSource.stop()}catch{}try{if(currentMusicSource.removeAttribute){currentMusicSource.removeAttribute('src');currentMusicSource.load&&currentMusicSource.load()}}catch{}}currentMusicNodes.forEach(n=>{try{n.onended=null}catch{}try{n.stop&&n.stop()}catch{}try{n.disconnect&&n.disconnect()}catch{}});currentMusicNodes=[];currentMusicSource=null;currentMusicSignature=null}",
+    "let audioCtx=null,currentMusicSource=null,currentMusicNodes=[],currentMusicSignature=null,currentMusicRequestId=0,pendingMusicRequest=null,exportAudioUnlocked=!!window.__trycodeSharedAudioContext;function musicRequestSignature(src,action='play',loop=true){const normalizedAction=String(action??'play').trim().toLowerCase();const normalizedLoop=!!loop;const normalizedSource=(typeof src==='number'&&Number.isFinite(src))?src:String(src??'0').trim();return normalizedSource+'|'+normalizedAction+'|'+(normalizedLoop?'1':'0')}function ctxAudio(){if(!audioCtx){audioCtx=window.__trycodeSharedAudioContext||new (window.AudioContext||window.webkitAudioContext)();window.__trycodeSharedAudioContext=audioCtx}try{audioCtx.resume&&audioCtx.resume().catch(()=>{})}catch{}return audioCtx}function stopMusic(){currentMusicRequestId++;pendingMusicRequest=null;if(currentMusicSource){try{currentMusicSource.onended=null}catch{}try{currentMusicSource.pause&&currentMusicSource.pause()}catch{}try{currentMusicSource.stop&&currentMusicSource.stop()}catch{}try{if(currentMusicSource.removeAttribute){currentMusicSource.removeAttribute('src');currentMusicSource.load&&currentMusicSource.load()}}catch{}}currentMusicNodes.forEach(n=>{try{n.onended=null}catch{}try{n.stop&&n.stop()}catch{}try{n.disconnect&&n.disconnect()}catch{}});currentMusicNodes=[];currentMusicSource=null;currentMusicSignature=null}",
     "function getTrackSource(t){return String((t&&(t.fileData||t.file))||'')}function resolveMusicTrack(src){const list=projectRef.music||[];if(typeof src==='string'&&!/^\\d+$/.test(src)){return list.find(t=>t&&(t.fileName===src||t.name===src))||{file:src,fileData:src,loop:true}}return list[typeof src==='number'?src:parseInt(String(src||'0'),10)]}async function playDecodedAudio(source,loop,requestId){try{const ac=ctxAudio();try{ac.resume&&ac.resume().catch(()=>{})}catch{}const res=await fetch(source);if(!res.ok&&!String(source).startsWith('data:'))return false;const data=await res.arrayBuffer();if(requestId!==currentMusicRequestId)return true;const buffer=await ac.decodeAudioData(data.slice(0));if(requestId!==currentMusicRequestId)return true;const node=ac.createBufferSource();node.buffer=buffer;node.loop=!!loop;node.connect(ac.destination);currentMusicSource=node;currentMusicNodes.push(node);node.onended=()=>{currentMusicNodes=currentMusicNodes.filter(n=>n!==node);if(currentMusicSource===node){currentMusicSource=null;currentMusicSignature=null}};node.start(0);return true}catch{return false}}",
     "function queueMusicUntilGesture(src,action,loop,signature){pendingMusicRequest={src,action,loop,signature};currentMusicSignature=signature}async function musicPlay(src,action='play',loop=true){const normalized=String(action??'play').trim().toLowerCase();if(normalized==='stop'||String(src??'').trim().toLowerCase()==='stop'){stopMusic();return}const audioLoop=loop==null?true:!!loop;const requestSignature=musicRequestSignature(src,normalized,audioLoop);if(currentMusicSignature===requestSignature)return;if(!exportAudioUnlocked){queueMusicUntilGesture(src,normalized,audioLoop,requestSignature);return}const track=resolveMusicTrack(src);const source=getTrackSource(track);if(!source){currentMusicSignature=null;showErr('Music unavailable: the requested exported track has no embedded audio data.');return}const finalLoop=loop==null?!!track.loop:audioLoop;const requestId=++currentMusicRequestId;stopMusic();currentMusicRequestId=requestId;currentMusicSignature=requestSignature;if(await playDecodedAudio(source,finalLoop,requestId))return;if(requestId!==currentMusicRequestId)return;const audio=new Audio(source);audio.loop=finalLoop;currentMusicSource=audio;audio.onended=()=>{if(currentMusicSource===audio){currentMusicSource=null;currentMusicSignature=null}};const playPromise=audio.play();if(playPromise&&playPromise.catch)playPromise.catch(()=>{if(currentMusicSource===audio){currentMusicSource=null;currentMusicSignature=null}queueMusicUntilGesture(src,normalized,audioLoop,requestSignature);});try{const ac=ctxAudio();ac.resume&&ac.resume().catch(()=>{})}catch{}}",
     "async function sfxPlay(index,loop=false){const snd=(projectRef.sounds||[])[index|0];if(!snd)return;const ac=ctxAudio();try{await ac.resume()}catch{}const now=ac.currentTime,len=Math.max(0.05,Number(snd.length)||0.3),steps=Math.max(1,(snd.wavetable||[]).length),stepDur=len/steps,gain=ac.createGain();gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(Number(snd.volume)||0.6,now+(Number(snd.attack)||0.01));gain.gain.linearRampToValueAtTime((Number(snd.volume)||0.6)*(Number(snd.sustain)||0.6),now+(Number(snd.attack)||0.01)+(Number(snd.decay)||0.08));gain.gain.linearRampToValueAtTime(0.0001,now+len+(Number(snd.release)||0.1));if(snd.wave==='noise'){const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++){const seq=(snd.wavetable||[])[Math.floor((i/data.length)*steps)]||0;data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65)}const src=ac.createBufferSource();src.buffer=buffer;src.loop=!!loop;src.connect(gain).connect(ac.destination);src.start(now);if(!loop)src.stop(now+len+(Number(snd.release)||0.1)+0.02);return}const osc=ac.createOscillator();osc.type=snd.wave==='wavetable'?'sine':(snd.wave||'square');const base=Number(snd.pitch)||440;for(let i=0;i<steps;i++){const seq=(snd.wavetable||[])[i]||0;osc.frequency.setValueAtTime(base*Math.pow(2,(seq*12)/12),now+i*stepDur)}osc.connect(gain).connect(ac.destination);osc.start(now);if(!loop)osc.stop(now+len+(Number(snd.release)||0.1)+0.02)}function unlockAudio(){if(exportAudioUnlocked)return;exportAudioUnlocked=true;try{const ac=ctxAudio();ac.resume&&ac.resume().catch(()=>{});const osc=ac.createOscillator();const gain=ac.createGain();gain.gain.setValueAtTime(0,ac.currentTime);osc.connect(gain).connect(ac.destination);osc.start(ac.currentTime);osc.stop(ac.currentTime+0.01)}catch{}if(pendingMusicRequest){const req=pendingMusicRequest;pendingMusicRequest=null;currentMusicSignature=null;musicPlay(req.src,req.action,req.loop)}}['pointerdown','mousedown','touchstart','keydown','click'].forEach(type=>window.addEventListener(type,unlockAudio,{capture:true,passive:true}));document.addEventListener('visibilitychange',()=>{if(exportAudioUnlocked&&document.visibilityState!=='hidden')unlockAudio()},{capture:true,passive:true});",
@@ -2719,10 +2719,10 @@ function buildExportFontHeadHtml(){
 }
 function buildExportRuntimeStartScript(runtimeJs){
   const escapedRuntime=escapeInlineScript(runtimeJs);
-  return `<scr${'ipt'}>const __trycodeStart=()=>{${escapedRuntime}};let __trycodeStarted=false;const __trycodeRun=()=>{if(__trycodeStarted)return;__trycodeStarted=true;document.body.classList.add('started');document.getElementById('startOverlay')?.remove();__trycodeStart()};const __trycodeReady=()=>{const fontsReady=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]):Promise.resolve();fontsReady.then(__trycodeRun,__trycodeRun)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeReady,{once:true});},{once:true});else {const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeReady,{once:true});}<\/script>`;
+  return `<scr${'ipt'}>const __trycodeStart=()=>{${escapedRuntime}};let __trycodeStarted=false;const __trycodePrimeAudio=()=>{try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!window.__trycodeSharedAudioContext)window.__trycodeSharedAudioContext=new AC();const ac=window.__trycodeSharedAudioContext;const p=ac.resume&&ac.resume();if(p&&p.catch)p.catch(()=>{});try{const osc=ac.createOscillator();const gain=ac.createGain();gain.gain.setValueAtTime(0,ac.currentTime);osc.connect(gain).connect(ac.destination);osc.start(ac.currentTime);osc.stop(ac.currentTime+0.01)}catch{}}catch{}};const __trycodeRun=()=>{if(__trycodeStarted)return;__trycodeStarted=true;document.body.classList.add('started');document.getElementById('startOverlay')?.remove();__trycodeStart()};const __trycodeReady=()=>{const fontsReady=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]):Promise.resolve();fontsReady.then(__trycodeRun,__trycodeRun)};const __trycodeOnStartClick=()=>{__trycodePrimeAudio();__trycodeReady()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeOnStartClick,{once:true});},{once:true});else {const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeOnStartClick,{once:true});}<\/script>`;
 }
 function buildExportHTMLDocument(fengariSource, runtimeJs){
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title>${buildExportFontHeadHtml()}<style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;filter:blur(4px)}body.started canvas{filter:none}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:34px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:34px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:34px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}.startOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,8,4,.45);backdrop-filter:blur(4px);z-index:50}.startCard{display:flex;flex-direction:column;gap:10px;align-items:center;padding:14px 16px;border:2px solid rgba(255,255,255,.45);border-radius:14px;background:rgba(20,20,20,.72);color:#fff;font:700 12px sans-serif;letter-spacing:.06em;text-transform:uppercase}.startBtn{width:76px;height:76px;border-radius:50%;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.14);color:#fff;font-size:30px;cursor:pointer}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="startOverlay" id="startOverlay"><div class="startCard"><button class="startBtn" id="startBtn">▶</button><div>Click to play</div></div></div><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">▲</div><div class="dpadBtn left" data-dpad-btn="2">&lt;</div><div class="dpadBtn right" data-dpad-btn="3">&gt;</div><div class="dpadBtn down" data-dpad-btn="1">▼</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><scr${'ipt'}>${escapeInlineScript(fengariSource)}<\/script>${buildExportRuntimeStartScript(runtimeJs)}</body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title>${buildExportFontHeadHtml()}<style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;filter:blur(4px)}body.started canvas{filter:none}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:34px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:34px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:34px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}.startOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,8,4,.45);backdrop-filter:blur(4px);z-index:50}.startCard{display:flex;flex-direction:column;gap:10px;align-items:center;padding:14px 16px;border:2px solid rgba(255,255,255,.45);border-radius:14px;background:rgba(20,20,20,.72);color:#fff;font:700 12px sans-serif;letter-spacing:.06em;text-transform:uppercase}.startBtn{width:76px;height:76px;border-radius:50%;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.14);color:#fff;font-size:30px;cursor:pointer}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="startOverlay" id="startOverlay"><div class="startCard"><button class="startBtn" id="startBtn">&#9654;</button><div>Click to play</div></div></div><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">&#9650;</div><div class="dpadBtn left" data-dpad-btn="2">&lt;</div><div class="dpadBtn right" data-dpad-btn="3">&gt;</div><div class="dpadBtn down" data-dpad-btn="1">&#9660;</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><scr${'ipt'}>${escapeInlineScript(fengariSource)}<\/script>${buildExportRuntimeStartScript(runtimeJs)}</body></html>`;
 }
 async function exportHTML(){
   saveEditorToCurrentCodeFile();
@@ -2941,7 +2941,7 @@ function buildDocs(){
     sec.innerHTML=`<h3>${escapeHtml(category.toUpperCase())}</h3>`;
     docs.forEach(doc=>{
       const argsHtml=(doc.args||[]).length
-        ? `<div class="docDesc"><b>Args</b></div>${doc.args.map(([arg,desc])=>`<div class="docDesc"><code>${escapeHtml(arg)}</code> â€” ${escapeHtml(desc)}</div>`).join('')}`
+        ? `<div class="docDesc"><b>Args</b></div>${doc.args.map(([arg,desc])=>`<div class="docDesc"><code>${escapeHtml(arg)}</code> \u2014 ${escapeHtml(desc)}</div>`).join('')}`
         : `<div class="docDesc"><b>Args</b></div><div class="docDesc">No arguments.</div>`;
       const examplesHtml=(doc.examples||[]).length
         ? `<div class="docDesc"><b>Examples</b></div>${doc.examples.map(example=>`<div class="docCode">${escapeHtml(example)}</div>`).join('')}`
@@ -6332,7 +6332,7 @@ function _draw()
   print("2048 clone", 14, 8, 8, color(255, 243, 223), color(0,0,0))
   print("score: "..score, 11, 8, 24, color(255, 221, 129), color(0,0,0))
   print("high: "..high_score, 11, 140, 24, color(196, 244, 255), color(0,0,0))
-  print("dpad move  â€¢  A reset", 9, 8, 248, color(190, 196, 210), color(0,0,0))
+  print("dpad move  \u2022  A reset", 9, 8, 248, color(190, 196, 210), color(0,0,0))
   for y=1,size do
     for x=1,size do
       local v = board[y][x]
@@ -7882,7 +7882,7 @@ function importPngIntoSpriteFolder(folderIndex,file,autoScaleLarge=false){
       invalidateEditorRenderCache();
       selectSpriteFolder(folderIndex);
       if(shouldScaleDown){
-        toast(`<b>Imported PNG</b> into sprite ${folderIndex} (scaled ${sourceW}x${sourceH} â†’ ${w}x${h})`);
+        toast(`<b>Imported PNG</b> into sprite ${folderIndex} (scaled ${sourceW}x${sourceH} \u2192 ${w}x${h})`);
       }else{
         toast(`<b>Imported PNG</b> into sprite ${folderIndex}`);
       }
@@ -7962,7 +7962,7 @@ function refreshSpriteList(){
     }
     const actionBtn=document.createElement('button');
     actionBtn.className='smallbtn spriteActionBtn';
-    actionBtn.textContent='â‹®';
+    actionBtn.textContent='\u22EE';
     actionBtn.title='Sprite actions';
     const actionMenu=document.createElement('div');
     actionMenu.className='spriteActionMenu';
@@ -8055,7 +8055,7 @@ function updateSpriteFrameStatus(){
   const editLabel=$("spriteEditFrameLabel");
   if(editLabel) editLabel.textContent=`Editing frame ${spriteFrameName(state.currentSpriteFrame)} / ${Math.max(1, frameCount)}`;
   const animToggleBtn=$("spriteAnimToggleBtn");
-  if(animToggleBtn) animToggleBtn.textContent=state.spriteAnimPlaying?'â¸ï¸':'â–¶ï¸';
+  if(animToggleBtn) animToggleBtn.textContent=state.spriteAnimPlaying?'\u23F8\uFE0F':'\u25B6\uFE0F';
   const statusLabel=$("spriteAnimStatusLabel");
   if(statusLabel){
     if(state.spriteAnimPlaying) statusLabel.textContent=`Preview playing at ${Math.max(1, Number(state.spriteAnimSpeed)||6)} fps`;
@@ -9753,7 +9753,7 @@ function makeRuntime(){
     const fengariApi=getFengariApi();
     if(!fengariApi){
       L=null;
-      setLastRunError('Loading Lua runtime dependencyâ€¦');
+      setLastRunError('Loading Lua runtime dependency\u2026');
       cls();
       ensureFengariApi().then(api=>{
         if(!api) throw new Error('Lua runtime API not found after script load.');
