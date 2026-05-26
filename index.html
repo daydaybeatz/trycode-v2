@@ -61,13 +61,10 @@
     body.dark-mode .sidebar input,
     body.dark-mode .sidebar select,
     body.dark-mode .sidebar textarea{border-radius:4px}
+    body.dark-mode .strokeStepperBtn,
+    body.dark-mode .runtimeStartPlayBtn{border-radius:999px}
     body.dark-mode .menuToggleInput,
-    body.dark-mode .menuToggleInput::after,
-    body.dark-mode .joy,
-    body.dark-mode .joy .knob,
-    body.dark-mode .symbtn,
-    body.dark-mode .dpadBtn,
-    body.dark-mode .sysbtn{border-radius:6px}
+    body.dark-mode .menuToggleInput::after{border-radius:6px}
     @media (max-width: 900px){
       .runtimeHideBtn{display:none !important}
     }
@@ -237,6 +234,15 @@
     .runtimeView.mobile-fullscreen{inset:0;padding:0;border:none;box-shadow:none;background:transparent;border-radius:0}
     .screenStage{position:absolute;inset:10px;display:flex;align-items:center;justify-content:center;border:4px solid var(--line);border-radius:18px;background:#201810;box-shadow:inset 0 0 0 3px #5c452f}
     #screen{image-rendering:pixelated;background:#000;display:block;border-radius:0}
+    .runtimeStartOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:34;background:rgba(18,10,6,.48);backdrop-filter:blur(5px)}
+    .runtimeStartOverlay.hidden{display:none}
+    .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:13px 14px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
+    .runtimeStartPlaceholder{width:min(100%,420px);padding:10px 12px;border:3px solid #9fa6d8;border-radius:6px;background:#2b2f4f;font-family:"Press Start 2P","Courier New",monospace;color:#dfe5ff;letter-spacing:.04em;line-height:1.45;text-shadow:0 1px 0 rgba(0,0,0,.35)}
+    .runtimeStartPlaceholderTitle{margin:0 0 8px;font-size:10px;color:#f3f5ff}
+    .runtimeStartPlaceholderLine{margin:4px 0;font-size:9px;word-break:break-word}
+    .runtimeStartPlayBtn{width:78px;height:78px;border-radius:50%;font-size:30px;line-height:1;display:inline-flex;align-items:center;justify-content:center;padding:0;background:linear-gradient(180deg,#f3f0e7,#d9d7c7);border-color:var(--line);color:#20332d;box-shadow:0 4px 0 #2a3f35}
+    .playTriangle{display:block;width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:18px solid currentColor;transform:translateX(2px)}
+    .runtimeStartHint{font-size:12px;font-weight:800;letter-spacing:.06em;color:var(--danger);text-transform:uppercase}
     .runtimeBar{display:none}
     .runtimeErrorBox{position:absolute;left:16px;top:16px;z-index:35;display:none;max-width:min(420px,calc(100% - 32px));padding:10px 12px;border:3px solid #5f0f10;border-radius:16px;background:rgba(97,16,18,.94);box-shadow:0 6px 0 rgba(42,6,8,.45);color:#fff7ee}
     .runtimeErrorBox.show{display:block}
@@ -256,14 +262,14 @@
     .runtimeDialogActions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
     .runtimeDialogActions .uiBtn{min-width:84px}
     .runtimeDialogActions .uiBtn.primary{border-color:var(--accent);box-shadow:0 4px 0 #7a2a18}
-    .hud{position:absolute;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;--hud-edge:clamp(14px,4vw,28px);--hud-bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));--joy-size:clamp(112px,28vw,142px);--knob-size:calc(var(--joy-size) * .42);--cluster-size:clamp(148px,36vw,174px);--face-size:clamp(56px,13.5vw,66px);--face-offset:calc((var(--cluster-size) - var(--face-size)) / 2);--sys-height:clamp(36px,9vw,42px)}
+    .hud{position:absolute;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;--hud-edge:clamp(14px,4vw,28px);--hud-bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));--hud-controls-lift:clamp(16px,3.5vw,24px);--joy-size:clamp(112px,28vw,142px);--knob-size:calc(var(--joy-size) * .42);--cluster-size:clamp(148px,36vw,174px);--face-size:clamp(56px,13.5vw,66px);--face-offset:calc((var(--cluster-size) - var(--face-size)) / 2);--sys-height:clamp(36px,9vw,42px)}
     body.desktop-ui .hud{display:none}
     .joy{position:absolute;width:var(--joy-size);height:var(--joy-size);border-radius:50%;border:3px solid #f5e2b8;background:rgba(255,245,223,.12);box-shadow:0 4px 0 rgba(0,0,0,.25);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
     .joy .knob{position:absolute;left:50%;top:50%;width:var(--knob-size);height:var(--knob-size);transform:translate(-50%,-50%);border-radius:50%;border:3px solid #fff4db;background:rgba(255,255,255,.2)}
-    .joy.left{left:var(--hud-edge);bottom:var(--hud-bottom)}
-    .joy.right{left:34%;bottom:var(--hud-bottom)}
-    .dpadCluster{position:absolute;left:var(--hud-edge);bottom:var(--hud-bottom);width:var(--cluster-size);height:var(--cluster-size);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
-    .btnCluster{position:absolute;right:var(--hud-edge);bottom:var(--hud-bottom);width:var(--cluster-size);height:var(--cluster-size);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+    .joy.left{left:var(--hud-edge);bottom:calc(var(--hud-bottom) + var(--hud-controls-lift))}
+    .joy.right{left:34%;bottom:calc(var(--hud-bottom) + var(--hud-controls-lift))}
+    .dpadCluster{position:absolute;left:var(--hud-edge);bottom:calc(var(--hud-bottom) + var(--hud-controls-lift));width:var(--cluster-size);height:var(--cluster-size);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+    .btnCluster{position:absolute;right:var(--hud-edge);bottom:calc(var(--hud-bottom) + var(--hud-controls-lift));width:var(--cluster-size);height:var(--cluster-size);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
     .sysCluster{position:absolute;left:50%;bottom:max(20px,calc(env(safe-area-inset-bottom) + 10px));transform:translateX(-50%);display:flex;gap:clamp(8px,2.5vw,14px);pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
     .sysbtn{min-width:clamp(78px,19vw,94px);height:var(--sys-height);padding:0 14px;border-radius:999px;border:3px solid #f7ebcf;background:rgba(255,245,223,.14);pointer-events:auto;touch-action:none;display:grid;place-items:center;font-weight:900;font-size:clamp(12px,3vw,14px);color:#fff7e9;text-shadow:1px 1px 0 #472f24;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
     .symbtn,.dpadBtn{position:absolute;width:var(--face-size);height:var(--face-size);border-radius:50%;border:3px solid #f7ebcf;background:rgba(255,245,223,.14);pointer-events:auto;touch-action:none;display:grid;place-items:center;font-weight:900;font-size:clamp(14px,3.8vw,18px);color:#fff7e9;text-shadow:1px 1px 0 #472f24;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
@@ -395,6 +401,7 @@
     body:not(.dark-mode) .codeLineNumbers{background:#2a3f35;color:#d9d7c7;border-right-color:rgba(47,74,63,.65)}
     body:not(.dark-mode) .codeHighlight{color:#fbf6e7}
     body:not(.dark-mode) .code textarea.code{caret-color:#fbf6e7}
+    body:not(.dark-mode) .runtimeStartPlayBtn{background:linear-gradient(180deg,#f1efe3,#d9d7c7);border-color:var(--line);color:#2a3f35;box-shadow:0 4px 0 var(--shadow)}
     body:not(.dark-mode) .code textarea.code::selection{background:rgba(122,166,178,.22)}
     body:not(.dark-mode) .tok-comment{color:#9cb3a7}
     body:not(.dark-mode) .tok-keyword{color:#fbf6e7;font-weight:700}
@@ -490,10 +497,16 @@
       background-position:0 0, 0 7px, 7px -7px, -7px 0}
     body.dark-mode .edgePalette{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 3px 0 #0f1528}
     body.dark-mode .screenStage{background:#0b1021;box-shadow:inset 0 0 0 3px rgba(199,208,232,.12)}
+    body.dark-mode .runtimeStartCard{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 6px 0 #0f1528}
+    body.dark-mode .runtimeStartPlayBtn{background:linear-gradient(180deg,#f3f0e7,#d9d7c7);border-color:var(--line);color:#1f1210;box-shadow:0 4px 0 #0f1528}
+    body.dark-mode .runtimeStartHint{color:#f7b7c4}
+    body.dark-mode .runtimeStartPlaceholder{background:#0a1122;border-color:#6f83b6;color:#e8ecff}
     body.dark-mode .joy{border-color:#c7d0e8;background:rgba(199,208,232,.1);box-shadow:0 4px 0 rgba(0,0,0,.3)}
     body.dark-mode .joy .knob{border-color:#f4f1e3;background:rgba(241,166,90,.22)}
     body.dark-mode .symbtn,
     body.dark-mode .dpadBtn{border-color:#c7d0e8;background:rgba(79,97,141,.4);color:#f4f1e3;text-shadow:1px 1px 0 #0b1021}
+    body.dark-mode .symbtn,
+    body.dark-mode .dpadBtn{border-radius:50%}
     body.dark-mode .eyeIcon path,
     body.dark-mode .eyeIcon circle,
     body.dark-mode .eyeIcon line{stroke:#d8e1f4}
@@ -546,13 +559,15 @@
     body.dark-mode .sidebar input,
     body.dark-mode .sidebar select,
     body.dark-mode .sidebar textarea{border-radius:4px}
+    body.dark-mode .strokeStepperBtn,
+    body.dark-mode .runtimeStartPlayBtn{border-radius:999px}
     body.dark-mode .menuToggleInput,
-    body.dark-mode .menuToggleInput::after,
+    body.dark-mode .menuToggleInput::after{border-radius:6px}
     body.dark-mode .joy,
     body.dark-mode .joy .knob,
     body.dark-mode .symbtn,
-    body.dark-mode .dpadBtn,
-    body.dark-mode .sysbtn{border-radius:6px}
+    body.dark-mode .dpadBtn{border-radius:50%}
+    body.dark-mode .sysbtn{border-radius:999px}
     @media (max-width: 900px){
       .animPreviewBar{
         right:0;
@@ -635,10 +650,10 @@
         <div class="sidebar panelSkin">
           <div class="pane"><h4>SOUNDS</h4><div class="formRow"><button class="mbtn" id="addSoundBtn">Add Sound</button></div>
             <div class="pane attachedPane"><h4>SETTINGS</h4>
-              <div class="formRow"><div class="field"><label>Wave</label><select id="soundWaveInput"><option>sine</option><option>square</option><option>sawtooth</option><option>triangle</option><option>noise</option><option>wavetable</option></select></div><div class="field"><label>Length (sec)</label><input id="soundLengthInput" type="number" step="0.05" min="0.05" value="0.3"></div></div>
-              <div class="formRow"><div class="field"><label>Volume</label><input id="soundVolumeInput" type="number" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Pitch Hz</label><input id="soundPitchInput" type="number" min="20" value="440"></div></div>
-              <div class="formRow"><div class="field"><label>Attack</label><input id="soundAttackInput" type="number" step="0.01" min="0" value="0.01"></div><div class="field"><label>Decay</label><input id="soundDecayInput" type="number" step="0.01" min="0" value="0.08"></div></div>
-              <div class="formRow"><div class="field"><label>Sustain</label><input id="soundSustainInput" type="number" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Release</label><input id="soundReleaseInput" type="number" step="0.01" min="0" value="0.1"></div></div>
+              <div class="formRow"><div class="field"><label>Wave</label><select id="soundWaveInput"><option>sine</option><option>square</option><option>sawtooth</option><option>triangle</option><option>noise</option><option>wavetable</option></select></div><div class="field"><label>Length (sec) <span id="soundLengthValue">0.30</span></label><input id="soundLengthInput" type="range" step="0.05" min="0.05" max="2" value="0.3"></div></div>
+              <div class="formRow"><div class="field"><label>Volume <span id="soundVolumeValue">0.60</span></label><input id="soundVolumeInput" type="range" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Pitch Hz <span id="soundPitchValue">440</span></label><input id="soundPitchInput" type="range" min="20" max="2000" step="1" value="440"></div></div>
+              <div class="formRow"><div class="field"><label>Attack <span id="soundAttackValue">0.01</span></label><input id="soundAttackInput" type="range" step="0.01" min="0" max="1" value="0.01"></div><div class="field"><label>Decay <span id="soundDecayValue">0.08</span></label><input id="soundDecayInput" type="range" step="0.01" min="0" max="1" value="0.08"></div></div>
+              <div class="formRow"><div class="field"><label>Sustain <span id="soundSustainValue">0.60</span></label><input id="soundSustainInput" type="range" step="0.01" min="0" max="1" value="0.6"></div><div class="field"><label>Release <span id="soundReleaseValue">0.10</span></label><input id="soundReleaseInput" type="range" step="0.01" min="0" max="2" value="0.1"></div></div>
               <div class="formRow"><button class="mbtn" id="previewSoundBtn">Preview</button></div>
             </div>
             <div class="pane attachedPane"><h4>PITCH SEQUENCER</h4><canvas class="waveCanvas" id="soundWaveCanvas" width="800" height="240"></canvas></div>
@@ -676,7 +691,7 @@
 
     <div class="view" id="view-runtime">
       <div class="runtimeView panelSkin">
-        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas></div>
+        <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><div class="runtimeStartPlaceholder" id="runtimeStartPlaceholder"><p class="runtimeStartPlaceholderTitle">**** TRY-CODE CONSOLE ****</p><p class="runtimeStartPlaceholderLine" id="runtimeStartProjectLine">PROJECT:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartResolutionLine">RESOLUTION:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartControlsLine">ONSCREEN CONTROLS:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartFontLine">DEFAULT FONT:</p><p class="runtimeStartPlaceholderLine">BOOT READY.</p></div><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
         <div class="runtimeBar"></div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
           <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><div class="runtimeErrorActions"><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button><button class="uiBtn runtimeErrorGotoBtn" id="gotoRuntimeErrorBtn">Go to</button></div></div>
@@ -1220,6 +1235,7 @@ function flattenPalettePages(pages){
 const DEFAULT_PALETTE = flattenPalettePages(PRESET_PALETTE_PAGES);
 let runtime;
 let runtimeUiHidden=false;
+let runtimeStarted=false;
 function applyRuntimeUiHiddenState(){
   const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
   if(!canHide) runtimeUiHidden=false;
@@ -1254,8 +1270,35 @@ const previewImages = {};
 const editorRenderCache = { sprites:new Map(), tiles:new Map() };
 const spriteHistory = { undo: [], redo: [] };
 const mapHistory = { undo: [], redo: [] };
-let audioCtx = null, currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
-function ctxAudio(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+let audioCtx = null, audioUnlocked = false, pendingSfxRequests = [], currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
+function ctxAudio(){
+  const AudioCtor=window.AudioContext||window.webkitAudioContext;
+  if(!AudioCtor) throw new Error('Web Audio API is unavailable in this browser.');
+  if(!audioCtx || audioCtx.state==='closed'){
+    audioCtx = new AudioCtor();
+  }
+  return audioCtx;
+}
+function flushPendingSfx(){
+  if(!audioUnlocked || !pendingSfxRequests.length) return;
+  const queue=pendingSfxRequests.splice(0,pendingSfxRequests.length);
+  queue.forEach(req=>{ previewSound(req.index, req.loop, true); });
+}
+function ensureEditorAudioRunning(){
+  const ac=ctxAudio();
+  if(!audioUnlocked) return false;
+  if(ac.state==='running') return true;
+  Promise.resolve(ac.resume&&ac.resume()).then(()=>{ if(ac.state==='running') flushPendingSfx(); }).catch(()=>{});
+  return ac.state==='running';
+}
+function unlockEditorAudio(){
+  audioUnlocked=true;
+  ensureEditorAudioRunning();
+  flushPendingSfx();
+}
+['pointerdown','mousedown','touchstart','keydown','click'].forEach(type=>window.addEventListener(type,unlockEditorAudio,{capture:true,passive:true}));
+['focus','pageshow'].forEach(type=>window.addEventListener(type,()=>{ unlockEditorAudio(); },{capture:true,passive:true}));
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') unlockEditorAudio(); },{capture:true,passive:true});
 function makeSprite(w=16,h=16){ const pixels=[]; for(let y=0;y<h;y++){ const row=[]; for(let x=0;x<w;x++) row.push(-1); pixels.push(row);} return {w,h,pixels}; }
 function cloneSprite(s){ return JSON.parse(JSON.stringify(s)); }
 function makeEmptyMap(name, mapW, mapH){ const mapName=String(name??"").trim(); const mkLayer=(n)=>{const data=[]; for(let y=0;y<mapH;y++){const row=[]; for(let x=0;x<mapW;x++) row.push(0); data.push(row);} return {name:n,visible:true,data};}; return {name:mapName&&mapName!=="0"?mapName:"",layers:[mkLayer("Ground"),mkLayer("Walls")]}; }
@@ -1309,7 +1352,9 @@ function ensureSpriteFolderView(folder){
   const allowed=['off','auto','1','2','4','8','16','32','64'];
   const gridMode=allowed.includes(mode)?mode:'auto';
   const scrollInitialized=raw.scrollInitialized===true;
-  folder.view={zoom,offsetX,offsetY,gridMode,scrollInitialized};
+  const lastCanvasW=Number.isFinite(Number(raw.lastCanvasW))?Number(raw.lastCanvasW):0;
+  const lastCanvasH=Number.isFinite(Number(raw.lastCanvasH))?Number(raw.lastCanvasH):0;
+  folder.view={zoom,offsetX,offsetY,gridMode,scrollInitialized,lastCanvasW,lastCanvasH};
   return folder.view;
 }
 function currentSpriteView(){ return ensureSpriteFolderView(currentSpriteFolder()); }
@@ -2010,15 +2055,15 @@ function renderCodeHighlight(){
   inner.innerHTML=String(ed.value||"").split(/\n/).map(highlightLuaLine).join("\n");
 }
 function expandLuaShorthand(source){
-  const shorthand=/([A-Za-z_][A-Za-z0-9_\.]*)(\s*)([+\-*\/])=(\s*)(.*?)(?=(\s+\bend\b|\s*;|\s*$))/g;
+  const shorthand=/(^|[^A-Za-z0-9_])(\b[A-Za-z_][A-Za-z0-9_\.\[\]"'\(\)]*)(\s*)([+\-*\/])=(\s*)(.*?)(?=(\s+\bend\b|\s*;|\s*$))/g;
   return String(source||"").split(/\r?\n/).map(line=>{
     const {code, comment}=splitLuaLineComment(line);
     let changed=false;
-    const expanded=code.replace(shorthand,(match,name,_leftSpace,op,_rightSpace,rhs)=>{
+    const expanded=code.replace(shorthand,(match,prefix,name,_leftSpace,op,_rightSpace,rhs)=>{
       const value=rhs.trim();
       if(!value) return match;
       changed=true;
-      return `${name} = ${name} ${op} (${value})`;
+      return `${prefix}${name} = ${name} ${op} (${value})`;
     });
     return changed ? `${expanded}${comment}` : line;
   }).join("\n");
@@ -2315,6 +2360,7 @@ async function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={})
   refreshMusicUI();
   runtime.syncProject(state.appProject);
   runtime.loadEditor(getProjectLua());
+  updateRuntimePausePlaceholder();
   setView('code');
 }
 async function loadAutoBackupProject(){
@@ -2414,6 +2460,7 @@ function refreshProjectList(){
       delete all[name];
       saveAllProjects(all);
       if(state.currentProjectName===name) state.currentProjectName=next;
+      updateRuntimePausePlaceholder();
       refreshProjectList();
       toast(`<b>Renamed:</b> ${escapeHtml(name)} â†’ ${escapeHtml(next)}`);
     };
@@ -2539,6 +2586,7 @@ async function persistProjectSnapshot(name){
   all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject,{stripMusicData:true}) };
   saveAllProjects(all);
   refreshProjectList();
+  updateRuntimePausePlaceholder();
   updateCodeLineNumbers();
   const hasMusicAssets=(state.appProject.music||[]).some(track=>getMusicAssetKey(track));
   toast(hasMusicAssets ? `<b>Saved:</b> ${escapeHtml(name)}<br>Imported music is saved as browser audio blobs, not local file links.` : `<b>Saved:</b> ${escapeHtml(name)}`);
@@ -2671,10 +2719,10 @@ function buildExportFontHeadHtml(){
 }
 function buildExportRuntimeStartScript(runtimeJs){
   const escapedRuntime=escapeInlineScript(runtimeJs);
-  return `<scr${'ipt'}>const __trycodeStart=()=>{${escapedRuntime}};let __trycodeStarted=false;const __trycodeRun=()=>{if(__trycodeStarted)return;__trycodeStarted=true;__trycodeStart()};const __trycodeReady=()=>{const fontsReady=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]):Promise.resolve();fontsReady.then(__trycodeRun,__trycodeRun)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',__trycodeReady,{once:true});else __trycodeReady()<\/script>`;
+  return `<scr${'ipt'}>const __trycodeStart=()=>{${escapedRuntime}};let __trycodeStarted=false;const __trycodeRun=()=>{if(__trycodeStarted)return;__trycodeStarted=true;document.body.classList.add('started');document.getElementById('startOverlay')?.remove();__trycodeStart()};const __trycodeReady=()=>{const fontsReady=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]):Promise.resolve();fontsReady.then(__trycodeRun,__trycodeRun)};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeReady,{once:true});},{once:true});else {const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeReady,{once:true});}<\/script>`;
 }
 function buildExportHTMLDocument(fengariSource, runtimeJs){
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title>${buildExportFontHeadHtml()}<style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:34px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:34px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:34px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">â–²</div><div class="dpadBtn left" data-dpad-btn="2">&lt;</div><div class="dpadBtn right" data-dpad-btn="3">&gt;</div><div class="dpadBtn down" data-dpad-btn="1">â–¼</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><scr${'ipt'}>${escapeInlineScript(fengariSource)}<\/script>${buildExportRuntimeStartScript(runtimeJs)}</body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title>${buildExportFontHeadHtml()}<style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;filter:blur(4px)}body.started canvas{filter:none}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:34px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:34px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:34px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}.startOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,8,4,.45);backdrop-filter:blur(4px);z-index:50}.startCard{display:flex;flex-direction:column;gap:10px;align-items:center;padding:14px 16px;border:2px solid rgba(255,255,255,.45);border-radius:14px;background:rgba(20,20,20,.72);color:#fff;font:700 12px sans-serif;letter-spacing:.06em;text-transform:uppercase}.startBtn{width:76px;height:76px;border-radius:50%;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.14);color:#fff;font-size:30px;cursor:pointer}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="startOverlay" id="startOverlay"><div class="startCard"><button class="startBtn" id="startBtn">▶</button><div>Click to play</div></div></div><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">▲</div><div class="dpadBtn left" data-dpad-btn="2">&lt;</div><div class="dpadBtn right" data-dpad-btn="3">&gt;</div><div class="dpadBtn down" data-dpad-btn="1">▼</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><scr${'ipt'}>${escapeInlineScript(fengariSource)}<\/script>${buildExportRuntimeStartScript(runtimeJs)}</body></html>`;
 }
 async function exportHTML(){
   saveEditorToCurrentCodeFile();
@@ -7530,6 +7578,34 @@ function getExampleProjects(){
   ];
 }
 function setProjectCode(code){ state.syncLock=true; try{$("codeEditor").value=code; saveEditorToCurrentCodeFile(); runtime.setLua(getProjectLua()); state.lastEdited="code";} finally{state.syncLock=false;} }
+function updateRuntimePausePlaceholder(){
+  const project=state.appProject||{};
+  const settings=project.settings||{};
+  const projectMeta=project.project||{};
+  const normalizeText=value=>String(value??'').trim()||'Unknown';
+  const projectName=normalizeText(state.currentProjectName||project.name||projectMeta.name||'Untitled project');
+  const resolutionLabels={
+    normal:'Normal (480x270)',
+    hd_2x:'2x (960x540)',
+    hd_3x:'3x (1440x810)',
+    hd_4x:'4x (1920x1080)',
+    mobile_fullscreen:'Mobile portrait (270x480)'
+  };
+  const controlsLabels={
+    left_joystick:'Left joystick',
+    dpad:'D-pad',
+    none:'No onscreen controls'
+  };
+  const selectedResolution=settings.displayMode||settings.resolution;
+  const resolution=resolutionLabels[selectedResolution]||normalizeText(selectedResolution||'Normal (480x270)');
+  const controls=controlsLabels[settings.movementInput]||normalizeText(settings.movementInput||'Left joystick');
+  const font=normalizeText(settings.defaultPrintFont||'Press Start 2P');
+  const setLine=(id,label,value)=>{ const el=$(id); if(el) el.textContent=`${label}: ${value}`; };
+  setLine('runtimeStartProjectLine','PROJECT',projectName);
+  setLine('runtimeStartResolutionLine','RESOLUTION',resolution);
+  setLine('runtimeStartControlsLine','ONSCREEN CONTROLS',controls);
+  setLine('runtimeStartFontLine','DEFAULT FONT',font);
+}
 function centerMapEditorView(closeup=true){
   const wrap=$("mapCanvasWrap");
   if(!wrap || !state.appProject) return false;
@@ -7553,6 +7629,12 @@ function setView(name){
   }
   const previousView=state.activeView;
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
+  if(leavingRuntime){
+    runtimeStarted=false;
+    runtime?.setActive?.(false);
+    updateRuntimePausePlaceholder();
+    $("runtimeStartOverlay")?.classList.remove("hidden");
+  }
   const leavingMusicEditor=previousView==="music" && name!=="music";
   state.activeView=name;
   if(leavingRuntime || leavingMusicEditor){
@@ -7561,7 +7643,7 @@ function setView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   targetView.classList.add('active');
   if(name==="code") requestAnimationFrame(()=>{ updateCodeLineNumbers(); focusIfAppropriate($("codeEditor")); });
-  if(name==="sprites") drawSpriteEditor();
+  if(name==="sprites") { drawSpriteEditor(); requestAnimationFrame(()=>drawSpriteEditor()); }
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
   if(name==="music") { refreshMusicUI();  }
   if(name==="map"){
@@ -7584,6 +7666,9 @@ function setView(name){
     });
   }
   if(name==="runtime"){
+    updateRuntimePausePlaceholder();
+    $("runtimeStartOverlay")?.classList.toggle("hidden", runtimeStarted);
+    runtime?.setActive?.(runtimeStarted);
     runtime.resizeDisplay();
     scheduleRuntimeViewportFocus();
     requestAnimationFrame(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
@@ -7930,6 +8015,13 @@ function clearCurrentSpriteFrame(){
   drawMapEditor();
   runtime.syncProject(state.appProject);
 }
+function ensureSpriteViewInitialized(metrics=getSpriteCanvasMetrics()){
+  const view=currentSpriteView();
+  const shouldInit=!view.scrollInitialized||!Number.isFinite(view.lastCanvasW)||!Number.isFinite(view.lastCanvasH)||view.lastCanvasW<=2||view.lastCanvasH<=2;
+  if(shouldInit){ view.offsetX=0; view.offsetY=0; view.scrollInitialized=true; }
+  view.lastCanvasW=metrics.width;
+  view.lastCanvasH=metrics.height;
+}
 function getSpriteCanvasMetrics(){
   const sprite=currentSprite();
   const z=getSpriteDisplayZoom();
@@ -8015,6 +8107,7 @@ function drawSpriteEditor(){
   ensureProjectData();
   const canvas=$("spriteCanvas"), ctx=canvas.getContext('2d');
   const metrics=getSpriteCanvasMetrics();
+  ensureSpriteViewInitialized(metrics);
   const {sprite:s, width:cw, height:ch, baseX, baseY, z}=metrics;
   const view=currentSpriteView();
   if(canvas.width!==cw) canvas.width=cw;
@@ -8611,9 +8704,9 @@ function paintMapCircle(start,end,filled){
   return changed;
 }
 function midiToHz(n){ return 440*Math.pow(2,(n-69)/12); }
-async function previewSound(index,loop=false){ const snd=state.appProject.sounds[index]; if(!snd) return; const ac=ctxAudio(); try{ await ac.resume(); }catch{} const now=ac.currentTime; const len=Math.max(0.05,snd.length); const steps=Math.max(1,snd.wavetable.length); const stepDur=len/steps; if(snd.wave==="noise"){ const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ const seq=snd.wavetable[Math.floor((i/data.length)*steps)]||0; data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65); } const src=ac.createBufferSource(); const gain=ac.createGain(); src.buffer=buffer; src.loop=!!loop; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(snd.volume,now+snd.attack); gain.gain.linearRampToValueAtTime(snd.volume*snd.sustain,now+snd.attack+snd.decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+snd.release); src.connect(gain).connect(ac.destination); src.start(now); if(!loop) src.stop(now+len+snd.release+0.02); return; }
- const osc=ac.createOscillator(); const gain=ac.createGain(); osc.type=(snd.wave==="wavetable"?"sine":snd.wave); gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(snd.volume,now+snd.attack); gain.gain.linearRampToValueAtTime(snd.volume*snd.sustain,now+snd.attack+snd.decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+snd.release); const base=snd.pitch; for(let i=0;i<steps;i++){ const seq=snd.wavetable[i]||0; const semis=seq*12; const freq=base*Math.pow(2,semis/12); osc.frequency.setValueAtTime(freq, now+i*stepDur); }
- osc.connect(gain); gain.connect(ac.destination); osc.start(now); if(!loop) osc.stop(now+len+snd.release+0.02); }
+function previewSound(index,loop=false,ignoreLock=false){ const soundIndex=index|0; const snd=state.appProject.sounds[soundIndex]; if(!snd) return; const ac=ctxAudio(); if(!ignoreLock && (ac.state!=="running" || !audioUnlocked)){ pendingSfxRequests.push({index:soundIndex,loop:!!loop}); return; } if(ac.state!=="running"){ Promise.resolve().then(()=>ac.resume&&ac.resume()).then(()=>{ if(ac.state==="running") previewSound(soundIndex,loop,true); }).catch(()=>{}); return; } try{ ac.resume(); }catch{} const now=ac.currentTime; const len=Math.max(0.05,Number(snd.length)||0.3); const wavetable=Array.isArray(snd.wavetable)?snd.wavetable:Array.from({length:64},()=>0); const steps=Math.max(1,wavetable.length); const stepDur=len/steps; const volume=Number(snd.volume)||0.6; const attack=Math.max(0,Number(snd.attack)||0.01); const decay=Math.max(0,Number(snd.decay)||0.08); const sustain=Math.max(0,Math.min(1,Number(snd.sustain)||0.6)); const release=Math.max(0,Number(snd.release)||0.1); if(snd.wave==="noise"){ const buffer=ac.createBuffer(1,Math.floor(ac.sampleRate*len),ac.sampleRate); const data=buffer.getChannelData(0); for(let i=0;i<data.length;i++){ const seq=wavetable[Math.floor((i/data.length)*steps)]||0; data[i]=(Math.random()*2-1)*(0.35+Math.abs(seq)*0.65); } const src=ac.createBufferSource(); const gain=ac.createGain(); src.buffer=buffer; src.loop=!!loop; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+attack); gain.gain.linearRampToValueAtTime(volume*sustain,now+attack+decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+release); src.connect(gain).connect(ac.destination); src.start(now); if(!loop) src.stop(now+len+release+0.02); return; }
+ const osc=ac.createOscillator(); const gain=ac.createGain(); osc.type=(snd.wave==="wavetable"?"sine":snd.wave)||"square"; gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(volume,now+attack); gain.gain.linearRampToValueAtTime(volume*sustain,now+attack+decay); gain.gain.linearRampToValueAtTime(0.0001,now+len+release); const base=Number(snd.pitch)||440; for(let i=0;i<steps;i++){ const seq=wavetable[i]||0; const semis=seq*12; const freq=base*Math.pow(2,semis/12); osc.frequency.setValueAtTime(freq, now+i*stepDur); }
+ osc.connect(gain); gain.connect(ac.destination); osc.start(now); if(!loop) osc.stop(now+len+release+0.02); }
 
 function refreshMusicWaveOptions(){
   const sel=$("musicWaveInput");
@@ -8823,8 +8916,9 @@ function clearSoundSlot(index){
   }else refreshSoundList();
   runtime.syncProject(state.appProject);
 }
-function refreshSoundUI(){ const s=currentSound(); refreshSoundList(); $("soundWaveInput").value=s.wave; $("soundLengthInput").value=s.length; $("soundVolumeInput").value=s.volume; $("soundPitchInput").value=s.pitch; $("soundAttackInput").value=s.attack; $("soundDecayInput").value=s.decay; $("soundSustainInput").value=s.sustain; $("soundReleaseInput").value=s.release; }
-function updateCurrentSoundFromUI(){ const s=currentSound(); s.wave=$("soundWaveInput").value; s.length=parseFloat($("soundLengthInput").value)||0.3; s.volume=parseFloat($("soundVolumeInput").value)||0.6; s.pitch=parseFloat($("soundPitchInput").value)||440; s.attack=parseFloat($("soundAttackInput").value)||0.01; s.decay=parseFloat($("soundDecayInput").value)||0.08; s.sustain=parseFloat($("soundSustainInput").value)||0.6; s.release=parseFloat($("soundReleaseInput").value)||0.1; }
+function refreshSoundUI(){ const s=currentSound(); refreshSoundList(); $("soundWaveInput").value=s.wave; $("soundLengthInput").value=s.length; $("soundVolumeInput").value=s.volume; $("soundPitchInput").value=s.pitch; $("soundAttackInput").value=s.attack; $("soundDecayInput").value=s.decay; $("soundSustainInput").value=s.sustain; $("soundReleaseInput").value=s.release; updateSoundSliderLabels(); }
+function updateCurrentSoundFromUI(){ const s=currentSound(); s.wave=$("soundWaveInput").value; s.length=parseFloat($("soundLengthInput").value)||0.3; s.volume=parseFloat($("soundVolumeInput").value)||0.6; s.pitch=parseFloat($("soundPitchInput").value)||440; s.attack=parseFloat($("soundAttackInput").value)||0.01; s.decay=parseFloat($("soundDecayInput").value)||0.08; s.sustain=parseFloat($("soundSustainInput").value)||0.6; s.release=parseFloat($("soundReleaseInput").value)||0.1; updateSoundSliderLabels(); }
+function updateSoundSliderLabels(){ const fmt=(n,d)=>Number(n||0).toFixed(d); $("soundLengthValue").textContent=fmt($("soundLengthInput").value,2); $("soundVolumeValue").textContent=fmt($("soundVolumeInput").value,2); $("soundPitchValue").textContent=String(Math.round(Number($("soundPitchInput").value)||0)); $("soundAttackValue").textContent=fmt($("soundAttackInput").value,2); $("soundDecayValue").textContent=fmt($("soundDecayInput").value,2); $("soundSustainValue").textContent=fmt($("soundSustainInput").value,2); $("soundReleaseValue").textContent=fmt($("soundReleaseInput").value,2); }
 function drawSoundWaveCanvas(){ const c=$("soundWaveCanvas"), ctx=c.getContext('2d'), s=currentSound(); const styles=getComputedStyle(document.documentElement); const paper=styles.getPropertyValue('--paper').trim()||'#edf2df'; const line=styles.getPropertyValue('--line').trim()||'#506f66'; const accent=styles.getPropertyValue('--accent').trim()||'#577f77'; ctx.clearRect(0,0,c.width,c.height); ctx.fillStyle=paper; ctx.fillRect(0,0,c.width,c.height); ctx.strokeStyle=line; ctx.lineWidth=3; ctx.strokeRect(0,0,c.width,c.height); ctx.strokeStyle=line; ctx.globalAlpha=0.35; ctx.beginPath(); ctx.moveTo(0,c.height/2); ctx.lineTo(c.width,c.height/2); ctx.stroke(); ctx.globalAlpha=1; ctx.beginPath(); ctx.moveTo(0,c.height/2); for(let i=0;i<s.wavetable.length;i++){ const x=(i/Math.max(1,s.wavetable.length-1))*c.width; const y=(1-((s.wavetable[i]+1)/2))*c.height; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.strokeStyle=accent; ctx.lineWidth=4; ctx.stroke(); }
 function refreshMusicList(){
   const wrap=$("musicList");
@@ -9007,6 +9101,7 @@ function makeRuntime(){
     mobile_fullscreen:{w:270,h:480}
   };
   const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
+  let hasStarted=false, pendingRunMode='load', runtimeActive=false;
   const dialogKeyboardInput=document.createElement('input');
   dialogKeyboardInput.type='text';
   dialogKeyboardInput.autocomplete='off';
@@ -9581,7 +9676,7 @@ function makeRuntime(){
     const endLayer=layer==null?Math.max(0,totalLayers-1):startLayer;
     pmap(mapIndex,0,0,sx0,sy0,projectRef.project.map_w,projectRef.project.map_h,startLayer,endLayer);
   }
-  function sfxPlay(index, loop=false){ previewSound(index, loop); }
+  function sfxPlay(index, loop=false){ previewSound(index|0, loop); }
   function musicPlay(src, action='play', loop=true){
     const normalizedAction=String(action??'play').trim().toLowerCase();
     if(normalizedAction==='stop'){
@@ -9728,15 +9823,30 @@ function makeRuntime(){
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); cls(); return; }
     pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
-  function setLua(code){ pendingCode=code||''; lastCode=pendingCode; if(rebuildTimer) clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>build(pendingCode,{suppressAudio:true}),80); }
-  function loadEditor(codeOverride){ currentMusicSuppressedSignatures.clear(); build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:''),{suppressAudio:true}); }
-  function rerun(codeOverride){ currentMusicSuppressedSignatures.clear(); build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
-  function reset(codeOverride){ currentMusicSuppressedSignatures.clear(); build((codeOverride!=null?codeOverride:lastCode)||($('codeEditor')?$('codeEditor').value:'')); }
+  function queueBuild(mode='load',codeOverride){
+    const source=(codeOverride!=null?codeOverride:lastCode);
+    const resolvedSource=(source!=null&&source!=='')?source:getProjectLua();
+    if(mode==='load') currentMusicSuppressedSignatures.clear();
+    if(!hasStarted){ pendingRunMode=mode; return; }
+    build(resolvedSource, mode==='load'?{suppressAudio:true}:undefined);
+  }
+  function setActive(nextActive){ runtimeActive=!!nextActive; }
+  function startRuntime(mode='run'){
+    runtimeActive=true;
+    if(hasStarted) return;
+    hasStarted=true;
+    pendingRunMode=mode||pendingRunMode||'run';
+    queueBuild(pendingRunMode||'run');
+  }
+  function setLua(code){ pendingCode=code||''; lastCode=pendingCode; if(rebuildTimer) clearTimeout(rebuildTimer); rebuildTimer=setTimeout(()=>queueBuild('load',pendingCode),80); }
+  function loadEditor(codeOverride){ queueBuild('load',codeOverride); }
+  function rerun(codeOverride){ queueBuild('run',codeOverride); }
+  function reset(codeOverride){ queueBuild('run',codeOverride); }
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(runtimeActive){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -9755,7 +9865,29 @@ function wireUI(){
     },options);
     return el;
   };
+  const bindTarget=(el,id,type,handler,options)=>{
+    if(!el) return null;
+    el.addEventListener(type,event=>{
+      try{ handler(event); }
+      catch(err){ handleUiError(id,type,err); }
+    },options);
+    return el;
+  };
   const bindClick=(id,handler)=>bind(id,'click',handler);
+  bindClick('runtimeStartPlayBtn',()=>{
+    runtimeStarted=true;
+    $('runtimeStartOverlay')?.classList.add('hidden');
+    runtime?.startRuntime?.();
+  });
+  const pauseRuntimePreview=()=>{
+    if(state.activeView!=="runtime") return;
+    runtimeStarted=false;
+    runtime?.setActive?.(false);
+    updateRuntimePausePlaceholder();
+    $("runtimeStartOverlay")?.classList.remove("hidden");
+  };
+  bindTarget(document,'document','visibilitychange',()=>{ if(document.hidden) pauseRuntimePreview(); });
+  bindTarget(window,'window','blur',()=>pauseRuntimePreview());
   function colorizeToolbarButton(btn, group){ if(btn) btn.classList.add('cat-'+group); }
   colorizeToolbarButton($("logicBtn"), 'logic');
   colorizeToolbarButton($("graphicsBtn"), 'graphics');
@@ -9848,11 +9980,11 @@ function wireUI(){
   bindClick("btnLoadBackup",e=>{ e.stopPropagation(); setFileMenuOpen(false); loadAutoBackupProject(); });
   bindClick("menuLoadCloseBtn",e=>{ e.stopPropagation(); closeLoadPanel(); });
   bindClick("btnOpenDocs",e=>{ e.stopPropagation(); setFileMenuOpen(false); setView('docs'); });
-  bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
-  bind("resolutionSelect",'change',()=>{ ensureProjectData(); const value=String($("resolutionSelect")?.value||'').trim(); state.appProject.settings.displayMode=['normal','hd_2x','hd_3x','hd_4x','mobile_fullscreen'].includes(value)?value:'normal'; runtime.syncProject(state.appProject); runtime.resizeDisplay(); });
+  bind("inputModeSelect",'change',()=>{ ensureProjectData(); const value=$("inputModeSelect")?.value; state.appProject.settings.movementInput=(value==='dpad'||value==='none')?value:'left_joystick'; updateRuntimePausePlaceholder(); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
+  bind("resolutionSelect",'change',()=>{ ensureProjectData(); const value=String($("resolutionSelect")?.value||'').trim(); state.appProject.settings.displayMode=['normal','hd_2x','hd_3x','hd_4x','mobile_fullscreen'].includes(value)?value:'normal'; updateRuntimePausePlaceholder(); runtime.syncProject(state.appProject); runtime.resizeDisplay(); });
   bindClick("projectListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage-1+pages)%pages; refreshProjectList(); });
   bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
-  bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
+  bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); updateRuntimePausePlaceholder(); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
   bind("darkModeToggle",'change',()=>{ ensureProjectData(); state.appProject.settings.darkMode=!!$("darkModeToggle")?.checked; applyThemeUI(); });
   function syncSidebarToggleButton(buttonId, viewId){ const btn=$(buttonId), view=$(viewId); if(!btn||!view) return; const hidden=view.classList.contains('sidebar-hidden'); btn.textContent=hidden?'>':'<'; btn.setAttribute('aria-expanded', hidden?'false':'true'); btn.title=hidden?'Open panel':'Close panel'; }
   bindClick("toggleMapSidebarBtn",()=>{
@@ -10096,7 +10228,7 @@ function wireUI(){
   bindClick("addSoundBtn",()=>{ state.appProject.sounds.push(makeSound()); state.currentSoundIndex=state.appProject.sounds.length-1; state.soundListPage=Math.floor(state.currentSoundIndex/SOUND_LIST_PAGE_SIZE); refreshSoundUI(); drawSoundWaveCanvas(); });
   bindClick("soundListPrevBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.sounds?.length||0)/SOUND_LIST_PAGE_SIZE)); state.soundListPage=(state.soundListPage-1+pages)%pages; closeListRename(); refreshSoundList(); });
   bindClick("soundListNextBtn",()=>{ const pages=Math.max(1,Math.ceil((state.appProject.sounds?.length||0)/SOUND_LIST_PAGE_SIZE)); state.soundListPage=(state.soundListPage+1)%pages; closeListRename(); refreshSoundList(); });
-  ["soundWaveInput","soundLengthInput","soundVolumeInput","soundPitchInput","soundAttackInput","soundDecayInput","soundSustainInput","soundReleaseInput"].forEach(id=>bind(id,'input',()=>{ updateCurrentSoundFromUI(); drawSoundWaveCanvas(); })); bindClick("previewSoundBtn",async()=>{ try{ await ctxAudio().resume(); }catch{} previewSound(state.currentSoundIndex,false); });
+  ["soundWaveInput","soundLengthInput","soundVolumeInput","soundPitchInput","soundAttackInput","soundDecayInput","soundSustainInput","soundReleaseInput"].forEach(id=>bind(id,'input',()=>{ updateCurrentSoundFromUI(); drawSoundWaveCanvas(); })); bindClick("previewSoundBtn",()=>{ unlockEditorAudio(); previewSound(state.currentSoundIndex,false,true); });
   let soundDraw=false; bind("soundWaveCanvas",'pointerdown',e=>{ soundDraw=true; e.preventDefault(); writeWavePoint(e); }); bind("soundWaveCanvas",'pointermove',e=>{ if(soundDraw){ e.preventDefault(); writeWavePoint(e); }}); window.addEventListener('pointerup',()=>soundDraw=false);
   bindClick("addMusicBtn",()=>{ state.appProject.music.push(makeMusic()); state.currentMusicIndex=state.appProject.music.length-1; state.musicListPage=Math.floor(state.currentMusicIndex/MUSIC_LIST_PAGE_SIZE); refreshMusicUI();  });
 
@@ -10311,10 +10443,3 @@ startAutoBackupTimer();
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
