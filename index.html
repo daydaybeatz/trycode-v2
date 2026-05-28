@@ -1588,14 +1588,14 @@ function getDocCategory(signature){
   if(sig==="_init()"||sig==="_update()"||sig==="_draw()"||sig==="_tick()") return "main callbacks";
   if(sig.startsWith("btn(")||sig.startsWith("btnp(")||sig.startsWith("mouse(")||sig.startsWith("joyx(")||sig.startsWith("joyy(")) return "controls";
   if(sig.startsWith("camera(")||sig.startsWith("map(")||sig.startsWith("pmap(")||sig.startsWith("mget(")||sig.startsWith("mset(")||sig.startsWith("fget(")||sig.startsWith("solid(")||sig.startsWith("wall(")) return "map";
-  if(sig.startsWith("distance(")||sig.startsWith("abs(")||sig.startsWith("flr(")||sig.startsWith("sin(")||sig.startsWith("rnd(")||sig.startsWith("sub(")||sig.startsWith("upper(")) return "math";
+  if(sig.startsWith("distance(")||sig.startsWith("abs(")||sig.startsWith("flr(")||sig.startsWith("sin(")||sig.startsWith("rnd(")||sig.startsWith("sub(")||sig.startsWith("upper(")||sig.startsWith("lerp(")||sig.startsWith("blink(")) return "math";
   if(sig.startsWith("a % b")) return "math";
   if(sig.startsWith("add(")||sig.startsWith("del(")||sig.startsWith("deli(")||sig.startsWith("all(")||sig.startsWith("foreach(")||sig.startsWith("pairs(")||sig.startsWith("get_value(")||sig.startsWith("set_value(")||sig.startsWith("mod_value(")) return "tables";
   if(sig.startsWith("#table")) return "tables";
   if(sig.startsWith("col(")||sig.startsWith("col2(")) return "helpers/collision";
   if(sig.startsWith("message_box(")||sig.startsWith("confirm_box(")||sig.startsWith("entry_box(")||sig.startsWith("default_box(")) return "ui boxes";
   if(sig.startsWith("save_data(")||sig.startsWith("load_data(")) return "data/save/load";
-  if(sig.startsWith("sfx(")||sig.startsWith("music(")||sig.startsWith("default_font(")||sig.startsWith("fonts")||sig.startsWith("include ")||sig.startsWith("x +=")) return "system/fonts/defaults/include";
+  if(sig.startsWith("sfx(")||sig.startsWith("music(")||sig.startsWith("default_font(")||sig.startsWith("fonts")||sig.startsWith("include ")||sig.startsWith("x +=")||sig.startsWith("time(")||sig.startsWith("clock(")) return "system/fonts/defaults/include";
   if(sig.startsWith("pset(")||sig.startsWith("pget(")||sig.startsWith("line(")||sig.startsWith("rect(")||sig.startsWith("circ(")||sig.startsWith("circfill(")||sig.startsWith("spr(")||sig.startsWith("sspr(")||sig.startsWith("r_spr(")||sig.startsWith("animate(")||sig.startsWith("print(")||sig.startsWith("rectfill(")||sig.startsWith("color(")||sig.startsWith("cls(")||sig.startsWith("clip(")||sig.startsWith("zoom(")) return "drawing";
   return "other";
 }
@@ -1619,6 +1619,10 @@ const CODE_API_DOCS = [
   makeDoc("mouse()", "Returns mouse or touch state as mx, my, mb, mbr.", [], ["local mx,my,mb,mbr = mouse()","if (mb & 1) ~= 0 then print(mx..\",\"..my, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "mx and my are screen coordinates. mb is the current button bitmask, and mbr is the newly pressed button bitmask for that frame. Touch input maps to button 1."),
   makeDoc("joyx(i)", "Reads a joystick horizontal axis from -1 to 1.", [["i", "Joystick index. 0 is left, 1 is right."]], ["local x_axis = joyx(0)","x += joyx(0) * speed"], "Read the value every frame. Negative is left and positive is right."),
   makeDoc("joyy(i)", "Reads a joystick vertical axis from -1 to 1.", [["i", "Joystick index. 0 is left, 1 is right."]], ["local y_axis = joyy(0)","y += joyy(0) * speed"], "Read the value every frame. Negative is up and positive is down."),
+  makeDoc("time()", "Returns seconds since the last time() call, or since the program started before the first call.", [], ["dt = time()\nx += 40 * dt"], "Use this for frame-rate independent movement, timers, cooldowns, and animation deltas."),
+  makeDoc("clock()", "Returns total seconds since the program started or reset.", [], ["if clock() > 2 then print(\"go\", nil, 8, 8) end"], "Use this when you need an absolute running timer instead of the delta returned by time()."),
+  makeDoc("lerp(a, b, t)", "Linearly interpolates between a and b by t.", [["a", "Starting number."],["b", "Ending number."],["t", "Amount from 0 to 1; values outside that range extrapolate."]], ["x = lerp(x, target_x, 0.15)","fade = lerp(0, 255, 0.5)"], "Useful for smooth movement, UI easing, fades, and color-channel blends."),
+  makeDoc("blink(values, speed, mode)", "Cycles through a table of values at speed steps per second.", [["values", "Table of numbers or strings, such as {1, 6, 8} or colors."],["speed", "Steps per second; defaults to 6."],["mode", "\"loop\", \"bounce\", or \"random\". Defaults to \"loop\"."]], ["pal(8, blink({1,6,8}, 12, \"loop\"))","c = blink({\"#ff004d\", \"#ffec27\"}, 4, \"bounce\")"], "Use this for flashing palette indexes, morphing colors, warning lights, or random sparkle colors."),
   makeDoc("camera(x, y)", "Offsets later drawing calls by a camera position.", [["x", "World x coordinate to center around."],["y", "World y coordinate to center around."]], ["camera(player_x - 240, player_y - 135)","camera()\n-- resets the camera to 0,0"], "Call cls() first, then camera(), then draw your map and sprites so the whole scene scrolls together."),
   makeDoc("map(mapIndex, sx, sy, layer)", "Draws a whole map, optionally at an offset or on a single layer.", [["mapIndex", "Which map to draw, usually 0."],["sx", "Optional screen/world x offset. Defaults to 0."],["sy", "Optional screen/world y offset. Defaults to 0."],["layer", "Optional single layer index. Leave empty to draw every visible layer."]], ["map(0)","map(0, 32, 16)","map(0, 0, 0, 1)"], "For scrolling worlds, call camera(...) before map(0)."),
   makeDoc("pmap(mapIndex, mx, my, sx, sy, w, h, startLayer, endLayer)", "Draws only part of a map or a selected layer range.", [["mapIndex", "Which map to read from."],["mx", "Tile x inside the map."],["my", "Tile y inside the map."],["sx", "Destination x position."],["sy", "Destination y position."],["w", "Tile width to draw."],["h", "Tile height to draw."],["startLayer", "First layer index to draw."],["endLayer", "Last layer index to draw."]], ["pmap(0, 0, 0, 0, 0, 10, 8, 0, 1)","pmap(0, 4, 4, 32, 16, 6, 6, 1, 1)"], "Use this when you want a minimap, chunk streaming, or one layer only."),
@@ -1659,9 +1663,6 @@ const CODE_API_DOCS = [
   makeDoc("sub(text, start, finish)", "sub() returns a substring from start to finish (inclusive, 1-based).", [["text", "Text value to slice."],["start", "Start character index (1-based)."],["finish", "Optional end character index. Leave empty to slice to the end."]], ["name = \"kuocop\"","first = sub(name, 1, 1) -- \"k\"","rest = sub(name, 2) -- \"uocop\""], "Use this as a short alias for string.sub(...) in gameplay scripts and UI text formatting."),
   makeDoc("tostr(value)", "Converts any value into text using Lua tostring().", [["value", "Any value (number, boolean, table field, or nil)."]], ["label = tostr(score)","status = \"hp: \"..tostr(player.hp)","print(tostr(nil), 12, 8, 8, color(0,0,0), color(255,255,255)) -- prints empty text"], "Use this when you need explicit string conversion. nil becomes an empty string so UI labels stay safe."),
   makeDoc("upper(text)", "upper() turns letters into uppercase.", [["text", "Text value to convert."]], ["upper(\"k\")      -- \"K\"","upper(\"kuocop\") -- \"KUOCOP\""], "Use this helper when you want labels, names, or UI text in all caps."),
-  makeDoc("lerp(a, b, t)", "Linearly interpolates between numbers.", [["a","Start value."],["b","End value."],["t","Blend 0..1 (can exceed range)."]], ["x = lerp(10, 30, 0.5) -- 20"], "Great for smoothing movement, fades, and UI transitions.");
-  makeDoc("time()", "Returns elapsed seconds since the previous time() call, or since runtime start.", [], ["dt = time()","x = x + speed * dt"], "Call once per update loop to get frame delta style timing.");
-  makeDoc("blink(values, speed, mode)", "Cycles through a list of values for flashing colors or animation indexes.", [["values","Lua table like {1,6,8}."],["speed","Steps per second."],["mode","\"loop\", \"bounce\", or \"random\"."]], ["c = blink({1,6,8}, 8, \"loop\")","frame = blink({0,1,2,1}, 10, \"bounce\")"], "Useful for color pulsing, palette swaps, and morphing frame indices.");
   makeDoc("a % b", "Returns the remainder after division (modulo).", [["a", "Value to divide."],["b", "Divisor."]], ["col = x % 16","if frame % 8 == 0 then blink = not blink end"], "Use this for wrapping indexes, timed pulses, and repeating patterns."),
   makeDoc("#table", "Returns the length of an array-style table.", [["table", "Array-style Lua table."]], ["for i=1,#enemies do\n  print(i, nil, 8, 8, color(0,0,0), color(255,255,255))\nend","piece = pieces[flr(rnd(#pieces)) + 1]"], "Use #table to count list entries and drive loops."),
   makeDoc("add(list, value)", "Appends a value to the end of an array-style table and returns it.", [["list", "Table to grow."],["value", "Value to append."]], ["add(particles, {x=mx, y=my})"], "This is handy for projectiles, particles, enemies, and menu items."),
@@ -7901,12 +7902,22 @@ function importPngIntoSpriteFolder(folderIndex,file,autoScaleLarge=false,targetF
 }
 
 function askSpriteImportScaleChoice(){
-  return confirm(`Import at original size?\n\nOK = import as-is\nCancel = compress when image is larger than ${SPRITE_IMPORT_MAX_WIDTH}x${SPRITE_IMPORT_MAX_HEIGHT}.`)?false:true;
+  return confirm(`Compress large imported images?\n\nOK = compress images larger than ${SPRITE_IMPORT_MAX_WIDTH}x${SPRITE_IMPORT_MAX_HEIGHT}\nCancel = import as-is at original size`);
+}
+function normalizeSpriteImportFiles(files){
+  return Array.from(files||[]).sort((a,b)=>String(a?.name||'').localeCompare(String(b?.name||''), undefined, {numeric:true,sensitivity:'base'}));
+}
+function spriteFolderHasDrawablePixels(folder){
+  return !!(folder && Array.isArray(folder.frames) && folder.frames.some(frame=>!isSpriteFrameEmpty(frame)));
 }
 function importSpriteFilesSequential(files,startIndex,autoScaleLarge){
   let idx=Math.max(0,startIndex|0);
-  Array.from(files||[]).forEach(file=>{
+  normalizeSpriteImportFiles(files).forEach(file=>{
     while((state.appProject.spriteFolders||[]).length<=idx) state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]});
+    while(spriteFolderHasDrawablePixels(state.appProject.spriteFolders[idx])){
+      idx++;
+      while((state.appProject.spriteFolders||[]).length<=idx) state.appProject.spriteFolders.push({frames:[makeSprite(16,16)]});
+    }
     importPngIntoSpriteFolder(idx,file,autoScaleLarge);
     idx++;
   });
@@ -7914,12 +7925,13 @@ function importSpriteFilesSequential(files,startIndex,autoScaleLarge){
 function importSpriteFilesIntoFolderFrames(files,folderIndex,autoScaleLarge){
   const folder=state.appProject.spriteFolders[folderIndex];
   if(!folder) return;
+  const orderedFiles=normalizeSpriteImportFiles(files).slice(0,26);
   folder.frames=[makeSprite(16,16)];
-  Array.from(files||[]).slice(0,26).forEach((file,frameIdx)=>{
+  orderedFiles.forEach((file,frameIdx)=>{
     importPngIntoSpriteFolder(folderIndex,file,autoScaleLarge,frameIdx,true);
   });
   selectSpriteFolder(folderIndex);
-  toast(`<b>Imported ${Math.min(26, (files||[]).length)} frame(s)</b> into sprite ${folderIndex}`);
+  toast(`<b>Imported ${orderedFiles.length} frame(s)</b> into sprite ${folderIndex}`);
 }
 function deleteSpriteFolder(index){
   clearSpriteFolder(index);
@@ -8003,7 +8015,7 @@ function refreshSpriteList(){
       const input=$("spriteImportPngInput");
       if(!input) return;
       input.value='';
-      const autoScaleLarge=confirm(`If the image is larger than ${SPRITE_IMPORT_MAX_WIDTH}x${SPRITE_IMPORT_MAX_HEIGHT}, auto-scale it down before import?\n\nThis helps reduce lag on mobile and slower desktops.`);
+      const autoScaleLarge=askSpriteImportScaleChoice();
       input.onchange=()=>{ const file=input.files&&input.files[0]; if(file) importPngIntoSpriteFolder(i,file,autoScaleLarge); input.value=''; };
       input.click();
     };
