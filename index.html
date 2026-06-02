@@ -300,6 +300,11 @@
     .row{display:flex;gap:8px;flex-wrap:wrap;padding:0 6px 10px}
     .menuSettingRow{padding:0 6px 10px}
     .menuSettingRow select{width:100%;border:3px solid var(--line);border-radius:12px;padding:8px;background:#fffaf1;color:var(--ink)}
+    .desktopDirectorySettings{display:none}
+    body.desktop-ui .desktopDirectorySettings{display:block}
+    .desktopDirectoryRow{display:flex;align-items:center;gap:6px}
+    .desktopDirectoryRow input{min-width:0;flex:1 1 auto;border:3px solid var(--line);border-radius:12px;padding:8px;background:#fffaf1;color:var(--ink)}
+    .desktopDirectoryRow .uiBtn{flex:0 0 auto;padding:5px 8px;font-size:11px}
     .projName{width:100%;font-weight:800;word-break:break-word;line-height:1.25}
     .projectCard{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:8px;padding:10px}
     .projectCardActions{display:flex;flex-wrap:wrap;gap:6px}
@@ -518,6 +523,7 @@
     body.dark-mode .menuSection{border-color:rgba(150,163,207,.45)}
     body.dark-mode .menuSectionHeader{background:linear-gradient(180deg,#303d62,#1a223c);box-shadow:0 3px 0 #0f1528;color:#f6f1df}
     body.dark-mode .menuSettingRow select{background:#10162a;color:var(--ink)}
+    body.dark-mode .desktopDirectoryRow input{background:#10162a;color:var(--ink)}
     body.dark-mode .docsSection{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 6px 0 #0f1528}
     body.dark-mode .docsSection h3{background:linear-gradient(180deg,#e55b7a,#8e3851);text-shadow:1px 1px 0 #341521}
     body.dark-mode .docItem{border-top-color:rgba(199,208,232,.22)}
@@ -734,7 +740,7 @@
     <div class="menuBackdrop" id="menuBackdrop"></div>
     <div class="menu" id="menu"><div class="menuCard">
       <div class="menuSection" id="menuSectionFile"><button class="menuSectionHeader" id="menuSectionFileToggle">FILE</button><div class="menuSectionBody"><div class="row"><button class="mbtn" id="btnSaveProject">Save</button><button class="mbtn" id="btnNewProject">New</button><button class="mbtn" id="btnImportProject">Import</button><button class="mbtn" id="btnExport">Export</button><button class="mbtn" id="btnMenuLoadProjects">Load</button><button class="mbtn" id="btnLoadBackup">Backup</button><button class="mbtn" id="btnOpenDocs">Docs</button></div><div class="row hidden" id="importFormatRow"><button class="mbtn" id="btnImportZip">.zip</button><button class="mbtn" id="btnImportCodeTxt">code.txt</button></div><div class="row hidden" id="exportFormatRow"><button class="mbtn" id="btnExportZip">.zip</button><button class="mbtn" id="btnExportHtml">.html</button><button class="mbtn" id="btnExportCodeTxt">code.txt</button></div></div></div>
-      <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal (480x270)</option><option value="hd_2x">2x (960x540)</option><option value="hd_3x">3x (1440x810)</option><option value="hd_4x">4x (1920x1080)</option><option value="mobile_fullscreen">Mobile portrait (270x480)</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
+      <div class="menuSection" id="menuSectionSettings"><button class="menuSectionHeader" id="menuSectionSettingsToggle">SETTINGS</button><div class="menuSectionBody"><div class="menuSettingRow"><div class="field"><label for="inputModeSelect">Onscreen Controls</label><select id="inputModeSelect"><option value="left_joystick">Left joystick</option><option value="dpad">D-pad</option><option value="none">No onscreen controls</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="resolutionSelect">Game Screen Resolution</label><select id="resolutionSelect"><option value="normal">Normal (480x270)</option><option value="hd_2x">2x (960x540)</option><option value="hd_3x">3x (1440x810)</option><option value="hd_4x">4x (1920x1080)</option><option value="mobile_fullscreen">Mobile portrait (270x480)</option></select></div></div><div class="menuSettingRow"><div class="field"><label for="defaultPrintFontSelect">Default Print Font</label><select id="defaultPrintFontSelect"><option value="Press Start 2P">Press Start 2P</option><option value="Orbitron">Orbitron</option><option value="Rajdhani">Rajdhani</option><option value="Inter">Inter</option><option value="Merriweather">Merriweather</option><option value="Playfair Display">Playfair Display</option></select></div></div><div class="desktopDirectorySettings"><div class="menuSettingRow"><div class="field"><label for="projectDirectoryInput">Project Directory</label><div class="desktopDirectoryRow"><input id="projectDirectoryInput" type="text" readonly value="Desktop (default)"><button class="uiBtn" id="btnChooseProjectDirectory" type="button">Set</button><button class="uiBtn" id="btnOpenProjectDirectory" type="button">Open</button></div></div></div><div class="menuSettingRow"><div class="field"><label for="exportDirectoryInput">Project Export Directory</label><div class="desktopDirectoryRow"><input id="exportDirectoryInput" type="text" readonly value="Downloads (default)"><button class="uiBtn" id="btnChooseExportDirectory" type="button">Set</button><button class="uiBtn" id="btnOpenExportDirectory" type="button">Open</button></div></div></div></div><div class="menuToggleRow"><label class="menuToggleLabel" for="darkModeToggle"><span>Dark mode</span><input class="menuToggleInput" id="darkModeToggle" type="checkbox" role="switch" aria-label="Toggle dark mode"></label></div></div></div>
             <div class="menuLoadPanel hidden" id="menuLoadPanel"><div class="menuLoadHeader"><b>Load Project</b><button class="uiBtn miniBtn" id="menuLoadCloseBtn">Close</button></div><div class="list menuLoadList" id="projectList"></div><div class="pageRow compact"><button class="uiBtn" id="projectListPrevBtn">&lt;</button><div class="docDesc" id="projectListPageLabel">1 / 1</div><button class="uiBtn" id="projectListNextBtn">&gt;</button></div></div>
     </div></div>
   </div>
@@ -750,6 +756,9 @@
 const $ = id => document.getElementById(id);
 const LS_KEY = "try_code_projects_v20";
 const BACKUP_KEY = "try_code_auto_backup_v1";
+const DESKTOP_DIRECTORY_KEY = "try_code_desktop_directories_v1";
+const DIRECTORY_DB_NAME = "trycode_directory_handles";
+const DIRECTORY_DB_VERSION = 1;
 const AUTO_BACKUP_INTERVAL_MS = 3 * 60 * 1000;
 const NOTE_MAP = {"C":0,"C#":1,"D":2,"D#":3,"E":4,"F":5,"F#":6,"G":7,"G#":8,"A":9,"A#":10,"B":11};
 const SCALE_MAP = {
@@ -1216,6 +1225,8 @@ const SPRITE_LIST_PAGE_SIZE = 5;
 const SOUND_LIST_PAGE_SIZE = 5;
 const MUSIC_LIST_PAGE_SIZE = 5;
 const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,soundListPage:0,musicListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
+const desktopDirectories=loadDesktopDirectoryPreferences();
+let directoryDbPromise=null;
 const SPRITE_IMPORT_MAX_WIDTH=960;
 const SPRITE_IMPORT_MAX_HEIGHT=540;
 const PRESET_PALETTE_PAGES = [
@@ -1245,6 +1256,14 @@ function applyRuntimeUiHiddenState(){
   if(hideBtn) hideBtn.textContent=runtimeUiHidden?'Show':'Hide';
   if(state.activeView==='runtime' && runtime) runtime.resizeDisplay();
 }
+async function toggleAppFullscreen(){
+  try{
+    if(document.fullscreenElement) await document.exitFullscreen?.();
+    else await document.documentElement.requestFullscreen?.();
+  }catch(err){
+    toast(`<b>Fullscreen failed:</b> ${escapeHtml(err?.message||String(err))}`);
+  }
+}
 function createRuntimeFallback(message){
   const text=String(message||'Runtime unavailable. The editor shell is still available.');
   return {
@@ -1254,6 +1273,7 @@ function createRuntimeFallback(message){
     reset(){ setLastRunError(text); },
     resizeDisplay(){},
     syncProject(){},
+    hasActiveDialog(){ return false; },
   };
 }
 function initRuntime(){
@@ -1269,6 +1289,7 @@ function initRuntime(){
 const previewImages = {};
 const editorRenderCache = { sprites:new Map(), tiles:new Map() };
 const spriteHistory = { undo: [], redo: [] };
+const spriteViewLayoutReady = new WeakSet();
 const mapHistory = { undo: [], redo: [] };
 let audioCtx = null, audioUnlocked = false, pendingSfxRequests = [], currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
 function ctxAudio(){
@@ -1384,7 +1405,7 @@ function isDesktopUI(){
     return false;
   }
 }
-function syncResponsiveUI(){ document.body.classList.toggle('desktop-ui', isDesktopUI()); }
+function syncResponsiveUI(){ document.body.classList.toggle('desktop-ui', isDesktopUI()); refreshDesktopDirectorySettingsUI(); }
 function getMapAnimationTimeMs(){ return state.mapAnimPlaying ? performance.now() : state.mapAnimPausedAt; }
 function updateMapAnimToggleButton(){ const btn=$("mapAnimToggleBtn"); if(!btn) return; btn.textContent=state.mapAnimPlaying?"Pause":"Play"; btn.classList.toggle('active', !state.mapAnimPlaying); btn.title=state.mapAnimPlaying?"Pause animated tile preview":"Play animated tile preview"; }
 function updateMapToolButtons(){
@@ -2151,6 +2172,147 @@ function finishNewProject(){
 }
 function newProject(){ if(!confirm("Are you sure you want to start a new project? Unsaved changes will be lost.")) return; finishNewProject(); }
 
+function defaultDesktopDirectoryPreferences(){
+  return {
+    project:{label:'Desktop (default)',path:'',startIn:'desktop',handle:null},
+    export:{label:'Downloads (default)',path:'',startIn:'downloads',handle:null}
+  };
+}
+function loadDesktopDirectoryPreferences(){
+  const defaults=defaultDesktopDirectoryPreferences();
+  try{
+    const saved=JSON.parse(localStorage.getItem(DESKTOP_DIRECTORY_KEY)||'{}');
+    ['project','export'].forEach(kind=>{
+      if(!saved?.[kind] || typeof saved[kind]!=='object') return;
+      defaults[kind].label=String(saved[kind].label||defaults[kind].label);
+      defaults[kind].path=String(saved[kind].path||'');
+    });
+  }catch(_){}
+  return defaults;
+}
+function saveDesktopDirectoryPreferences(){
+  const snapshot={};
+  ['project','export'].forEach(kind=>{
+    const directory=desktopDirectories[kind];
+    snapshot[kind]={label:directory.label,path:directory.path||''};
+  });
+  try{ localStorage.setItem(DESKTOP_DIRECTORY_KEY,JSON.stringify(snapshot)); }catch(_){}
+}
+function desktopDirectoryDisplayValue(kind){
+  const directory=desktopDirectories[kind];
+  return String(directory?.path||directory?.label||'').trim();
+}
+function refreshDesktopDirectorySettingsUI(){
+  if($("projectDirectoryInput")) $("projectDirectoryInput").value=desktopDirectoryDisplayValue('project');
+  if($("exportDirectoryInput")) $("exportDirectoryInput").value=desktopDirectoryDisplayValue('export');
+}
+function openDirectoryHandleDb(){
+  if(!('indexedDB' in window)) return Promise.resolve(null);
+  if(!directoryDbPromise){
+    directoryDbPromise=new Promise((resolve,reject)=>{
+      const req=indexedDB.open(DIRECTORY_DB_NAME,DIRECTORY_DB_VERSION);
+      req.onupgradeneeded=()=>{
+        const db=req.result;
+        if(!db.objectStoreNames.contains('directories')) db.createObjectStore('directories',{keyPath:'kind'});
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||new Error('Could not open directory handle storage.'));
+    }).catch(err=>{ console.warn('Directory handle storage unavailable',err); return null; });
+  }
+  return directoryDbPromise;
+}
+async function persistDesktopDirectoryHandle(kind,handle){
+  if(!handle) return false;
+  const db=await openDirectoryHandleDb();
+  if(!db) return false;
+  return new Promise(resolve=>{
+    const tx=db.transaction('directories','readwrite');
+    try{ tx.objectStore('directories').put({kind,handle}); }
+    catch(err){ console.warn('Directory handle save failed',err); resolve(false); return; }
+    tx.oncomplete=()=>resolve(true);
+    tx.onerror=()=>{ console.warn('Directory handle save failed',tx.error); resolve(false); };
+  });
+}
+async function restoreDesktopDirectoryHandle(kind){
+  const db=await openDirectoryHandleDb();
+  if(!db) return null;
+  return new Promise(resolve=>{
+    const tx=db.transaction('directories','readonly');
+    const req=tx.objectStore('directories').get(kind);
+    req.onsuccess=()=>resolve(req.result?.handle||null);
+    req.onerror=()=>{ console.warn('Directory handle restore failed',req.error); resolve(null); };
+  });
+}
+async function restoreDesktopDirectoryHandles(){
+  await Promise.all(['project','export'].map(async kind=>{
+    const handle=await restoreDesktopDirectoryHandle(kind);
+    if(!handle) return;
+    desktopDirectories[kind].handle=handle;
+    desktopDirectories[kind].label=String(handle.name||desktopDirectories[kind].label);
+  }));
+  saveDesktopDirectoryPreferences();
+  refreshDesktopDirectorySettingsUI();
+}
+function getTryCodeDesktopBridge(){
+  return window.tryCodeDesktop||window.trycodeDesktop||null;
+}
+function applyDesktopDirectorySelection(kind,selection){
+  if(!selection) return false;
+  const directory=desktopDirectories[kind];
+  if(typeof selection==='string') selection={path:selection};
+  if(selection.kind==='directory'){
+    directory.handle=selection;
+    directory.label=String(selection.name||directory.label);
+    directory.path='';
+    persistDesktopDirectoryHandle(kind,selection).catch(err=>console.warn('Directory handle save failed',err));
+  }else{
+    directory.path=String(selection.path||selection.directory||'').trim();
+    if(!directory.path) return false;
+    directory.label=String(selection.label||directory.path||directory.label);
+  }
+  saveDesktopDirectoryPreferences();
+  refreshDesktopDirectorySettingsUI();
+  return true;
+}
+async function chooseDesktopDirectory(kind){
+  const directory=desktopDirectories[kind];
+  const bridge=getTryCodeDesktopBridge();
+  try{
+    if(bridge?.chooseDirectory){
+      const selection=await bridge.chooseDirectory({kind,path:directory.path||'',defaultDirectory:directory.startIn});
+      if(!applyDesktopDirectorySelection(kind,selection)) return false;
+    }else if(window.showDirectoryPicker){
+      const handle=await window.showDirectoryPicker({id:`try-code-${kind}-directory`,mode:kind==='export'?'readwrite':'read',startIn:directory.handle||directory.startIn});
+      if(!applyDesktopDirectorySelection(kind,handle)) return false;
+    }else{
+      toast('Folder selection needs a desktop host or a browser with directory picker support.');
+      return false;
+    }
+    toast(`<b>${kind==='export'?'Export':'Project'} directory:</b> ${escapeHtml(desktopDirectoryDisplayValue(kind))}`);
+    return true;
+  }catch(err){
+    if(err?.name!=='AbortError') toast(`<b>Folder selection failed:</b> ${escapeHtml(err?.message||String(err))}`);
+    return false;
+  }
+}
+async function openDesktopDirectory(kind){
+  const directory=desktopDirectories[kind];
+  const bridge=getTryCodeDesktopBridge();
+  try{
+    if(bridge?.openDirectory){
+      await bridge.openDirectory({kind,path:directory.path||'',label:directory.label});
+      return true;
+    }
+    if(window.showDirectoryPicker){
+      toast('Host folder opening is unavailable here. Choose or confirm the folder instead.');
+      return chooseDesktopDirectory(kind);
+    }
+    toast('Opening a folder in the host OS needs desktop host support.');
+  }catch(err){
+    toast(`<b>Could not open folder:</b> ${escapeHtml(err?.message||String(err))}`);
+  }
+  return false;
+}
 
 function loadAllProjects(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(_){ return {}; } }
 function saveAllProjects(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
@@ -2493,7 +2655,7 @@ function applyThemeUI(){
   drawSpriteEditor();
   drawMapEditor();
 }
-function refreshMenuSettingsUI(){ ensureProjectData(); if($("inputModeSelect")) $("inputModeSelect").value=state.appProject.settings.movementInput||'left_joystick'; if($("resolutionSelect")) $("resolutionSelect").value=state.appProject.settings.displayMode||'normal'; if($("defaultPrintFontSelect")) $("defaultPrintFontSelect").value=normalizePrintFontName(state.appProject.settings.defaultPrintFont); if($("darkModeToggle")) $("darkModeToggle").checked=!!state.appProject.settings.darkMode; applyThemeUI(); runtime?.resizeDisplay?.(); }
+function refreshMenuSettingsUI(){ ensureProjectData(); if($("inputModeSelect")) $("inputModeSelect").value=state.appProject.settings.movementInput||'left_joystick'; if($("resolutionSelect")) $("resolutionSelect").value=state.appProject.settings.displayMode||'normal'; if($("defaultPrintFontSelect")) $("defaultPrintFontSelect").value=normalizePrintFontName(state.appProject.settings.defaultPrintFont); if($("darkModeToggle")) $("darkModeToggle").checked=!!state.appProject.settings.darkMode; refreshDesktopDirectorySettingsUI(); applyThemeUI(); runtime?.resizeDisplay?.(); }
 function normalizeProjectNameInput(raw, fallback='project_1'){ const trimmed=String(raw??'').trim(); return trimmed||fallback; }
 function makeProjectFilename(name){ return normalizeProjectNameInput(name).replace(/[\\/:*?"<>|]+/g,'-'); }
 function promptForProjectName(message, fallback='project_1'){ const name=prompt(message, normalizeProjectNameInput(fallback)); if(name===null) return null; const trimmed=String(name).trim(); if(!trimmed) return null; return trimmed; }
@@ -2719,10 +2881,51 @@ function buildExportFontHeadHtml(){
 }
 function buildExportRuntimeStartScript(runtimeJs){
   const escapedRuntime=escapeInlineScript(runtimeJs);
-  return `<scr${'ipt'}>const __trycodeStart=()=>{${escapedRuntime}};let __trycodeStarted=false;const __trycodePrimeAudio=()=>{try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!window.__trycodeSharedAudioContext)window.__trycodeSharedAudioContext=new AC();const ac=window.__trycodeSharedAudioContext;const p=ac.resume&&ac.resume();if(p&&p.catch)p.catch(()=>{});try{const osc=ac.createOscillator();const gain=ac.createGain();gain.gain.setValueAtTime(0,ac.currentTime);osc.connect(gain).connect(ac.destination);osc.start(ac.currentTime);osc.stop(ac.currentTime+0.01)}catch{}}catch{}};const __trycodeRun=()=>{if(__trycodeStarted)return;__trycodeStarted=true;document.body.classList.add('started');document.getElementById('startOverlay')?.remove();__trycodeStart()};const __trycodeReady=()=>{const fontsReady=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]):Promise.resolve();fontsReady.then(__trycodeRun,__trycodeRun)};const __trycodeOnStartClick=()=>{__trycodePrimeAudio();__trycodeReady()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeOnStartClick,{once:true});},{once:true});else {const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeOnStartClick,{once:true});}<\/script>`;
+  return `<scr${'ipt'}>const __trycodeStart=()=>{${escapedRuntime}};let __trycodeStarted=false;const __trycodeToggleFullscreen=()=>{try{const action=document.fullscreenElement?document.exitFullscreen?.():document.documentElement.requestFullscreen?.();action?.catch?.(()=>{})}catch{}};window.addEventListener('keydown',e=>{if(e.altKey&&!e.ctrlKey&&!e.metaKey&&String(e.key||'').toLowerCase()==='enter'){e.preventDefault();__trycodeToggleFullscreen()}},{passive:false});const __trycodePrimeAudio=()=>{try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!window.__trycodeSharedAudioContext)window.__trycodeSharedAudioContext=new AC();const ac=window.__trycodeSharedAudioContext;const p=ac.resume&&ac.resume();if(p&&p.catch)p.catch(()=>{});try{const osc=ac.createOscillator();const gain=ac.createGain();gain.gain.setValueAtTime(0,ac.currentTime);osc.connect(gain).connect(ac.destination);osc.start(ac.currentTime);osc.stop(ac.currentTime+0.01)}catch{}}catch{}};const __trycodeRun=()=>{if(__trycodeStarted)return;__trycodeStarted=true;document.body.classList.add('started');document.getElementById('startOverlay')?.remove();__trycodeStart()};const __trycodeReady=()=>{const fontsReady=document.fonts&&document.fonts.ready?Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]):Promise.resolve();fontsReady.then(__trycodeRun,__trycodeRun)};const __trycodeOnStartClick=()=>{__trycodePrimeAudio();__trycodeReady()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeOnStartClick,{once:true});},{once:true});else {const btn=document.getElementById('startBtn');if(btn) btn.addEventListener('click',__trycodeOnStartClick,{once:true});}<\/script>`;
 }
 function buildExportHTMLDocument(fengariSource, runtimeJs){
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRY_CODE_FC_V43 Export</title>${buildExportFontHeadHtml()}<style>html,body{margin:0;height:100%;background:#111}body{overflow:hidden}canvas{display:block;position:fixed;left:0;right:0;top:0;bottom:0;margin:auto;max-width:100vw;max-height:100vh;width:100vw;height:auto;aspect-ratio:16/9;image-rendering:pixelated;background:#000;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;filter:blur(4px)}body.started canvas{filter:none}#err{position:fixed;left:8px;top:8px;z-index:30;color:#fff;background:rgba(120,0,0,.7);padding:6px 8px;font:12px monospace;display:none;max-width:calc(100vw - 16px);white-space:pre-wrap}.hud{position:fixed;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.joy,.symbtn,.dpadBtn{pointer-events:auto;touch-action:none;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}.joy{position:absolute;width:104px;height:104px;border-radius:50%;bottom:34px}.joy.left{left:35%;transform:translateX(-100%)}.joy.right{left:36%}.knob{position:absolute;left:50%;top:50%;width:42px;height:42px;margin-left:-21px;margin-top:-21px;border-radius:50%;background:rgba(255,255,255,.15)}.dpad{position:absolute;left:35%;bottom:34px;width:132px;height:132px;transform:translateX(-100%)}.btns{position:absolute;right:18px;bottom:34px;width:132px;height:132px}.symbtn,.dpadBtn{position:absolute;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:600 14px sans-serif}.symbtn.top,.dpadBtn.up{left:42px;top:0}.symbtn.left,.dpadBtn.left{left:0;top:42px}.symbtn.right,.dpadBtn.right{right:0;top:42px}.symbtn.bottom,.dpadBtn.down{left:42px;bottom:0}@media (min-width:1024px) and (pointer:fine){.hud{display:none}}.startOverlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,8,4,.45);backdrop-filter:blur(4px);z-index:50}.startCard{display:flex;flex-direction:column;gap:10px;align-items:center;padding:14px 16px;border:2px solid rgba(255,255,255,.45);border-radius:14px;background:rgba(20,20,20,.72);color:#fff;font:700 12px sans-serif;letter-spacing:.06em;text-transform:uppercase}.startBtn{width:76px;height:76px;border-radius:50%;border:1px solid rgba(255,255,255,.7);background:rgba(255,255,255,.14);color:#fff;font-size:30px;cursor:pointer}</style></head><body><div id="err"></div><canvas id="c" width="480" height="270"></canvas><div class="startOverlay" id="startOverlay"><div class="startCard"><button class="startBtn" id="startBtn">&#9654;</button><div>Click to play</div></div></div><div class="hud"><div class="joy left" id="joyL"><div class="knob" id="knobL"></div></div><div class="dpad" id="dpadL" style="display:none"><div class="dpadBtn up" data-dpad-btn="0">&#9650;</div><div class="dpadBtn left" data-dpad-btn="2">&lt;</div><div class="dpadBtn right" data-dpad-btn="3">&gt;</div><div class="dpadBtn down" data-dpad-btn="1">&#9660;</div></div><div class="joy right" id="joyR"><div class="knob" id="knobR"></div></div><div class="btns"><div class="symbtn top" data-btn="7">Y</div><div class="symbtn left" data-btn="6">X</div><div class="symbtn right" data-btn="5">B</div><div class="symbtn bottom" data-btn="4">A</div></div></div><scr${'ipt'}>${escapeInlineScript(fengariSource)}<\/script>${buildExportRuntimeStartScript(runtimeJs)}</body></html>`;
+}
+function triggerBrowserDownload(blob,filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),4000);
+}
+async function getWritableExportDirectoryHandle(){
+  let handle=desktopDirectories.export.handle;
+  if(!handle){
+    handle=await restoreDesktopDirectoryHandle('export');
+    if(handle) desktopDirectories.export.handle=handle;
+  }
+  if(!handle?.getFileHandle) return null;
+  let permission='prompt';
+  try{ permission=await handle.queryPermission?.({mode:'readwrite'})||permission; }catch(_){}
+  if(permission!=='granted'){
+    try{ permission=await handle.requestPermission?.({mode:'readwrite'})||permission; }catch(_){}
+  }
+  return permission==='granted'?handle:null;
+}
+async function saveExportBlob(blob,filename){
+  const bridge=getTryCodeDesktopBridge();
+  if(bridge?.saveExportFile){
+    const saved=await bridge.saveExportFile({path:desktopDirectories.export.path||'',filename,blob});
+    if(saved!==false) return true;
+  }
+  const directory=await getWritableExportDirectoryHandle();
+  if(directory){
+    const file=await directory.getFileHandle(filename,{create:true});
+    const writable=await file.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return true;
+  }
+  triggerBrowserDownload(blob,filename);
+  return false;
 }
 async function exportHTML(){
   saveEditorToCurrentCodeFile();
@@ -2736,9 +2939,8 @@ async function exportHTML(){
     const runtimeJs = buildExportRuntimeSource(projectJson, codeJson);
     const html = buildExportHTMLDocument(fengariSource, runtimeJs);
     const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=exportFilename+'.html'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
-    toast(`<b>Exported runtime:</b> ${escapeHtml(exportFilename)}.html`);
+    const savedToFolder=await saveExportBlob(blob,exportFilename+'.html');
+    toast(`<b>Exported runtime${savedToFolder?' to folder':''}:</b> ${escapeHtml(exportFilename)}.html`);
   }catch(err){
     console.error(err);
     toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
@@ -2760,9 +2962,8 @@ async function exportProjectCodeTxt(){
   try{
     const combinedCode=buildCombinedCodeExportText();
     const blob=new Blob([combinedCode],{type:'text/plain;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=exportFilename+'_code.txt'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
-    toast(`<b>Exported code bundle:</b> ${escapeHtml(exportFilename)}_code.txt`);
+    const savedToFolder=await saveExportBlob(blob,exportFilename+'_code.txt');
+    toast(`<b>Exported code bundle${savedToFolder?' to folder':''}:</b> ${escapeHtml(exportFilename)}_code.txt`);
   }catch(err){
     console.error(err);
     toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
@@ -2800,9 +3001,8 @@ async function exportProjectZip(){
     zip.file('project/project.json', JSON.stringify(exportProject.project||{}, null, 2));
     zip.file('project/full_project.json', JSON.stringify(exportProject||{}, null, 2));
     const blob=await zip.generateAsync({type:'blob'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=exportFilename+'.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 4000);
-    toast(`<b>Exported project bundle:</b> ${escapeHtml(exportFilename)}.zip`);
+    const savedToFolder=await saveExportBlob(blob,exportFilename+'.zip');
+    toast(`<b>Exported project bundle${savedToFolder?' to folder':''}:</b> ${escapeHtml(exportFilename)}.zip`);
   }catch(err){
     console.error(err);
     toast(`<b>Export failed:</b> ${escapeHtml(err?.message||String(err))}`);
@@ -7825,6 +8025,7 @@ function selectSpriteFolder(index){
   spriteHistory.redo.length=0;
   syncSpriteUI();
   drawSpriteEditor();
+  requestAnimationFrame(()=>drawSpriteEditor());
   refreshTilePalette();
   runtime.syncProject(state.appProject);
 }
@@ -8016,9 +8217,12 @@ function clearCurrentSpriteFrame(){
   runtime.syncProject(state.appProject);
 }
 function ensureSpriteViewInitialized(metrics=getSpriteCanvasMetrics()){
+  const folder=currentSpriteFolder();
   const view=currentSpriteView();
-  const shouldInit=!view.scrollInitialized||!Number.isFinite(view.lastCanvasW)||!Number.isFinite(view.lastCanvasH)||view.lastCanvasW<=2||view.lastCanvasH<=2;
-  if(shouldInit){ view.offsetX=0; view.offsetY=0; view.scrollInitialized=true; }
+  const wrap=$("spriteCanvasWrap");
+  const hasVisibleLayout=!!wrap && wrap.clientWidth>2 && wrap.clientHeight>2;
+  const shouldInit=hasVisibleLayout && (!spriteViewLayoutReady.has(folder)||!view.scrollInitialized||!Number.isFinite(view.lastCanvasW)||!Number.isFinite(view.lastCanvasH)||view.lastCanvasW<=2||view.lastCanvasH<=2);
+  if(shouldInit){ view.offsetX=0; view.offsetY=0; view.scrollInitialized=true; spriteViewLayoutReady.add(folder); }
   view.lastCanvasW=metrics.width;
   view.lastCanvasH=metrics.height;
 }
@@ -9846,7 +10050,7 @@ function makeRuntime(){
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(runtimeActive){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -9950,7 +10154,8 @@ function wireUI(){
     $("screenStage")?.addEventListener(type,()=>scheduleRuntimeViewportFocus(),{passive:true});
   });
   bindClick("runTitleBtn",(e)=>{ e.stopPropagation(); runRuntimeFromEditor('rerun'); });
-  const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ $("importFormatRow")?.classList.add('hidden'); $("exportFormatRow")?.classList.add('hidden'); closeLoadPanel(); } };
+  const closeFormatRows=()=>{ $("importFormatRow")?.classList.add('hidden'); $("exportFormatRow")?.classList.add('hidden'); };
+  const setFileMenuOpen=(open)=>{ const menu=$("menu"), backdrop=$("menuBackdrop"); menu?.classList.toggle('open', !!open); backdrop?.classList.toggle('open', !!open); if(!open){ closeFormatRows(); closeLoadPanel(); } };
   bindClick("fileBtn",e=>{ e.stopPropagation(); const isOpen=$("menu")?.classList.contains('open'); setFileMenuOpen(!isOpen); refreshProjectList(); refreshMenuSettingsUI(); resetToolbar(); });
   const toggleMenuSection=(id)=>$(id)?.classList.toggle('open');
   bindClick("menuSectionFileToggle",()=>toggleMenuSection('menuSectionFile'));
@@ -9958,7 +10163,7 @@ function wireUI(){
   const setLoadPanelOpen=open=>$("menuLoadPanel")?.classList.toggle('hidden', !open);
   const closeLoadPanel=()=>setLoadPanelOpen(false);
   
-  bind("menu","click",e=>e.stopPropagation());
+  bind("menu","click",e=>{ e.stopPropagation(); if(!e.target.closest('#btnImportProject,#btnExport,#importFormatRow,#exportFormatRow')) closeFormatRows(); });
   ["pointerdown","mousedown","click"].forEach(type=>{ bind("inputModeSelect",type,e=>e.stopPropagation()); bind("resolutionSelect",type,e=>e.stopPropagation()); bind("defaultPrintFontSelect",type,e=>e.stopPropagation()); });
   bindClick("menuBackdrop",()=>setFileMenuOpen(false));
   document.addEventListener('click',e=>{ if(e.target.closest('#menu')||e.target.closest('#fileBtn')) return; setFileMenuOpen(false); if(!e.target.closest('.topbar')) resetToolbar(); });
@@ -9967,12 +10172,12 @@ function wireUI(){
   bind("importCodeFileInput",'change',e=>{ const input=e.target; const file=input?.files?.[0]; if(file) importCodeFile(file); if(input) input.value=''; });
   bindClick("btnNewProject",e=>{ e.stopPropagation(); setFileMenuOpen(false); newProject(); });
   const setImportFormatRowOpen=open=>$("importFormatRow")?.classList.toggle('hidden', !open);
-  bindClick("btnImportProject",e=>{ e.stopPropagation(); const row=$("importFormatRow"); setImportFormatRowOpen(row?.classList.contains('hidden')); $("exportFormatRow")?.classList.add('hidden'); });
+  bindClick("btnImportProject",e=>{ e.stopPropagation(); const row=$("importFormatRow"), shouldOpen=row?.classList.contains('hidden'); closeFormatRows(); setImportFormatRowOpen(shouldOpen); });
   bindClick("btnImportZip",e=>{ e.stopPropagation(); setImportFormatRowOpen(false); setFileMenuOpen(false); $("importProjectZipInput")?.click(); });
   bindClick("btnImportCodeTxt",e=>{ e.stopPropagation(); setImportFormatRowOpen(false); setFileMenuOpen(false); $("importCodeFileInput")?.click(); });
   bind("importProjectZipInput",'change',e=>{ const input=e.target; const file=input?.files?.[0]; if(file) importProjectZip(file); if(input) input.value=''; });
   const setExportFormatRowOpen=open=>$("exportFormatRow")?.classList.toggle('hidden', !open);
-  bindClick("btnExport",e=>{ e.stopPropagation(); const row=$("exportFormatRow"); setExportFormatRowOpen(row?.classList.contains('hidden')); });
+  bindClick("btnExport",e=>{ e.stopPropagation(); const row=$("exportFormatRow"), shouldOpen=row?.classList.contains('hidden'); closeFormatRows(); setExportFormatRowOpen(shouldOpen); });
   bindClick("btnExportZip",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.zip'); });
   bindClick("btnExportHtml",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('.html'); });
   bindClick("btnExportCodeTxt",e=>{ e.stopPropagation(); setExportFormatRowOpen(false); setFileMenuOpen(false); exportProject('code.txt'); });
@@ -9986,6 +10191,10 @@ function wireUI(){
   bindClick("projectListNextBtn",()=>{ const pages=Math.max(1,Math.ceil(Object.keys(loadAllProjects()).length/5)); state.projectListPage=(state.projectListPage+1)%pages; refreshProjectList(); });
   bind("defaultPrintFontSelect",'change',()=>{ ensureProjectData(); state.appProject.settings.defaultPrintFont=normalizePrintFontName($("defaultPrintFontSelect")?.value); updateRuntimePausePlaceholder(); runtime.syncProject(state.appProject); runtime.loadEditor(getProjectLua()); });
   bind("darkModeToggle",'change',()=>{ ensureProjectData(); state.appProject.settings.darkMode=!!$("darkModeToggle")?.checked; applyThemeUI(); });
+  bindClick("btnChooseProjectDirectory",()=>chooseDesktopDirectory('project'));
+  bindClick("btnOpenProjectDirectory",()=>openDesktopDirectory('project'));
+  bindClick("btnChooseExportDirectory",()=>chooseDesktopDirectory('export'));
+  bindClick("btnOpenExportDirectory",()=>openDesktopDirectory('export'));
   function syncSidebarToggleButton(buttonId, viewId){ const btn=$(buttonId), view=$(viewId); if(!btn||!view) return; const hidden=view.classList.contains('sidebar-hidden'); btn.textContent=hidden?'>':'<'; btn.setAttribute('aria-expanded', hidden?'false':'true'); btn.title=hidden?'Open panel':'Close panel'; }
   bindClick("toggleMapSidebarBtn",()=>{
     const mapView=$("mapView");
@@ -10347,28 +10556,34 @@ function wireUI(){
   window.addEventListener('resize',applyRuntimeUiHiddenState);
   window.addEventListener('keydown',e=>{
     const key=String(e.key||'').toLowerCase();
+    if(e.altKey && !e.ctrlKey && !e.metaKey && key==='enter'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      toggleAppFullscreen();
+      return;
+    }
     if((e.ctrlKey||e.metaKey) && !e.altKey && !e.shiftKey && key==='r'){
       e.preventDefault();
       runRuntimeFromEditor('rerun');
       return;
     }
     const isEscapeKey=(key==='escape' || key==='esc');
-    const isEscapeShortcut=isEscapeKey && !e.altKey && state.activeView==='runtime' && !dialogState.active;
+    if(isEscapeKey && state.activeView==='runtime' && runtimeUiHidden){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      runtimeUiHidden=false;
+      applyRuntimeUiHiddenState();
+      return;
+    }
+    const isEscapeShortcut=isEscapeKey && !e.altKey && state.activeView==='runtime' && !runtime?.hasActiveDialog?.();
     if(isEscapeShortcut && (e.ctrlKey || e.metaKey)){
       e.preventDefault();
-      if(runtimeUiHidden){
-        runtimeUiHidden=false;
-        applyRuntimeUiHiddenState();
-      }
+      e.stopImmediatePropagation();
       return;
     }
     if(isEscapeShortcut && !e.ctrlKey && !e.metaKey){
       e.preventDefault();
-      if(runtimeUiHidden){
-        runtimeUiHidden=false;
-        applyRuntimeUiHiddenState();
-        return;
-      }
+      e.stopImmediatePropagation();
       setView('code');
       resetToolbar();
       applyRuntimeUiHiddenState();
@@ -10378,7 +10593,7 @@ function wireUI(){
       e.preventDefault();
       saveProject(false);
     }
-  },{passive:false});
+  },{capture:true,passive:false});
   applyRuntimeUiHiddenState();
   updateMapAnimToggleButton();
   updateMapToolButtons();
@@ -10413,6 +10628,7 @@ function bootEditorShell(){
   buildDocs();
   ensureProjectData();
   syncResponsiveUI();
+  restoreDesktopDirectoryHandles().catch(err=>console.warn('Directory handle restore failed',err));
   wireUI();
   renderCodeTabs();
   finishNewProject();
