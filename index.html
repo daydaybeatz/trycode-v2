@@ -193,6 +193,7 @@
       box-shadow:inset 0 0 0 3px #fff0cb
     }
     #mapCanvas,#spriteCanvas{display:block;image-rendering:pixelated;touch-action:none}
+    #spriteCanvas{width:100%;height:100%}
     #spriteCanvasWrap{scrollbar-width:none;-ms-overflow-style:none}
     #spriteCanvasWrap::-webkit-scrollbar{display:none}
     .palBtn{height:34px;border:3px solid var(--line);border-radius:10px;cursor:pointer;box-shadow:0 3px 0 #c08b52;position:relative;overflow:hidden}
@@ -421,6 +422,8 @@
     .attachedPane{margin:0 0 10px 0;background:linear-gradient(180deg,#eef4e5,#cadcc8)}
     .splitView:not(.sidebar-hidden) .canvasWrap{filter:grayscale(.65) opacity(.55);pointer-events:none}
     .splitView:not(.sidebar-hidden) .canvasWrap::after{content:'';position:absolute;inset:0;background:rgba(80,93,88,.34);z-index:30;pointer-events:auto;border-radius:12px}
+    #spriteView:not(.sidebar-hidden) #spriteCanvasWrap{pointer-events:auto}
+    #spriteView:not(.sidebar-hidden) #spriteCanvasWrap::after{pointer-events:none}
     .splitView:not(.sidebar-hidden) .overlayTools,
     .splitView:not(.sidebar-hidden) .spriteSecondaryTools,
     .splitView:not(.sidebar-hidden) .edgePalette,
@@ -795,6 +798,7 @@ function getFileTabThemes(){
 const PRINT_FONTS = ["Press Start 2P","Orbitron","Rajdhani","Inter","Merriweather","Playfair Display"];
 const PRINT_FONT_STYLESHEET_HREF = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Merriweather:wght@400;700&family=Orbitron:wght@500;700&family=Playfair+Display:wght@500;700&family=Press+Start+2P&family=Rajdhani:wght@500;700&display=swap';
 const DEFAULT_PRINT_FONT = 'Press Start 2P';
+const EXAMPLE_PRINT_FONT = 'Rajdhani';
 function normalizePrintFontName(value){
   const raw=String(value??'').trim();
   if(!raw) return DEFAULT_PRINT_FONT;
@@ -1287,7 +1291,7 @@ function initRuntime(){
   }
 }
 const previewImages = {};
-const editorRenderCache = { sprites:new Map(), tiles:new Map() };
+const editorRenderCache = { sprites:new Map(), tiles:new Map(), onion:new Map() };
 const spriteHistory = { undo: [], redo: [] };
 const spriteViewLayoutReady = new WeakSet();
 const mapHistory = { undo: [], redo: [] };
@@ -1541,7 +1545,7 @@ function isImageLike(s){ return /\.(png|jpg|jpeg|gif|webp|bmp|svg)$/i.test(Strin
 function isEmojiLike(s){ return false; }
 function isSpriteIndexLike(s){ return /^\d+$/.test(String(s||"").trim()); }
 function makeCanvas(w,h){ const c=document.createElement("canvas"); c.width=Math.max(1,w|0); c.height=Math.max(1,h|0); const ctx=c.getContext("2d"); if(ctx) ctx.imageSmoothingEnabled=false; return c; }
-function invalidateEditorRenderCache(){ editorRenderCache.sprites.clear(); editorRenderCache.tiles.clear(); }
+function invalidateEditorRenderCache(){ editorRenderCache.sprites.clear(); editorRenderCache.tiles.clear(); editorRenderCache.onion.clear(); }
 function ensureProjectData(){
   if(!state.appProject) state.appProject = defaultProject();
   const p=state.appProject;
@@ -3348,6 +3352,9 @@ end`}
   finalizeExampleProjectLoad();
 }
 function finalizeExampleProjectLoad(){
+  if(state.appProject?.settings && (!state.appProject.settings.defaultPrintFont || state.appProject.settings.defaultPrintFont===DEFAULT_PRINT_FONT)){
+    state.appProject.settings.defaultPrintFont=EXAMPLE_PRINT_FONT;
+  }
   const mode=((state.appProject&&state.appProject.settings&&state.appProject.settings.movementInput)||'left_joystick');
   const controlMode=mode==='dpad'?'dpad':(mode==='none'?'none':'left_joystick');
   const mainFile=(state.appProject.codeFiles||[]).find(file=>String(file.name||'').toLowerCase()==='main.lua');
@@ -4533,7 +4540,7 @@ board_h = 20
 cell = 10
 board_x = 120
 board_y = 30
-fall_delay = 28
+fall_delay = 22
 fall_timer = 0
 score = 0
 lines = 0
@@ -4544,7 +4551,12 @@ next_piece = nil
 board = {}
 high_scores = {}
 last_clear_flash = 0
+last_clear_text = "clear lines to score"
+combo_streak = 0
 title_t = 0
+up_slam = true
+pause_index = 1
+blocks_until_rainbow = 25
 
 pieces = {
   {name="I", color=12, rots={{{-1,0},{0,0},{1,0},{2,0}}, {{1,-1},{1,0},{1,1},{1,2}}}},
@@ -4556,11 +4568,15 @@ pieces = {
   {name="Z", color=9, rots={{{-1,0},{0,0},{0,1},{1,1}}, {{1,-1},{0,0},{1,0},{0,1}}}}
 }
 
-function copy_scores(src)
-  local out = {}
-  for item in all(src) do add(out, item) end
-  return out
-end
+rainbow_colors = {6,8,10,11,12}
+rainbow_shapes = {
+  {{-2,0},{-1,0},{0,0},{1,0},{2,0}},
+  {{0,-1},{-1,0},{0,0},{1,0},{0,1}},
+  {{-1,-1},{-1,0},{0,0},{1,0},{1,1}},
+  {{-1,0},{0,0},{1,0},{1,1},{2,1}},
+  {{0,-2},{0,-1},{0,0},{1,0},{1,1}},
+  {{-1,0},{0,0},{1,0},{0,1},{0,2}}
+}
 
 function save_scores()
   local raw = ""
@@ -4599,12 +4615,46 @@ function clear_board()
   end
 end
 
+function rotate_shape_once(shape)
+  local out = {}
+  for c in all(shape) do add(out, {-c[2], c[1]}) end
+  return out
+end
+
+function shape_rots(shape)
+  local rots = {}
+  local cur = shape
+  for i=1,4 do
+    local copy = {}
+    for c in all(cur) do add(copy, {c[1], c[2]}) end
+    add(rots, copy)
+    cur = rotate_shape_once(cur)
+  end
+  return rots
+end
+
+function make_rainbow_piece()
+  local shape = rainbow_shapes[flr(rnd(#rainbow_shapes)) + 1]
+  local colors = {}
+  for i=1,5 do add(colors, rainbow_colors[flr(rnd(#rainbow_colors)) + 1]) end
+  return {name="rainbow", color=15, rainbow=true, colors=colors, rots=shape_rots(shape)}
+end
+
 function new_piece_from(def)
   return {def=def, rot=1, x=5, y=1}
 end
 
 function random_piece()
   return pieces[flr(rnd(#pieces)) + 1]
+end
+
+function choose_next_piece()
+  if blocks_until_rainbow <= 0 then
+    blocks_until_rainbow = 25 + flr(rnd(6))
+    return make_rainbow_piece()
+  end
+  blocks_until_rainbow -= 1
+  return random_piece()
 end
 
 function piece_cells(piece, test_rot, test_x, test_y)
@@ -4614,9 +4664,21 @@ function piece_cells(piece, test_rot, test_x, test_y)
   local cells = {}
   local shape = piece.def.rots[rot]
   for i=1,#shape do
-    add(cells, {x = px + shape[i][1], y = py + shape[i][2]})
+    add(cells, {x = px + shape[i][1], y = py + shape[i][2], i = i})
   end
   return cells
+end
+
+function cell_color(v)
+  if type(v) == "table" then return v.color or 15 end
+  return v
+end
+
+function piece_cell_color(piece, c)
+  if piece.def.rainbow then
+    return piece.def.colors[((c.i - 1) % #piece.def.colors) + 1]
+  end
+  return piece.def.color
 end
 
 function can_place(piece, test_rot, test_x, test_y)
@@ -4630,12 +4692,25 @@ end
 
 function lock_piece()
   for c in all(piece_cells(active)) do
-    if c.y >= 1 then board[c.y][c.x] = active.def.color end
+    if c.y >= 1 then
+      local col = piece_cell_color(active, c)
+      if active.def.rainbow then
+        board[c.y][c.x] = {color=col, rainbow=true}
+      else
+        board[c.y][c.x] = col
+      end
+    end
   end
+end
+
+function update_speed()
+  level = 1 + flr(lines / 4)
+  fall_delay = math.max(3, 22 - (level - 1) * 3)
 end
 
 function clear_lines()
   local removed = 0
+  local rainbow_cells = 0
   local y = board_h
   while y >= 1 do
     local full = true
@@ -4643,27 +4718,52 @@ function clear_lines()
       if board[y][x] == 0 then full = false break end
     end
     if full then
-      removed = removed + 1
+      removed += 1
+      for x=1,board_w do
+        local v = board[y][x]
+        if type(v) == "table" and v.rainbow then rainbow_cells += 1 end
+      end
       for pull=y,2,-1 do
         for x=1,board_w do board[pull][x] = board[pull-1][x] end
       end
       for x=1,board_w do board[1][x] = 0 end
     else
-      y = y - 1
+      y -= 1
     end
   end
+
   if removed > 0 then
-    lines = lines + removed
-    score = score + removed * removed * 100
-    level = 1 + flr(lines / 10)
-    fall_delay = math.max(6, 28 - (level - 1) * 2)
+    lines += removed
+    combo_streak += 1
+    local base = removed * 100
+    local multi_bonus = 0
+    if removed > 1 then multi_bonus = removed * removed * 120 end
+    local chain_bonus = (combo_streak - 1) * removed * 90
+    local rainbow_bonus = 0
+    if rainbow_cells > 0 and (removed > 1 or combo_streak > 1) then
+      rainbow_bonus = rainbow_cells * 500
+    end
+    local gained = base + multi_bonus + chain_bonus + rainbow_bonus
+    score += gained
+    update_speed()
+    last_clear_text = "+"..gained.."  lines "..removed
+    if combo_streak > 1 then last_clear_text = last_clear_text.."  combo x"..combo_streak end
+    if rainbow_bonus > 0 then last_clear_text = last_clear_text.."  rainbow +"..rainbow_bonus end
     last_clear_flash = 8
+  else
+    combo_streak = 0
   end
 end
 
+function settle_piece()
+  lock_piece()
+  clear_lines()
+  spawn_piece()
+end
+
 function spawn_piece()
-  active = new_piece_from(next_piece or random_piece())
-  next_piece = random_piece()
+  active = new_piece_from(next_piece or choose_next_piece())
+  next_piece = choose_next_piece()
   if not can_place(active) then
     add(high_scores, score)
     table.sort(high_scores, function(a,b) return a > b end)
@@ -4678,77 +4778,103 @@ function start_game()
   score = 0
   lines = 0
   level = 1
-  fall_delay = 28
+  combo_streak = 0
+  fall_delay = 22
   fall_timer = 0
-  next_piece = random_piece()
+  last_clear_text = "clear lines to score"
+  blocks_until_rainbow = 25 + flr(rnd(6))
+  next_piece = choose_next_piece()
   state = "play"
   spawn_piece()
 end
 
 function move_piece(dx, dy)
+  if not active then return false end
   if can_place(active, active.rot, active.x + dx, active.y + dy) then
-    active.x = active.x + dx
-    active.y = active.y + dy
+    active.x += dx
+    active.y += dy
     return true
   end
   return false
 end
 
-function rotate_piece()
+function rotate_piece(dir)
+  if not active then return end
   local total = #active.def.rots
-  local new_rot = active.rot + 1
+  local new_rot = active.rot + (dir or 1)
   if new_rot > total then new_rot = 1 end
-  if can_place(active, new_rot, active.x, active.y) then
-    active.rot = new_rot
-    return
-  end
-  if can_place(active, new_rot, active.x - 1, active.y) then
-    active.rot = new_rot
-    active.x = active.x - 1
-    return
-  end
-  if can_place(active, new_rot, active.x + 1, active.y) then
-    active.rot = new_rot
-    active.x = active.x + 1
+  if new_rot < 1 then new_rot = total end
+  local kicks = {0, -1, 1, -2, 2}
+  for k in all(kicks) do
+    if can_place(active, new_rot, active.x + k, active.y) then
+      active.rot = new_rot
+      active.x += k
+      return
+    end
   end
 end
 
 function hard_drop()
-  while move_piece(0, 1) do
-    score = score + 2
-  end
-  lock_piece()
-  clear_lines()
-  spawn_piece()
+  while move_piece(0, 1) do end
+  settle_piece()
 end
 
 function update_play()
+  if btnp("start") or keyp("escape") or keyp("p") then
+    state = "pause"
+    pause_index = 1
+    return
+  end
   if btnp("left") then move_piece(-1,0) end
   if btnp("right") then move_piece(1,0) end
-  if btnp("down") then
-    if move_piece(0,1) then score = score + 1 end
+  if btnp("down") then move_piece(0,1) end
+  if btnp("b") or keyp("x") then rotate_piece(1) end
+  if btnp("x") or keyp("c") then rotate_piece(-1) end
+  if up_slam and btnp("up") then
+    hard_drop()
+    return
   end
-  if btnp("a") or btnp("up") then rotate_piece() end
-  if btnp("x") then hard_drop() end
 
-  fall_timer = fall_timer + 1
+  fall_timer += 1
   if fall_timer >= fall_delay then
     fall_timer = 0
-    if not move_piece(0,1) then
-      lock_piece()
-      clear_lines()
-      spawn_piece()
-    end
+    if not move_piece(0,1) then settle_piece() end
   end
 
-  if last_clear_flash > 0 then last_clear_flash = last_clear_flash - 1 end
+  if last_clear_flash > 0 then last_clear_flash -= 1 end
+end
+
+function update_pause()
+  if btnp("down") then
+    pause_index += 1
+    if pause_index > 3 then pause_index = 1 end
+  end
+  if btnp("up") then
+    pause_index -= 1
+    if pause_index < 1 then pause_index = 3 end
+  end
+  if btnp("start") or keyp("escape") or keyp("p") or btnp("b") or keyp("x") then
+    state = "play"
+    return
+  end
+  if btnp("a") or keyp("z") then
+    if pause_index == 1 then
+      state = "play"
+    elseif pause_index == 2 then
+      up_slam = not up_slam
+    else
+      active = nil
+      next_piece = nil
+      state = "title"
+    end
+  end
 end
 
 function draw_board()
   rectfill(board_x - 8, board_y - 8, board_x + board_w*cell + 8, board_y + board_h*cell + 8, 2)
   for y=1,board_h do
     for x=1,board_w do
-      local color_index = board[y][x]
+      local color_index = cell_color(board[y][x])
       if color_index ~= 0 then
         local px = board_x + (x-1)*cell
         local py = board_y + (y-1)*cell
@@ -4761,39 +4887,44 @@ function draw_board()
       if c.y >= 1 then
         local px = board_x + (c.x-1)*cell
         local py = board_y + (c.y-1)*cell
-        rectfill(px+1, py+1, px+cell-2, py+cell-2, active.def.color)
+        rectfill(px+1, py+1, px+cell-2, py+cell-2, piece_cell_color(active, c))
       end
     end
   end
 
   if last_clear_flash > 0 then
-    rectfill(board_x - 8, board_y - 8, board_x + board_w*cell + 8, board_y + board_h*cell + 8, 6)
+    rect(board_x - 8, board_y - 8, board_x + board_w*cell + 8, board_y + board_h*cell + 8, 6)
+    rect(board_x - 6, board_y - 6, board_x + board_w*cell + 6, board_y + board_h*cell + 6, 10)
   end
 end
 
 function draw_side_panel()
   rectfill(258, 30, 430, 230, 5)
-  print("tetronimoes", 16, 282, 44, 10, 0)
-  print("score "..score, 14, 278, 74, 15, 0)
-  print("lines "..lines, 14, 278, 96, 15, 0)
-  print("level "..level, 14, 278, 118, 15, 0)
-  print("next", 14, 278, 144, 14, 0)
+  print("neon stack", 15, 282, 42, 10, 0)
+  print("score "..score, 12, 278, 68, 15, 0)
+  print("lines "..lines.."  lvl "..level, 11, 278, 88, 7, 0)
+  print("combo x"..combo_streak, 11, 278, 108, 11, 0)
+  print(last_clear_text, 9, 278, 126, 6, 0)
+  print("next", 12, 278, 148, 14, 0)
 
   if next_piece then
     for c in all(piece_cells({def=next_piece, rot=1, x=0, y=0})) do
-      local px = 332 + c.x*10
-      local py = 172 + c.y*10
-      rectfill(px, py, px+8, py+8, next_piece.color)
+      local px = 336 + c.x*10
+      local py = 174 + c.y*10
+      rectfill(px, py, px+8, py+8, piece_cell_color({def=next_piece}, c))
     end
   end
 
-  print("high score board", 12, 278, 200, 6, 0)
+  print("rainbow in "..blocks_until_rainbow, 9, 278, 194, 12, 0)
+  print("x/b cw  c/x ccw", 9, 278, 207, 7, 0)
+  print("up slam "..(up_slam and "on" or "off"), 9, 278, 220, up_slam and 11 or 8, 0)
 end
 
 function draw_high_scores()
-  rectfill(258, 232, 430, 264, 3)
-  for i=1,5 do
-    print(i..". "..high_scores[i], 11, 268, 230 + i*6, 7, 0)
+  rectfill(258, 232, 430, 268, 3)
+  print("high scores", 8, 268, 235, 10, 0)
+  for i=1,3 do
+    print(i..". "..high_scores[i], 8, 268, 245 + (i-1)*8, 7, 0)
   end
 end
 
@@ -4813,6 +4944,11 @@ function _update()
     return
   end
 
+  if state == "pause" then
+    update_pause()
+    return
+  end
+
   if state == "game_over" then
     if btnp("a") or keyp("z") then
       state = "title"
@@ -4823,18 +4959,33 @@ end
 function draw_title()
   local bob = sin(title_t * 0.08) * 4
   rectfill(40, 26, 440, 244, 1)
-  print("neon stack - tetris style", 22, 74, 56 + bob, 12, 0)
-  print("tetronimoes puzzle block falling", 14, 102, 106, 10, 0)
-  print("line completion + rotation + points", 14, 96, 130, 11, 0)
-  print("persistent high score board", 14, 116, 154, 14, 0)
-  print("press z / a", 16, 176, 198, 7, 0)
+  print("neon stack", 26, 150, 54 + bob, 12, 0)
+  print("line clears score. drops do not.", 13, 116, 104, 10, 0)
+  print("x key / b button rotates clockwise", 12, 100, 128, 11, 0)
+  print("c key / x button rotates the other way", 12, 88, 150, 14, 0)
+  print("pause: start / p / escape", 12, 134, 174, 7, 0)
+  print("press z / a", 16, 176, 206, 7, 0)
+end
+
+function draw_pause_menu()
+  rectfill(84, 52, 396, 220, color(13, 20, 32))
+  rect(84, 52, 396, 220, 12)
+  print("paused", 22, 204, 72, 10, 0)
+  local labels = {"resume", "up slam: "..(up_slam and "on" or "off"), "exit to menu"}
+  for i=1,3 do
+    local y = 108 + i * 26
+    local selected = pause_index == i
+    rectfill(132, y-8, 348, y+14, selected and 8 or 2)
+    print(labels[i], 13, 154, y-3, selected and 15 or 7, 0)
+  end
+  print("up/down choose, z/a select", 10, 132, 204, 7, 0)
 end
 
 function draw_game_over()
   rectfill(96, 92, 384, 184, 13)
   print("game over", 20, 178, 116, 7, 0)
   print("score "..score, 14, 186, 144, 7, 0)
-  print("press z / a to return", 14, 136, 166, 7, 0)
+  print("press z / a to return", 12, 152, 166, 7, 0)
 end
 
 function _draw()
@@ -4849,6 +5000,7 @@ function _draw()
   draw_side_panel()
   draw_high_scores()
 
+  if state == "pause" then draw_pause_menu() end
   if state == "game_over" then draw_game_over() end
 end`}];
   finalizeExampleProjectLoad();
@@ -7378,16 +7530,17 @@ function loadZeldaLikeTopdownRpgExampleProject(){
     {frames:[spriteFromArt([
       "................",
       "................",
-      "................",
-      "................",
-      "................",
-      "..777777777777..",
-      ".7aaaaaaaaaaaa7.",
-      "..777777777777..",
-      "................",
-      "................",
-      "................",
-      "................",
+      ".........7......",
+      ".........77.....",
+      ".........777....",
+      "..77777777777...",
+      ".7aaaaaaaaaa77..",
+      "7aaaaaaaaaaaa77.",
+      ".7aaaaaaaaaa77..",
+      "..77777777777...",
+      ".........777....",
+      ".........77.....",
+      ".........7......",
       "................",
       "................",
       "................",
@@ -7502,7 +7655,7 @@ function hurt_player()
   if hit_timer > 0 then return end
   player.health -= 1
   hit_timer = 60
-  message = "ouch! hearts left: "..player.health
+  message = "ouch! health left: "..player.health
   if player.health <= 0 then
     player.health = 3
     player.x = 64
@@ -7692,7 +7845,7 @@ function draw_world()
   for bomb in all(bombs) do if bomb.map == map_id then spr(4, bomb.x, bomb.y) end end
   for arrow in all(arrows) do
     if arrow.map == map_id then
-      r_spr(5, arrow.x, arrow.y, math.atan(arrow.dy, arrow.dx))
+      r_spr(5, arrow.x, arrow.y, math.deg(math.atan(arrow.dy, arrow.dx)))
     end
   end
   for enemy in all(enemies) do
@@ -7717,13 +7870,11 @@ function draw_hud()
   clip(0, 0, 240, 38)
   rectfill(0, 0, 240, 38, color(32,24,16))
   clip()
-  for i=1,3 do
-    local c = 11
-    if i <= player.health then c = 6 end
-    circfill(12 + i * 16, 14, 6, c)
-    circfill(18 + i * 16, 14, 6, c)
-    rectfill(8 + i * 16, 15, 22 + i * 16, 27, c)
-  end
+  rectfill(10, 10, 94, 27, 11)
+  rect(10, 10, 94, 27, 7)
+  local hp_w = flr(80 * clamp(player.health, 0, 3) / 3)
+  rectfill(12, 12, 12 + hp_w, 25, 6)
+  print("hp", 10, 16, 14, 7, 0)
   circfill(104, 18, 6, 5)
   print("x "..player.coins, 12, 116, 11, 7, 0)
   print("map "..(map_id + 1), 12, 178, 11, 9, 0)
@@ -7843,7 +7994,7 @@ function setView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   targetView.classList.add('active');
   if(name==="code") requestAnimationFrame(()=>{ updateCodeLineNumbers(); focusIfAppropriate($("codeEditor")); });
-  if(name==="sprites") { drawSpriteEditor(); requestAnimationFrame(()=>drawSpriteEditor()); }
+  if(name==="sprites") scheduleSpriteEditorLayoutDraw();
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
   if(name==="music") { refreshMusicUI();  }
   if(name==="map"){
@@ -8024,8 +8175,7 @@ function selectSpriteFolder(index){
   spriteHistory.undo.length=0;
   spriteHistory.redo.length=0;
   syncSpriteUI();
-  drawSpriteEditor();
-  requestAnimationFrame(()=>drawSpriteEditor());
+  scheduleSpriteEditorLayoutDraw();
   refreshTilePalette();
   runtime.syncProject(state.appProject);
 }
@@ -8307,6 +8457,27 @@ function requestSpriteEditorDraw(){
     drawSpriteEditor();
   });
 }
+function scheduleSpriteEditorLayoutDraw(){
+  drawSpriteEditor();
+  requestAnimationFrame(()=>{
+    drawSpriteEditor();
+    requestAnimationFrame(()=>drawSpriteEditor());
+  });
+}
+function isSpritePanelOpen(){
+  const spriteView=$("spriteView");
+  return !!spriteView && !spriteView.classList.contains("sidebar-hidden");
+}
+function ensureSpriteCanvasReadyForInput(){
+  const wrap=$("spriteCanvasWrap"), canvas=$("spriteCanvas");
+  if(!wrap||!canvas) return false;
+  const targetW=Math.max(1,Math.floor(wrap.clientWidth||canvas.clientWidth||canvas.width||1));
+  const targetH=Math.max(1,Math.floor(wrap.clientHeight||canvas.clientHeight||canvas.height||1));
+  if(canvas.width!==targetW || canvas.height!==targetH){
+    drawSpriteEditor();
+  }
+  return canvas.width>0 && canvas.height>0 && wrap.clientWidth>0 && wrap.clientHeight>0;
+}
 function drawSpriteEditor(){
   ensureProjectData();
   const canvas=$("spriteCanvas"), ctx=canvas.getContext('2d');
@@ -8343,11 +8514,8 @@ function drawSpriteEditor(){
     const onionIndex=((state.currentSpriteFrame+offset)%folder.frames.length+folder.frames.length)%folder.frames.length;
     const onion=folder.frames[onionIndex];
     if(onion){
-      const onionCanvas=renderSpriteFrameToCanvas(onion);
-      ctx.save();
-      ctx.globalAlpha=0.35;
+      const onionCanvas=getEditorOnionSkinCanvas({folder:state.currentSpriteIndex,frame:onionIndex},onionMode);
       ctx.drawImage(onionCanvas, drawX, drawY, onion.w*z, onion.h*z);
-      ctx.restore();
     }
   }
   const spriteCanvas=getEditorSpriteCanvas({folder:state.currentSpriteIndex,frame:state.currentSpriteFrame});
@@ -8520,6 +8688,88 @@ function renderSpriteFrameToCanvas(s){
     }
   }
   ctx.putImageData(image,0,0);
+  return canvas;
+}
+function rgbToHsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h=0, s=0;
+  const l=(max+min)/2;
+  if(max!==min){
+    const d=max-min;
+    s=l>0.5?d/(2-max-min):d/(max+min);
+    if(max===r) h=(g-b)/d+(g<b?6:0);
+    else if(max===g) h=(b-r)/d+2;
+    else h=(r-g)/d+4;
+    h*=60;
+  }
+  return {h,s,l};
+}
+function hslToRgb(h,s,l){
+  h=((h%360)+360)%360/360;
+  const hue2rgb=(p,q,t)=>{
+    if(t<0) t+=1;
+    if(t>1) t-=1;
+    if(t<1/6) return p+(q-p)*6*t;
+    if(t<1/2) return q;
+    if(t<2/3) return p+(q-p)*(2/3-t)*6;
+    return p;
+  };
+  if(s<=0) return {r:Math.round(l*255),g:Math.round(l*255),b:Math.round(l*255)};
+  const q=l<0.5?l*(1+s):l+s-l*s;
+  const p=2*l-q;
+  return {
+    r:Math.round(hue2rgb(p,q,h+1/3)*255),
+    g:Math.round(hue2rgb(p,q,h)*255),
+    b:Math.round(hue2rgb(p,q,h-1/3)*255)
+  };
+}
+function onionSkinRgbaForColor(value, mode){
+  const rgb=hexToRgb(value)||{r:127,g:127,b:127};
+  const hsl=rgbToHsl(rgb.r,rgb.g,rgb.b);
+  const luminance=(0.2126*rgb.r+0.7152*rgb.g+0.0722*rgb.b)/255;
+  const hue=hsl.s<0.08 ? (mode==='nextframe'?318:188) : hsl.h+(mode==='nextframe'?46:206);
+  const lightness=luminance>0.58?0.3:(luminance<0.34?0.78:0.62);
+  const tint=hslToRgb(hue,0.92,lightness);
+  return {r:tint.r,g:tint.g,b:tint.b,a:176};
+}
+function renderOnionSkinFrameToCanvas(s, mode){
+  const canvas=makeCanvas(s.w,s.h), ctx=canvas.getContext('2d',{willReadFrequently:false});
+  if(!ctx) return canvas;
+  const image=ctx.createImageData(s.w,s.h);
+  const mask=Array.from({length:s.h},()=>Array.from({length:s.w},()=>false));
+  for(let y=0;y<s.h;y++) for(let x=0;x<s.w;x++) mask[y][x]=(s.pixels[y]?.[x]??-1)>=0;
+  const outline=mode==='nextframe'?{r:255,g:246,b:255,a:90}:{r:12,g:30,b:38,a:90};
+  const write=(x,y,c)=>{
+    if(x<0||y<0||x>=s.w||y>=s.h) return;
+    const out=(y*s.w+x)*4;
+    if(image.data[out+3]>=c.a) return;
+    image.data[out]=c.r;
+    image.data[out+1]=c.g;
+    image.data[out+2]=c.b;
+    image.data[out+3]=c.a;
+  };
+  for(let y=0;y<s.h;y++) for(let x=0;x<s.w;x++){
+    if(!mask[y][x]) continue;
+    write(x-1,y,outline); write(x+1,y,outline); write(x,y-1,outline); write(x,y+1,outline);
+  }
+  for(let y=0;y<s.h;y++) for(let x=0;x<s.w;x++){
+    const p=s.pixels[y]?.[x]??-1;
+    if(p>=0&&state.appProject.palette[p]) write(x,y,onionSkinRgbaForColor(state.appProject.palette[p],mode));
+  }
+  ctx.putImageData(image,0,0);
+  return canvas;
+}
+function getEditorOnionSkinCanvas(spriteRef, mode){
+  const ref=typeof spriteRef==='object'?spriteRef:parseSpriteRef(spriteRef);
+  if(!ref) return null;
+  const key=`${ref.folder}:${ref.frame}:${mode}`;
+  if(editorRenderCache.onion.has(key)) return editorRenderCache.onion.get(key);
+  const folder=state.appProject.spriteFolders[ref.folder];
+  const s=folder&&folder.frames[ref.frame];
+  if(!s) return null;
+  const canvas=renderOnionSkinFrameToCanvas(s, mode);
+  editorRenderCache.onion.set(key,canvas);
   return canvas;
 }
 function getEditorSpriteCanvas(spriteRef){
@@ -10205,7 +10455,7 @@ function wireUI(){
     drawMapEditor();
     requestAnimationFrame(()=>drawMapEditor());
   });
-  bindClick("toggleSpriteSidebarBtn",()=>{ const spriteView=$("spriteView"); if(!spriteView) return; spriteView.classList.toggle('sidebar-hidden'); syncSidebarToggleButton("toggleSpriteSidebarBtn","spriteView"); refreshEdgePalette(); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); });
+  bindClick("toggleSpriteSidebarBtn",()=>{ const spriteView=$("spriteView"); if(!spriteView) return; spriteView.classList.toggle('sidebar-hidden'); syncSidebarToggleButton("toggleSpriteSidebarBtn","spriteView"); refreshEdgePalette(); syncSpriteCanvasChrome(); drawSpriteAnimPreview(); scheduleSpriteEditorLayoutDraw(); });
   const zoomMapAtPoint=(nextZoom,clientX,clientY)=>{ const wrap=$("mapCanvasWrap"); const rect=wrap.getBoundingClientRect(); const oldZoom=state.mapZoom||1; const newZoom=clamp(nextZoom,0.2,8); const lx=(clientX-rect.left-(state.mapOffsetX||0))/oldZoom; const ly=(clientY-rect.top-(state.mapOffsetY||0))/oldZoom; state.mapZoom=newZoom; state.mapOffsetX=(clientX-rect.left)-lx*newZoom; state.mapOffsetY=(clientY-rect.top)-ly*newZoom; drawMapEditor(); };
   bindClick("mapZoomInBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)+0.025, rect.left+rect.width/2, rect.top+rect.height/2); });
   bindClick("mapZoomOutBtn",()=>{ const wrap=$("mapCanvasWrap"); if(!wrap) return; const rect=wrap.getBoundingClientRect(); zoomMapAtPoint((state.mapZoom||1)-0.025, rect.left+rect.width/2, rect.top+rect.height/2); });
@@ -10348,6 +10598,7 @@ function wireUI(){
   bind("spriteCanvasWrap",'contextmenu',e=>e.preventDefault());
   bind("spriteCanvasWrap",'pointerdown',e=>{
     e.preventDefault();
+    if(!ensureSpriteCanvasReadyForInput()) return;
     spritePointerMode=e.button===1?'pan':(e.button===2?'erase':'tool');
     spritePaintChanged=false;
     if(spritePointerMode==='pan' || state.spriteTool==='pan'){
@@ -10356,6 +10607,7 @@ function wireUI(){
       lastPan.y=e.clientY;
       return;
     }
+    if(isSpritePanelOpen()) return;
     if(e.button===0 && !state.spriteTool){ toast('Select a sprite tool first.'); return; }
     const point=spriteCoordsFromEvent(e);
     const shapeKind=(state.spriteTool==='line')?'line':(state.spriteTool==='rect'||state.spriteTool==='rectfill')?'rect':(state.spriteTool==='circ'||state.spriteTool==='circfill')?'circ':null;
@@ -10388,6 +10640,7 @@ function wireUI(){
       requestSpriteEditorDraw();
       return;
     }
+    if(isSpritePanelOpen()) return;
     if(spriteLineStart){
       const point=spriteCoordsFromEvent(e);
       state.spriteLinePreview={...(state.spriteLinePreview||{}),start:spriteLineStart,end:point,mode:spritePointerMode==='erase'?'erase':'draw',width:Math.max(1,state.spriteLineWidth||1)};
