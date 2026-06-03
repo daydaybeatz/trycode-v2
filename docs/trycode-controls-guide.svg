@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2400" viewBox="0 0 1800 2400">
+  <defs>
+    <style>
+      .bg{fill:#fff8eb}
+      .panel{fill:#fffdf8;stroke:#7b4a25;stroke-width:4}
+      .ink{fill:#2d2016}
+      .muted{fill:#6b5b4c}
+      .red{fill:#b31f24}
+      .blue{fill:#2d5a8a}
+      .green{fill:#2f855a}
+      .gold{fill:#b97813}
+      .rule{stroke:#ead8b6;stroke-width:2}
+      .thin{stroke:#7b4a25;stroke-width:2}
+      .title{font:700 44px "Segoe UI",Arial,sans-serif}
+      .subtitle{font:400 18px "Segoe UI",Arial,sans-serif}
+      .h{font:700 26px "Segoe UI",Arial,sans-serif}
+      .body{font:400 17px "Segoe UI",Arial,sans-serif}
+      .small{font:400 14px "Segoe UI",Arial,sans-serif}
+      .code{font:400 16px Consolas,"Courier New",monospace;fill:#2d5a8a}
+      .codeSmall{font:400 14px Consolas,"Courier New",monospace;fill:#2d5a8a}
+      .center{text-anchor:middle}
+      .accentRed{fill:#b31f24}
+      .accentBlue{fill:#2d5a8a}
+      .accentGreen{fill:#2f855a}
+      .accentGold{fill:#b97813}
+    </style>
+  </defs>
+
+  <rect class="bg" width="1800" height="2300"/>
+  <text x="54" y="76" class="title ink">TRYCODE CONTROLS GUIDE</text>
+  <text x="58" y="110" class="subtitle muted">Runtime input API + keyboard/on-screen/PS5 DualSense mapping</text>
+  <rect x="1280" y="56" width="150" height="34" rx="17" fill="#cdebd1" stroke="#7b4a25" stroke-width="2"/>
+  <text x="1355" y="78" class="small center ink">btn = held</text>
+  <rect x="1445" y="56" width="220" height="34" rx="17" fill="#ffe3a3" stroke="#7b4a25" stroke-width="2"/>
+  <text x="1555" y="78" class="small center ink">btnp = first frame</text>
+
+  <g id="ps5-panel">
+    <rect x="54" y="150" width="820" height="655" rx="22" class="panel"/>
+    <rect x="54" y="150" width="10" height="655" class="accentRed"/>
+    <text x="78" y="192" class="h red">PS5 / Browser Gamepad Mapping</text>
+
+    <path d="M160 430 C170 255 315 252 390 330 C430 290 500 290 540 330 C615 252 760 255 770 430 C790 570 690 610 600 548 C540 585 390 585 330 548 C240 610 140 570 160 430 Z" fill="#f7ead2" stroke="#7b4a25" stroke-width="4"/>
+    <rect x="390" y="342" width="150" height="78" rx="14" fill="#e7d2b0" stroke="#7b4a25" stroke-width="2"/>
+    <text x="465" y="386" class="small center muted">Touchpad</text>
+
+    <rect x="165" y="206" width="180" height="34" rx="17" fill="#ffd6d6" stroke="#7b4a25" stroke-width="2"/>
+    <text x="255" y="228" class="small center ink">L1 -> btn(8)</text>
+    <rect x="585" y="206" width="180" height="34" rx="17" fill="#ffd6d6" stroke="#7b4a25" stroke-width="2"/>
+    <text x="675" y="228" class="small center ink">R1 -> btn(9)</text>
+
+    <g class="thin">
+      <circle cx="291" cy="361" r="37" fill="#cfe9ff"/>
+      <circle cx="291" cy="505" r="37" fill="#cfe9ff"/>
+      <circle cx="217" cy="433" r="37" fill="#cfe9ff"/>
+      <circle cx="365" cy="433" r="37" fill="#cfe9ff"/>
+      <circle cx="685" cy="361" r="37" fill="#f1defd"/>
+      <circle cx="685" cy="505" r="37" fill="#d8f5df"/>
+      <circle cx="611" cy="433" r="37" fill="#e0ebff"/>
+      <circle cx="759" cy="433" r="37" fill="#ffe0df"/>
+      <circle cx="350" cy="583" r="48" fill="#d9d1c8"/>
+      <circle cx="580" cy="583" r="48" fill="#d9d1c8"/>
+    </g>
+
+    <text x="291" y="356" class="small center ink">UP</text>
+    <text x="291" y="382" class="codeSmall center">0</text>
+    <text x="291" y="500" class="small center ink">DOWN</text>
+    <text x="291" y="526" class="codeSmall center">1</text>
+    <text x="217" y="428" class="small center ink">LEFT</text>
+    <text x="217" y="454" class="codeSmall center">2</text>
+    <text x="365" y="428" class="small center ink">RIGHT</text>
+    <text x="365" y="454" class="codeSmall center">3</text>
+
+    <text x="685" y="356" class="small center ink">Y / TRI</text>
+    <text x="685" y="382" class="codeSmall center">7</text>
+    <text x="685" y="500" class="small center ink">A / CROSS</text>
+    <text x="685" y="526" class="codeSmall center">4</text>
+    <text x="611" y="428" class="small center ink">X / SQUARE</text>
+    <text x="611" y="454" class="codeSmall center">6</text>
+    <text x="759" y="428" class="small center ink">B / CIRCLE</text>
+    <text x="759" y="454" class="codeSmall center">5</text>
+
+    <text x="350" y="578" class="small center ink">Left stick</text>
+    <text x="350" y="604" class="codeSmall center">joy(0)</text>
+    <text x="580" y="578" class="small center ink">Right stick</text>
+    <text x="580" y="604" class="codeSmall center">joy(1)</text>
+
+    <rect x="115" y="656" width="300" height="34" rx="17" fill="#fff0bd" stroke="#7b4a25" stroke-width="2"/>
+    <text x="265" y="678" class="small center ink">Create / PS -> select btn(10)</text>
+    <rect x="435" y="656" width="330" height="34" rx="17" fill="#fff0bd" stroke="#7b4a25" stroke-width="2"/>
+    <text x="600" y="678" class="small center ink">Options / touchpad -> start btn(11)</text>
+
+    <text x="215" y="626" class="small red">L2/R2 + L3/R3: not exposed by TryCode btn() yet</text>
+    <text x="92" y="745" class="small muted">Standard browser layout used by the app: face 0-3, L1/R1 4-5, D-pad 12-15, axes 0-3.</text>
+  </g>
+
+  <g id="api-panel">
+    <rect x="920" y="150" width="826" height="655" rx="22" class="panel"/>
+    <rect x="920" y="150" width="10" height="655" class="accentBlue"/>
+    <text x="944" y="192" class="h blue">Lua APIs and Accepted Formats</text>
+
+    <text x="960" y="230" class="code">default_controls(mode)</text>
+    <text x="960" y="260" class="small ink">modes: "left_joystick" / "joystick" / "left joystick"; "dpad" / "d-pad"; "none" / "off"</text>
+    <text x="960" y="318" class="code">btn(i_or_name)</text>
+    <text x="960" y="348" class="small ink">held input. Use 0-11, directions, a/b/x/y, l1/r1, select/start.</text>
+    <text x="960" y="406" class="code">btnp(i_or_name)</text>
+    <text x="960" y="436" class="small ink">first pressed frame. Use for jump, menu select, toggles, one-shot SFX.</text>
+    <text x="960" y="494" class="code">joyx(i), joyy(i)</text>
+    <text x="960" y="524" class="small ink">i=0 left stick, i=1 right stick. -1 = left/up, +1 = right/down.</text>
+    <text x="960" y="582" class="code">key(name), keyp(name)</text>
+    <text x="960" y="612" class="small ink">held / first-frame keyboard reads. Names are lowercase strings.</text>
+    <text x="960" y="670" class="code">mouse()</text>
+    <text x="960" y="700" class="small ink">returns x,y,buttons,pressed. left/touch=1, middle=2, right=4.</text>
+    <text x="960" y="756" class="subtitle ink">Default keyboard-to-btn mapping:</text>
+    <text x="960" y="788" class="small muted">Arrows/WASD -> btn 0-3. Z/X/C/V -> btn 4-7.</text>
+  </g>
+
+  <g id="button-table">
+    <rect x="54" y="840" width="1692" height="635" rx="22" class="panel"/>
+    <rect x="54" y="840" width="10" height="635" class="accentGreen"/>
+    <text x="78" y="882" class="h green">TryCode Virtual Buttons</text>
+
+    <text x="82" y="925" class="subtitle green">TryCode</text>
+    <text x="230" y="925" class="subtitle green">Aliases</text>
+    <text x="650" y="925" class="subtitle green">Keyboard</text>
+    <text x="875" y="925" class="subtitle green">On-screen</text>
+    <text x="1130" y="925" class="subtitle green">PS5 / Gamepad API</text>
+
+    <line x1="72" y1="942" x2="1720" y2="942" class="rule"/>
+    <text x="82" y="970" class="code">0</text><text x="230" y="970" class="small ink">up, u</text><text x="650" y="970" class="small ink">ArrowUp / W</text><text x="875" y="970" class="small ink">D-pad up</text><text x="1130" y="970" class="small ink">D-pad Up = button[12]</text>
+    <line x1="72" y1="986" x2="1720" y2="986" class="rule"/>
+    <text x="82" y="1014" class="code">1</text><text x="230" y="1014" class="small ink">down, d</text><text x="650" y="1014" class="small ink">ArrowDown / S</text><text x="875" y="1014" class="small ink">D-pad down</text><text x="1130" y="1014" class="small ink">D-pad Down = button[13]</text>
+    <line x1="72" y1="1030" x2="1720" y2="1030" class="rule"/>
+    <text x="82" y="1058" class="code">2</text><text x="230" y="1058" class="small ink">left, l</text><text x="650" y="1058" class="small ink">ArrowLeft / A</text><text x="875" y="1058" class="small ink">D-pad left</text><text x="1130" y="1058" class="small ink">D-pad Left = button[14]</text>
+    <line x1="72" y1="1074" x2="1720" y2="1074" class="rule"/>
+    <text x="82" y="1102" class="code">3</text><text x="230" y="1102" class="small ink">right, r</text><text x="650" y="1102" class="small ink">ArrowRight / D</text><text x="875" y="1102" class="small ink">D-pad right</text><text x="1130" y="1102" class="small ink">D-pad Right = button[15]</text>
+    <line x1="72" y1="1118" x2="1720" y2="1118" class="rule"/>
+    <text x="82" y="1146" class="code">4</text><text x="230" y="1146" class="small ink">a</text><text x="650" y="1146" class="small ink">Z</text><text x="875" y="1146" class="small ink">A button</text><text x="1130" y="1146" class="small ink">Cross = button[0]</text>
+    <line x1="72" y1="1162" x2="1720" y2="1162" class="rule"/>
+    <text x="82" y="1190" class="code">5</text><text x="230" y="1190" class="small ink">b</text><text x="650" y="1190" class="small ink">X</text><text x="875" y="1190" class="small ink">B button</text><text x="1130" y="1190" class="small ink">Circle = button[1]</text>
+    <line x1="72" y1="1206" x2="1720" y2="1206" class="rule"/>
+    <text x="82" y="1234" class="code">6</text><text x="230" y="1234" class="small ink">x</text><text x="650" y="1234" class="small ink">C</text><text x="875" y="1234" class="small ink">X button</text><text x="1130" y="1234" class="small ink">Square = button[2]</text>
+    <line x1="72" y1="1250" x2="1720" y2="1250" class="rule"/>
+    <text x="82" y="1278" class="code">7</text><text x="230" y="1278" class="small ink">y</text><text x="650" y="1278" class="small ink">V</text><text x="875" y="1278" class="small ink">Y button</text><text x="1130" y="1278" class="small ink">Triangle = button[3]</text>
+    <line x1="72" y1="1294" x2="1720" y2="1294" class="rule"/>
+    <text x="82" y="1322" class="code">8</text><text x="230" y="1322" class="small ink">leftshoulder, lb, l1</text><text x="650" y="1322" class="small ink">-</text><text x="875" y="1322" class="small ink">-</text><text x="1130" y="1322" class="small ink">L1 = button[4]</text>
+    <line x1="72" y1="1338" x2="1720" y2="1338" class="rule"/>
+    <text x="82" y="1366" class="code">9</text><text x="230" y="1366" class="small ink">rightshoulder, rb, r1</text><text x="650" y="1366" class="small ink">-</text><text x="875" y="1366" class="small ink">-</text><text x="1130" y="1366" class="small ink">R1 = button[5]</text>
+    <text x="82" y="1410" class="code">10</text><text x="230" y="1410" class="small ink">select, back</text><text x="650" y="1410" class="small ink">-</text><text x="875" y="1410" class="small ink">SELECT</text><text x="1130" y="1410" class="small ink">Create or PS/center = button[8] or [16]</text>
+    <text x="82" y="1454" class="code">11</text><text x="230" y="1454" class="small ink">start</text><text x="650" y="1454" class="small ink">-</text><text x="875" y="1454" class="small ink">START</text><text x="1130" y="1454" class="small ink">Options or touchpad = button[9] or [17]</text>
+  </g>
+
+  <g id="keys-panel">
+    <rect x="54" y="1530" width="820" height="420" rx="22" class="panel"/>
+    <rect x="54" y="1530" width="10" height="420" class="accentGold"/>
+    <text x="78" y="1572" class="h gold">key() / keyp() Names</text>
+    <text x="92" y="1630" class="small ink">- letters: "a"-"z"; digits: "0"-"9" including numpad</text>
+    <text x="92" y="1674" class="small ink">- movement aliases: "up", "down", "left", "right"</text>
+    <text x="92" y="1718" class="small ink">- special: "space", "tab", "enter", "escape"/"esc"</text>
+    <text x="92" y="1762" class="small ink">- editing/nav: "backspace", "delete", "insert", "home", "end", "pageup", "pagedown"</text>
+    <text x="92" y="1806" class="small ink">- modifiers: "ctrl", "lctrl", "rctrl", "shift", "alt", "meta"</text>
+    <text x="92" y="1850" class="small ink">- punctuation: -, =, [, ], backslash, semicolon, quote, comma, period, slash, backquote</text>
+    <text x="92" y="1894" class="small ink">- function keys: usually "f1" through "f12"</text>
+  </g>
+
+  <g id="patterns-panel">
+    <rect x="920" y="1530" width="826" height="420" rx="22" class="panel"/>
+    <rect x="920" y="1530" width="10" height="420" class="accentRed"/>
+    <text x="944" y="1572" class="h red">Copy These Patterns</text>
+    <text x="960" y="1630" class="small muted">Held movement</text><text x="1120" y="1630" class="codeSmall">if btn("left") then x -= 1 end</text>
+    <text x="960" y="1685" class="small muted">First-frame action</text><text x="1120" y="1685" class="codeSmall">if btnp("a") then jump() end</text>
+    <text x="960" y="1740" class="small muted">Stick movement</text><text x="1120" y="1740" class="codeSmall">x += joyx(0) * speed</text>
+    <text x="960" y="1795" class="small muted">Deadzone</text><text x="1120" y="1795" class="codeSmall">if abs(joyx(0)) &gt; 0.2 then moving = true end</text>
+    <text x="960" y="1850" class="small muted">Keyboard fallback</text><text x="1120" y="1850" class="codeSmall">if btnp("a") or keyp("z") then select() end</text>
+    <text x="960" y="1905" class="small muted">Pointer/touch</text><text x="1120" y="1905" class="codeSmall">local mx,my,mb,mbr = mouse()</text>
+  </g>
+
+  <g id="examples-panel">
+    <rect x="54" y="2000" width="1692" height="270" rx="22" class="panel"/>
+    <rect x="54" y="2000" width="10" height="270" class="accentBlue"/>
+    <text x="78" y="2042" class="h blue">Where the Built-in Examples Use Controls</text>
+    <text x="92" y="2090" class="small ink">- Scrolling Wall Collision: btn + joyx/joyy movement; btnp(4/5) zoom.</text>
+    <text x="92" y="2128" class="small ink">- UI + Mouse Studio: default_controls("none"), mouse(), keyp("z/c/v"), btnp("a/x/y/b").</text>
+    <text x="92" y="2166" class="small ink">- Mushroom Run Platformer: joyx(0), btn("left/right"), btn("b"/"x") sprint, btnp("a") jump.</text>
+    <text x="92" y="2204" class="small ink">- Basic Menu + Screen Swap: d-pad menus, A/B/X actions, right stick aiming with joyx(1)/joyy(1).</text>
+    <text x="92" y="2242" class="small ink">- 2048 / Tetris / Flappy / Notes: mostly btnp() for grid moves, flap, reset, save/load, and menu actions.</text>
+    <text x="92" y="2280" class="small ink">- Zelda-like RPG: hybrid d-pad + left stick axis(), A sword, B bow, X bomb, Y talk.</text>
+  </g>
+</svg>
