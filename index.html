@@ -762,6 +762,9 @@ const BACKUP_KEY = "try_code_auto_backup_v1";
 const DESKTOP_DIRECTORY_KEY = "try_code_desktop_directories_v1";
 const DIRECTORY_DB_NAME = "trycode_directory_handles";
 const DIRECTORY_DB_VERSION = 1;
+const PROJECT_SNAPSHOT_DB_NAME = "trycode_project_snapshots";
+const PROJECT_SNAPSHOT_DB_VERSION = 1;
+const INLINE_PROJECT_STORAGE_LIMIT = 1500 * 1024;
 const AUTO_BACKUP_INTERVAL_MS = 3 * 60 * 1000;
 const NOTE_MAP = {"C":0,"C#":1,"D":2,"D#":3,"E":4,"F":5,"F#":6,"G":7,"G#":8,"A":9,"A#":10,"B":11};
 const SCALE_MAP = {
@@ -1304,6 +1307,7 @@ const MUSIC_LIST_PAGE_SIZE = 5;
 const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,soundListPage:0,musicListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
 const desktopDirectories=loadDesktopDirectoryPreferences();
 let directoryDbPromise=null;
+let projectSnapshotDbPromise=null;
 const SPRITE_IMPORT_MAX_WIDTH=960;
 const SPRITE_IMPORT_MAX_HEIGHT=540;
 const PRESET_PALETTE_PAGES = [
@@ -2402,6 +2406,60 @@ async function openDesktopDirectory(kind){
 
 function loadAllProjects(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(_){ return {}; } }
 function saveAllProjects(obj){ localStorage.setItem(LS_KEY, JSON.stringify(obj)); }
+function openProjectSnapshotDb(){
+  if(!('indexedDB' in window)) return Promise.resolve(null);
+  if(!projectSnapshotDbPromise){
+    projectSnapshotDbPromise=new Promise((resolve,reject)=>{
+      const req=indexedDB.open(PROJECT_SNAPSHOT_DB_NAME,PROJECT_SNAPSHOT_DB_VERSION);
+      req.onupgradeneeded=()=>{
+        const db=req.result;
+        if(!db.objectStoreNames.contains('projects')) db.createObjectStore('projects',{keyPath:'name'});
+      };
+      req.onsuccess=()=>resolve(req.result);
+      req.onerror=()=>reject(req.error||new Error('Could not open project snapshot storage.'));
+    }).catch(err=>{ console.warn('Project snapshot storage unavailable',err); return null; });
+  }
+  return projectSnapshotDbPromise;
+}
+function putProjectSnapshotInDb(name,project){
+  return openProjectSnapshotDb().then(db=>new Promise((resolve,reject)=>{
+    if(!db){ reject(new Error('Browser project database is unavailable.')); return; }
+    const tx=db.transaction('projects','readwrite');
+    try{ tx.objectStore('projects').put({name,project,t:Date.now()}); }
+    catch(err){ reject(err); return; }
+    tx.oncomplete=()=>resolve(true);
+    tx.onerror=()=>reject(tx.error||new Error('Could not save project snapshot.'));
+  }));
+}
+function getProjectSnapshotFromDb(name){
+  return openProjectSnapshotDb().then(db=>new Promise(resolve=>{
+    if(!db){ resolve(null); return; }
+    const tx=db.transaction('projects','readonly');
+    const req=tx.objectStore('projects').get(name);
+    req.onsuccess=()=>resolve(req.result?.project||null);
+    req.onerror=()=>{ console.warn('Project snapshot load failed',req.error); resolve(null); };
+  }));
+}
+function deleteProjectSnapshotFromDb(name){
+  if(!name) return Promise.resolve(false);
+  return openProjectSnapshotDb().then(db=>new Promise(resolve=>{
+    if(!db){ resolve(false); return; }
+    const tx=db.transaction('projects','readwrite');
+    try{ tx.objectStore('projects').delete(name); }
+    catch(err){ console.warn('Project snapshot delete failed',err); resolve(false); return; }
+    tx.oncomplete=()=>resolve(true);
+    tx.onerror=()=>{ console.warn('Project snapshot delete failed',tx.error); resolve(false); };
+  }));
+}
+function isDbBackedProjectEntry(entry){ return !!(entry&&entry.projectStorage==='indexedDB'&&entry.projectStorageKey); }
+async function loadProjectEntrySnapshot(name,entry){
+  if(entry?.project) return entry.project;
+  if(isDbBackedProjectEntry(entry)){
+    const project=await getProjectSnapshotFromDb(entry.projectStorageKey||name);
+    if(project) return project;
+  }
+  throw new Error(`Saved project "${name}" could not be found in browser storage.`);
+}
 const MUSIC_DB_NAME='trycode_music_assets';
 const MUSIC_DB_VERSION=1;
 let musicDbPromise=null;
@@ -2684,10 +2742,16 @@ function refreshProjectList(){
     loadBtn.onclick=async (e)=>{
       e.stopPropagation();
       if(!confirm(`Load ${name}? Unsaved changes will be lost.`)) return;
-      const p=all[name];
-      await restoreProjectFromSnapshot(p.project,{name,hasSaved:true});
-      setFileMenuOpen(false);
-      toast(`<b>Loaded:</b> ${escapeHtml(name)}`);
+      try{
+        const p=all[name];
+        const snapshot=await loadProjectEntrySnapshot(name,p);
+        await restoreProjectFromSnapshot(snapshot,{name,hasSaved:true});
+        setFileMenuOpen(false);
+        toast(`<b>Loaded:</b> ${escapeHtml(name)}`);
+      }catch(err){
+        console.warn('Project load failed', err);
+        toast(`<b>Load failed:</b> ${escapeHtml(err?.message||String(err))}`);
+      }
     };
     const deleteBtn=document.createElement('button');
     deleteBtn.className='smallbtn';
@@ -2695,7 +2759,7 @@ function refreshProjectList(){
     const renameBtn=document.createElement('button');
     renameBtn.className='smallbtn';
     renameBtn.textContent='Rename';
-    renameBtn.onclick=(e)=>{
+    renameBtn.onclick=async (e)=>{
       e.stopPropagation();
       const next=promptForProjectName('Rename project:', name);
       if(!next || next===name) return;
@@ -2703,26 +2767,47 @@ function refreshProjectList(){
         alert(`A project named "${next}" already exists.`);
         return;
       }
-      all[next]=all[name];
-      all[next].t=Date.now();
-      delete all[name];
-      saveAllProjects(all);
-      if(state.currentProjectName===name) state.currentProjectName=next;
-      updateRuntimePausePlaceholder();
-      refreshProjectList();
-      toast(`<b>Renamed:</b> ${escapeHtml(name)} \u2192 ${escapeHtml(next)}`);
+      try{
+        const oldEntry=all[name];
+        if(isDbBackedProjectEntry(oldEntry)){
+          const snapshot=await loadProjectEntrySnapshot(name,oldEntry);
+          await putProjectSnapshotInDb(next,snapshot);
+          all[next]={...oldEntry,t:Date.now(),project:null,projectStorage:'indexedDB',projectStorageKey:next};
+          delete all[name];
+          saveAllProjects(all);
+          await deleteProjectSnapshotFromDb(oldEntry.projectStorageKey||name);
+        }else{
+          all[next]={...oldEntry,t:Date.now()};
+          delete all[name];
+          saveAllProjects(all);
+        }
+        if(state.currentProjectName===name) state.currentProjectName=next;
+        updateRuntimePausePlaceholder();
+        refreshProjectList();
+        toast(`<b>Renamed:</b> ${escapeHtml(name)} \u2192 ${escapeHtml(next)}`);
+      }catch(err){
+        console.warn('Project rename failed', err);
+        toast(`<b>Rename failed:</b> ${escapeHtml(err?.message||String(err))}`);
+      }
     };
-    deleteBtn.onclick=(e)=>{
+    deleteBtn.onclick=async (e)=>{
       e.stopPropagation();
       if(!confirm(`Are you sure you want to delete "${name}"?`)) return;
-      delete all[name];
-      saveAllProjects(all);
-      if(state.currentProjectName===name){
-        state.currentProjectName="";
-        state.hasSaved=false;
+      try{
+        const oldEntry=all[name];
+        delete all[name];
+        saveAllProjects(all);
+        if(isDbBackedProjectEntry(oldEntry)) await deleteProjectSnapshotFromDb(oldEntry.projectStorageKey||name);
+        if(state.currentProjectName===name){
+          state.currentProjectName="";
+          state.hasSaved=false;
+        }
+        refreshProjectList();
+        showToast(`Deleted project "${name}".`);
+      }catch(err){
+        console.warn('Project delete failed', err);
+        toast(`<b>Delete failed:</b> ${escapeHtml(err?.message||String(err))}`);
       }
-      refreshProjectList();
-      showToast(`Deleted project "${name}".`);
     };
     const actions=document.createElement('div');
     actions.className='projectCardActions';
@@ -2829,15 +2914,35 @@ function importCodeTxtBundle(fileName, content){
 async function persistProjectSnapshot(name){
   await persistProjectMusicAssets(state.appProject);
   const all=loadAllProjects();
+  const previousEntry=all[name];
+  const snapshot=cloneProjectSnapshot(state.appProject,{stripMusicData:true});
+  const snapshotJson=JSON.stringify(snapshot);
+  let savedToDb=false;
+  try{
+    if(snapshotJson.length>INLINE_PROJECT_STORAGE_LIMIT) throw new Error('Project is too large for localStorage; using IndexedDB.');
+    all[name]={ t:Date.now(), project: snapshot };
+    saveAllProjects(all);
+    if(isDbBackedProjectEntry(previousEntry)) await deleteProjectSnapshotFromDb(previousEntry.projectStorageKey||name);
+  }catch(localErr){
+    await putProjectSnapshotInDb(name,snapshot);
+    all[name]={ t:Date.now(), project:null, projectStorage:'indexedDB', projectStorageKey:name };
+    try{
+      saveAllProjects(all);
+    }catch(manifestErr){
+      await deleteProjectSnapshotFromDb(name);
+      throw manifestErr;
+    }
+    savedToDb=true;
+    if(isDbBackedProjectEntry(previousEntry) && previousEntry.projectStorageKey!==name) await deleteProjectSnapshotFromDb(previousEntry.projectStorageKey);
+  }
   state.currentProjectName=name;
   state.hasSaved=true;
-  all[name]={ t:Date.now(), project: cloneProjectSnapshot(state.appProject,{stripMusicData:true}) };
-  saveAllProjects(all);
   refreshProjectList();
   updateRuntimePausePlaceholder();
   updateCodeLineNumbers();
   const hasMusicAssets=(state.appProject.music||[]).some(track=>getMusicAssetKey(track));
-  toast(hasMusicAssets ? `<b>Saved:</b> ${escapeHtml(name)}<br>Imported music is saved as browser audio blobs, not local file links.` : `<b>Saved:</b> ${escapeHtml(name)}`);
+  const storageNote=savedToDb?'<br>Large sprite data was saved in browser project storage.':'';
+  toast(hasMusicAssets ? `<b>Saved:</b> ${escapeHtml(name)}${storageNote}<br>Imported music is saved as browser audio blobs, not local file links.` : `<b>Saved:</b> ${escapeHtml(name)}${storageNote}`);
 }
 async function saveProject(forcePrompt=true){
   saveEditorToCurrentCodeFile();
@@ -2845,8 +2950,14 @@ async function saveProject(forcePrompt=true){
   const shouldPrompt=forcePrompt || !state.hasSaved || !state.currentProjectName;
   const name=shouldPrompt ? promptForProjectName('Save project as:', defaultName) : state.currentProjectName;
   if(!name) return false;
-  await persistProjectSnapshot(name);
-  return true;
+  try{
+    await persistProjectSnapshot(name);
+    return true;
+  }catch(err){
+    console.warn('Project save failed', err);
+    toast(`<b>Save failed:</b> ${escapeHtml(err?.message||String(err))}`);
+    return false;
+  }
 }
 function toggleCodeEditorLineComments(){
   const editor=$("codeEditor");
