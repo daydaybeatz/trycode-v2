@@ -32,8 +32,8 @@
     .topbar{flex:0 0 38px;display:flex;align-items:center;gap:3px;padding:3px 5px;background:linear-gradient(180deg,#efe0bc,#e8cf96);border-bottom:4px solid var(--line);box-shadow:inset 0 -3px 0 #c39a5b}
     .topbarRuntimeControls{display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .topbarRuntimeControls .fileBtn{padding:6px 10px;font-size:11px}
-    .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden{display:none}
-    .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
+    .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden,.runtimeVarsBtn.hidden,.runtimeDebugPauseBtn.hidden{display:none}
+    .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active,.runtimeVarsBtn.active,.runtimeDebugPauseBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
     .runtimeSaveLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
     body.runtime-ui-hidden .topbar,body.runtime-ui-hidden #view-runtime .hud,body.runtime-ui-hidden #view-runtime .runtimeErrorBox,body.runtime-ui-hidden #view-runtime .runtimeDialogLayer{display:none !important}
     body.runtime-ui-hidden .views{position:fixed;inset:0}
@@ -269,6 +269,15 @@
     .runtimeDialogInput{width:100%;border:3px solid var(--line);border-radius:12px;padding:9px 10px;background:#fffaf1;color:var(--ink)}
     .runtimeDialogActions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
     .runtimeDialogActions .uiBtn{min-width:84px}
+    .runtimeVarsPanel{position:fixed;right:10px;top:48px;z-index:80;display:none;width:min(360px,calc(100vw - 20px));max-height:min(460px,calc(100vh - 64px));overflow:auto;padding:10px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45);color:var(--ink)}
+    .runtimeVarsPanel.show{display:block}
+    .runtimeVarsHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    .runtimeVarsList{display:flex;flex-direction:column;gap:6px}
+    .runtimeVarRow{display:grid;grid-template-columns:minmax(74px,.8fr) minmax(0,1.2fr) auto;align-items:center;gap:6px;padding:6px;border:2px solid rgba(80,111,102,.55);border-radius:10px;background:rgba(255,250,241,.72);font:12px/1.25 Consolas,"SFMono-Regular",monospace}
+    .runtimeVarName{font-weight:900;word-break:break-word}
+    .runtimeVarValue{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .runtimeVarType{opacity:.72;font-size:10px}
+    .runtimeVarsEmpty{padding:8px;font-size:12px;font-weight:700;opacity:.75}
     .runtimeDialogActions .uiBtn.primary{border-color:var(--accent);box-shadow:0 4px 0 #7a2a18}
     .hud{position:absolute;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;--hud-edge:clamp(14px,4vw,28px);--hud-bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));--hud-controls-lift:clamp(16px,3.5vw,24px);--joy-size:clamp(112px,28vw,142px);--knob-size:calc(var(--joy-size) * .42);--cluster-size:clamp(148px,36vw,174px);--face-size:clamp(56px,13.5vw,66px);--face-offset:calc((var(--cluster-size) - var(--face-size)) / 2);--sys-height:clamp(36px,9vw,42px)}
     body.desktop-ui .hud{display:none}
@@ -517,6 +526,8 @@
     body.dark-mode .runtimeStartHint{color:#f7b7c4}
     body.dark-mode .runtimeStartPlaceholder{background:#0a1122;border-color:#6f83b6;color:#e8ecff}
     body.dark-mode .runtimeInspectorPanel{background:rgba(16,22,42,.96);color:#e9eefb;border-color:var(--line);box-shadow:0 4px 0 rgba(5,8,18,.7)}
+    body.dark-mode .runtimeVarsPanel{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 6px 0 #0f1528;color:#f6f1df}
+    body.dark-mode .runtimeVarRow{background:rgba(16,22,42,.72);border-color:rgba(150,163,207,.45);color:#f6f1df}
     body.dark-mode .joy{border-color:#c7d0e8;background:rgba(199,208,232,.1);box-shadow:0 4px 0 rgba(0,0,0,.3)}
     body.dark-mode .joy .knob{border-color:#f4f1e3;background:rgba(241,166,90,.22)}
     body.dark-mode .symbtn,
@@ -627,10 +638,13 @@
       </div>
       <div class="topbarRuntimeControls hidden" id="topbarRuntimeControls">
         <button class="fileBtn runtimeInspectorModeBtn hidden" id="runtimeInspectorModeBtn">Inspect</button>
+        <button class="fileBtn runtimeDebugPauseBtn hidden" id="runtimeDebugPauseBtn">Pause</button>
+        <button class="fileBtn runtimeVarsBtn hidden" id="runtimeVarsBtn">Vars</button>
         <button class="fileBtn runtimeSaveLayoutBtn hidden" id="runtimeSaveLayoutBtn" disabled>Save Layout</button>
         <button class="fileBtn runtimeHideBtn" id="runtimeHideBtn">Hide</button>
       </div>
       <button class="fileBtn" id="fileBtn">Menu</button>
+      <div class="runtimeVarsPanel" id="runtimeVarsPanel" aria-live="polite"><div class="runtimeVarsHeader"><span>Runtime Vars</span><button class="uiBtn miniBtn" id="runtimeVarsCloseBtn" type="button">Close</button></div><div class="runtimeVarsList" id="runtimeVarsList"></div></div>
     </div>
 
   <div class="views">
@@ -1295,10 +1309,14 @@ const DEFAULT_PALETTE = flattenPalettePages(PRESET_PALETTE_PAGES);
 let runtime;
 let runtimeUiHidden=false;
 let runtimeStarted=false;
+let runtimeDebugPaused=false;
+let runtimeVarsPanelRefreshAt=0;
 function updateRuntimeLayoutSaveState(){
-  const canShow=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
+  const canShow=state.activeView==='runtime';
   const saveBtn=$("runtimeSaveLayoutBtn");
   const inspectBtn=$("runtimeInspectorModeBtn");
+  const pauseBtn=$("runtimeDebugPauseBtn");
+  const varsBtn=$("runtimeVarsBtn");
   const hasEdits=!!runtime?.hasLayoutEdits?.();
   const inspectorActive=!!runtime?.isInspectorEnabled?.();
   if(saveBtn){
@@ -1312,16 +1330,82 @@ function updateRuntimeLayoutSaveState(){
     inspectBtn.classList.toggle('active', inspectorActive);
     inspectBtn.textContent=inspectorActive?'Inspect: On':'Inspect';
   }
+  if(pauseBtn){
+    pauseBtn.classList.toggle('hidden', !canShow);
+    pauseBtn.classList.toggle('active', runtimeDebugPaused);
+    pauseBtn.textContent=runtimeDebugPaused?'Resume':'Pause';
+    pauseBtn.title='Pause or resume the editor runtime for debugging.';
+  }
+  if(varsBtn){
+    varsBtn.classList.toggle('hidden', !canShow);
+    varsBtn.classList.toggle('active', $('runtimeVarsPanel')?.classList.contains('show'));
+  }
 }
 function applyRuntimeUiHiddenState(){
   const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
   if(!canHide) runtimeUiHidden=false;
+  if(state.activeView!=='runtime') closeRuntimeVarsPanel?.();
   document.body.classList.toggle('runtime-ui-hidden', runtimeUiHidden && canHide);
   const hideBtn=$("runtimeHideBtn");
   if(hideBtn) hideBtn.classList.toggle('hidden', !canHide);
   if(hideBtn) hideBtn.textContent=runtimeUiHidden?'Show':'Hide';
   updateRuntimeLayoutSaveState();
   if(state.activeView==='runtime' && runtime) runtime.resizeDisplay();
+}
+function formatRuntimeVarValue(variable){
+  if(!variable) return '';
+  if(variable.type==='string') return `"${String(variable.value).replace(/\\/g,'\\\\').replace(/"/g,'\\"')}"`;
+  if(variable.type==='nil') return 'nil';
+  return String(variable.value);
+}
+function closeRuntimeVarsPanel(){
+  $('runtimeVarsPanel')?.classList.remove('show');
+  updateRuntimeLayoutSaveState?.();
+}
+function refreshRuntimeVarsPanel(){
+  const list=$('runtimeVarsList');
+  if(!list) return;
+  list.innerHTML='';
+  const variables=runtime?.getRuntimeVariables?.()||[];
+  if(!variables.length){
+    const empty=document.createElement('div');
+    empty.className='runtimeVarsEmpty';
+    empty.textContent=runtimeStarted?'No runtime variables yet.':'Start the runtime to inspect variables.';
+    list.appendChild(empty);
+    return;
+  }
+  variables.forEach(variable=>{
+    const row=document.createElement('button');
+    row.type='button';
+    row.className='runtimeVarRow';
+    const name=document.createElement('span');
+    name.className='runtimeVarName';
+    name.textContent=variable.name;
+    const value=document.createElement('span');
+    value.className='runtimeVarValue';
+    value.textContent=formatRuntimeVarValue(variable);
+    const type=document.createElement('span');
+    type.className='runtimeVarType';
+    type.textContent=variable.type;
+    row.append(name,value,type);
+    row.onclick=()=>{
+      const next=prompt(`Set ${variable.name}:`, formatRuntimeVarValue(variable));
+      if(next==null) return;
+      if(runtime?.setRuntimeVariable?.(variable.name,next)){
+        refreshRuntimeVarsPanel();
+        toast(`<b>Variable updated:</b> ${escapeHtml(variable.name)}`);
+      }else toast(`<b>Variable update failed:</b> ${escapeHtml(variable.name)}`);
+    };
+    list.appendChild(row);
+  });
+}
+function toggleRuntimeVarsPanel(){
+  const panel=$('runtimeVarsPanel');
+  if(!panel) return;
+  const show=!panel.classList.contains('show');
+  panel.classList.toggle('show', show);
+  if(show) refreshRuntimeVarsPanel();
+  updateRuntimeLayoutSaveState?.();
 }
 async function toggleAppFullscreen(){
   try{
@@ -1346,6 +1430,11 @@ function createRuntimeFallback(message){
     hasLayoutEdits(){ return false; },
     getLayoutOverrideCount(){ return 0; },
     flushLayoutToProject(){ return 0; },
+    markLayoutSaved(){},
+    setPaused(){},
+    isPaused(){ return false; },
+    getRuntimeVariables(){ return []; },
+    setRuntimeVariable(){ return false; },
   };
 }
 function initRuntime(){
@@ -8058,6 +8147,8 @@ function setView(name){
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
   if(leavingRuntime){
     runtimeStarted=false;
+    runtimeDebugPaused=false;
+    runtime?.setPaused?.(false);
     runtime?.setActive?.(false);
     updateRuntimePausePlaceholder();
     $("runtimeStartOverlay")?.classList.remove("hidden");
@@ -8096,6 +8187,7 @@ function setView(name){
     updateRuntimePausePlaceholder();
     $("runtimeStartOverlay")?.classList.toggle("hidden", runtimeStarted);
     runtime?.setActive?.(runtimeStarted);
+    runtime?.setPaused?.(runtimeDebugPaused);
     runtime.resizeDisplay();
     scheduleRuntimeViewportFocus();
     requestAnimationFrame(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
@@ -8110,6 +8202,7 @@ function refreshTopbarRuntimeControls(){
   const controls=$("topbarRuntimeControls");
   if(!controls) return;
   controls.classList.toggle("hidden", state.activeView!=="runtime");
+  updateRuntimeLayoutSaveState();
 }
 
 function openPalettePicker(){
@@ -9631,7 +9724,7 @@ function makeRuntime(){
     mobile_fullscreen:{w:270,h:480}
   };
   const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
-  let hasStarted=false, pendingRunMode='load', runtimeActive=false;
+  let hasStarted=false, pendingRunMode='load', runtimeActive=false, runtimePaused=false;
   const dialogKeyboardInput=document.createElement('input');
   dialogKeyboardInput.type='text';
   dialogKeyboardInput.autocomplete='off';
@@ -10179,7 +10272,7 @@ function makeRuntime(){
     }
   }
   function setInspectorEnabled(next){
-    inspectorEnabled=!!next && isDesktopUI();
+    inspectorEnabled=!!next;
     ensureInspectorOverlay();
     if(!inspectorEnabled){ inspectorSelected=null; inspectorHover=null; inspectorDrag=null; }
     renderInspectorOverlay();
@@ -10575,6 +10668,74 @@ function makeRuntime(){
     if(state.activeView!=='runtime') return;
     playMusicEntry(src, action, loop, projectRef);
   }
+  function luaKeyToString(index){
+    if(!L || !lua) return null;
+    if(lua.lua_isstring(L,index)){ const raw=lua.lua_tolstring(L,index); return raw?to_jsstring(raw):''; }
+    if(lua.lua_isnumber(L,index)) return String(lua.lua_tonumber(L,index));
+    return null;
+  }
+  function luaValueForInspector(index){
+    if(!L || !lua) return {type:'nil',value:'nil'};
+    if(lua.lua_isnil(L,index)) return {type:'nil',value:'nil'};
+    if(lua.lua_isboolean(L,index)) return {type:'boolean',value:!!lua.lua_toboolean(L,index)};
+    if(lua.lua_isnumber(L,index)) return {type:'number',value:lua.lua_tonumber(L,index)};
+    if(lua.lua_isstring(L,index)){ const raw=lua.lua_tolstring(L,index); return {type:'string',value:raw?to_jsstring(raw):''}; }
+    if(lua.lua_isfunction(L,index)) return {type:'function',value:'[function]'};
+    if(lua.lua_istable(L,index)) return {type:'table',value:'[table]'};
+    return {type:'value',value:'[value]'};
+  }
+  function captureGlobalNames(){
+    const names=new Set();
+    if(!L || !lua || !to_luastring) return names;
+    lua.lua_getglobal(L,to_luastring('_G'));
+    lua.lua_pushnil(L);
+    while(lua.lua_next(L,-2)!==0){
+      const key=luaKeyToString(-2);
+      if(key) names.add(key);
+      lua.lua_pop(L,1);
+    }
+    lua.lua_pop(L,1);
+    return names;
+  }
+  function getRuntimeVariables(){
+    if(!L || !builtOk || !lua || !to_luastring) return [];
+    const vars=[];
+    lua.lua_getglobal(L,to_luastring('_G'));
+    lua.lua_pushnil(L);
+    while(lua.lua_next(L,-2)!==0){
+      const name=luaKeyToString(-2);
+      if(name && !baselineGlobals.has(name) && !name.startsWith('__tc_')){
+        const info=luaValueForInspector(-1);
+        if(info.type!=='function') vars.push({name,type:info.type,value:info.value});
+      }
+      lua.lua_pop(L,1);
+    }
+    lua.lua_pop(L,1);
+    vars.sort((a,b)=>a.name.localeCompare(b.name));
+    return vars;
+  }
+  function parseRuntimeVariableInput(raw){
+    const text=String(raw??'');
+    const trimmed=text.trim();
+    if(/^nil$/i.test(trimmed)) return {type:'nil',value:null};
+    if(/^true$/i.test(trimmed)) return {type:'boolean',value:true};
+    if(/^false$/i.test(trimmed)) return {type:'boolean',value:false};
+    if(trimmed!=='' && Number.isFinite(Number(trimmed))) return {type:'number',value:Number(trimmed)};
+    const quoted=(trimmed.match(/^"([\s\S]*)"$/) || trimmed.match(/^'([\s\S]*)'$/));
+    if(quoted) return {type:'string',value:quoted[1].replace(/\\"/g,'"').replace(/\\'/g,"'").replace(/\\n/g,'\n').replace(/\\\\/g,'\\')};
+    return {type:'string',value:text};
+  }
+  function setRuntimeVariable(name,rawValue){
+    const key=String(name||'').trim();
+    if(!key || !L || !builtOk || !lua || !to_luastring) return false;
+    const parsed=parseRuntimeVariableInput(rawValue);
+    if(parsed.type==='nil') lua.lua_pushnil(L);
+    else if(parsed.type==='boolean') lua.lua_pushboolean(L,parsed.value?1:0);
+    else if(parsed.type==='number') lua.lua_pushnumber(L,parsed.value);
+    else lua.lua_pushstring(L,to_luastring(String(parsed.value??'')));
+    lua.lua_setglobal(L,to_luastring(key));
+    return true;
+  }
   const getFengariApi=()=>{
     const root=(typeof window!=='undefined'&&window)||globalThis;
     return root.fengari || root.fengariWeb?.fengari || root.Fengari?.fengari || null;
@@ -10631,7 +10792,7 @@ function makeRuntime(){
     })().finally(()=>{ fengariLoadPromise=null; });
     return fengariLoadPromise;
   };
-  let lua, lauxlib, lualib, to_luastring, to_jsstring;
+  let lua, lauxlib, lualib, to_luastring, to_jsstring, baselineGlobals=new Set();
   function pushProjectTable(){ lua.lua_newtable(L); lua.lua_pushinteger(L,projectRef.project.tile_w); lua.lua_setfield(L,-2,to_luastring('tile_w')); lua.lua_pushinteger(L,projectRef.project.tile_h); lua.lua_setfield(L,-2,to_luastring('tile_h')); lua.lua_pushinteger(L,projectRef.project.map_w); lua.lua_setfield(L,-2,to_luastring('map_w')); lua.lua_pushinteger(L,projectRef.project.map_h); lua.lua_setfield(L,-2,to_luastring('map_h')); lua.lua_pushinteger(L,projectRef.maps.length); lua.lua_setfield(L,-2,to_luastring('map_count')); lua.lua_pushinteger(L,projectRef.spriteFolders.length); lua.lua_setfield(L,-2,to_luastring('sprite_count')); lua.lua_pushinteger(L,projectRef.sounds.length); lua.lua_setfield(L,-2,to_luastring('sound_count')); lua.lua_pushinteger(L,projectRef.music.length); lua.lua_setfield(L,-2,to_luastring('music_count')); lua.lua_setglobal(L,to_luastring('project')); }
   function build(code, options={}){
     if(rebuildTimer){ clearTimeout(rebuildTimer); rebuildTimer=0; }
@@ -10712,7 +10873,7 @@ function makeRuntime(){
     push('music',L=>{ if(suppressAudio) return 0; const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); if(argc===0){ musicPlay(0,'stop',false); return 0; } const src=readArg(1); const srcText=String(src??'').trim().toLowerCase(); if(argc<=1&&srcText==='stop'){ musicPlay(0,'stop',false); return 0; } const action=String((argc>=2?readArg(2):'play')??'play').trim().toLowerCase()||'play'; const loop=argc>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
     const helperStatus=lauxlib.luaL_dostring(L,to_luastring(LUA_RUNTIME_HELPERS));
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); cls(); return; }
-    pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
+    pushProjectTable(); baselineGlobals=captureGlobalNames(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
     lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
   function queueBuild(mode='load',codeOverride){
     const source=(codeOverride!=null?codeOverride:lastCode);
@@ -10721,7 +10882,8 @@ function makeRuntime(){
     if(!hasStarted){ pendingRunMode=mode; return; }
     build(resolvedSource, mode==='load'?{suppressAudio:true}:undefined);
   }
-  function setActive(nextActive){ runtimeActive=!!nextActive; }
+  function setActive(nextActive){ runtimeActive=!!nextActive; if(!runtimeActive) setPaused(false); }
+  function setPaused(nextPaused){ runtimePaused=!!nextPaused && hasStarted; updateRuntimeLayoutSaveState?.(); }
   function startRuntime(mode='run'){
     runtimeActive=true;
     if(hasStarted) return;
@@ -10736,8 +10898,8 @@ function makeRuntime(){
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } inspectorBeginFrame(); if(runtimeActive){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } inspectorFinishFrame(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,getRuntimeVariables,setRuntimeVariable,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -10767,12 +10929,17 @@ function wireUI(){
   const bindClick=(id,handler)=>bind(id,'click',handler);
   bindClick('runtimeStartPlayBtn',()=>{
     runtimeStarted=true;
+    runtimeDebugPaused=false;
     $('runtimeStartOverlay')?.classList.add('hidden');
+    runtime?.setPaused?.(false);
     runtime?.startRuntime?.();
+    updateRuntimeLayoutSaveState?.();
   });
   const pauseRuntimePreview=()=>{
     if(state.activeView!=="runtime") return;
     runtimeStarted=false;
+    runtimeDebugPaused=false;
+    runtime?.setPaused?.(false);
     runtime?.setActive?.(false);
     updateRuntimePausePlaceholder();
     $("runtimeStartOverlay")?.classList.remove("hidden");
@@ -11244,11 +11411,29 @@ function wireUI(){
     applyRuntimeUiHiddenState();
   });
   bindClick('runtimeInspectorModeBtn',()=>{
-    if(state.activeView!=='runtime' || !window.matchMedia('(min-width: 901px)').matches) return;
+    if(state.activeView!=='runtime') return;
     const enabled=runtime?.toggleInspector?.();
     toast(enabled?'UI inspector enabled.':'UI inspector disabled.');
     applyRuntimeUiHiddenState();
   });
+  bindClick('runtimeDebugPauseBtn',()=>{
+    if(state.activeView!=='runtime') return;
+    if(!runtimeStarted){
+      runtimeStarted=true;
+      $('runtimeStartOverlay')?.classList.add('hidden');
+      runtime?.startRuntime?.();
+    }
+    runtimeDebugPaused=!runtimeDebugPaused;
+    runtime?.setPaused?.(runtimeDebugPaused);
+    toast(runtimeDebugPaused?'Runtime paused for debugging.':'Runtime resumed.');
+    updateRuntimeLayoutSaveState?.();
+  });
+  bindClick('runtimeVarsBtn',()=>{
+    if(state.activeView!=='runtime') return;
+    toggleRuntimeVarsPanel();
+  });
+  bindClick('runtimeVarsCloseBtn',closeRuntimeVarsPanel);
+  bind('runtimeVarsPanel','click',e=>e.stopPropagation());
   bindClick('runtimeSaveLayoutBtn',async ()=>{
     if(state.activeView!=='runtime') return;
     const count=runtime?.getLayoutOverrideCount?.()||0;
