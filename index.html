@@ -286,13 +286,14 @@
     .runtimeVarsCrumbs,.runtimeVarsPager{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;font-weight:800}
     .runtimeVarsPath{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1.25 Consolas,"SFMono-Regular",monospace}
     .runtimeVarsPager{justify-content:center}
-    .runtimeVarRow{display:grid;grid-template-columns:minmax(74px,.8fr) minmax(0,1.2fr) auto auto;align-items:center;gap:6px;padding:6px;border:2px solid rgba(80,111,102,.55);border-radius:10px;background:rgba(255,250,241,.72);font:12px/1.25 Consolas,"SFMono-Regular",monospace}
+    .runtimeVarRow{display:grid;grid-template-columns:minmax(74px,.8fr) minmax(0,1.2fr) auto auto auto;align-items:center;gap:6px;padding:6px;border:2px solid rgba(80,111,102,.55);border-radius:10px;background:rgba(255,250,241,.72);font:12px/1.25 Consolas,"SFMono-Regular",monospace}
     .runtimeVarName{font-weight:900;word-break:break-word}
     .runtimeVarOpenBtn{padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit;font-weight:900}
     .runtimeVarOpenBtn:hover{text-decoration:underline}
     .runtimeVarValue{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .runtimeVarType{opacity:.72;font-size:10px}
-    .runtimeVarEditBtn{padding:3px 7px;font-size:10px;line-height:1;min-width:auto;box-shadow:0 2px 0 var(--shadow)}
+    .runtimeVarEditBtn,.runtimeVarGotoBtn{padding:3px 7px;font-size:10px;line-height:1;min-width:auto;box-shadow:0 2px 0 var(--shadow)}
+    .runtimeInspectorVarInput{width:100%;min-width:0;padding:3px 5px;border:2px solid rgba(80,111,102,.55);border-radius:7px;background:rgba(255,255,255,.7);font:11px/1.25 Consolas,"SFMono-Regular",monospace}
     .runtimeVarsEmpty{padding:8px;font-size:12px;font-weight:700;opacity:.75}
     .runtimeDialogActions .uiBtn.primary{border-color:var(--accent);box-shadow:0 4px 0 #7a2a18}
     .hud{position:absolute;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;--hud-edge:clamp(14px,4vw,28px);--hud-bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));--hud-controls-lift:clamp(16px,3.5vw,24px);--joy-size:clamp(112px,28vw,142px);--knob-size:calc(var(--joy-size) * .42);--cluster-size:clamp(148px,36vw,174px);--face-size:clamp(56px,13.5vw,66px);--face-offset:calc((var(--cluster-size) - var(--face-size)) / 2);--sys-height:clamp(36px,9vw,42px)}
@@ -1421,11 +1422,57 @@ function refreshRuntimeVarsPanel(){
   label.textContent=runtimeVarsPathLabel(runtimeVarsPath);
   header.append(up,label);
   list.appendChild(header);
+  const inspectorSelection=!runtimeVarsPath.length ? runtime?.getInspectorVariables?.() : null;
+  if(inspectorSelection?.items?.length){
+    const title=document.createElement('div');
+    title.className='runtimeVarsCrumbs';
+    title.textContent=`Selected element: ${inspectorSelection.label||inspectorSelection.key||'element'}`;
+    list.appendChild(title);
+    inspectorSelection.items.forEach(item=>{
+      const row=document.createElement('div');
+      row.className='runtimeVarRow';
+      const name=document.createElement('span');
+      name.className='runtimeVarName';
+      name.textContent=item.name;
+      const input=document.createElement('input');
+      input.className='runtimeInspectorVarInput';
+      input.type='text';
+      input.value=formatRuntimeVarValue(item).replace(/^"|"$/g,'');
+      input.disabled=item.readonly;
+      const type=document.createElement('span');
+      type.className='runtimeVarType';
+      type.textContent=item.type||'value';
+      const go=document.createElement('button');
+      go.type='button';
+      go.className='uiBtn miniBtn runtimeVarGotoBtn';
+      go.textContent='Go to';
+      go.disabled=!item.canGoTo;
+      go.onclick=()=>runtime?.goToInspectorSelection?.();
+      const edit=document.createElement('button');
+      edit.type='button';
+      edit.className='uiBtn miniBtn runtimeVarEditBtn';
+      edit.textContent='Edit';
+      edit.disabled=item.readonly;
+      const apply=()=>{
+        if(item.readonly) return;
+        if(runtime?.setInspectorVariable?.(item.name,input.value)){
+          refreshRuntimeVarsPanel();
+          toast(`<b>Inspector value updated:</b> ${escapeHtml(item.name)}`);
+        }else toast(`<b>Inspector value update failed:</b> ${escapeHtml(item.name)}`);
+      };
+      edit.onclick=apply;
+      input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); apply(); } });
+      row.append(name,input,type,go,edit);
+      list.appendChild(row);
+    });
+  }
   if(!variables.length){
-    const empty=document.createElement('div');
-    empty.className='runtimeVarsEmpty';
-    empty.textContent=runtimeStarted?'No inspectable values on this page/table.':'Start the runtime to inspect variables.';
-    list.appendChild(empty);
+    if(!inspectorSelection?.items?.length){
+      const empty=document.createElement('div');
+      empty.className='runtimeVarsEmpty';
+      empty.textContent=runtimeStarted?'No inspectable values on this page/table.':'Start the runtime to inspect variables.';
+      list.appendChild(empty);
+    }
     return;
   }
   const pages=Math.max(1,Math.ceil(variables.length/RUNTIME_VARS_PAGE_SIZE));
@@ -1445,15 +1492,20 @@ function refreshRuntimeVarsPanel(){
     const type=document.createElement('span');
     type.className='runtimeVarType';
     type.textContent=variable.type;
+    const go=document.createElement('button');
+    go.type='button';
+    go.className='uiBtn miniBtn runtimeVarGotoBtn';
+    go.textContent='Go to';
+    go.disabled=variable.type!=='function' && !variable.sourceLine;
+    go.onclick=()=>{
+      if(variable.type==='function') goToRuntimeFunctionSource(variable);
+      else if(variable.sourceLine) goToCodeLine(variable.sourceLine, variable.sourceFileIndex);
+    };
     const edit=document.createElement('button');
     edit.type='button';
     edit.className='uiBtn miniBtn runtimeVarEditBtn';
     edit.textContent='Edit';
     const editValue=()=>{
-      if(variable.type==='function'){
-        goToRuntimeFunctionSource(variable);
-        return;
-      }
       const next=runtimeVarEditPrompt(variable);
       if(next==null) return;
       if(runtime?.setRuntimeVariable?.(variable.path||variable.name,next)){
@@ -1463,10 +1515,11 @@ function refreshRuntimeVarsPanel(){
     };
     name.onclick=()=>{
       if(variable.type==='table' && variable.path){ runtimeVarsPath=variable.path; runtimeVarsPage=0; refreshRuntimeVarsPanel(); }
+      else if(variable.type==='function') goToRuntimeFunctionSource(variable);
       else editValue();
     };
     edit.onclick=editValue;
-    row.append(name,value,type,edit);
+    row.append(name,value,type,go,edit);
     list.appendChild(row);
   });
   if(pages>1){
@@ -1490,6 +1543,15 @@ function toggleRuntimeVarsPanel(){
   const show=!panel.classList.contains('show');
   panel.classList.toggle('show', show);
   if(show) refreshRuntimeVarsPanel();
+  updateRuntimeLayoutSaveState?.();
+}
+function openRuntimeVarsForInspectorSelection(){
+  const panel=$('runtimeVarsPanel');
+  if(!panel) return;
+  runtimeVarsPath=[];
+  runtimeVarsPage=0;
+  panel.classList.add('show');
+  refreshRuntimeVarsPanel();
   updateRuntimeLayoutSaveState?.();
 }
 async function toggleAppFullscreen(){
@@ -1521,6 +1583,9 @@ function createRuntimeFallback(message){
     isPaused(){ return false; },
     getRuntimeVariables(){ return []; },
     setRuntimeVariable(){ return false; },
+    getInspectorVariables(){ return {items:[]}; },
+    setInspectorVariable(){ return false; },
+    goToInspectorSelection(){ return false; },
   };
 }
 function initRuntime(){
@@ -1538,7 +1603,7 @@ const editorRenderCache = { sprites:new Map(), tiles:new Map(), onion:new Map() 
 const spriteHistory = { undo: [], redo: [] };
 const spriteViewLayoutReady = new WeakSet();
 const mapHistory = { undo: [], redo: [] };
-let audioCtx = null, audioUnlocked = false, pendingSfxRequests = [], currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
+let audioCtx = null, audioUnlocked = false, pendingSfxRequests = [], currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0, runtimeMusicPausedByInspector = false;
 function ctxAudio(){
   const AudioCtor=window.AudioContext||window.webkitAudioContext;
   if(!AudioCtor) throw new Error('Web Audio API is unavailable in this browser.');
@@ -1753,15 +1818,95 @@ function getMainCodeFileIndex(){
   const mainIndex=files.findIndex(file=>String(file?.name||'').toLowerCase()==='main.lua');
   return mainIndex>=0 ? mainIndex : clamp(state.currentCodeFile,0,Math.max(0,files.length-1));
 }
-function goToRuntimeFunctionSource(variable){
-  const line=Number(variable?.sourceLine)||0;
-  if(!Number.isFinite(line) || line<=0){
-    toast(`<b>Source unavailable:</b> ${escapeHtml(variable?.pathLabel||variable?.name||'function')}`);
-    return false;
+function escapeRegExp(text){ return String(text||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function codeFilesForRuntimeSearch(){
+  return (state.appProject?.codeFiles||[])
+    .map((file,index)=>({file,index,name:String(file?.name||''),content:String(file?.content||'')}))
+    .filter(entry=>/\.(?:lua|txt)$/i.test(entry.name));
+}
+function buildResolvedLuaLineMap(source, fileIndex, seen=new Set()){
+  const lines=String(source||'').split(/\r?\n/);
+  const out=[];
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const name=parseIncludeTarget(line);
+    if(name){
+      const foundIndex=(state.appProject?.codeFiles||[]).findIndex(f=>String(f?.name||'')===name);
+      if(foundIndex>=0 && !seen.has(name)){
+        seen.add(name);
+        out.push({fileIndex,line:i+1,marker:true,name});
+        out.push(...buildResolvedLuaLineMap(state.appProject.codeFiles[foundIndex].content, foundIndex, seen));
+        out.push({fileIndex,line:i+1,marker:true,name});
+        continue;
+      }
+    }
+    out.push({fileIndex,line:i+1});
   }
-  goToCodeLine(line, getMainCodeFileIndex());
-  toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'function')} at line ${line}.`);
-  return true;
+  return out;
+}
+function mapResolvedLuaLine(lineNumber){
+  const files=state.appProject?.codeFiles||[];
+  const mainIndex=getMainCodeFileIndex();
+  const main=files[mainIndex];
+  if(!main) return null;
+  const map=buildResolvedLuaLineMap(main.content||'', mainIndex);
+  const hit=map[Math.max(1,lineNumber|0)-1];
+  return hit && !hit.marker ? hit : null;
+}
+function functionSearchNames(variable){
+  const names=[];
+  const add=value=>{ const text=String(value||'').replace(/^_G\.?/,'').trim(); if(text && !names.includes(text)) names.push(text); };
+  add(variable?.pathLabel);
+  if(Array.isArray(variable?.path)) add(variable.path.map(part=>String(part?.label??part?.value??'')).filter(Boolean).join('.'));
+  add(variable?.name);
+  return names;
+}
+function findRuntimeFunctionInProject(variable){
+  const names=functionSearchNames(variable);
+  const files=codeFilesForRuntimeSearch();
+  const checks=[];
+  names.forEach(name=>{
+    const full=escapeRegExp(name).replace(/\\\./g,'\\s*[.:]\\s*');
+    checks.push(new RegExp(`(^|[^A-Za-z0-9_])function\\s+${full}\\s*[(:]`));
+    checks.push(new RegExp(`(^|[^A-Za-z0-9_])${full}\\s*=\\s*function\\s*[(:]`));
+    const last=name.split('.').pop();
+    if(last && last!==name){
+      const leaf=escapeRegExp(last);
+      checks.push(new RegExp(`(^|[^A-Za-z0-9_])function\\s+${leaf}\\s*[(:]`));
+      checks.push(new RegExp(`(^|[^A-Za-z0-9_])${leaf}\\s*=\\s*function\\s*[(:]`));
+    }
+  });
+  for(const entry of files){
+    const lines=entry.content.split(/\r?\n/);
+    for(let i=0;i<lines.length;i++){
+      const code=splitLuaLineComment(lines[i]).code;
+      if(checks.some(re=>re.test(code))) return {fileIndex:entry.index,line:i+1,fileName:entry.name};
+    }
+  }
+  return null;
+}
+function goToRuntimeFunctionSource(variable){
+  const found=findRuntimeFunctionInProject(variable);
+  if(found){
+    goToCodeLine(found.line, found.fileIndex);
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'function')} in ${escapeHtml(found.fileName)} at line ${found.line}.`);
+    return true;
+  }
+  const line=Number(variable?.sourceLine)||0;
+  const mapped=Number.isFinite(line)&&line>0 ? mapResolvedLuaLine(line) : null;
+  if(mapped){
+    goToCodeLine(mapped.line, mapped.fileIndex);
+    const fileName=state.appProject?.codeFiles?.[mapped.fileIndex]?.name||'code';
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'function')} in ${escapeHtml(fileName)} at line ${mapped.line}.`);
+    return true;
+  }
+  if(Number.isFinite(line) && line>0){
+    goToCodeLine(line, getMainCodeFileIndex());
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'function')} at line ${line}.`);
+    return true;
+  }
+  toast(`<b>Source unavailable:</b> ${escapeHtml(variable?.pathLabel||variable?.name||'function')}`);
+  return false;
 }
 function gotoLastRunErrorLine(){
   if(!state.lastRunError){ toast('No run error has been captured yet.'); return; }
@@ -8252,10 +8397,13 @@ function setView(name){
   }
   const previousView=state.activeView;
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
+  const leavingRuntimeWithInspectorPause=leavingRuntime && (runtimeDebugPaused || runtime?.isInspectorEnabled?.());
   if(leavingRuntime){
-    if(runtimeDebugPaused){
+    if(leavingRuntimeWithInspectorPause){
+      runtimeDebugPaused=true;
       runtime?.setActive?.(runtimeStarted);
       runtime?.setPaused?.(true);
+      $("runtimeStartOverlay")?.classList.add("hidden");
     }else{
       runtimeStarted=false;
       runtimeDebugPaused=false;
@@ -8267,7 +8415,7 @@ function setView(name){
   }
   const leavingMusicEditor=previousView==="music" && name!=="music";
   state.activeView=name;
-  if(leavingRuntime || leavingMusicEditor){
+  if((leavingRuntime && !leavingRuntimeWithInspectorPause) || leavingMusicEditor){
     stopMusicPlayback({suppressCurrent:leavingRuntime});
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -9496,6 +9644,21 @@ function suppressMusicPlaybackForTrack(index, track){
     if(name) suppressMusicRequest(name, 'play', loop);
   });
 }
+
+function pauseRuntimeMusicPlayback(){
+  runtimeMusicPausedByInspector=true;
+  currentMusicElements.forEach(audio=>{ try{ audio.pause?.(); }catch{} });
+  try{
+    if(audioCtx && audioCtx.state==='running') audioCtx.suspend?.();
+  }catch(_){ }
+}
+function resumeRuntimeMusicPlayback(){
+  if(!runtimeMusicPausedByInspector) return;
+  runtimeMusicPausedByInspector=false;
+  try{ if(audioCtx && audioCtx.state==='suspended') audioCtx.resume?.(); }catch(_){ }
+  currentMusicElements.forEach(audio=>{ try{ audio.play?.(); }catch{} });
+}
+
 function stopMusicPlayback(options={}){
   if(options.suppressCurrent&&currentMusicSignature) currentMusicSuppressedSignatures.add(currentMusicSignature);
   if(options.invalidate!==false) currentMusicRequestId++;
@@ -9514,6 +9677,7 @@ function stopMusicPlayback(options={}){
   currentMusicElements.clear();
   currentMusicSource=null;
   currentMusicSignature=null;
+  runtimeMusicPausedByInspector=false;
 }
 async function playMusicEntry(src, action="play", loop=true, project=state.appProject, options={}){
   const normalizedAction=String(action??'play').trim().toLowerCase();
@@ -10143,14 +10307,65 @@ function makeRuntime(){
   };
   const inspectorParamLabel=(key,value)=>/^(?:bg|border|text|hover_bg|color|fill|outline)$/i.test(String(key||''))?colorLabel(value):String(value??'nil');
   const geometryFromObject=obj=>({x:Number(obj.x)||0,y:Number(obj.y)||0,w:Number(obj.w)||0,h:Number(obj.h)||0,r:Number(obj.r)||0,fontSize:Number(obj.fontSize)||0});
+  const inspectorEditableKeys=obj=>{
+    const keys=['x','y','w','h'];
+    if(obj?.shape==='circle' || obj?.r) keys.push('r');
+    if(obj?.fontSize) keys.push('fontSize');
+    Object.keys(obj?.colors||{}).forEach(key=>{ if(!keys.includes(key)) keys.push(key); });
+    if(obj?.text!=null && !keys.includes('text')) keys.push('text');
+    if(obj?.kind && !keys.includes('kind')) keys.push('kind');
+    return keys;
+  };
+  const currentInspectorObject=()=>inspectorSelected?.key ? (inspectorObjects.find(obj=>obj.key===inspectorSelected.key)||inspectorSelected) : null;
+  const coerceInspectorInput=(current,raw)=>{
+    const text=String(raw??'');
+    if(typeof current==='boolean') return /^(true|1|yes|on)$/i.test(text.trim());
+    if(current==null || typeof current==='number'){
+      const n=Number(text);
+      if(Number.isFinite(n)) return Math.round(n*100)/100;
+    }
+    return text;
+  };
   const setObjectOverride=(obj,next)=>{
     if(!obj?.key) return;
-    const value={};
+    const value={...(layoutOverrides[obj.key]||{})};
     ['x','y','w','h','r','fontSize'].forEach(key=>{
       if(next[key]!=null && Number.isFinite(Number(next[key]))) value[key]=Math.round(Number(next[key])*100)/100;
     });
+    Object.keys(next||{}).forEach(key=>{
+      if(['x','y','w','h','r','fontSize'].includes(key)) return;
+      if(next[key]!==undefined) value[key]=next[key];
+    });
     layoutOverrides[obj.key]=value;
     markLayoutDirty();
+  };
+  const getInspectorVariables=()=>{
+    const obj=currentInspectorObject();
+    if(!inspectorEnabled || !obj) return {items:[]};
+    const ov=layoutOverrides[obj.key]||{};
+    const items=inspectorEditableKeys(obj).map(key=>{
+      const current=ov[key]!==undefined ? ov[key] : (key in obj ? obj[key] : obj.colors?.[key]);
+      const type=key==='kind'?'string':(current==null?'nil':Array.isArray(current)?'table':typeof current);
+      return {name:key,type,value:current==null?'':current,readonly:key==='kind',canGoTo:true};
+    });
+    items.unshift({name:'key',type:'string',value:obj.key,readonly:true,canGoTo:false});
+    return {key:obj.key,label:obj.label||obj.kind,items};
+  };
+  const setInspectorVariable=(name,raw)=>{
+    const obj=currentInspectorObject();
+    if(!inspectorEnabled || !obj || !name || name==='key' || name==='kind') return false;
+    const current=(layoutOverrides[obj.key]||{})[name] ?? (name in obj ? obj[name] : obj.colors?.[name]);
+    const value=coerceInspectorInput(current,raw);
+    setObjectOverride(obj,{[name]:value});
+    inspectorSelected={...obj,[name]:value,colors:{...(obj.colors||{}),[name]:value}};
+    inspectorSelected.screen=worldToScreenRect(inspectorSelected);
+    return true;
+  };
+  const goToInspectorSelection=()=>{
+    const obj=currentInspectorObject();
+    if(!obj){ toast('No inspector element selected.'); return false; }
+    toast(`<b>Inspector source:</b> ${escapeHtml(obj.label||obj.kind||'element')} is a runtime draw/widget element; use its key (${escapeHtml(obj.key)}) or stable id in code.`);
+    return false;
   };
   const applyOverrideToRect=(key,geom)=>{
     const ov=layoutOverrides[key];
@@ -10174,8 +10389,10 @@ function makeRuntime(){
     const left=Math.min(Number(x0)||0,Number(x1)||0), right=Math.max(Number(x0)||0,Number(x1)||0);
     const top=Math.min(Number(y0)||0,Number(y1)||0), bottom=Math.max(Number(y0)||0,Number(y1)||0);
     const geom=applyOverrideToRect(key,{x:left,y:top,w:Math.abs(right-left)+1,h:Math.abs(bottom-top)+1});
-    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
-    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w-1,y1:geom.y+geom.h-1,colorIndex};
+    const ov=layoutOverrides[key]||{};
+    const finalColor=ov.color!==undefined?ov.color:colorIndex;
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
+    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w-1,y1:geom.y+geom.h-1,colorIndex:finalColor};
   }
   function inspectorTransformRectFill(x0,y0,a,b,colorIndex){
     const seq=nextInspectorSequence('rectfill');
@@ -10185,28 +10402,34 @@ function makeRuntime(){
     const right=hasColor?(Number(a)||0):left+(Number(a)||0);
     const bottom=hasColor?(Number(b)||0):top+(Number(b)||0);
     const geom=applyOverrideToRect(key,{x:Math.min(left,right),y:Math.min(top,bottom),w:Math.abs(right-left)+(hasColor?1:0),h:Math.abs(bottom-top)+(hasColor?1:0)});
-    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
-    return hasColor ? {x0:geom.x,y0:geom.y,a:geom.x+geom.w-1,b:geom.y+geom.h-1,colorIndex} : {x0:geom.x,y0:geom.y,a:geom.w,b:geom.h,colorIndex};
+    const ov=layoutOverrides[key]||{};
+    const finalColor=ov.color!==undefined?ov.color:colorIndex;
+    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
+    return hasColor ? {x0:geom.x,y0:geom.y,a:geom.x+geom.w-1,b:geom.y+geom.h-1,colorIndex:finalColor} : {x0:geom.x,y0:geom.y,a:geom.w,b:geom.h,colorIndex:finalColor};
   }
   function inspectorTransformLine(x0,y0,x1,y1,colorIndex){
     const seq=nextInspectorSequence('line');
     const key=`draw:line:${seq}`;
     const geom=applyOverrideToLine(key,{x:Number(x0)||0,y:Number(y0)||0,w:(Number(x1)||0)-(Number(x0)||0),h:(Number(y1)||0)-(Number(y0)||0)});
-    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
-    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w,y1:geom.y+geom.h,colorIndex};
+    const ov=layoutOverrides[key]||{};
+    const finalColor=ov.color!==undefined?ov.color:colorIndex;
+    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
+    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w,y1:geom.y+geom.h,colorIndex:finalColor};
   }
   function inspectorTransformCircle(kind,x,y,r,colorIndex){
     const seq=nextInspectorSequence(kind);
     const key=`draw:${kind}:${seq}`;
     const geom=applyOverrideToCircle(key,{x:Number(x)||0,y:Number(y)||0,r:Math.max(1,Number(r)||1)});
-    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,colors:{color:colorIndex}});
-    return {x:geom.x,y:geom.y,r:geom.r,colorIndex};
+    const ov=layoutOverrides[key]||{};
+    const finalColor=ov.color!==undefined?ov.color:colorIndex;
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,colors:{color:finalColor}});
+    return {x:geom.x,y:geom.y,r:geom.r,colorIndex:finalColor};
   }
   function inspectorPreparePrint(text,x,y,fontSize,fill,outline,font){
     const seq=nextInspectorSequence('print');
     const key=`draw:print:${seq}`;
     const ov=layoutOverrides[key]||{};
-    return {key,seq,text:String(text??''),x:Number.isFinite(Number(ov.x))?Number(ov.x):(Number(x)||0),y:Number.isFinite(Number(ov.y))?Number(ov.y):(Number(y)||0),fontSize:Math.max(1,Number.isFinite(Number(ov.fontSize))?Number(ov.fontSize):(Number.isFinite(Number(ov.h))?Number(ov.h):(Number(fontSize)||12))),fill,outline,font};
+    return {key,seq,text:ov.text!==undefined?String(ov.text):String(text??''),x:Number.isFinite(Number(ov.x))?Number(ov.x):(Number(x)||0),y:Number.isFinite(Number(ov.y))?Number(ov.y):(Number(y)||0),fontSize:Math.max(1,Number.isFinite(Number(ov.fontSize))?Number(ov.fontSize):(Number.isFinite(Number(ov.h))?Number(ov.h):(Number(fontSize)||12))),fill:ov.fill!==undefined?ov.fill:fill,outline:ov.outline!==undefined?ov.outline:outline,font:ov.font!==undefined?ov.font:font};
   }
   function inspectorRecordPrint(info,width,height){
     addInspectorObject({key:info.key,kind:'print',label:`print #${info.seq}`,shape:'rect',priority:1,x:info.x,y:info.y,w:Math.max(1,width),h:Math.max(1,height),fontSize:info.fontSize,canResize:true,text:info.text,colors:{fill:info.fill,outline:info.outline,font:info.font}});
@@ -10223,8 +10446,10 @@ function makeRuntime(){
       return value;
     };
     const write=(name,value)=>{
-      if(value==null || !Number.isFinite(Number(value))) return;
-      lua.lua_pushnumber(L,Number(value));
+      if(value==null) return;
+      if(typeof value==='number' || Number.isFinite(Number(value))) lua.lua_pushnumber(L,Number(value));
+      else if(typeof value==='boolean') lua.lua_pushboolean(L,value?1:0);
+      else lua.lua_pushstring(L,to_luastring(String(value)));
       lua.lua_setfield(L,index,to_luastring(name));
     };
     const explicitId=read('id')||read('layout_id')||read('layoutId');
@@ -10232,6 +10457,7 @@ function makeRuntime(){
     const seq=nextInspectorSequence(kind);
     const key=explicitId ? `widget:${kind}:${inspectorSlug(explicitId)}` : `widget:${kind}:${seq}:${inspectorSlug(label)}`;
     const widgetType=String(read('type')||'rect').toLowerCase();
+    const ov=layoutOverrides[key]||{};
     let x=Number(read('x'))||0, y=Number(read('y'))||0;
     let w=Math.max(1,Number(read('w'))||84), h=Math.max(1,Number(read('h'))||18);
     let r=Math.max(1,Number(read('r')||read('radius'))||8);
@@ -10245,7 +10471,16 @@ function makeRuntime(){
       x=geom.x; y=geom.y; w=geom.w; h=geom.h;
       write('x',x); write('y',y); write('w',w); write('h',h);
     }
-    addInspectorObject({key,kind,label:`${kind}${label?`: ${label}`:''}`,shape:isCircle?'circle':'rect',priority:kind==='arrange'?3:5,x,y,w,h,r:isCircle?r:0,canResize:true,text:label,colors:{bg:read('bg'),border:read('border'),text:read('text'),hover_bg:read('hover_bg'),text_size:read('text_size'),label_x:read('label_x'),label_y:read('label_y')}});
+    const colorKeys=['bg','border','text','hover_bg','text_size','label_x','label_y','font','func'];
+    const colors={};
+    colorKeys.forEach(name=>{
+      const value=ov[name]!==undefined ? ov[name] : read(name);
+      colors[name]=value;
+      if(ov[name]!==undefined) write(name,value);
+    });
+    const displayText=ov.text!==undefined ? String(ov.text) : label;
+    if(ov.text!==undefined) write('text',displayText);
+    addInspectorObject({key,kind,label:`${kind}${displayText?`: ${displayText}`:''}`,shape:isCircle?'circle':'rect',priority:kind==='arrange'?3:5,x,y,w,h,r:isCircle?r:0,canResize:true,text:displayText,colors});
   }
   function inspectorBeginFrame(){ inspectorObjects=[]; inspectorSeq={}; inspectorOrder=0; }
   const hitInspectorObject=(obj,point)=>{
@@ -10326,7 +10561,10 @@ function makeRuntime(){
     inspectorCanvas.addEventListener('pointerup',e=>{
       if(!inspectorEnabled) return;
       const point=pointerPoint(e), clicked=inspectorDrag && !inspectorDrag.moved;
-      if(clicked && inspectorSelected) inspectorPage=inspectorDrag.sameSelection?((inspectorPage+1)%3):0;
+      if(clicked && inspectorSelected){
+        inspectorPage=inspectorDrag.sameSelection?((inspectorPage+1)%3):0;
+        openRuntimeVarsForInspectorSelection?.();
+      }
       inspectorDrag=null;
       inspectorCanvas.classList.remove('dragging');
       inspectorHover=findInspectorObjectAt(point);
@@ -11115,7 +11353,7 @@ function makeRuntime(){
     build(resolvedSource, mode==='load'?{suppressAudio:true}:undefined);
   }
   function setActive(nextActive){ runtimeActive=!!nextActive; if(!runtimeActive) setPaused(false); }
-  function setPaused(nextPaused){ runtimePaused=!!nextPaused && hasStarted; updateRuntimeLayoutSaveState?.(); }
+  function setPaused(nextPaused){ runtimePaused=!!nextPaused && hasStarted; if(runtimePaused) pauseRuntimeMusicPlayback(); else resumeRuntimeMusicPlayback(); updateRuntimeLayoutSaveState?.(); }
   function startRuntime(mode='run'){
     runtimeActive=true;
     if(hasStarted) return;
@@ -11131,7 +11369,7 @@ function makeRuntime(){
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -11169,8 +11407,10 @@ function wireUI(){
   });
   const pauseRuntimePreview=()=>{
     if(state.activeView!=="runtime") return;
-    if(runtimeDebugPaused){
+    if(runtimeDebugPaused || runtime?.isInspectorEnabled?.()){
+      runtimeDebugPaused=true;
       runtime?.setPaused?.(true);
+      $("runtimeStartOverlay")?.classList.add("hidden");
       updateRuntimeLayoutSaveState?.();
       return;
     }
