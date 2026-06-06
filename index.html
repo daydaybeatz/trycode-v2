@@ -1536,13 +1536,15 @@ function refreshRuntimeVarsPanel(){
     name.className='runtimeVarName runtimeVarOpenBtn';
     name.textContent=variable.name;
     name.title=variable.type==='table'?'Open table':'Edit value';
-    const value=variable.type==='function' ? document.createElement('span') : document.createElement('input');
-    value.className=variable.type==='function' ? 'runtimeVarValue' : 'runtimeInspectorVarInput';
-    if(variable.type==='function') value.textContent=formatRuntimeVarValue(variable);
-    else{
+    const value=(variable.type==='function' || variable.type==='table') ? document.createElement('span') : document.createElement('input');
+    value.className=(variable.type==='function' || variable.type==='table') ? 'runtimeVarValue' : 'runtimeInspectorVarInput';
+    if(variable.type==='function' || variable.type==='table'){
+      value.textContent=formatRuntimeVarValue(variable);
+      if(variable.activityLabel) value.title=variable.activityLabel;
+    }else{
       value.type='text';
       value.value=formatRuntimeVarValue(variable).replace(/^"|"$/g,'');
-      value.title=variable.type==='table'?'Enter a Lua table literal such as {x=1}, or click the name to open fields.':'Edit the value and press Enter or Save.';
+      value.title='Edit the value and press Enter or Save.';
     }
     const type=document.createElement('span');
     type.className='runtimeVarType';
@@ -1551,10 +1553,10 @@ function refreshRuntimeVarsPanel(){
     go.type='button';
     go.className='uiBtn miniBtn runtimeVarGotoBtn';
     go.textContent='Go to';
-    go.disabled=variable.type!=='function' && !variable.sourceLine;
+    go.disabled=false;
     go.onclick=()=>{
       if(variable.type==='function') goToRuntimeFunctionSource(variable);
-      else if(variable.sourceLine) goToCodeLine(variable.sourceLine, variable.sourceFileIndex);
+      else goToRuntimeVariableSource(variable);
     };
     const editValue=()=>{
       if(variable.type==='function') return;
@@ -1570,7 +1572,7 @@ function refreshRuntimeVarsPanel(){
       else value.focus?.();
     };
     if(variable.type!=='function') value.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); editValue(); } });
-    if(variable.type==='function') row.append(name,value,type,go);
+    if(variable.type==='function' || variable.type==='table') row.append(name,value,type,go);
     else{
       const edit=document.createElement('button');
       edit.type='button';
@@ -1945,6 +1947,44 @@ function findRuntimeFunctionInProject(variable){
     }
   }
   return null;
+}
+
+function findRuntimeVariableInProject(variable){
+  const names=functionSearchNames(variable);
+  const files=codeFilesForRuntimeSearch();
+  const checks=[];
+  names.forEach(name=>{
+    const dotted=escapeRegExp(name).replace(/\\\./g,'\\s*[.]\\s*');
+    const first=String(name||'').split('.')[0];
+    if(first) checks.push(new RegExp(`(^|[^A-Za-z0-9_])(?:local\\s+)?${escapeRegExp(first)}\\s*(?:=|,|$)`));
+    checks.push(new RegExp(`(^|[^A-Za-z0-9_])(?:local\\s+)?${dotted}\\s*=`));
+    checks.push(new RegExp(`(^|[^A-Za-z0-9_])${dotted}\\s*=`));
+    if(variable?.type==='table') checks.push(new RegExp(`(^|[^A-Za-z0-9_])(?:local\\s+)?${dotted}\\s*=\\s*\\{`));
+  });
+  for(const entry of files){
+    const lines=entry.content.split(/\r?\n/);
+    for(let i=0;i<lines.length;i++){
+      const code=splitLuaLineComment(lines[i]).code;
+      if(checks.some(re=>re.test(code))) return {fileIndex:entry.index,line:i+1,fileName:entry.name};
+    }
+  }
+  return null;
+}
+function goToRuntimeVariableSource(variable){
+  const found=findRuntimeVariableInProject(variable);
+  if(found){
+    goToCodeLine(found.line, found.fileIndex);
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'value')} in ${escapeHtml(found.fileName)} at line ${found.line}.`);
+    return true;
+  }
+  const line=Number(variable?.sourceLine)||0;
+  if(Number.isFinite(line)&&line>0){
+    goToCodeLine(line, Number.isInteger(variable?.sourceFileIndex)?variable.sourceFileIndex:getMainCodeFileIndex());
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'value')} at line ${line}.`);
+    return true;
+  }
+  toast(`<b>Source unavailable:</b> Could not find ${escapeHtml(variable?.pathLabel||variable?.name||'value')} in code.`);
+  return false;
 }
 function goToRuntimeFunctionSource(variable){
   const found=findRuntimeFunctionInProject(variable);
@@ -10060,7 +10100,7 @@ function makeRuntime(){
     hd_4x:{w:1920,h:1080},
     mobile_fullscreen:{w:270,h:480}
   };
-  const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
+  const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false, runtimeActivityClock=0; const runtimeActivity=new Map(), runtimeSnapshots=new Map();
   let hasStarted=false, pendingRunMode='load', runtimeActive=false, runtimePaused=false;
   const dialogKeyboardInput=document.createElement('input');
   dialogKeyboardInput.type='text';
@@ -10422,10 +10462,44 @@ function makeRuntime(){
     inspectorSelected.screen=worldToScreenRect(inspectorSelected);
     return true;
   };
+  const findInspectorObjectInProject=obj=>{
+    if(!obj) return null;
+    const files=codeFilesForRuntimeSearch();
+    const terms=[];
+    const addTerm=value=>{ const text=String(value??'').trim(); if(text && !terms.includes(text)) terms.push(text); };
+    addTerm(obj.key);
+    addTerm(obj.text);
+    addTerm(String(obj.key||'').split(':').pop());
+    const functionNames={rectfill:['rectfill'],rect:['rect'],line:['line'],circ:['circ'],circfill:['circfill'],print:['print','print_'],button:['ui_button','ui_buttons'],dropdown:['ui_dropdown'],arrange:['arrange']};
+    const calls=functionNames[obj.kind]||[obj.kind].filter(Boolean);
+    const termChecks=terms.filter(term=>term && term.length>1).map(term=>new RegExp(escapeRegExp(term)));
+    const callChecks=calls.map(name=>new RegExp(`(^|[^A-Za-z0-9_])${escapeRegExp(name)}\\s*\\(`));
+    for(const entry of files){
+      const lines=entry.content.split(/\r?\n/);
+      for(let i=0;i<lines.length;i++){
+        const code=splitLuaLineComment(lines[i]).code;
+        if(termChecks.some(re=>re.test(code))) return {fileIndex:entry.index,line:i+1,fileName:entry.name};
+      }
+    }
+    for(const entry of files){
+      const lines=entry.content.split(/\r?\n/);
+      for(let i=0;i<lines.length;i++){
+        const code=splitLuaLineComment(lines[i]).code;
+        if(callChecks.some(re=>re.test(code))) return {fileIndex:entry.index,line:i+1,fileName:entry.name};
+      }
+    }
+    return null;
+  };
   const goToInspectorSelection=()=>{
     const obj=currentInspectorObject();
     if(!obj){ toast('No inspector element selected.'); return false; }
-    toast(`<b>Inspector source:</b> ${escapeHtml(obj.label||obj.kind||'element')} is a runtime draw/widget element; use its key (${escapeHtml(obj.key)}) or stable id in code.`);
+    const found=findInspectorObjectInProject(obj);
+    if(found){
+      goToCodeLine(found.line, found.fileIndex);
+      toast(`Jumped to ${escapeHtml(obj.label||obj.kind||'element')} in ${escapeHtml(found.fileName)} at line ${found.line}.`);
+      return true;
+    }
+    toast(`<b>Source unavailable:</b> Could not find ${escapeHtml(obj.label||obj.kind||'element')} in code. Add a stable id/key near the widget or draw call to make it easier to locate.`);
     return false;
   };
   const applyOverrideToRect=(key,geom)=>{
@@ -11154,6 +11228,54 @@ function makeRuntime(){
     if(!Array.isArray(path)||!path.length) return '_G';
     return path.map(part=>String(part?.display||'')).join('').replace(/^\./,'');
   }
+
+  const runtimeActivityKey=pathOrName=>Array.isArray(pathOrName)?runtimePathLabel(pathOrName):String(pathOrName||'');
+  const markRuntimeActivity=(pathOrName,reason='changed')=>{
+    const key=runtimeActivityKey(pathOrName);
+    if(!key) return 0;
+    const at=++runtimeActivityClock;
+    runtimeActivity.set(key,{at,reason});
+    return at;
+  };
+  function luaInspectorSignature(index,depth=0){
+    if(!L || !lua) return 'unavailable';
+    const abs=index<0 ? lua.lua_gettop(L)+index+1 : index;
+    if(lua.lua_isnil(L,abs)) return 'nil';
+    if(lua.lua_isboolean(L,abs)) return `boolean:${lua.lua_toboolean(L,abs)?1:0}`;
+    if(lua.lua_isnumber(L,abs)) return `number:${lua.lua_tonumber(L,abs)}`;
+    if(lua.lua_isstring(L,abs)){ const raw=lua.lua_tolstring(L,abs); return `string:${raw?to_jsstring(raw):''}`; }
+    if(lua.lua_isfunction(L,abs)){
+      const info=luaFunctionSourceInfo(abs);
+      return `function:${info?.shortSource||info?.source||''}:${info?.lineDefined||0}:${info?.lastLineDefined||0}`;
+    }
+    if(lua.lua_istable(L,abs)){
+      const parts=[];
+      let count=0;
+      lua.lua_pushnil(L);
+      while(lua.lua_next(L,abs)!==0){
+        count++;
+        const key=luaKeyToString(-2) ?? `key${count}`;
+        let valueSig=luaValueForInspector(-1).type;
+        if(depth<1 && !lua.lua_istable(L,-1)) valueSig=luaInspectorSignature(-1,depth+1);
+        parts.push(`${key}:${valueSig}`);
+        lua.lua_pop(L,1);
+      }
+      parts.sort();
+      return `table:${count}:${parts.slice(0,40).join('|')}`;
+    }
+    return luaValueForInspector(abs).type;
+  }
+  const annotateRuntimeActivity=(item,signature)=>{
+    const key=runtimeActivityKey(item.path||item.pathLabel||item.name);
+    const previous=runtimeSnapshots.get(key);
+    if(previous!==signature) markRuntimeActivity(item.path||key, previous==null?'added':'changed');
+    runtimeSnapshots.set(key,signature);
+    const activity=runtimeActivity.get(key);
+    item.activityAt=activity?.at||0;
+    item.activityReason=activity?.reason||'';
+    item.activityLabel=item.activityAt ? `Most recently ${item.activityReason || 'affected'} #${item.activityAt}` : '';
+    return item;
+  };
   function pushLuaKey(part){
     if(!part) return false;
     if(part.type==='number') lua.lua_pushnumber(L,Number(part.value)||0);
@@ -11204,15 +11326,18 @@ function makeRuntime(){
         const isRoot=!basePath.length;
         const name=key.label;
         if(!isRoot || (key.type==='string' && name && !baselineGlobals.has(name) && !name.startsWith('__tc_'))){
+          const signature=luaInspectorSignature(-1);
           const info=luaValueForInspector(-1);
           const nextPath=isRoot ? [{...key,display:name}] : basePath.concat(key);
-          vars.push({name,...info,path:nextPath,pathLabel:runtimePathLabel(nextPath)});
+          vars.push(annotateRuntimeActivity({name,...info,path:nextPath,pathLabel:runtimePathLabel(nextPath)},signature));
         }
       }
       lua.lua_pop(L,1);
     }
     lua.lua_pop(L,1);
     vars.sort((a,b)=>{
+      const activity=(Number(b.activityAt)||0)-(Number(a.activityAt)||0);
+      if(activity) return activity;
       const an=Number(a.name), bn=Number(b.name), aNum=Number.isFinite(an), bNum=Number.isFinite(bn);
       if(aNum&&bNum) return an-bn;
       if(aNum!==bNum) return aNum?-1:1;
@@ -11257,6 +11382,7 @@ function makeRuntime(){
     if(path.length===1 && path[0].type==='string'){
       if(!pushParsedRuntimeValue(rawValue)) return false;
       lua.lua_setglobal(L,to_luastring(String(path[0].value)));
+      markRuntimeActivity(path,'changed');
       return true;
     }
     const parentPath=path.slice(0,-1), last=path[path.length-1];
@@ -11266,6 +11392,8 @@ function makeRuntime(){
     if(!pushParsedRuntimeValue(rawValue)){ lua.lua_pop(L,2); return false; }
     lua.lua_settable(L,-3);
     lua.lua_pop(L,1);
+    markRuntimeActivity(path,'changed');
+    markRuntimeActivity(parentPath,'affected');
     return true;
   }
   const getFengariApi=()=>{
@@ -11331,6 +11459,7 @@ function makeRuntime(){
     lastCode=code||'';
     const suppressAudio=!!options.suppressAudio;
     builtOk=false;
+    runtimeActivity.clear(); runtimeSnapshots.clear(); runtimeActivityClock=0;
     resetRuntimeDefaults();
     const fengariApi=getFengariApi();
     if(!fengariApi){
@@ -11427,7 +11556,7 @@ function makeRuntime(){
   function loadEditor(codeOverride){ queueBuild('load',codeOverride); }
   function rerun(codeOverride){ queueBuild('run',codeOverride); }
   function reset(codeOverride){ queueBuild('run',codeOverride); }
-  function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
+  function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ markRuntimeActivity(name,'called'); const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
