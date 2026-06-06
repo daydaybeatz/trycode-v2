@@ -32,9 +32,9 @@
     .topbar{flex:0 0 38px;display:flex;align-items:center;gap:3px;padding:3px 5px;background:linear-gradient(180deg,#efe0bc,#e8cf96);border-bottom:4px solid var(--line);box-shadow:inset 0 -3px 0 #c39a5b}
     .topbarRuntimeControls{display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .topbarRuntimeControls .fileBtn{padding:6px 10px;font-size:11px}
-    .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden,.runtimeVarsBtn.hidden,.runtimeDebugPauseBtn.hidden{display:none}
-    .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active,.runtimeVarsBtn.active,.runtimeDebugPauseBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
-    .runtimeSaveLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
+    .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden,.runtimeResetLayoutBtn.hidden,.runtimeVarsBtn.hidden,.runtimeDebugPauseBtn.hidden{display:none}
+    .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active,.runtimeResetLayoutBtn.active,.runtimeVarsBtn.active,.runtimeDebugPauseBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
+    .runtimeSaveLayoutBtn:disabled,.runtimeResetLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
     .runtimeInspectorSaveFab{display:none}
     body.runtime-ui-hidden .topbar,body.runtime-ui-hidden #view-runtime .hud,body.runtime-ui-hidden #view-runtime .runtimeErrorBox,body.runtime-ui-hidden #view-runtime .runtimeDialogLayer{display:none !important}
     body.runtime-ui-hidden .views{position:fixed;inset:0}
@@ -649,6 +649,7 @@
         <button class="fileBtn runtimeDebugPauseBtn hidden" id="runtimeDebugPauseBtn">Pause</button>
         <button class="fileBtn runtimeVarsBtn hidden" id="runtimeVarsBtn">Vars</button>
         <button class="fileBtn runtimeSaveLayoutBtn hidden" id="runtimeSaveLayoutBtn" disabled>Save Layout</button>
+        <button class="fileBtn runtimeResetLayoutBtn hidden" id="runtimeResetLayoutBtn" disabled>Reset</button>
         <button class="fileBtn runtimeHideBtn" id="runtimeHideBtn">Hide</button>
       </div>
       <button class="fileBtn" id="fileBtn">Menu</button>
@@ -1323,6 +1324,7 @@ let runtimeVarsPanelRefreshAt=0;
 function updateRuntimeLayoutSaveState(){
   const canShow=state.activeView==='runtime';
   const saveBtns=document.querySelectorAll(".runtimeSaveLayoutBtn");
+  const resetBtns=document.querySelectorAll(".runtimeResetLayoutBtn");
   const inspectBtns=document.querySelectorAll(".runtimeInspectorModeBtn");
   const pauseBtns=document.querySelectorAll(".runtimeDebugPauseBtn");
   const varsBtns=document.querySelectorAll(".runtimeVarsBtn");
@@ -1334,6 +1336,13 @@ function updateRuntimeLayoutSaveState(){
     saveBtn.disabled=!hasEdits;
     saveBtn.classList.toggle('active', hasEdits);
     saveBtn.textContent=mobileFab ? (hasEdits?'Save *':'Save') : (hasEdits?'Save Layout *':'Save Layout');
+  });
+  resetBtns.forEach(resetBtn=>{
+    resetBtn.classList.toggle('hidden', !canShow);
+    resetBtn.disabled=!hasEdits;
+    resetBtn.classList.toggle('active', hasEdits);
+    resetBtn.title='Discard unsaved inspector layout tweaks and return to the saved/code values.';
+    resetBtn.textContent=hasEdits?'Reset *':'Reset';
   });
   inspectBtns.forEach(inspectBtn=>{
     inspectBtn.classList.toggle('hidden', !canShow);
@@ -1441,6 +1450,7 @@ function createRuntimeFallback(message){
     getLayoutOverrideCount(){ return 0; },
     flushLayoutToProject(){ return 0; },
     markLayoutSaved(){},
+    resetLayoutEdits(){ return 0; },
     setPaused(){},
     isPaused(){ return false; },
     getRuntimeVariables(){ return []; },
@@ -9951,13 +9961,15 @@ function makeRuntime(){
     resetUiBoxStyle();
   }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
-  let layoutOverrides={}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null;
+  let layoutOverrides={}, layoutSavedSnapshot={version:1,overrides:{},savedAt:0}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null;
   const cloneLayoutOverrides=source=>{
     try{ return JSON.parse(JSON.stringify(source&&typeof source==='object'&&!Array.isArray(source)?source:{})); }
     catch(_){ return {}; }
   };
+  const cloneLayoutSnapshot=source=>({version:1,overrides:cloneLayoutOverrides(source?.overrides),savedAt:Number(source?.savedAt)||0});
   const loadRuntimeLayoutOverrides=()=>{
-    layoutOverrides=cloneLayoutOverrides(projectRef.runtimeLayout?.overrides);
+    layoutSavedSnapshot=cloneLayoutSnapshot(projectRef.runtimeLayout);
+    layoutOverrides=cloneLayoutOverrides(layoutSavedSnapshot.overrides);
     layoutDirty=false;
     updateRuntimeLayoutSaveState?.();
   };
@@ -9966,8 +9978,26 @@ function makeRuntime(){
     updateRuntimeLayoutSaveState?.();
   };
   const markLayoutSaved=()=>{
+    layoutSavedSnapshot=cloneLayoutSnapshot(projectRef.runtimeLayout);
+    layoutOverrides=cloneLayoutOverrides(layoutSavedSnapshot.overrides);
     layoutDirty=false;
     updateRuntimeLayoutSaveState?.();
+  };
+  const resetLayoutEdits=()=>{
+    layoutOverrides=cloneLayoutOverrides(layoutSavedSnapshot.overrides);
+    const snapshot=cloneLayoutSnapshot(layoutSavedSnapshot);
+    projectRef.runtimeLayout=snapshot;
+    if(state.appProject){
+      ensureProjectData();
+      state.appProject.runtimeLayout=cloneLayoutSnapshot(snapshot);
+    }
+    layoutDirty=false;
+    inspectorDrag=null;
+    inspectorSelected=inspectorSelected?.key ? inspectorObjects.find(obj=>obj.key===inspectorSelected.key)||null : null;
+    inspectorHover=inspectorHover?.key ? inspectorObjects.find(obj=>obj.key===inspectorHover.key)||null : null;
+    renderInspectorOverlay?.();
+    updateRuntimeLayoutSaveState?.();
+    return Object.keys(layoutOverrides||{}).length;
   };
   const layoutOverrideCount=()=>Object.keys(layoutOverrides||{}).length;
   const flushLayoutToProject=(options={})=>{
@@ -10909,7 +10939,7 @@ function makeRuntime(){
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,getRuntimeVariables,setRuntimeVariable,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -11454,8 +11484,15 @@ function wireUI(){
     if(saved) toast(`<b>Layout saved:</b> ${count} override${count===1?'':'s'}.`);
     applyRuntimeUiHiddenState();
   }
+  function resetRuntimeLayoutFromInspector(){
+    if(state.activeView!=='runtime') return;
+    runtime?.resetLayoutEdits?.();
+    toast('Inspector tweaks reset to saved/code values.');
+    applyRuntimeUiHiddenState();
+  }
   bindClick('runtimeSaveLayoutBtn',saveRuntimeLayoutFromInspector);
   bindClick('runtimeMobileSaveLayoutBtn',saveRuntimeLayoutFromInspector);
+  bindClick('runtimeResetLayoutBtn',resetRuntimeLayoutFromInspector);
   window.addEventListener('resize',applyRuntimeUiHiddenState);
   window.addEventListener('keydown',e=>{
     const key=String(e.key||'').toLowerCase();
