@@ -1450,6 +1450,10 @@ function refreshRuntimeVarsPanel(){
     edit.className='uiBtn miniBtn runtimeVarEditBtn';
     edit.textContent='Edit';
     const editValue=()=>{
+      if(variable.type==='function'){
+        goToRuntimeFunctionSource(variable);
+        return;
+      }
       const next=runtimeVarEditPrompt(variable);
       if(next==null) return;
       if(runtime?.setRuntimeVariable?.(variable.path||variable.name,next)){
@@ -1718,9 +1722,15 @@ function getLineNumberFromLastRunError(){
   const line=parseInt(match[1],10);
   return Number.isFinite(line)&&line>0?line:null;
 }
-function goToCodeLine(lineNumber){
+function goToCodeLine(lineNumber, fileIndex=state.currentCodeFile){
   const line=Math.max(1,lineNumber|0);
+  saveEditorToCurrentCodeFile();
   saveCurrentCodeViewState();
+  if(Number.isInteger(fileIndex) && state.appProject?.codeFiles?.[fileIndex] && fileIndex!==state.currentCodeFile){
+    state.currentCodeFile=fileIndex;
+    loadCurrentCodeFileToEditor();
+    renderCodeTabs();
+  }
   setView("code");
   const editor=$("codeEditor"), shell=$("codeScrollShell");
   if(!editor||!shell) return;
@@ -1737,6 +1747,21 @@ function goToCodeLine(lineNumber){
   const paddingTop=parseFloat(metrics.paddingTop)||0;
   shell.scrollTop=Math.max(0, Math.round(((targetLine-1)*lineHeight)+paddingTop-lineHeight*2));
   saveCurrentCodeViewState();
+}
+function getMainCodeFileIndex(){
+  const files=state.appProject?.codeFiles||[];
+  const mainIndex=files.findIndex(file=>String(file?.name||'').toLowerCase()==='main.lua');
+  return mainIndex>=0 ? mainIndex : clamp(state.currentCodeFile,0,Math.max(0,files.length-1));
+}
+function goToRuntimeFunctionSource(variable){
+  const line=Number(variable?.sourceLine)||0;
+  if(!Number.isFinite(line) || line<=0){
+    toast(`<b>Source unavailable:</b> ${escapeHtml(variable?.pathLabel||variable?.name||'function')}`);
+    return false;
+  }
+  goToCodeLine(line, getMainCodeFileIndex());
+  toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'function')} at line ${line}.`);
+  return true;
 }
 function gotoLastRunErrorLine(){
   if(!state.lastRunError){ toast('No run error has been captured yet.'); return; }
@@ -8228,12 +8253,17 @@ function setView(name){
   const previousView=state.activeView;
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
   if(leavingRuntime){
-    runtimeStarted=false;
-    runtimeDebugPaused=false;
-    runtime?.setPaused?.(false);
-    runtime?.setActive?.(false);
-    updateRuntimePausePlaceholder();
-    $("runtimeStartOverlay")?.classList.remove("hidden");
+    if(runtimeDebugPaused){
+      runtime?.setActive?.(runtimeStarted);
+      runtime?.setPaused?.(true);
+    }else{
+      runtimeStarted=false;
+      runtimeDebugPaused=false;
+      runtime?.setPaused?.(false);
+      runtime?.setActive?.(false);
+      updateRuntimePausePlaceholder();
+      $("runtimeStartOverlay")?.classList.remove("hidden");
+    }
   }
   const leavingMusicEditor=previousView==="music" && name!=="music";
   state.activeView=name;
@@ -10789,13 +10819,34 @@ function makeRuntime(){
     }
     return null;
   }
+  function luaFunctionSourceInfo(index){
+    if(!L || !lua || !to_luastring || !to_jsstring || !lua.lua_getglobal || !lua.lua_getfield || !lua.lua_pushvalue) return null;
+    const absIndex=index<0 ? lua.lua_gettop(L)+index+1 : index;
+    lua.lua_getglobal(L,to_luastring('debug'));
+    if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,1); return null; }
+    lua.lua_getfield(L,-1,to_luastring('getinfo'));
+    if(!lua.lua_isfunction(L,-1)){ lua.lua_pop(L,2); return null; }
+    lua.lua_pushvalue(L,absIndex);
+    lua.lua_pushstring(L,to_luastring('S'));
+    if(lua.lua_pcall(L,2,1,0)!==lua.LUA_OK){ lua.lua_pop(L,2); return null; }
+    if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,2); return null; }
+    const readNumber=name=>{ lua.lua_getfield(L,-1,to_luastring(name)); const value=lua.lua_isnumber(L,-1)?lua.lua_tonumber(L,-1):0; lua.lua_pop(L,1); return value; };
+    const readString=name=>{ lua.lua_getfield(L,-1,to_luastring(name)); const raw=lua.lua_isstring(L,-1)?lua.lua_tolstring(L,-1):null; const value=raw?to_jsstring(raw):''; lua.lua_pop(L,1); return value; };
+    const info={source:readString('source'),shortSource:readString('short_src'),lineDefined:readNumber('linedefined'),lastLineDefined:readNumber('lastlinedefined')};
+    lua.lua_pop(L,2);
+    return info;
+  }
   function luaValueForInspector(index){
     if(!L || !lua) return {type:'nil',value:'nil'};
     if(lua.lua_isnil(L,index)) return {type:'nil',value:'nil'};
     if(lua.lua_isboolean(L,index)) return {type:'boolean',value:!!lua.lua_toboolean(L,index)};
     if(lua.lua_isnumber(L,index)) return {type:'number',value:lua.lua_tonumber(L,index)};
     if(lua.lua_isstring(L,index)){ const raw=lua.lua_tolstring(L,index); return {type:'string',value:raw?to_jsstring(raw):''}; }
-    if(lua.lua_isfunction(L,index)) return {type:'function',value:'[function]'};
+    if(lua.lua_isfunction(L,index)){
+      const info=luaFunctionSourceInfo(index);
+      const sourceLine=Number(info?.lineDefined)||0;
+      return {type:'function',value:'[function]',sourceLine:sourceLine>0?sourceLine:null,sourceLastLine:Number(info?.lastLineDefined)||null,source:info?.source||'',shortSource:info?.shortSource||''};
+    }
     if(lua.lua_istable(L,index)) return {type:'table',value:'[table]'};
     return {type:'value',value:'[value]'};
   }
@@ -10855,7 +10906,7 @@ function makeRuntime(){
         if(!isRoot || (key.type==='string' && name && !baselineGlobals.has(name) && !name.startsWith('__tc_'))){
           const info=luaValueForInspector(-1);
           const nextPath=isRoot ? [{...key,display:name}] : basePath.concat(key);
-          vars.push({name,type:info.type,value:info.value,path:nextPath,pathLabel:runtimePathLabel(nextPath)});
+          vars.push({name,...info,path:nextPath,pathLabel:runtimePathLabel(nextPath)});
         }
       }
       lua.lua_pop(L,1);
@@ -11118,6 +11169,11 @@ function wireUI(){
   });
   const pauseRuntimePreview=()=>{
     if(state.activeView!=="runtime") return;
+    if(runtimeDebugPaused){
+      runtime?.setPaused?.(true);
+      updateRuntimeLayoutSaveState?.();
+      return;
+    }
     runtimeStarted=false;
     runtimeDebugPaused=false;
     runtime?.setPaused?.(false);
