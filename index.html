@@ -283,10 +283,16 @@
     .runtimeVarsPanel.show{display:block}
     .runtimeVarsHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
     .runtimeVarsList{display:flex;flex-direction:column;gap:6px}
-    .runtimeVarRow{display:grid;grid-template-columns:minmax(74px,.8fr) minmax(0,1.2fr) auto;align-items:center;gap:6px;padding:6px;border:2px solid rgba(80,111,102,.55);border-radius:10px;background:rgba(255,250,241,.72);font:12px/1.25 Consolas,"SFMono-Regular",monospace}
+    .runtimeVarsCrumbs,.runtimeVarsPager{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;font-weight:800}
+    .runtimeVarsPath{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1.25 Consolas,"SFMono-Regular",monospace}
+    .runtimeVarsPager{justify-content:center}
+    .runtimeVarRow{display:grid;grid-template-columns:minmax(74px,.8fr) minmax(0,1.2fr) auto auto;align-items:center;gap:6px;padding:6px;border:2px solid rgba(80,111,102,.55);border-radius:10px;background:rgba(255,250,241,.72);font:12px/1.25 Consolas,"SFMono-Regular",monospace}
     .runtimeVarName{font-weight:900;word-break:break-word}
+    .runtimeVarOpenBtn{padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit;font-weight:900}
+    .runtimeVarOpenBtn:hover{text-decoration:underline}
     .runtimeVarValue{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .runtimeVarType{opacity:.72;font-size:10px}
+    .runtimeVarEditBtn{padding:3px 7px;font-size:10px;line-height:1;min-width:auto;box-shadow:0 2px 0 var(--shadow)}
     .runtimeVarsEmpty{padding:8px;font-size:12px;font-weight:700;opacity:.75}
     .runtimeDialogActions .uiBtn.primary{border-color:var(--accent);box-shadow:0 4px 0 #7a2a18}
     .hud{position:absolute;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;--hud-edge:clamp(14px,4vw,28px);--hud-bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));--hud-controls-lift:clamp(16px,3.5vw,24px);--joy-size:clamp(112px,28vw,142px);--knob-size:calc(var(--joy-size) * .42);--cluster-size:clamp(148px,36vw,174px);--face-size:clamp(56px,13.5vw,66px);--face-offset:calc((var(--cluster-size) - var(--face-size)) / 2);--sys-height:clamp(36px,9vw,42px)}
@@ -1323,6 +1329,9 @@ let runtimeUiHidden=false;
 let runtimeStarted=false;
 let runtimeDebugPaused=false;
 let runtimeVarsPanelRefreshAt=0;
+let runtimeVarsPath=[];
+let runtimeVarsPage=0;
+const RUNTIME_VARS_PAGE_SIZE=24;
 function updateRuntimeLayoutSaveState(){
   const canShow=state.activeView==='runtime';
   const saveBtns=document.querySelectorAll(".runtimeSaveLayoutBtn");
@@ -1383,42 +1392,93 @@ function closeRuntimeVarsPanel(){
   $('runtimeVarsPanel')?.classList.remove('show');
   updateRuntimeLayoutSaveState?.();
 }
+function runtimeVarsPathLabel(path=runtimeVarsPath){
+  if(!path?.length) return '_G';
+  return path.map((part,i)=>String(part?.display ?? `${i?'?':''}`)).join('').replace(/^\./,'');
+}
+function runtimeVarEditPrompt(variable){
+  const target=variable.pathLabel || variable.name;
+  const hint=variable.type==='function' ? '\nTip: enter function(...) ... end to replace it.' : (variable.type==='table' ? '\nTip: enter {x=1} to replace the table, or open it to edit fields.' : '');
+  return prompt(`Set ${target}:${hint}`, formatRuntimeVarValue(variable));
+}
 function refreshRuntimeVarsPanel(){
   const list=$('runtimeVarsList');
   if(!list) return;
   list.innerHTML='';
-  const variables=runtime?.getRuntimeVariables?.()||[];
+  const result=runtime?.getRuntimeVariables?.(runtimeVarsPath)||{items:[]};
+  const variables=Array.isArray(result)?result:(result.items||[]);
+  const parentPath=Array.isArray(result?.parentPath)?result.parentPath:null;
+  const header=document.createElement('div');
+  header.className='runtimeVarsCrumbs';
+  const up=document.createElement('button');
+  up.type='button';
+  up.className='uiBtn miniBtn';
+  up.textContent=runtimeVarsPath.length?'Back':'Root';
+  up.disabled=!runtimeVarsPath.length;
+  up.onclick=()=>{ runtimeVarsPath=parentPath||runtimeVarsPath.slice(0,-1); runtimeVarsPage=0; refreshRuntimeVarsPanel(); };
+  const label=document.createElement('span');
+  label.className='runtimeVarsPath';
+  label.textContent=runtimeVarsPathLabel(runtimeVarsPath);
+  header.append(up,label);
+  list.appendChild(header);
   if(!variables.length){
     const empty=document.createElement('div');
     empty.className='runtimeVarsEmpty';
-    empty.textContent=runtimeStarted?'No runtime variables yet.':'Start the runtime to inspect variables.';
+    empty.textContent=runtimeStarted?'No inspectable values on this page/table.':'Start the runtime to inspect variables.';
     list.appendChild(empty);
     return;
   }
-  variables.forEach(variable=>{
-    const row=document.createElement('button');
-    row.type='button';
+  const pages=Math.max(1,Math.ceil(variables.length/RUNTIME_VARS_PAGE_SIZE));
+  runtimeVarsPage=Math.max(0,Math.min(runtimeVarsPage,pages-1));
+  const pageItems=variables.slice(runtimeVarsPage*RUNTIME_VARS_PAGE_SIZE,(runtimeVarsPage+1)*RUNTIME_VARS_PAGE_SIZE);
+  pageItems.forEach(variable=>{
+    const row=document.createElement('div');
     row.className='runtimeVarRow';
-    const name=document.createElement('span');
-    name.className='runtimeVarName';
+    const name=document.createElement('button');
+    name.type='button';
+    name.className='runtimeVarName runtimeVarOpenBtn';
     name.textContent=variable.name;
+    name.title=variable.type==='table'?'Open table':'Edit value';
     const value=document.createElement('span');
     value.className='runtimeVarValue';
     value.textContent=formatRuntimeVarValue(variable);
     const type=document.createElement('span');
     type.className='runtimeVarType';
     type.textContent=variable.type;
-    row.append(name,value,type);
-    row.onclick=()=>{
-      const next=prompt(`Set ${variable.name}:`, formatRuntimeVarValue(variable));
+    const edit=document.createElement('button');
+    edit.type='button';
+    edit.className='uiBtn miniBtn runtimeVarEditBtn';
+    edit.textContent='Edit';
+    const editValue=()=>{
+      const next=runtimeVarEditPrompt(variable);
       if(next==null) return;
-      if(runtime?.setRuntimeVariable?.(variable.name,next)){
+      if(runtime?.setRuntimeVariable?.(variable.path||variable.name,next)){
         refreshRuntimeVarsPanel();
-        toast(`<b>Variable updated:</b> ${escapeHtml(variable.name)}`);
-      }else toast(`<b>Variable update failed:</b> ${escapeHtml(variable.name)}`);
+        toast(`<b>Value updated:</b> ${escapeHtml(variable.pathLabel||variable.name)}`);
+      }else toast(`<b>Value update failed:</b> ${escapeHtml(variable.pathLabel||variable.name)}`);
     };
+    name.onclick=()=>{
+      if(variable.type==='table' && variable.path){ runtimeVarsPath=variable.path; runtimeVarsPage=0; refreshRuntimeVarsPanel(); }
+      else editValue();
+    };
+    edit.onclick=editValue;
+    row.append(name,value,type,edit);
     list.appendChild(row);
   });
+  if(pages>1){
+    const pager=document.createElement('div');
+    pager.className='runtimeVarsPager';
+    const prev=document.createElement('button');
+    prev.type='button'; prev.className='uiBtn miniBtn'; prev.textContent='Prev'; prev.disabled=runtimeVarsPage<=0;
+    prev.onclick=()=>{ runtimeVarsPage=Math.max(0,runtimeVarsPage-1); refreshRuntimeVarsPanel(); };
+    const label=document.createElement('span');
+    label.textContent=`Page ${runtimeVarsPage+1} / ${pages}`;
+    const next=document.createElement('button');
+    next.type='button'; next.className='uiBtn miniBtn'; next.textContent='Next'; next.disabled=runtimeVarsPage>=pages-1;
+    next.onclick=()=>{ runtimeVarsPage=Math.min(pages-1,runtimeVarsPage+1); refreshRuntimeVarsPanel(); };
+    pager.append(prev,label,next);
+    list.appendChild(pager);
+  }
 }
 function toggleRuntimeVarsPanel(){
   const panel=$('runtimeVarsPanel');
@@ -10716,6 +10776,19 @@ function makeRuntime(){
     if(lua.lua_isnumber(L,index)) return String(lua.lua_tonumber(L,index));
     return null;
   }
+  function luaKeyDescriptor(index){
+    if(!L || !lua) return null;
+    if(lua.lua_isnumber(L,index)){
+      const value=lua.lua_tonumber(L,index);
+      return {type:'number',value,display:`[${Number.isInteger(value)?value:String(value)}]`,label:String(value)};
+    }
+    if(lua.lua_isstring(L,index)){
+      const raw=lua.lua_tolstring(L,index), value=raw?to_jsstring(raw):'';
+      const safe=/^[A-Za-z_][A-Za-z0-9_]*$/.test(value);
+      return {type:'string',value,display:safe?`.${value}`:`[${JSON.stringify(value)}]`,label:value};
+    }
+    return null;
+  }
   function luaValueForInspector(index){
     if(!L || !lua) return {type:'nil',value:'nil'};
     if(lua.lua_isnil(L,index)) return {type:'nil',value:'nil'};
@@ -10725,6 +10798,31 @@ function makeRuntime(){
     if(lua.lua_isfunction(L,index)) return {type:'function',value:'[function]'};
     if(lua.lua_istable(L,index)) return {type:'table',value:'[table]'};
     return {type:'value',value:'[value]'};
+  }
+  function runtimePathLabel(path){
+    if(!Array.isArray(path)||!path.length) return '_G';
+    return path.map(part=>String(part?.display||'')).join('').replace(/^\./,'');
+  }
+  function pushLuaKey(part){
+    if(!part) return false;
+    if(part.type==='number') lua.lua_pushnumber(L,Number(part.value)||0);
+    else lua.lua_pushstring(L,to_luastring(String(part.value??'')));
+    return true;
+  }
+  function pushRuntimePathValue(path){
+    if(!L || !lua || !to_luastring) return false;
+    const parts=Array.isArray(path)?path:[];
+    if(!parts.length){ lua.lua_getglobal(L,to_luastring('_G')); return true; }
+    const first=parts[0];
+    if(first.type!=='string') return false;
+    lua.lua_getglobal(L,to_luastring(String(first.value??'')));
+    for(let i=1;i<parts.length;i++){
+      if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,1); return false; }
+      pushLuaKey(parts[i]);
+      lua.lua_gettable(L,-2);
+      lua.lua_remove(L,-2);
+    }
+    return true;
   }
   function captureGlobalNames(){
     const names=new Set();
@@ -10739,22 +10837,37 @@ function makeRuntime(){
     lua.lua_pop(L,1);
     return names;
   }
-  function getRuntimeVariables(){
-    if(!L || !builtOk || !lua || !to_luastring) return [];
+  function getRuntimeVariables(path=[]){
+    if(!L || !builtOk || !lua || !to_luastring) return {items:[],parentPath:[]};
+    const basePath=Array.isArray(path)?path:[];
     const vars=[];
-    lua.lua_getglobal(L,to_luastring('_G'));
+    if(!pushRuntimePathValue(basePath)) return {items:[],parentPath:basePath.slice(0,-1)};
+    if(!lua.lua_istable(L,-1)){
+      lua.lua_pop(L,1);
+      return {items:[],parentPath:basePath.slice(0,-1)};
+    }
     lua.lua_pushnil(L);
     while(lua.lua_next(L,-2)!==0){
-      const name=luaKeyToString(-2);
-      if(name && !baselineGlobals.has(name) && !name.startsWith('__tc_')){
-        const info=luaValueForInspector(-1);
-        if(info.type!=='function') vars.push({name,type:info.type,value:info.value});
+      const key=luaKeyDescriptor(-2);
+      if(key){
+        const isRoot=!basePath.length;
+        const name=key.label;
+        if(!isRoot || (key.type==='string' && name && !baselineGlobals.has(name) && !name.startsWith('__tc_'))){
+          const info=luaValueForInspector(-1);
+          const nextPath=isRoot ? [{...key,display:name}] : basePath.concat(key);
+          vars.push({name,type:info.type,value:info.value,path:nextPath,pathLabel:runtimePathLabel(nextPath)});
+        }
       }
       lua.lua_pop(L,1);
     }
     lua.lua_pop(L,1);
-    vars.sort((a,b)=>a.name.localeCompare(b.name));
-    return vars;
+    vars.sort((a,b)=>{
+      const an=Number(a.name), bn=Number(b.name), aNum=Number.isFinite(an), bNum=Number.isFinite(bn);
+      if(aNum&&bNum) return an-bn;
+      if(aNum!==bNum) return aNum?-1:1;
+      return String(a.name).localeCompare(String(b.name));
+    });
+    return {items:vars,parentPath:basePath.slice(0,-1)};
   }
   function parseRuntimeVariableInput(raw){
     const text=String(raw??'');
@@ -10767,15 +10880,41 @@ function makeRuntime(){
     if(quoted) return {type:'string',value:quoted[1].replace(/\\"/g,'"').replace(/\\'/g,"'").replace(/\\n/g,'\n').replace(/\\\\/g,'\\')};
     return {type:'string',value:text};
   }
-  function setRuntimeVariable(name,rawValue){
-    const key=String(name||'').trim();
-    if(!key || !L || !builtOk || !lua || !to_luastring) return false;
+  function pushParsedRuntimeValue(rawValue){
+    const text=String(rawValue??'');
+    const trimmed=text.trim();
+    const expressionLike=/^(function\b|\{|\[|require\b)/.test(trimmed);
+    if(expressionLike && lauxlib?.luaL_loadstring){
+      const status=lauxlib.luaL_loadstring(L,to_luastring(`return ${trimmed}`));
+      if(status===lua.LUA_OK && lua.lua_pcall(L,0,1,0)===lua.LUA_OK) return true;
+      const err=to_jsstring(lua.lua_tostring(L,-1));
+      lua.lua_pop(L,1);
+      setLastRunError(`Inspector value error: ${err}`);
+      return false;
+    }
     const parsed=parseRuntimeVariableInput(rawValue);
     if(parsed.type==='nil') lua.lua_pushnil(L);
     else if(parsed.type==='boolean') lua.lua_pushboolean(L,parsed.value?1:0);
     else if(parsed.type==='number') lua.lua_pushnumber(L,parsed.value);
     else lua.lua_pushstring(L,to_luastring(String(parsed.value??'')));
-    lua.lua_setglobal(L,to_luastring(key));
+    return true;
+  }
+  function setRuntimeVariable(pathOrName,rawValue){
+    if(!L || !builtOk || !lua || !to_luastring) return false;
+    const path=Array.isArray(pathOrName)?pathOrName:[{type:'string',value:String(pathOrName||'').trim(),display:String(pathOrName||'').trim()}];
+    if(!path.length || !path[0].value) return false;
+    if(path.length===1 && path[0].type==='string'){
+      if(!pushParsedRuntimeValue(rawValue)) return false;
+      lua.lua_setglobal(L,to_luastring(String(path[0].value)));
+      return true;
+    }
+    const parentPath=path.slice(0,-1), last=path[path.length-1];
+    if(!pushRuntimePathValue(parentPath)) return false;
+    if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,1); return false; }
+    pushLuaKey(last);
+    if(!pushParsedRuntimeValue(rawValue)){ lua.lua_pop(L,2); return false; }
+    lua.lua_settable(L,-3);
+    lua.lua_pop(L,1);
     return true;
   }
   const getFengariApi=()=>{
