@@ -35,6 +35,7 @@
     .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden,.runtimeVarsBtn.hidden,.runtimeDebugPauseBtn.hidden{display:none}
     .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active,.runtimeVarsBtn.active,.runtimeDebugPauseBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
     .runtimeSaveLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
+    .runtimeInspectorSaveFab{display:none}
     body.runtime-ui-hidden .topbar,body.runtime-ui-hidden #view-runtime .hud,body.runtime-ui-hidden #view-runtime .runtimeErrorBox,body.runtime-ui-hidden #view-runtime .runtimeDialogLayer{display:none !important}
     body.runtime-ui-hidden .views{position:fixed;inset:0}
     body.runtime-ui-hidden #view-runtime .runtimeView{inset:0;padding:0;border:none;border-radius:0;box-shadow:none;background:#000}
@@ -244,6 +245,11 @@
     .runtimeInspectorCanvas.dragging{cursor:grabbing}
     .runtimeInspectorPanel{position:absolute;z-index:44;display:none;min-width:190px;max-width:280px;padding:8px 10px;border:3px solid var(--line);border-radius:6px;background:rgba(251,246,231,.96);box-shadow:0 4px 0 rgba(42,63,53,.45);color:var(--ink);font:11px/1.35 Consolas,"SFMono-Regular",monospace;white-space:pre-wrap;pointer-events:none}
     .runtimeInspectorPanel.show{display:block}
+    @media (max-width: 900px), (pointer: coarse){
+      .runtimeInspectorSaveFab:not(.hidden){position:absolute;right:12px;top:12px;z-index:46;display:inline-flex;align-items:center;justify-content:center;padding:7px 10px;font-size:10px;line-height:1.1}
+      .runtimeInspectorSaveFab.hidden{display:none !important}
+      .runtimeInspectorSaveFab:disabled{display:none !important}
+    }
     .runtimeStartOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:34;background:rgba(18,10,6,.48);backdrop-filter:blur(5px)}
     .runtimeStartOverlay.hidden{display:none}
     .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:13px 14px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
@@ -726,6 +732,7 @@
 
     <div class="view" id="view-runtime">
       <div class="runtimeView panelSkin">
+        <button class="fileBtn runtimeSaveLayoutBtn runtimeInspectorSaveFab hidden" id="runtimeMobileSaveLayoutBtn" type="button" disabled>Save Layout</button>
         <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><div class="runtimeStartPlaceholder" id="runtimeStartPlaceholder"><p class="runtimeStartPlaceholderTitle">**** TRY-CODE CONSOLE ****</p><p class="runtimeStartPlaceholderLine" id="runtimeStartProjectLine">PROJECT:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartResolutionLine">RESOLUTION:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartControlsLine">ONSCREEN CONTROLS:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartFontLine">DEFAULT FONT:</p><p class="runtimeStartPlaceholderLine">BOOT READY.</p></div><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
         <div class="runtimeBar"></div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
@@ -1315,18 +1322,19 @@ let runtimeDebugPaused=false;
 let runtimeVarsPanelRefreshAt=0;
 function updateRuntimeLayoutSaveState(){
   const canShow=state.activeView==='runtime';
-  const saveBtn=$("runtimeSaveLayoutBtn");
+  const saveBtns=document.querySelectorAll(".runtimeSaveLayoutBtn");
   const inspectBtns=document.querySelectorAll(".runtimeInspectorModeBtn");
   const pauseBtns=document.querySelectorAll(".runtimeDebugPauseBtn");
   const varsBtns=document.querySelectorAll(".runtimeVarsBtn");
   const hasEdits=!!runtime?.hasLayoutEdits?.();
   const inspectorActive=!!runtime?.isInspectorEnabled?.();
-  if(saveBtn){
-    saveBtn.classList.toggle('hidden', !canShow);
+  saveBtns.forEach(saveBtn=>{
+    const mobileFab=saveBtn.classList.contains('runtimeInspectorSaveFab');
+    saveBtn.classList.toggle('hidden', !canShow || (mobileFab && (!inspectorActive || !hasEdits)));
     saveBtn.disabled=!hasEdits;
     saveBtn.classList.toggle('active', hasEdits);
-    saveBtn.textContent=hasEdits?'Save Layout *':'Save Layout';
-  }
+    saveBtn.textContent=mobileFab ? (hasEdits?'Save *':'Save') : (hasEdits?'Save Layout *':'Save Layout');
+  });
   inspectBtns.forEach(inspectBtn=>{
     inspectBtn.classList.toggle('hidden', !canShow);
     inspectBtn.classList.toggle('active', inspectorActive);
@@ -11439,13 +11447,15 @@ function wireUI(){
   bindClick('runtimeVarsBtn',toggleRuntimeVarsDebugPanel);
   bindClick('runtimeVarsCloseBtn',closeRuntimeVarsPanel);
   bind('runtimeVarsPanel','click',e=>e.stopPropagation());
-  bindClick('runtimeSaveLayoutBtn',async ()=>{
+  async function saveRuntimeLayoutFromInspector(){
     if(state.activeView!=='runtime') return;
     const count=runtime?.getLayoutOverrideCount?.()||0;
     const saved=await saveProject(false);
     if(saved) toast(`<b>Layout saved:</b> ${count} override${count===1?'':'s'}.`);
     applyRuntimeUiHiddenState();
-  });
+  }
+  bindClick('runtimeSaveLayoutBtn',saveRuntimeLayoutFromInspector);
+  bindClick('runtimeMobileSaveLayoutBtn',saveRuntimeLayoutFromInspector);
   window.addEventListener('resize',applyRuntimeUiHiddenState);
   window.addEventListener('keydown',e=>{
     const key=String(e.key||'').toLowerCase();
