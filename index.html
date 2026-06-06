@@ -35,6 +35,8 @@
     .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden,.runtimeVarsBtn.hidden,.runtimeDebugPauseBtn.hidden{display:none}
     .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active,.runtimeVarsBtn.active,.runtimeDebugPauseBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
     .runtimeSaveLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
+    .runtimeDebugDock{position:absolute;top:max(12px,calc(env(safe-area-inset-top) + 8px));left:50%;transform:translateX(-50%);z-index:46;display:none;align-items:center;gap:6px;padding:5px;border:3px solid rgba(247,235,207,.92);border-radius:999px;background:rgba(20,12,7,.46);box-shadow:0 4px 0 rgba(0,0,0,.28);backdrop-filter:blur(4px);pointer-events:auto}
+    .runtimeDebugDock .uiBtn{padding:6px 9px;min-width:auto;border-radius:999px;font-size:10px;line-height:1;box-shadow:0 3px 0 rgba(42,63,53,.8)}
     body.runtime-ui-hidden .topbar,body.runtime-ui-hidden #view-runtime .hud,body.runtime-ui-hidden #view-runtime .runtimeErrorBox,body.runtime-ui-hidden #view-runtime .runtimeDialogLayer{display:none !important}
     body.runtime-ui-hidden .views{position:fixed;inset:0}
     body.runtime-ui-hidden #view-runtime .runtimeView{inset:0;padding:0;border:none;border-radius:0;box-shadow:none;background:#000}
@@ -67,8 +69,10 @@
     body.dark-mode .runtimeStartPlayBtn{border-radius:999px}
     body.dark-mode .menuToggleInput,
     body.dark-mode .menuToggleInput::after{border-radius:6px}
-    @media (max-width: 900px){
+    @media (max-width: 900px), (pointer: coarse){
       .runtimeHideBtn{display:none !important}
+      #view-runtime.active .runtimeDebugDock{display:flex}
+      .topbarRuntimeControls{display:none !important}
     }
     .brand{flex:0 0 auto;padding:7px 10px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#b82626,#912020);color:#fff6eb;font-weight:900;letter-spacing:.05em;text-shadow:2px 2px 0 #561010;box-shadow:0 4px 0 #6f1818;font-size:11px}
     .tabsWrap{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
@@ -726,6 +730,11 @@
       <div class="runtimeView panelSkin">
         <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><div class="runtimeStartPlaceholder" id="runtimeStartPlaceholder"><p class="runtimeStartPlaceholderTitle">**** TRY-CODE CONSOLE ****</p><p class="runtimeStartPlaceholderLine" id="runtimeStartProjectLine">PROJECT:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartResolutionLine">RESOLUTION:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartControlsLine">ONSCREEN CONTROLS:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartFontLine">DEFAULT FONT:</p><p class="runtimeStartPlaceholderLine">BOOT READY.</p></div><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
         <div class="runtimeBar"></div>
+        <div class="runtimeDebugDock" id="runtimeDebugDock" aria-label="Runtime debug controls">
+          <button class="uiBtn runtimeInspectorModeBtn hidden" data-runtime-debug-action="inspect" type="button">Inspect</button>
+          <button class="uiBtn runtimeDebugPauseBtn hidden" data-runtime-debug-action="pause" type="button">Pause</button>
+          <button class="uiBtn runtimeVarsBtn hidden" data-runtime-debug-action="vars" type="button">Vars</button>
+        </div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
           <div class="runtimeErrorHeader"><div class="runtimeErrorTitle">Runtime Error</div><div class="runtimeErrorActions"><button class="uiBtn runtimeErrorCopyBtn" id="copyRuntimeErrorBtn">Copy</button><button class="uiBtn runtimeErrorGotoBtn" id="gotoRuntimeErrorBtn">Go to</button></div></div>
           <pre class="runtimeErrorText" id="runtimeErrorText"></pre>
@@ -1314,9 +1323,9 @@ let runtimeVarsPanelRefreshAt=0;
 function updateRuntimeLayoutSaveState(){
   const canShow=state.activeView==='runtime';
   const saveBtn=$("runtimeSaveLayoutBtn");
-  const inspectBtn=$("runtimeInspectorModeBtn");
-  const pauseBtn=$("runtimeDebugPauseBtn");
-  const varsBtn=$("runtimeVarsBtn");
+  const inspectBtns=document.querySelectorAll(".runtimeInspectorModeBtn");
+  const pauseBtns=document.querySelectorAll(".runtimeDebugPauseBtn");
+  const varsBtns=document.querySelectorAll(".runtimeVarsBtn");
   const hasEdits=!!runtime?.hasLayoutEdits?.();
   const inspectorActive=!!runtime?.isInspectorEnabled?.();
   if(saveBtn){
@@ -1325,21 +1334,21 @@ function updateRuntimeLayoutSaveState(){
     saveBtn.classList.toggle('active', hasEdits);
     saveBtn.textContent=hasEdits?'Save Layout *':'Save Layout';
   }
-  if(inspectBtn){
+  inspectBtns.forEach(inspectBtn=>{
     inspectBtn.classList.toggle('hidden', !canShow);
     inspectBtn.classList.toggle('active', inspectorActive);
     inspectBtn.textContent=inspectorActive?'Inspect: On':'Inspect';
-  }
-  if(pauseBtn){
+  });
+  pauseBtns.forEach(pauseBtn=>{
     pauseBtn.classList.toggle('hidden', !canShow);
     pauseBtn.classList.toggle('active', runtimeDebugPaused);
     pauseBtn.textContent=runtimeDebugPaused?'Resume':'Pause';
     pauseBtn.title='Pause or resume the editor runtime for debugging.';
-  }
-  if(varsBtn){
+  });
+  varsBtns.forEach(varsBtn=>{
     varsBtn.classList.toggle('hidden', !canShow);
     varsBtn.classList.toggle('active', $('runtimeVarsPanel')?.classList.contains('show'));
-  }
+  });
 }
 function applyRuntimeUiHiddenState(){
   const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
@@ -11410,13 +11419,13 @@ function wireUI(){
     runtimeUiHidden=!runtimeUiHidden;
     applyRuntimeUiHiddenState();
   });
-  bindClick('runtimeInspectorModeBtn',()=>{
+  function toggleRuntimeInspectorMode(){
     if(state.activeView!=='runtime') return;
     const enabled=runtime?.toggleInspector?.();
     toast(enabled?'UI inspector enabled.':'UI inspector disabled.');
     applyRuntimeUiHiddenState();
-  });
-  bindClick('runtimeDebugPauseBtn',()=>{
+  }
+  function toggleRuntimeDebugPause(){
     if(state.activeView!=='runtime') return;
     if(!runtimeStarted){
       runtimeStarted=true;
@@ -11427,10 +11436,23 @@ function wireUI(){
     runtime?.setPaused?.(runtimeDebugPaused);
     toast(runtimeDebugPaused?'Runtime paused for debugging.':'Runtime resumed.');
     updateRuntimeLayoutSaveState?.();
-  });
-  bindClick('runtimeVarsBtn',()=>{
+  }
+  function toggleRuntimeVarsDebugPanel(){
     if(state.activeView!=='runtime') return;
     toggleRuntimeVarsPanel();
+  }
+  bindClick('runtimeInspectorModeBtn',toggleRuntimeInspectorMode);
+  bindClick('runtimeDebugPauseBtn',toggleRuntimeDebugPause);
+  bindClick('runtimeVarsBtn',toggleRuntimeVarsDebugPanel);
+  document.querySelectorAll('[data-runtime-debug-action]').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const action=btn.dataset.runtimeDebugAction;
+      if(action==='inspect') toggleRuntimeInspectorMode();
+      else if(action==='pause') toggleRuntimeDebugPause();
+      else if(action==='vars') toggleRuntimeVarsDebugPanel();
+    });
   });
   bindClick('runtimeVarsCloseBtn',closeRuntimeVarsPanel);
   bind('runtimeVarsPanel','click',e=>e.stopPropagation());
