@@ -30,8 +30,10 @@
     body{padding-top:env(safe-area-inset-top)}
     .app{height:100%;display:flex;flex-direction:column;min-height:0}
     .topbar{flex:0 0 38px;display:flex;align-items:center;gap:3px;padding:3px 5px;background:linear-gradient(180deg,#efe0bc,#e8cf96);border-bottom:4px solid var(--line);box-shadow:inset 0 -3px 0 #c39a5b}
-    .topbarRuntimeControls{display:flex;align-items:center;gap:6px;flex:0 0 auto}
-    .topbarRuntimeControls .fileBtn{padding:6px 10px;font-size:11px}
+    .topbarRuntimeControls{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+    .topbarRuntimeControls::-webkit-scrollbar{display:none}
+    .topbarRuntimeControls .fileBtn{padding:6px 10px;font-size:11px;flex:0 0 auto;white-space:nowrap}
+    .topbar:has(.topbarRuntimeControls:not(.hidden)) .tabsWrap{flex:0 0 auto}
     .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden,.runtimeResetLayoutBtn.hidden,.runtimeVarsBtn.hidden,.runtimeDebugPauseBtn.hidden{display:none}
     .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active,.runtimeResetLayoutBtn.active,.runtimeVarsBtn.active,.runtimeDebugPauseBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
     .runtimeSaveLayoutBtn:disabled,.runtimeResetLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
