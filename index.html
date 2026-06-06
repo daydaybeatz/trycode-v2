@@ -1331,6 +1331,7 @@ let runtimeStarted=false;
 let runtimeDebugPaused=false;
 let runtimeVarsPanelRefreshAt=0;
 let runtimeVarsPath=[];
+let runtimeVarsFunctionDetail=null;
 let runtimeVarsPage=0;
 const RUNTIME_VARS_PAGE_SIZE=24;
 function updateRuntimeLayoutSaveState(){
@@ -1394,18 +1395,67 @@ function closeRuntimeVarsPanel(){
   updateRuntimeLayoutSaveState?.();
 }
 function runtimeVarsPathLabel(path=runtimeVarsPath){
+  if(runtimeVarsFunctionDetail) return `${runtimeVarsFunctionDetail.pathLabel||runtimeVarsFunctionDetail.name}()`;
   if(!path?.length) return '_G';
   return path.map((part,i)=>String(part?.display ?? `${i?'?':''}`)).join('').replace(/^\./,'');
 }
-function runtimeVarEditPrompt(variable){
-  const target=variable.pathLabel || variable.name;
-  const hint=variable.type==='function' ? '\nTip: enter function(...) ... end to replace it.' : (variable.type==='table' ? '\nTip: enter {x=1} to replace the table, or open it to edit fields.' : '');
-  return prompt(`Set ${target}:${hint}`, formatRuntimeVarValue(variable));
+function runtimeVarsPanelHasFocusedEditor(){
+  const panel=$('runtimeVarsPanel');
+  const active=document.activeElement;
+  if(!panel || !active || !panel.contains(active)) return false;
+  const tag=String(active.tagName||'').toUpperCase();
+  return active.isContentEditable || tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT';
 }
 function refreshRuntimeVarsPanel(){
   const list=$('runtimeVarsList');
   if(!list) return;
   list.innerHTML='';
+  if(runtimeVarsFunctionDetail){
+    const fn=runtimeVarsFunctionDetail;
+    const header=document.createElement('div');
+    header.className='runtimeVarsCrumbs';
+    const back=document.createElement('button');
+    back.type='button';
+    back.className='uiBtn miniBtn';
+    back.textContent='Back';
+    back.onclick=()=>{ runtimeVarsFunctionDetail=null; refreshRuntimeVarsPanel(); };
+    const label=document.createElement('span');
+    label.className='runtimeVarsPath';
+    label.textContent=runtimeVarsPathLabel();
+    header.append(back,label);
+    list.appendChild(header);
+    const details=[
+      ['name', fn.pathLabel||fn.name, 'string'],
+      ['type', 'function', 'string'],
+      ['parameters', fn.paramCount ?? 'unknown', 'number'],
+      ['vararg', fn.isVararg ? 'true' : 'false', 'boolean'],
+      ['source line', fn.sourceLine || 'unknown', 'number'],
+      ['last line', fn.sourceLastLine || 'unknown', 'number'],
+      ['source', fn.shortSource || fn.source || 'unknown', 'string']
+    ];
+    details.forEach(([detailName,detailValue,detailType])=>{
+      const row=document.createElement('div');
+      row.className='runtimeVarRow';
+      const name=document.createElement('span');
+      name.className='runtimeVarName';
+      name.textContent=detailName;
+      const value=document.createElement('span');
+      value.className='runtimeVarValue';
+      value.textContent=String(detailValue);
+      const type=document.createElement('span');
+      type.className='runtimeVarType';
+      type.textContent=detailType;
+      const go=document.createElement('button');
+      go.type='button';
+      go.className='uiBtn miniBtn runtimeVarGotoBtn';
+      go.textContent='Go to';
+      go.disabled=!fn.sourceLine;
+      go.onclick=()=>goToRuntimeFunctionSource(fn);
+      row.append(name,value,type,go);
+      list.appendChild(row);
+    });
+    return;
+  }
   const result=runtime?.getRuntimeVariables?.(runtimeVarsPath)||{items:[]};
   const variables=Array.isArray(result)?result:(result.items||[]);
   const parentPath=Array.isArray(result?.parentPath)?result.parentPath:null;
@@ -1416,7 +1466,7 @@ function refreshRuntimeVarsPanel(){
   up.className='uiBtn miniBtn';
   up.textContent=runtimeVarsPath.length?'Back':'Root';
   up.disabled=!runtimeVarsPath.length;
-  up.onclick=()=>{ runtimeVarsPath=parentPath||runtimeVarsPath.slice(0,-1); runtimeVarsPage=0; refreshRuntimeVarsPanel(); };
+  up.onclick=()=>{ runtimeVarsFunctionDetail=null; runtimeVarsPath=parentPath||runtimeVarsPath.slice(0,-1); runtimeVarsPage=0; refreshRuntimeVarsPanel(); };
   const label=document.createElement('span');
   label.className='runtimeVarsPath';
   label.textContent=runtimeVarsPathLabel(runtimeVarsPath);
@@ -1486,9 +1536,14 @@ function refreshRuntimeVarsPanel(){
     name.className='runtimeVarName runtimeVarOpenBtn';
     name.textContent=variable.name;
     name.title=variable.type==='table'?'Open table':'Edit value';
-    const value=document.createElement('span');
-    value.className='runtimeVarValue';
-    value.textContent=formatRuntimeVarValue(variable);
+    const value=variable.type==='function' ? document.createElement('span') : document.createElement('input');
+    value.className=variable.type==='function' ? 'runtimeVarValue' : 'runtimeInspectorVarInput';
+    if(variable.type==='function') value.textContent=formatRuntimeVarValue(variable);
+    else{
+      value.type='text';
+      value.value=formatRuntimeVarValue(variable).replace(/^"|"$/g,'');
+      value.title=variable.type==='table'?'Enter a Lua table literal such as {x=1}, or click the name to open fields.':'Edit the value and press Enter or Save.';
+    }
     const type=document.createElement('span');
     type.className='runtimeVarType';
     type.textContent=variable.type;
@@ -1501,25 +1556,29 @@ function refreshRuntimeVarsPanel(){
       if(variable.type==='function') goToRuntimeFunctionSource(variable);
       else if(variable.sourceLine) goToCodeLine(variable.sourceLine, variable.sourceFileIndex);
     };
-    const edit=document.createElement('button');
-    edit.type='button';
-    edit.className='uiBtn miniBtn runtimeVarEditBtn';
-    edit.textContent='Edit';
     const editValue=()=>{
-      const next=runtimeVarEditPrompt(variable);
-      if(next==null) return;
-      if(runtime?.setRuntimeVariable?.(variable.path||variable.name,next)){
+      if(variable.type==='function') return;
+      if(runtime?.setRuntimeVariable?.(variable.path||variable.name,value.value)){
         refreshRuntimeVarsPanel();
         toast(`<b>Value updated:</b> ${escapeHtml(variable.pathLabel||variable.name)}`);
       }else toast(`<b>Value update failed:</b> ${escapeHtml(variable.pathLabel||variable.name)}`);
     };
+    name.title=variable.type==='table'?'Open table':(variable.type==='function'?'Show function details':'Focus value');
     name.onclick=()=>{
-      if(variable.type==='table' && variable.path){ runtimeVarsPath=variable.path; runtimeVarsPage=0; refreshRuntimeVarsPanel(); }
-      else if(variable.type==='function') goToRuntimeFunctionSource(variable);
-      else editValue();
+      if(variable.type==='table' && variable.path){ runtimeVarsFunctionDetail=null; runtimeVarsPath=variable.path; runtimeVarsPage=0; refreshRuntimeVarsPanel(); }
+      else if(variable.type==='function'){ runtimeVarsFunctionDetail=variable; refreshRuntimeVarsPanel(); }
+      else value.focus?.();
     };
-    edit.onclick=editValue;
-    row.append(name,value,type,go,edit);
+    if(variable.type!=='function') value.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); editValue(); } });
+    if(variable.type==='function') row.append(name,value,type,go);
+    else{
+      const edit=document.createElement('button');
+      edit.type='button';
+      edit.className='uiBtn miniBtn runtimeVarEditBtn';
+      edit.textContent='Save';
+      edit.onclick=editValue;
+      row.append(name,value,type,go,edit);
+    }
     list.appendChild(row);
   });
   if(pages>1){
@@ -1542,6 +1601,7 @@ function toggleRuntimeVarsPanel(){
   if(!panel) return;
   const show=!panel.classList.contains('show');
   panel.classList.toggle('show', show);
+  if(!show) runtimeVarsFunctionDetail=null;
   if(show) refreshRuntimeVarsPanel();
   updateRuntimeLayoutSaveState?.();
 }
@@ -1549,6 +1609,7 @@ function openRuntimeVarsForInspectorSelection(){
   const panel=$('runtimeVarsPanel');
   if(!panel) return;
   runtimeVarsPath=[];
+  runtimeVarsFunctionDetail=null;
   runtimeVarsPage=0;
   panel.classList.add('show');
   refreshRuntimeVarsPanel();
@@ -11031,6 +11092,7 @@ function makeRuntime(){
   function sfxPlay(index, loop=false){ previewSound(index|0, loop); }
   function musicPlay(src, action='play', loop=true){
     const normalizedAction=String(action??'play').trim().toLowerCase();
+    if(runtimePaused && normalizedAction!=='stop') return;
     if(normalizedAction==='stop'){
       playMusicEntry(src, action, loop, projectRef);
       return;
@@ -11065,12 +11127,12 @@ function makeRuntime(){
     lua.lua_getfield(L,-1,to_luastring('getinfo'));
     if(!lua.lua_isfunction(L,-1)){ lua.lua_pop(L,2); return null; }
     lua.lua_pushvalue(L,absIndex);
-    lua.lua_pushstring(L,to_luastring('S'));
+    lua.lua_pushstring(L,to_luastring('Su'));
     if(lua.lua_pcall(L,2,1,0)!==lua.LUA_OK){ lua.lua_pop(L,2); return null; }
     if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,2); return null; }
     const readNumber=name=>{ lua.lua_getfield(L,-1,to_luastring(name)); const value=lua.lua_isnumber(L,-1)?lua.lua_tonumber(L,-1):0; lua.lua_pop(L,1); return value; };
     const readString=name=>{ lua.lua_getfield(L,-1,to_luastring(name)); const raw=lua.lua_isstring(L,-1)?lua.lua_tolstring(L,-1):null; const value=raw?to_jsstring(raw):''; lua.lua_pop(L,1); return value; };
-    const info={source:readString('source'),shortSource:readString('short_src'),lineDefined:readNumber('linedefined'),lastLineDefined:readNumber('lastlinedefined')};
+    const info={source:readString('source'),shortSource:readString('short_src'),lineDefined:readNumber('linedefined'),lastLineDefined:readNumber('lastlinedefined'),nparams:readNumber('nparams'),isvararg:!!readNumber('isvararg')};
     lua.lua_pop(L,2);
     return info;
   }
@@ -11083,7 +11145,7 @@ function makeRuntime(){
     if(lua.lua_isfunction(L,index)){
       const info=luaFunctionSourceInfo(index);
       const sourceLine=Number(info?.lineDefined)||0;
-      return {type:'function',value:'[function]',sourceLine:sourceLine>0?sourceLine:null,sourceLastLine:Number(info?.lastLineDefined)||null,source:info?.source||'',shortSource:info?.shortSource||''};
+      return {type:'function',value:'[function]',sourceLine:sourceLine>0?sourceLine:null,sourceLastLine:Number(info?.lastLineDefined)||null,source:info?.source||'',shortSource:info?.shortSource||'',paramCount:Number.isFinite(Number(info?.nparams))?Number(info.nparams):null,isVararg:!!info?.isvararg};
     }
     if(lua.lua_istable(L,index)) return {type:'table',value:'[table]'};
     return {type:'value',value:'[value]'};
@@ -11353,7 +11415,7 @@ function makeRuntime(){
     build(resolvedSource, mode==='load'?{suppressAudio:true}:undefined);
   }
   function setActive(nextActive){ runtimeActive=!!nextActive; if(!runtimeActive) setPaused(false); }
-  function setPaused(nextPaused){ runtimePaused=!!nextPaused && hasStarted; if(runtimePaused) pauseRuntimeMusicPlayback(); else resumeRuntimeMusicPlayback(); updateRuntimeLayoutSaveState?.(); }
+  function setPaused(nextPaused){ runtimePaused=!!nextPaused && hasStarted; if(runtimePaused) pauseRuntimeMusicPlayback(); else if(runtimeActive && state.activeView==='runtime') resumeRuntimeMusicPlayback(); updateRuntimeLayoutSaveState?.(); }
   function startRuntime(mode='run'){
     runtimeActive=true;
     if(hasStarted) return;
@@ -11368,7 +11430,7 @@ function makeRuntime(){
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
   requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
