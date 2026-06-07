@@ -1439,6 +1439,8 @@ function formatRuntimeVarValue(variable){
 }
 function closeRuntimeVarsPanel(){
   $('runtimeVarsPanel')?.classList.remove('show');
+  runtimeVarsFunctionDetail=null;
+  runtime?.renderInspectorOverlay?.();
   updateRuntimeLayoutSaveState?.();
 }
 function runtimeVarsPathLabel(path=runtimeVarsPath){
@@ -1550,6 +1552,8 @@ function refreshRuntimeVarsPanel(){
         const input=document.createElement('textarea');
         input.className='runtimeInspectorVarInput';
         input.rows=1;
+        input.wrap='off';
+        input.spellcheck=false;
         input.value=sourceRow.text;
         input.title='Edit this source line and press Cmd/Ctrl+Enter or Save.';
         const type=document.createElement('span');
@@ -1727,16 +1731,21 @@ function toggleRuntimeVarsPanel(){
   panel.classList.toggle('show', show);
   if(!show) runtimeVarsFunctionDetail=null;
   if(show) refreshRuntimeVarsPanel();
+  runtime?.renderInspectorOverlay?.();
   updateRuntimeLayoutSaveState?.();
 }
 function openRuntimeVarsForInspectorSelection(){
   const panel=$('runtimeVarsPanel');
-  if(!panel) return;
+  if(!panel?.classList.contains('show')){
+    runtime?.renderInspectorOverlay?.();
+    updateRuntimeLayoutSaveState?.();
+    return;
+  }
   runtimeVarsPath=[];
   runtimeVarsFunctionDetail=null;
   runtimeVarsPage=0;
-  panel.classList.add('show');
   refreshRuntimeVarsPanel();
+  runtime?.renderInspectorOverlay?.();
   updateRuntimeLayoutSaveState?.();
 }
 async function toggleAppFullscreen(){
@@ -11147,10 +11156,11 @@ function makeRuntime(){
       }
       ctxi.restore();
     }
-    const panelObj=inspectorSelected||inspectorHover;
+    const varsPanel=$('runtimeVarsPanel');
+    const varsPanelOpen=!!varsPanel?.classList.contains('show');
+    const panelObj=varsPanelOpen ? (inspectorSelected||inspectorHover) : null;
     if(panelObj && inspectorPanel){
-      const varsPanel=$('runtimeVarsPanel');
-      const varsRect=(varsPanel?.classList.contains('show')) ? varsPanel.getBoundingClientRect() : null;
+      const varsRect=varsPanel.getBoundingClientRect();
       const top=varsRect ? Math.min(window.innerHeight-24, varsRect.bottom+8) : 56;
       inspectorPanel.style.right='10px';
       inspectorPanel.style.left='auto';
@@ -12018,8 +12028,9 @@ function makeRuntime(){
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ markRuntimeActivity(name,'called'); const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,handleInspectorKey,stopInspectorKeyNudge,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  function callPausedDrawCallbacks(){ if(hasLuaFunction('_draw')){ if(!callMaybe('_draw')) return false; callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); return true; } return false; }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused || (runtimePaused && inspectorEnabled && runtimeActive)) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(runtimeActive && runtimePaused && inspectorEnabled){ callPausedDrawCallbacks(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && !runtimeVarsFunctionDetail && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },renderInspectorOverlay,toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,handleInspectorKey,stopInspectorKeyNudge,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
