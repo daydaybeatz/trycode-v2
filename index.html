@@ -11337,8 +11337,9 @@ function makeRuntime(){
   }
   function luaKeyToString(index){
     if(!L || !lua) return null;
-    if(lua.lua_isstring(L,index)){ const raw=lua.lua_tolstring(L,index); return raw?to_jsstring(raw):''; }
     if(lua.lua_isnumber(L,index)) return String(lua.lua_tonumber(L,index));
+    // lua_tolstring converts numeric keys in-place, which breaks lua_next iteration.
+    if(lua.lua_isstring(L,index)){ const raw=lua.lua_tolstring(L,index); return raw?to_jsstring(raw):''; }
     return null;
   }
   function luaKeyDescriptor(index){
