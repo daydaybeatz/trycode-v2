@@ -10474,7 +10474,7 @@ function makeRuntime(){
     resetUiBoxStyle();
   }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
-  let layoutOverrides={}, layoutSavedSnapshot={version:1,overrides:{},savedAt:0}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null;
+  let layoutOverrides={}, layoutSavedSnapshot={version:1,overrides:{},savedAt:0}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorObjects=[], inspectorStaticObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null, inspectorCaptureMode='frame';
   const cloneLayoutOverrides=source=>{
     try{ return JSON.parse(JSON.stringify(source&&typeof source==='object'&&!Array.isArray(source)?source:{})); }
     catch(_){ return {}; }
@@ -10528,10 +10528,12 @@ function makeRuntime(){
     return clean.slice(0,48)||'item';
   };
   const nextInspectorSequence=kind=>{
-    const key=String(kind||'item');
+    const key=`${inspectorCaptureMode}:${String(kind||'item')}`;
     inspectorSeq[key]=(inspectorSeq[key]||0)+1;
     return inspectorSeq[key];
   };
+  const drawInspectorKey=(kind,seq)=>`draw:${inspectorCaptureMode==='static'?'static:':''}${kind}:${seq}`;
+  const widgetInspectorKey=(kind,seq,label,explicitId)=>explicitId ? `widget:${inspectorCaptureMode==='static'?'static:':''}${kind}:${inspectorSlug(explicitId)}` : `widget:${inspectorCaptureMode==='static'?'static:':''}${kind}:${seq}:${inspectorSlug(label)}`;
   const screenToWorld=(x,y)=>({
     x:(((Number(x)||0)-(GAME_W/2)-zoomOffX)/viewZoom)+(GAME_W/2)+camx,
     y:(((Number(y)||0)-(GAME_H/2)-zoomOffY)/viewZoom)+(GAME_H/2)+camy
@@ -10550,10 +10552,11 @@ function makeRuntime(){
     return {x,y,w:Math.max(1,(Number(obj.w)||1)*zoomSafe),h:Math.max(1,(Number(obj.h)||1)*zoomSafe)};
   };
   const addInspectorObject=obj=>{
-    if(!inspectorEnabled || state.activeView!=='runtime') return obj;
+    if(inspectorCaptureMode!=='static' && (!inspectorEnabled || state.activeView!=='runtime')) return obj;
     const next={...obj,order:++inspectorOrder};
     next.screen=worldToScreenRect(next);
-    inspectorObjects.push(next);
+    if(inspectorCaptureMode==='static') inspectorStaticObjects.push(next);
+    else inspectorObjects.push(next);
     return next;
   };
   const colorLabel=value=>{
@@ -10676,7 +10679,7 @@ function makeRuntime(){
   };
   function inspectorTransformRect(kind,x0,y0,x1,y1,colorIndex){
     const seq=nextInspectorSequence(kind);
-    const key=`draw:${kind}:${seq}`;
+    const key=drawInspectorKey(kind,seq);
     const left=Math.min(Number(x0)||0,Number(x1)||0), right=Math.max(Number(x0)||0,Number(x1)||0);
     const top=Math.min(Number(y0)||0,Number(y1)||0), bottom=Math.max(Number(y0)||0,Number(y1)||0);
     const geom=applyOverrideToRect(key,{x:left,y:top,w:Math.abs(right-left)+1,h:Math.abs(bottom-top)+1});
@@ -10687,7 +10690,7 @@ function makeRuntime(){
   }
   function inspectorTransformRectFill(x0,y0,a,b,colorIndex){
     const seq=nextInspectorSequence('rectfill');
-    const key=`draw:rectfill:${seq}`;
+    const key=drawInspectorKey('rectfill',seq);
     const hasColor=colorIndex!=null;
     const left=Number(x0)||0, top=Number(y0)||0;
     const right=hasColor?(Number(a)||0):left+(Number(a)||0);
@@ -10700,7 +10703,7 @@ function makeRuntime(){
   }
   function inspectorTransformLine(x0,y0,x1,y1,colorIndex){
     const seq=nextInspectorSequence('line');
-    const key=`draw:line:${seq}`;
+    const key=drawInspectorKey('line',seq);
     const geom=applyOverrideToLine(key,{x:Number(x0)||0,y:Number(y0)||0,w:(Number(x1)||0)-(Number(x0)||0),h:(Number(y1)||0)-(Number(y0)||0)});
     const ov=layoutOverrides[key]||{};
     const finalColor=ov.color!==undefined?ov.color:colorIndex;
@@ -10709,7 +10712,7 @@ function makeRuntime(){
   }
   function inspectorTransformCircle(kind,x,y,r,colorIndex){
     const seq=nextInspectorSequence(kind);
-    const key=`draw:${kind}:${seq}`;
+    const key=drawInspectorKey(kind,seq);
     const geom=applyOverrideToCircle(key,{x:Number(x)||0,y:Number(y)||0,r:Math.max(1,Number(r)||1)});
     const ov=layoutOverrides[key]||{};
     const finalColor=ov.color!==undefined?ov.color:colorIndex;
@@ -10718,7 +10721,7 @@ function makeRuntime(){
   }
   function inspectorPreparePrint(text,x,y,fontSize,fill,outline,font){
     const seq=nextInspectorSequence('print');
-    const key=`draw:print:${seq}`;
+    const key=drawInspectorKey('print',seq);
     const ov=layoutOverrides[key]||{};
     return {key,seq,text:ov.text!==undefined?String(ov.text):String(text??''),x:Number.isFinite(Number(ov.x))?Number(ov.x):(Number(x)||0),y:Number.isFinite(Number(ov.y))?Number(ov.y):(Number(y)||0),fontSize:Math.max(1,Number.isFinite(Number(ov.fontSize))?Number(ov.fontSize):(Number.isFinite(Number(ov.h))?Number(ov.h):(Number(fontSize)||12))),fill:ov.fill!==undefined?ov.fill:fill,outline:ov.outline!==undefined?ov.outline:outline,font:ov.font!==undefined?ov.font:font};
   }
@@ -10746,7 +10749,7 @@ function makeRuntime(){
     const explicitId=read('id')||read('layout_id')||read('layoutId');
     const label=read('label')||read('name')||read('text')||'';
     const seq=nextInspectorSequence(kind);
-    const key=explicitId ? `widget:${kind}:${inspectorSlug(explicitId)}` : `widget:${kind}:${seq}:${inspectorSlug(label)}`;
+    const key=widgetInspectorKey(kind,seq,label,explicitId);
     const widgetType=String(read('type')||'rect').toLowerCase();
     const ov=layoutOverrides[key]||{};
     let x=Number(read('x'))||0, y=Number(read('y'))||0;
@@ -10773,7 +10776,9 @@ function makeRuntime(){
     if(ov.text!==undefined) write('text',displayText);
     addInspectorObject({key,kind,label:`${kind}${displayText?`: ${displayText}`:''}`,shape:isCircle?'circle':'rect',priority:kind==='arrange'?3:5,x,y,w,h,r:isCircle?r:0,canResize:true,text:displayText,colors});
   }
-  function inspectorBeginFrame(){ inspectorObjects=[]; inspectorSeq={}; inspectorOrder=0; }
+  function inspectorBeginFrame(){ inspectorCaptureMode='frame'; inspectorSeq={}; inspectorOrder=0; inspectorObjects=(inspectorEnabled && state.activeView==='runtime') ? inspectorStaticObjects.map(obj=>{ const next={...obj,order:++inspectorOrder}; next.screen=worldToScreenRect(next); return next; }) : []; }
+  function inspectorBeginStaticCapture(){ inspectorCaptureMode='static'; inspectorStaticObjects=[]; inspectorSeq={}; inspectorOrder=0; }
+  function inspectorEndStaticCapture(){ inspectorCaptureMode='frame'; inspectorSeq={}; inspectorOrder=0; }
   const hitInspectorObject=(obj,point)=>{
     const s=obj.screen||worldToScreenRect(obj), px=point.x, py=point.y;
     if(obj.shape==='circle') return Math.hypot(px-s.cx,py-s.cy)<=s.r+5;
@@ -11615,6 +11620,7 @@ function makeRuntime(){
     lastCode=code||'';
     const suppressAudio=!!options.suppressAudio;
     builtOk=false;
+    inspectorStaticObjects=[]; inspectorObjects=[];
     runtimeActivity.clear(); runtimeSnapshots.clear(); runtimeActivityClock=0;
     resetRuntimeDefaults();
     const fengariApi=getFengariApi();
@@ -11690,8 +11696,8 @@ function makeRuntime(){
     push('music',L=>{ if(suppressAudio) return 0; const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); if(argc===0){ musicPlay(0,'stop',false); return 0; } const src=readArg(1); const srcText=String(src??'').trim().toLowerCase(); if(argc<=1&&srcText==='stop'){ musicPlay(0,'stop',false); return 0; } const action=String((argc>=2?readArg(2):'play')??'play').trim().toLowerCase()||'play'; const loop=argc>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
     const helperStatus=lauxlib.luaL_dostring(L,to_luastring(LUA_RUNTIME_HELPERS));
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); cls(); return; }
-    pushProjectTable(); baselineGlobals=captureGlobalNames(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
-    lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
+    pushProjectTable(); baselineGlobals=captureGlobalNames(); inspectorBeginStaticCapture(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); inspectorEndStaticCapture(); if(status!==lua.LUA_OK){ inspectorStaticObjects=[]; inspectorObjects=[]; const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
+    lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ inspectorStaticObjects=[]; inspectorObjects=[]; const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
   function queueBuild(mode='load',codeOverride){
     const source=(codeOverride!=null?codeOverride:lastCode);
     const resolvedSource=(source!=null&&source!=='')?source:getProjectLua();
