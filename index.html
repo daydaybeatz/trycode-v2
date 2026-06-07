@@ -287,6 +287,9 @@
     .runtimeVarsPath{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1.25 Consolas,"SFMono-Regular",monospace}
     .runtimeVarsPager{justify-content:center}
     .runtimeVarRow{display:grid;grid-template-columns:minmax(74px,.8fr) minmax(0,1.2fr) auto auto auto;align-items:center;gap:6px;padding:6px;border:2px solid rgba(80,111,102,.55);border-radius:10px;background:rgba(255,250,241,.72);font:12px/1.25 Consolas,"SFMono-Regular",monospace}
+    .runtimeVarRow.functionSourceRow{grid-template-columns:minmax(42px,.45fr) minmax(0,1.55fr) auto auto;align-items:start}
+    .runtimeVarRow.functionSourceRow .runtimeInspectorVarInput{min-height:30px;resize:vertical;white-space:pre;overflow:auto}
+    .runtimeVarSectionTitle{padding:8px 4px 2px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;opacity:.82}
     .runtimeVarName{font-weight:900;word-break:break-word}
     .runtimeVarOpenBtn{padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit;font-weight:900}
     .runtimeVarOpenBtn:hover{text-decoration:underline}
@@ -1454,6 +1457,81 @@ function refreshRuntimeVarsPanel(){
       row.append(name,value,type,go);
       list.appendChild(row);
     });
+    const sourceRows=getRuntimeFunctionSourceRows(fn);
+    if(sourceRows.length){
+      const sourceTitle=document.createElement('div');
+      sourceTitle.className='runtimeVarSectionTitle';
+      sourceTitle.textContent=`Editable source: ${sourceRows[0].fileName}`;
+      list.appendChild(sourceTitle);
+      const firstParams=functionDeclarationParams(sourceRows[0].text);
+      if(firstParams!=null){
+        const paramRow=document.createElement('div');
+        paramRow.className='runtimeVarRow';
+        const paramName=document.createElement('span');
+        paramName.className='runtimeVarName';
+        paramName.textContent='params';
+        const paramInput=document.createElement('input');
+        paramInput.className='runtimeInspectorVarInput';
+        paramInput.type='text';
+        paramInput.value=firstParams;
+        paramInput.title='Edit the function parameter list and press Enter or Save.';
+        const paramType=document.createElement('span');
+        paramType.className='runtimeVarType';
+        paramType.textContent='source';
+        const paramSave=document.createElement('button');
+        paramSave.type='button';
+        paramSave.className='uiBtn miniBtn runtimeVarEditBtn';
+        paramSave.textContent='Save';
+        const saveParams=()=>{
+          const nextLine=replaceFunctionDeclarationParams(sourceRows[0].text,paramInput.value);
+          if(replaceRuntimeFunctionSourceLine(sourceRows[0],nextLine)){
+            refreshRuntimeVarsPanel();
+            toast(`<b>Function parameters updated:</b> ${escapeHtml(fn.pathLabel||fn.name)}`);
+          }else toast(`<b>Parameter update failed:</b> ${escapeHtml(fn.pathLabel||fn.name)}`);
+        };
+        paramSave.onclick=saveParams;
+        paramInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); saveParams(); } });
+        paramRow.append(paramName,paramInput,paramType,paramSave);
+        list.appendChild(paramRow);
+      }
+      sourceRows.forEach(sourceRow=>{
+        const row=document.createElement('div');
+        row.className='runtimeVarRow functionSourceRow';
+        const name=document.createElement('button');
+        name.type='button';
+        name.className='runtimeVarName runtimeVarOpenBtn';
+        name.textContent=`L${sourceRow.line}`;
+        name.title='Jump to this source line';
+        name.onclick=()=>goToCodeLine(sourceRow.line,sourceRow.fileIndex);
+        const input=document.createElement('textarea');
+        input.className='runtimeInspectorVarInput';
+        input.rows=1;
+        input.value=sourceRow.text;
+        input.title='Edit this source line and press Cmd/Ctrl+Enter or Save.';
+        const type=document.createElement('span');
+        type.className='runtimeVarType';
+        type.textContent='line';
+        const save=document.createElement('button');
+        save.type='button';
+        save.className='uiBtn miniBtn runtimeVarEditBtn';
+        save.textContent='Save';
+        const applyLine=()=>{
+          if(replaceRuntimeFunctionSourceLine(sourceRow,input.value)){
+            refreshRuntimeVarsPanel();
+            toast(`<b>Line ${sourceRow.line} updated:</b> ${escapeHtml(fn.pathLabel||fn.name)}`);
+          }else toast(`<b>Line update failed:</b> ${escapeHtml(fn.pathLabel||fn.name)}`);
+        };
+        save.onclick=applyLine;
+        input.addEventListener('keydown',e=>{ if(e.key==='Enter' && (e.metaKey||e.ctrlKey)){ e.preventDefault(); applyLine(); } });
+        row.append(name,input,type,save);
+        list.appendChild(row);
+      });
+    }else{
+      const empty=document.createElement('div');
+      empty.className='runtimeVarsEmpty';
+      empty.textContent='Source lines are unavailable for this function. Use Go to if the function has debuggable source info.';
+      list.appendChild(empty);
+    }
     return;
   }
   const result=runtime?.getRuntimeVariables?.(runtimeVarsPath)||{items:[]};
@@ -2008,6 +2086,84 @@ function goToRuntimeFunctionSource(variable){
   }
   toast(`<b>Source unavailable:</b> ${escapeHtml(variable?.pathLabel||variable?.name||'function')}`);
   return false;
+}
+
+function scanLuaFunctionEndLine(lines,startLine){
+  let depth=0;
+  const startIndex=Math.max(0,(startLine|0)-1);
+  for(let i=startIndex;i<lines.length;i++){
+    const code=splitLuaLineComment(lines[i]||'').code;
+    const tokens=code.match(/\b(function|if|for|while|repeat|do|end|until)\b/g)||[];
+    for(let t=0;t<tokens.length;t++){
+      const token=tokens[t];
+      if(token==='function' || token==='if' || token==='for' || token==='while' || token==='repeat') depth++;
+      else if(token==='do'){
+        const prev=tokens[t-1];
+        if(prev!=='for' && prev!=='while') depth++;
+      }else if(token==='end' || token==='until'){
+        depth=Math.max(0,depth-1);
+        if(depth===0) return i+1;
+      }
+    }
+  }
+  return Math.min(lines.length, startLine);
+}
+function getRuntimeFunctionSourceLocation(variable){
+  saveEditorToCurrentCodeFile();
+  const files=state.appProject?.codeFiles||[];
+  const found=findRuntimeFunctionInProject(variable);
+  const sourceLine=Number(variable?.sourceLine)||0;
+  const sourceLastLine=Number(variable?.sourceLastLine)||0;
+  let start=found ? {fileIndex:found.fileIndex,line:found.line} : (sourceLine>0 ? mapResolvedLuaLine(sourceLine) : null);
+  if(!start && sourceLine>0) start={fileIndex:getMainCodeFileIndex(),line:sourceLine};
+  if(!start || !files[start.fileIndex]) return null;
+  const lines=String(files[start.fileIndex].content||'').split(/\r?\n/);
+  let endLine=0;
+  const mappedEnd=sourceLastLine>0 ? mapResolvedLuaLine(sourceLastLine) : null;
+  if(mappedEnd && mappedEnd.fileIndex===start.fileIndex && mappedEnd.line>=start.line) endLine=mappedEnd.line;
+  if(!endLine) endLine=scanLuaFunctionEndLine(lines,start.line);
+  endLine=Math.max(start.line,Math.min(endLine,lines.length));
+  return {fileIndex:start.fileIndex,fileName:files[start.fileIndex]?.name||'code',startLine:start.line,endLine,lines};
+}
+function getRuntimeFunctionSourceRows(variable){
+  const loc=getRuntimeFunctionSourceLocation(variable);
+  if(!loc) return [];
+  return loc.lines.slice(loc.startLine-1,loc.endLine).map((text,index)=>({
+    fileIndex:loc.fileIndex,
+    fileName:loc.fileName,
+    line:loc.startLine+index,
+    relativeLine:index+1,
+    text
+  }));
+}
+function replaceRuntimeFunctionSourceLine(row,nextText){
+  if(!row || !Number.isInteger(row.fileIndex) || !state.appProject?.codeFiles?.[row.fileIndex]) return false;
+  saveEditorToCurrentCodeFile();
+  const file=state.appProject.codeFiles[row.fileIndex];
+  const lines=String(file.content||'').split(/\r?\n/);
+  const lineIndex=(Number(row.line)||0)-1;
+  if(lineIndex<0 || lineIndex>=lines.length) return false;
+  lines[lineIndex]=String(nextText??'').replace(/[\r\n]/g,' ');
+  file.content=lines.join('\n');
+  if(row.fileIndex===state.currentCodeFile){
+    const editor=$('codeEditor');
+    if(editor) editor.value=file.content;
+    updateCodeLineNumbers();
+  }
+  state.lastEdited='code';
+  runtime?.setLua?.(getProjectLua());
+  return true;
+}
+function functionDeclarationParams(line){
+  const match=String(line||'').match(/function\s+[A-Za-z_][A-Za-z0-9_\.\:]*\s*\(([^)]*)\)/) || String(line||'').match(/[A-Za-z_][A-Za-z0-9_\.]*\s*=\s*function\s*\(([^)]*)\)/);
+  return match ? match[1] : null;
+}
+function replaceFunctionDeclarationParams(line,nextParams){
+  const text=String(line||'');
+  const params=String(nextParams??'').replace(/[\r\n]/g,' ');
+  if(/function\s+[A-Za-z_][A-Za-z0-9_\.\:]*\s*\([^)]*\)/.test(text)) return text.replace(/(function\s+[A-Za-z_][A-Za-z0-9_\.\:]*\s*\()[^)]*(\))/,`$1${params}$2`);
+  if(/[A-Za-z_][A-Za-z0-9_\.]*\s*=\s*function\s*\([^)]*\)/.test(text)) return text.replace(/([A-Za-z_][A-Za-z0-9_\.]*\s*=\s*function\s*\()[^)]*(\))/,`$1${params}$2`);
+  return text;
 }
 function gotoLastRunErrorLine(){
   if(!state.lastRunError){ toast('No run error has been captured yet.'); return; }
