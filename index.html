@@ -1083,29 +1083,69 @@ local function __tc_runtime_inspect(kind, widget)
   end
 end
 
-function arrange(list, opts)
+function arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding, down_padding, left_padding, right_padding)
   if type(list) ~= "table" then return list end
-  opts = type(opts) == "table" and opts or {}
-  local x = tonumber(opts.x) or 0
-  local y = tonumber(opts.y) or 0
-  local gap = tonumber(opts.gap) or 4
-  local dir = tostring(opts.dir or opts.direction or "row"):lower()
+
+  local opts = nil
+  if type(x) == "table" then opts = x end
+
+  local base_x = tonumber(opts and opts.x or x) or 0
+  local base_y = tonumber(opts and opts.y or y) or 0
+  local rows = math.max(0, math.floor(tonumber(opts and (opts.rows or opts.row_amt or opts.rowAmount) or row_amt) or 0))
+  local columns = math.max(0, math.floor(tonumber(opts and (opts.columns or opts.column_amt or opts.columnAmount or opts.cols) or column_amt) or 0))
+  local x_gap = tonumber(opts and (opts.x_buffer or opts.xBuffer or opts.gap_x or opts.x_gap or opts.gap) or x_buffer) or (opts and 4 or 0)
+  local y_gap = tonumber(opts and (opts.y_buffer or opts.yBuffer or opts.gap_y or opts.y_gap or opts.gap) or y_buffer) or x_gap
+  local pad_up = tonumber(opts and (opts.up_padding or opts.upPadding or opts.padding_y or opts.padding) or up_padding) or 0
+  local pad_down = tonumber(opts and (opts.down_padding or opts.downPadding or opts.padding_y or opts.padding) or down_padding) or 0
+  local pad_left = tonumber(opts and (opts.left_padding or opts.leftPadding or opts.padding_x or opts.padding) or left_padding) or 0
+  local pad_right = tonumber(opts and (opts.right_padding or opts.rightPadding or opts.padding_x or opts.padding) or right_padding) or 0
+  local dir = tostring(opts and (opts.dir or opts.direction) or "row"):lower()
+  local legacy_step = opts ~= nil and columns == 0 and rows == 0
+  if legacy_step then
+    if dir == "col" or dir == "column" or dir == "vertical" then columns = 1 else rows = 1 end
+  elseif columns == 0 and rows > 0 then
+    columns = math.max(1, math.ceil(#list / rows))
+  elseif columns == 0 then
+    columns = math.max(1, #list)
+  end
+
+  local current_x = base_x + pad_left
+  local current_y = base_y + pad_up
+  local row = 1
+  local column = 1
+
   for i, item in ipairs(list) do
     if type(item) == "table" then
-      if item.x == nil then item.x = x end
-      if item.y == nil then item.y = y end
-      if opts.w ~= nil and item.w == nil then item.w = opts.w end
-      if opts.h ~= nil and item.h == nil then item.h = opts.h end
+      local iw = tonumber(item.w) or tonumber(opts and opts.w) or __tc_button_theme.w or 84
+      local ih = tonumber(item.h) or tonumber(opts and opts.h) or __tc_button_theme.h or 18
+      if opts and opts.w ~= nil and item.w == nil then item.w = opts.w end
+      if opts and opts.h ~= nil and item.h == nil then item.h = opts.h end
+
+      item.x = current_x
+      item.y = current_y
       __tc_runtime_inspect("arrange", item)
-      local iw = tonumber(item.w) or tonumber(opts.w) or 84
-      local ih = tonumber(item.h) or tonumber(opts.h) or 18
-      if dir == "col" or dir == "column" or dir == "vertical" then
-        y = y + ih + gap
+
+      if legacy_step then
+        if dir == "col" or dir == "column" or dir == "vertical" then
+          current_y = current_y + ih + pad_up + pad_down + y_gap
+        else
+          current_x = current_x + iw + pad_left + pad_right + x_gap
+        end
       else
-        x = x + iw + gap
+        column = column + 1
+        if columns > 0 and column > columns then
+          column = 1
+          row = row + 1
+          current_x = base_x + pad_left
+          current_y = current_y + ih + pad_up + pad_down + y_gap
+          if rows > 0 and row > rows then row = 1 end
+        else
+          current_x = current_x + iw + pad_left + pad_right + x_gap
+        end
       end
     end
   end
+
   return list
 end
 
@@ -2477,7 +2517,7 @@ const CODE_API_DOCS = [
   makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons and runs callbacks on click.", [["button", "Button table; ui_button merges it with the current default_button theme."],["list", "Array of button tables for ui_buttons()."]], ["if ui_button({x=12,y=24,label=\"buy\",func=buy_item}) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Use table overrides when one button needs different size/colors."),
   makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
-  makeDoc("arrange(list, opts)", "Positions and inspector-registers a list of widget tables in a row or column before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables; each item receives x/y and optional w/h defaults."],["opts", "Layout fields: x, y, gap, dir/direction (\"row\" or \"column\"), optional w and h defaults. Inspector edits to arranged items are tracked per element."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,{x=24,y=42,w=120,h=20,dir=\"column\",gap=6}))"], "Use arrange() when you want the inspector to move and resize generated UI without hand-placing every item first."),
+  makeDoc("arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding, down_padding, left_padding, right_padding)", "Positions and inspector-registers a list of widget tables in a grid before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables; each item receives x/y every time arrange() runs."],["x, y", "Top-left layout origin before padding."],["row_amt, column_amt", "Grid size. column_amt is the number of items per row; row_amt is used to infer columns when column_amt is 0/nil."],["x_buffer, y_buffer", "Horizontal and vertical gap between arranged items."],["padding", "up, down, left, and right padding values; left/up offset each item within its grid cell, while right/down add spacing after each item."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,24,42,3,1,0,6,0,0,0,0))","ui_buttons(arrange(menu_buttons,24,42,1,3,6,0,0,0,0,0))"], "arrange() overwrites each item's x/y so rebuilt UI lists get fresh positions each frame. The older table options form still works."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("keyboard_box(message, default_text, title)", "Alias of entry_box for explicitly requesting the in-engine keyboard input dialog.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["player = keyboard_box(\"name\", player or \"\", \"keyboard\")","if player then print(player, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Use this exactly like entry_box(). On touch devices, tapping the input area opens the mobile on-screen keyboard."),
   makeDoc("save_data(slot, values)", "Stores a persistent table of values in browser local storage for this project name.", [["slot", "Save slot key."],["values", "Lua table of fields to store."]], ["save_data(\"save_slot\", {hq=2,funds=140})"], "Call this after meaningful progress. Values remain after reload."),
@@ -2560,7 +2600,7 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['ui_button','ui_button(buttonTable) -> clickedBool'],
   ['ui_buttons','ui_buttons(buttonList) -> anyClickedBool'],
   ['ui_dropdown','ui_dropdown(dropdownTable) -> toggledBool'],
-  ['arrange','arrange(list, {x, y, [w], [h], [gap=4], [dir="column"|"row"]}) -> list'],
+  ['arrange','arrange(list,x,y,row_amt,column_amt,x_buffer,y_buffer,up_padding,down_padding,left_padding,right_padding) -> list'],
   ['__tc_ui_flush_overlay','__tc_ui_flush_overlay() -> changedBool \u2014 internal dropdown overlay flush'],
   ['_init','_init() \u2014 optional; called once after build'],
   ['_tick','_tick() \u2014 optional combined update/draw frame callback; takes priority'],
