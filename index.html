@@ -245,7 +245,11 @@
     .runtimeInspectorCanvas{position:absolute;z-index:43;display:none;image-rendering:pixelated;touch-action:none;cursor:crosshair}
     .runtimeInspectorCanvas.active{display:block;pointer-events:auto}
     .runtimeInspectorCanvas.dragging{cursor:grabbing}
-    .runtimeInspectorPanel{position:absolute;z-index:44;display:none;min-width:190px;max-width:280px;padding:8px 10px;border:3px solid var(--line);border-radius:6px;background:rgba(251,246,231,.96);box-shadow:0 4px 0 rgba(42,63,53,.45);color:var(--ink);font:11px/1.35 Consolas,"SFMono-Regular",monospace;white-space:pre-wrap;pointer-events:none}
+    .runtimeInspectorPanel{position:fixed;right:10px;top:520px;z-index:79;display:none;min-width:190px;max-width:280px;padding:8px 10px;border:3px solid var(--line);border-radius:6px;background:rgba(251,246,231,.96);box-shadow:0 4px 0 rgba(42,63,53,.45);color:var(--ink);font:11px/1.35 Consolas,"SFMono-Regular",monospace;white-space:normal;pointer-events:auto}
+    .runtimeInspectorPanelText{white-space:pre-wrap}
+    .runtimeInspectorPanelActions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
+    .runtimeInspectorPanelResetBtn{padding:3px 8px;font-size:10px;min-width:auto;box-shadow:0 2px 0 rgba(42,63,53,.45)}
+    .runtimeInspectorPanelResetBtn:disabled{opacity:.55;cursor:default}
     .runtimeInspectorPanel.show{display:block}
     @media (max-width: 900px), (pointer: coarse){
       .runtimeInspectorSaveFab:not(.hidden){position:absolute;right:12px;top:12px;z-index:46;display:inline-flex;align-items:center;justify-content:center;padding:7px 10px;font-size:10px;line-height:1.1}
@@ -2380,7 +2384,7 @@ const DOC_CATEGORY_ORDER = [
 function getDocCategory(signature){
   const sig=String(signature||"").toLowerCase();
   if(sig==="_init()"||sig==="_update()"||sig==="_draw()"||sig==="_tick()") return "main callbacks";
-  if(sig.startsWith("btn(")||sig.startsWith("btnp(")||sig.startsWith("mouse(")||sig.startsWith("joyx(")||sig.startsWith("joyy(")) return "controls";
+  if(sig.startsWith("btn(")||sig.startsWith("btnp(")||sig.startsWith("mouse(")||sig.startsWith("key(")||sig.startsWith("keyp(")||sig.startsWith("joyx(")||sig.startsWith("joyy(")) return "controls";
   if(sig.startsWith("camera(")||sig.startsWith("map(")||sig.startsWith("pmap(")||sig.startsWith("mget(")||sig.startsWith("mset(")||sig.startsWith("fget(")||sig.startsWith("solid(")||sig.startsWith("wall(")) return "map";
   if(sig.startsWith("distance(")||sig.startsWith("abs(")||sig.startsWith("flr(")||sig.startsWith("sin(")||sig.startsWith("rnd(")||sig.startsWith("sub(")||sig.startsWith("upper(")) return "math";
   if(sig.startsWith("a % b")) return "math";
@@ -2411,6 +2415,8 @@ const CODE_API_DOCS = [
   makeDoc("btn(i_or_name)", "Returns true while a d-pad or face button is held.", [["i_or_name", "Use 0-3 or up/down/left/right for directions, and 4-7 or a/b/x/y for face buttons."]], ["if btn(2) then x -= 1 end","if btn(\"right\") then x += 1 end","if btn(\"a\") then jump() end"], "Use this for held input, such as continuous walking or charging."),
   makeDoc("btnp(i_or_name)", "Returns true only on the frame a button becomes pressed.", [["i_or_name", "Same button names and indices as btn()."]], ["if btnp(4) then zoom(2) end","if btnp(5) then zoom(1) end","if btnp(\"b\") then sfx(0, false) end"], "Use this for single-trigger actions like toggles, menus, zoom changes, or sound effects."),
   makeDoc("mouse()", "Returns mouse or touch state as mx, my, mb, mbr.", [], ["local mx,my,mb,mbr = mouse()","if (mb & 1) ~= 0 then print(mx..\",\"..my, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "mx and my are screen coordinates. mb is the current button bitmask, and mbr is the newly pressed button bitmask for that frame. Touch input maps to button 1."),
+  makeDoc("key(name)", "Returns true while a keyboard key is held.", [["name", "Key name such as \"space\", \"enter\", \"arrowleft\", \"a\", or \"escape\"."]], ["if key(\"space\") then boost = true end","if key(\"arrowleft\") then x -= 1 end"], "Use key() for held keyboard input when btn() is not specific enough."),
+  makeDoc("keyp(name)", "Returns true only on the frame a keyboard key becomes pressed.", [["name", "Same key names as key()."]], ["if keyp(\"enter\") then start_game() end","if keyp(\"escape\") then paused = not paused end"], "Use keyp() for toggles, menu choices, and one-shot keyboard shortcuts."),
   makeDoc("joyx(i)", "Reads a joystick horizontal axis from -1 to 1.", [["i", "Joystick index. 0 is left, 1 is right."]], ["local x_axis = joyx(0)","x += joyx(0) * speed"], "Read the value every frame. Negative is left and positive is right."),
   makeDoc("joyy(i)", "Reads a joystick vertical axis from -1 to 1.", [["i", "Joystick index. 0 is left, 1 is right."]], ["local y_axis = joyy(0)","y += joyy(0) * speed"], "Read the value every frame. Negative is up and positive is down."),
   makeDoc("camera(x, y)", "Offsets later drawing calls by a camera position.", [["x", "World x coordinate to center around."],["y", "World y coordinate to center around."]], ["camera(player_x - 240, player_y - 135)","camera()\n-- resets the camera to 0,0"], "Call cls() first, then camera(), then draw your map and sprites so the whole scene scrolls together."),
@@ -2471,7 +2477,7 @@ const CODE_API_DOCS = [
   makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons and runs callbacks on click.", [["button", "Button table; ui_button merges it with the current default_button theme."],["list", "Array of button tables for ui_buttons()."]], ["if ui_button({x=12,y=24,label=\"buy\",func=buy_item}) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Use table overrides when one button needs different size/colors."),
   makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
-  makeDoc("arrange(list, opts)", "Positions a list of widget tables in a row or column before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables."],["opts", "Layout fields: x, y, gap, dir/direction (\"row\" or \"column\"), optional w and h defaults."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,{x=24,y=42,w=120,h=20,dir=\"column\",gap=6}))"], "Use arrange() when you want the inspector to move and resize generated UI without hand-placing every item first."),
+  makeDoc("arrange(list, opts)", "Positions and inspector-registers a list of widget tables in a row or column before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables; each item receives x/y and optional w/h defaults."],["opts", "Layout fields: x, y, gap, dir/direction (\"row\" or \"column\"), optional w and h defaults. Inspector edits to arranged items are tracked per element."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,{x=24,y=42,w=120,h=20,dir=\"column\",gap=6}))"], "Use arrange() when you want the inspector to move and resize generated UI without hand-placing every item first."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("keyboard_box(message, default_text, title)", "Alias of entry_box for explicitly requesting the in-engine keyboard input dialog.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["player = keyboard_box(\"name\", player or \"\", \"keyboard\")","if player then print(player, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Use this exactly like entry_box(). On touch devices, tapping the input area opens the mobile on-screen keyboard."),
   makeDoc("save_data(slot, values)", "Stores a persistent table of values in browser local storage for this project name.", [["slot", "Save slot key."],["values", "Lua table of fields to store."]], ["save_data(\"save_slot\", {hq=2,funds=140})"], "Call this after meaningful progress. Values remain after reload."),
@@ -2554,7 +2560,7 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['ui_button','ui_button(buttonTable) -> clickedBool'],
   ['ui_buttons','ui_buttons(buttonList) -> anyClickedBool'],
   ['ui_dropdown','ui_dropdown(dropdownTable) -> toggledBool'],
-  ['arrange','arrange(list, opts) -> list'],
+  ['arrange','arrange(list, {x, y, [w], [h], [gap=4], [dir="column"|"row"]}) -> list'],
   ['__tc_ui_flush_overlay','__tc_ui_flush_overlay() -> changedBool \u2014 internal dropdown overlay flush'],
   ['_init','_init() \u2014 optional; called once after build'],
   ['_tick','_tick() \u2014 optional combined update/draw frame callback; takes priority'],
@@ -8759,6 +8765,7 @@ function setView(name){
       runtimeDebugPaused=true;
       runtime?.setActive?.(runtimeStarted);
       runtime?.setPaused?.(true);
+      stopMusicPlayback({invalidate:false});
       $("runtimeStartOverlay")?.classList.add("hidden");
     }else{
       runtimeStarted=false;
@@ -10573,7 +10580,7 @@ function makeRuntime(){
     resetUiBoxStyle();
   }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
-  let layoutOverrides={}, layoutSavedSnapshot={version:1,overrides:{},savedAt:0}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorObjects=[], inspectorStaticObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null, inspectorCaptureMode='frame', pendingPrintSourceInfo=null;
+  let layoutOverrides={}, layoutSavedSnapshot={version:1,overrides:{},savedAt:0}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorPanelTextEl=null, inspectorPanelResetBtn=null, inspectorObjects=[], inspectorStaticObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null, inspectorKeyNudge=null, inspectorCaptureMode='frame', pendingPrintSourceInfo=null;
   const cloneLayoutOverrides=source=>{
     try{ return JSON.parse(JSON.stringify(source&&typeof source==='object'&&!Array.isArray(source)?source:{})); }
     catch(_){ return {}; }
@@ -10612,6 +10619,19 @@ function makeRuntime(){
     return Object.keys(layoutOverrides||{}).length;
   };
   const layoutOverrideCount=()=>Object.keys(layoutOverrides||{}).length;
+  const hasUnsavedObjectOverride=key=>JSON.stringify(layoutOverrides?.[key]||null)!==JSON.stringify(layoutSavedSnapshot?.overrides?.[key]||null);
+  const resetObjectLayoutEdits=key=>{
+    if(!key || !hasUnsavedObjectOverride(key)) return false;
+    const saved=layoutSavedSnapshot?.overrides?.[key];
+    if(saved && typeof saved==='object') layoutOverrides[key]=cloneLayoutOverrides({[key]:saved})[key];
+    else delete layoutOverrides[key];
+    layoutDirty=JSON.stringify(layoutOverrides||{})!==JSON.stringify(layoutSavedSnapshot?.overrides||{});
+    inspectorSelected=inspectorSelected?.key===key ? (inspectorObjects.find(obj=>obj.key===key)||inspectorSelected) : inspectorSelected;
+    inspectorHover=inspectorHover?.key===key ? (inspectorObjects.find(obj=>obj.key===key)||inspectorHover) : inspectorHover;
+    renderInspectorOverlay?.();
+    updateRuntimeLayoutSaveState?.();
+    return true;
+  };
   const flushLayoutToProject=(options={})=>{
     const snapshot={version:1,overrides:cloneLayoutOverrides(layoutOverrides),savedAt:Date.now()};
     projectRef.runtimeLayout=cloneLayoutOverrides(snapshot);
@@ -10923,13 +10943,20 @@ function makeRuntime(){
     }
     return px>=s.x-3 && px<=s.x+s.w+3 && py>=s.y-3 && py<=s.y+s.h+3;
   };
-  const findInspectorObjectAt=point=>{
-    let best=null;
-    for(const obj of inspectorObjects){
-      if(!hitInspectorObject(obj,point)) continue;
-      if(!best || obj.priority>best.priority || (obj.priority===best.priority && obj.order>best.order)) best=obj;
-    }
-    return best;
+  const findInspectorObjectsAt=point=>inspectorObjects
+    .filter(obj=>hitInspectorObject(obj,point))
+    .sort((a,b)=>(b.priority-a.priority)||(b.order-a.order));
+  const findInspectorObjectAt=point=>findInspectorObjectsAt(point)[0]||null;
+  const cycleInspectorObjectAt=point=>{
+    const hits=findInspectorObjectsAt(point);
+    if(!hits.length) return null;
+    const currentIndex=hits.findIndex(obj=>obj.key===inspectorSelected?.key);
+    const next=hits[(currentIndex+1+hits.length)%hits.length];
+    inspectorSelected=next;
+    inspectorHover=next;
+    inspectorPage=0;
+    openRuntimeVarsForInspectorSelection?.();
+    return next;
   };
   const isInspectorResizeHit=(obj,point)=>{
     if(!obj?.canResize) return false;
@@ -10946,8 +10973,24 @@ function makeRuntime(){
     inspectorCtx=inspectorCanvas.getContext('2d');
     inspectorPanel=document.createElement('div');
     inspectorPanel.className='runtimeInspectorPanel';
+    inspectorPanelTextEl=document.createElement('div');
+    inspectorPanelTextEl.className='runtimeInspectorPanelText';
+    const actions=document.createElement('div');
+    actions.className='runtimeInspectorPanelActions';
+    inspectorPanelResetBtn=document.createElement('button');
+    inspectorPanelResetBtn.type='button';
+    inspectorPanelResetBtn.className='uiBtn miniBtn runtimeInspectorPanelResetBtn';
+    inspectorPanelResetBtn.textContent='Reset';
+    inspectorPanelResetBtn.title='Reset unsaved inspector edits for only this element.';
+    inspectorPanelResetBtn.addEventListener('click',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const obj=inspectorSelected||inspectorHover;
+      if(resetObjectLayoutEdits(obj?.key)) toast?.('Inspector element reset to saved/code values.');
+    });
+    actions.appendChild(inspectorPanelResetBtn);
+    inspectorPanel.append(inspectorPanelTextEl,actions);
+    document.body.appendChild(inspectorPanel);
     stage.appendChild(inspectorCanvas);
-    stage.appendChild(inspectorPanel);
     const pointerPoint=e=>clientToMouse(e.clientX,e.clientY);
     inspectorCanvas.addEventListener('pointerdown',e=>{
       if(!inspectorEnabled) return;
@@ -10997,6 +11040,13 @@ function makeRuntime(){
       inspectorDrag=null;
       inspectorCanvas.classList.remove('dragging');
       inspectorHover=findInspectorObjectAt(point);
+      renderInspectorOverlay(point);
+      e.preventDefault(); e.stopPropagation();
+    },{passive:false});
+    inspectorCanvas.addEventListener('contextmenu',e=>{
+      if(!inspectorEnabled) return;
+      const point=pointerPoint(e);
+      cycleInspectorObjectAt(point);
       renderInspectorOverlay(point);
       e.preventDefault(); e.stopPropagation();
     },{passive:false});
@@ -11059,21 +11109,67 @@ function makeRuntime(){
     }
     const panelObj=inspectorSelected||inspectorHover;
     if(panelObj && inspectorPanel){
-      const s=panelObj.screen||worldToScreenRect(panelObj), stageRect=stage.getBoundingClientRect(), canvasRect=canvas.getBoundingClientRect();
-      const scaleX=canvasRect.width/GAME_W, scaleY=canvasRect.height/GAME_H;
-      const desiredLeft=(canvasRect.left-stageRect.left)+((s.x+s.w+8)*scaleX), desiredTop=(canvasRect.top-stageRect.top)+(s.y*scaleY);
-      inspectorPanel.style.left=`${Math.round(clamp(desiredLeft,8,Math.max(8,stageRect.width-290)))}px`;
-      inspectorPanel.style.top=`${Math.round(clamp(desiredTop,8,Math.max(8,stageRect.height-140)))}px`;
-      inspectorPanel.textContent=inspectorPanelText(panelObj);
+      const varsPanel=$('runtimeVarsPanel');
+      const varsRect=(varsPanel?.classList.contains('show')) ? varsPanel.getBoundingClientRect() : null;
+      const top=varsRect ? Math.min(window.innerHeight-24, varsRect.bottom+8) : 56;
+      inspectorPanel.style.right='10px';
+      inspectorPanel.style.left='auto';
+      inspectorPanel.style.top=`${Math.round(top)}px`;
+      if(inspectorPanelTextEl) inspectorPanelTextEl.textContent=inspectorPanelText(panelObj);
+      if(inspectorPanelResetBtn){
+        inspectorPanelResetBtn.disabled=!hasUnsavedObjectOverride(panelObj.key);
+        inspectorPanelResetBtn.title=inspectorPanelResetBtn.disabled ? 'No unsaved inspector edits for this element.' : 'Reset unsaved inspector edits for only this element.';
+      }
       inspectorPanel.classList.add('show');
     }else{
       inspectorPanel?.classList.remove('show');
     }
   }
+  const nudgeInspectorSelection=(dx,dy)=>{
+    const obj=currentInspectorObject();
+    if(!inspectorEnabled || state.activeView!=='runtime' || !obj) return false;
+    const next={x:(Number(obj.x)||0)+dx,y:(Number(obj.y)||0)+dy};
+    setObjectOverride(obj,next);
+    inspectorSelected={...obj,...next};
+    inspectorSelected.screen=worldToScreenRect(inspectorSelected);
+    renderInspectorOverlay();
+    return true;
+  };
+  const stopInspectorKeyNudge=key=>{
+    if(!inspectorKeyNudge) return;
+    if(!key || inspectorKeyNudge.key===key){
+      cancelAnimationFrame(inspectorKeyNudge.raf);
+      inspectorKeyNudge=null;
+    }
+  };
+  const handleInspectorKey=(key,down)=>{
+    const dirs={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+    if(!dirs[key]) return false;
+    if(!down){ stopInspectorKeyNudge(key); return true; }
+    if(!inspectorEnabled || state.activeView!=='runtime' || !currentInspectorObject()) return false;
+    const [dx,dy]=dirs[key];
+    if(!inspectorKeyNudge || inspectorKeyNudge.key!==key){
+      stopInspectorKeyNudge();
+      inspectorKeyNudge={key,dx,dy,steps:0,last:0,raf:0};
+      nudgeInspectorSelection(dx,dy);
+    }
+    const step=now=>{
+      if(!inspectorKeyNudge || inspectorKeyNudge.key!==key) return;
+      const delay=inspectorKeyNudge.steps<4 ? 95 : 16;
+      if(!inspectorKeyNudge.last || now-inspectorKeyNudge.last>=delay){
+        inspectorKeyNudge.last=now;
+        inspectorKeyNudge.steps++;
+        nudgeInspectorSelection(dx,dy);
+      }
+      inspectorKeyNudge.raf=requestAnimationFrame(step);
+    };
+    if(!inspectorKeyNudge.raf) inspectorKeyNudge.raf=requestAnimationFrame(step);
+    return true;
+  };
   function setInspectorEnabled(next){
     inspectorEnabled=!!next;
     ensureInspectorOverlay();
-    if(!inspectorEnabled){ inspectorSelected=null; inspectorHover=null; inspectorDrag=null; }
+    if(!inspectorEnabled){ inspectorSelected=null; inspectorHover=null; inspectorDrag=null; stopInspectorKeyNudge(); }
     renderInspectorOverlay();
     updateRuntimeLayoutSaveState?.();
     return inspectorEnabled;
@@ -11883,7 +11979,7 @@ function makeRuntime(){
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,handleInspectorKey,stopInspectorKeyNudge,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -12445,7 +12541,15 @@ function wireUI(){
   bindClick('runtimeMobileSaveLayoutBtn',saveRuntimeLayoutFromInspector);
   bindClick('runtimeResetLayoutBtn',resetRuntimeLayoutFromInspector);
   window.addEventListener('resize',applyRuntimeUiHiddenState);
+  window.addEventListener('keyup',e=>{ runtime?.handleInspectorKey?.(e.key,false); });
   window.addEventListener('keydown',e=>{
+    const active=document.activeElement;
+    const editing=active && (active.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(String(active.tagName||'').toUpperCase()));
+    if(!editing && runtime?.handleInspectorKey?.(e.key,true)){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
     const key=String(e.key||'').toLowerCase();
     if(state.activeView==='runtime' && (key==='f1' || e.code==='F1')){
       e.preventDefault();
