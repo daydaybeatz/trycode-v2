@@ -1007,8 +1007,16 @@ local __tc_ui_state = {
   mouse_armed = false
 }
 
+local __tc_button_theme_defaults = {
+  x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
+}
+
 local __tc_button_theme = {
   x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
+}
+
+local __tc_dropdown_theme_defaults = {
+  x = 0, y = 0, w = 112, h = 18, r = 8, type = "rect", label = "dropdown", bg = 1, border = 7, text = 7, hover_bg = 13, text_size = nil, label_x = 0, label_y = 0, open = false, selected = 1, items = {}, visible = true, enabled = true
 }
 
 local __tc_dropdown_theme = {
@@ -1021,6 +1029,14 @@ local function __tc_uicopy(dst, src)
     dst[k] = v
   end
   return dst
+end
+
+local function __tc_uireset(dst, src)
+  if type(dst) ~= "table" or type(src) ~= "table" then return dst end
+  for k in __tc_builtin_pairs(dst) do
+    dst[k] = nil
+  end
+  return __tc_uicopy(dst, src)
 end
 
 local function __tc_point_in(mx, my, x, y, w, h)
@@ -1150,6 +1166,9 @@ function arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding
 end
 
 function default_button(opts)
+  if opts == nil then
+    __tc_uireset(__tc_button_theme, __tc_button_theme_defaults)
+  end
   if __tc_button_theme_patch(opts) then
     local patch = {}
     __tc_uicopy(patch, opts)
@@ -1164,6 +1183,9 @@ function default_button(opts)
 end
 
 function default_dropdown(opts)
+  if opts == nil then
+    __tc_uireset(__tc_dropdown_theme, __tc_dropdown_theme_defaults)
+  end
   if __tc_dropdown_theme_patch(opts) then
     local patch = {}
     __tc_uicopy(patch, opts)
@@ -1180,12 +1202,19 @@ function default_dropdown(opts)
 end
 
 function default_ui_theme(kind, patch)
-  if type(patch) ~= "table" then return end
   local normalized = tostring(kind or ""):lower()
   if normalized == "button" then
-    __tc_uicopy(__tc_button_theme, patch)
+    if patch == nil then
+      __tc_uireset(__tc_button_theme, __tc_button_theme_defaults)
+    elseif type(patch) == "table" then
+      __tc_uicopy(__tc_button_theme, patch)
+    end
   elseif normalized == "dropdown" then
-    __tc_uicopy(__tc_dropdown_theme, patch)
+    if patch == nil then
+      __tc_uireset(__tc_dropdown_theme, __tc_dropdown_theme_defaults)
+    elseif type(patch) == "table" then
+      __tc_uicopy(__tc_dropdown_theme, patch)
+    end
   end
 end
 
@@ -2523,9 +2552,9 @@ const CODE_API_DOCS = [
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
   makeDoc("default_font(font, size, color)", "Sets default print font settings used when print() leaves those values nil.", [["font", "Font family string, nil, or \"nil\". nil keeps the File menu font."],["size", "Default font size in pixels, nil, or \"nil\". nil resets to 12."],["color", "Default fill color string, palette index, color() result, nil, or \"nil\". nil follows current color()."]], ["default_font(\"Orbitron\", 14, color(255,247,232))","default_font(nil, nil, nil) -- reset all print defaults","print(\"score\", nil, 8, 8, color(255,247,232), color(0,0,0)) -- now uses default_font settings"], "Use this once in _init() when you want a global text style without repeating font arguments."),
   makeDoc("default_controls(mode)", "Sets the movement control scheme to joystick or d-pad.", [["mode", "Use \"joystick\"/\"left_joystick\" for joystick controls, or \"dpad\"/\"d-pad\" for directional pad controls."]], ["default_controls(\"dpad\")","default_controls(\"joystick\")"], "Returns the current mode string after applying the setting."),
-  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
+  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults. Call default_button() or default_ui_theme(\"button\") to reset button defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","default_button() -- reset button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons and runs callbacks on click.", [["button", "Button table; ui_button merges it with the current default_button theme."],["list", "Array of button tables for ui_buttons()."]], ["if ui_button({x=12,y=24,label=\"buy\",func=buy_item}) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Use table overrides when one button needs different size/colors."),
-  makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
+  makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func. Call default_dropdown() or default_ui_theme(\"dropdown\") to reset dropdown defaults."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","default_dropdown() -- reset dropdown defaults","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
   makeDoc("arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding, down_padding, left_padding, right_padding)", "Positions and inspector-registers a list of widget tables in a grid before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables; each item receives x/y every time arrange() runs."],["x, y", "Top-left layout origin before padding."],["row_amt, column_amt", "Grid size. column_amt is the number of items per row; row_amt is used to infer columns when column_amt is 0/nil."],["x_buffer, y_buffer", "Horizontal and vertical gap between arranged items."],["padding", "up, down, left, and right padding values; left/up offset each item within its grid cell, while right/down add spacing after each item."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,24,42,3,1,0,6,0,0,0,0))","ui_buttons(arrange(menu_buttons,24,42,1,3,6,0,0,0,0,0))"], "arrange() overwrites each item's x/y so rebuilt UI lists get fresh positions each frame. The older table options form still works."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("keyboard_box(message, default_text, title)", "Alias of entry_box for explicitly requesting the in-engine keyboard input dialog.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["player = keyboard_box(\"name\", player or \"\", \"keyboard\")","if player then print(player, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Use this exactly like entry_box(). On touch devices, tapping the input area opens the mobile on-screen keyboard."),
