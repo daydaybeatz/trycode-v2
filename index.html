@@ -32,7 +32,9 @@
     .topbar{flex:0 0 38px;display:flex;align-items:center;gap:3px;padding:3px 5px;background:linear-gradient(180deg,#efe0bc,#e8cf96);border-bottom:4px solid var(--line);box-shadow:inset 0 -3px 0 #c39a5b}
     .topbarRuntimeControls{display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .topbarRuntimeControls .fileBtn{padding:6px 10px;font-size:11px}
-    .runtimeHideBtn.hidden{display:none}
+    .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden{display:none}
+    .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
+    .runtimeSaveLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
     body.runtime-ui-hidden .topbar,body.runtime-ui-hidden #view-runtime .hud,body.runtime-ui-hidden #view-runtime .runtimeErrorBox,body.runtime-ui-hidden #view-runtime .runtimeDialogLayer{display:none !important}
     body.runtime-ui-hidden .views{position:fixed;inset:0}
     body.runtime-ui-hidden #view-runtime .runtimeView{inset:0;padding:0;border:none;border-radius:0;box-shadow:none;background:#000}
@@ -235,6 +237,11 @@
     .runtimeView.mobile-fullscreen{inset:0;padding:0;border:none;box-shadow:none;background:transparent;border-radius:0}
     .screenStage{position:absolute;inset:10px;display:flex;align-items:center;justify-content:center;border:4px solid var(--line);border-radius:18px;background:#201810;box-shadow:inset 0 0 0 3px #5c452f}
     #screen{image-rendering:pixelated;background:#000;display:block;border-radius:0}
+    .runtimeInspectorCanvas{position:absolute;z-index:43;display:none;image-rendering:pixelated;touch-action:none;cursor:crosshair}
+    .runtimeInspectorCanvas.active{display:block;pointer-events:auto}
+    .runtimeInspectorCanvas.dragging{cursor:grabbing}
+    .runtimeInspectorPanel{position:absolute;z-index:44;display:none;min-width:190px;max-width:280px;padding:8px 10px;border:3px solid var(--line);border-radius:6px;background:rgba(251,246,231,.96);box-shadow:0 4px 0 rgba(42,63,53,.45);color:var(--ink);font:11px/1.35 Consolas,"SFMono-Regular",monospace;white-space:pre-wrap;pointer-events:none}
+    .runtimeInspectorPanel.show{display:block}
     .runtimeStartOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:34;background:rgba(18,10,6,.48);backdrop-filter:blur(5px)}
     .runtimeStartOverlay.hidden{display:none}
     .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:13px 14px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
@@ -509,6 +516,7 @@
     body.dark-mode .runtimeStartPlayBtn{background:linear-gradient(180deg,#f3f0e7,#d9d7c7);border-color:var(--line);color:#1f1210;box-shadow:0 4px 0 #0f1528}
     body.dark-mode .runtimeStartHint{color:#f7b7c4}
     body.dark-mode .runtimeStartPlaceholder{background:#0a1122;border-color:#6f83b6;color:#e8ecff}
+    body.dark-mode .runtimeInspectorPanel{background:rgba(16,22,42,.96);color:#e9eefb;border-color:var(--line);box-shadow:0 4px 0 rgba(5,8,18,.7)}
     body.dark-mode .joy{border-color:#c7d0e8;background:rgba(199,208,232,.1);box-shadow:0 4px 0 rgba(0,0,0,.3)}
     body.dark-mode .joy .knob{border-color:#f4f1e3;background:rgba(241,166,90,.22)}
     body.dark-mode .symbtn,
@@ -618,6 +626,8 @@
         <div class="tabs" id="toolbarSub" style="display:none"></div>
       </div>
       <div class="topbarRuntimeControls hidden" id="topbarRuntimeControls">
+        <button class="fileBtn runtimeInspectorModeBtn hidden" id="runtimeInspectorModeBtn">Inspect</button>
+        <button class="fileBtn runtimeSaveLayoutBtn hidden" id="runtimeSaveLayoutBtn" disabled>Save Layout</button>
         <button class="fileBtn runtimeHideBtn" id="runtimeHideBtn">Hide</button>
       </div>
       <button class="fileBtn" id="fileBtn">Menu</button>
@@ -957,8 +967,16 @@ local __tc_ui_state = {
   mouse_armed = false
 }
 
+local __tc_button_theme_defaults = {
+  x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
+}
+
 local __tc_button_theme = {
   x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
+}
+
+local __tc_dropdown_theme_defaults = {
+  x = 0, y = 0, w = 112, h = 18, r = 8, type = "rect", label = "dropdown", bg = 1, border = 7, text = 7, hover_bg = 13, text_size = nil, label_x = 0, label_y = 0, open = false, selected = 1, items = {}, visible = true, enabled = true
 }
 
 local __tc_dropdown_theme = {
@@ -971,6 +989,14 @@ local function __tc_uicopy(dst, src)
     dst[k] = v
   end
   return dst
+end
+
+local function __tc_uireset(dst, src)
+  if type(dst) ~= "table" or type(src) ~= "table" then return dst end
+  for k in __tc_builtin_pairs(dst) do
+    dst[k] = nil
+  end
+  return __tc_uicopy(dst, src)
 end
 
 local function __tc_point_in(mx, my, x, y, w, h)
@@ -1027,7 +1053,42 @@ local function __tc_ui_hover(mx, my, widget)
   return __tc_point_in(mx, my, widget.x or 0, widget.y or 0, widget.w or 84, widget.h or 18)
 end
 
+local function __tc_runtime_inspect(kind, widget)
+  if type(__tc_runtime_inspect_widget) == "function" then
+    __tc_runtime_inspect_widget(kind, widget)
+  end
+end
+
+function arrange(list, opts)
+  if type(list) ~= "table" then return list end
+  opts = type(opts) == "table" and opts or {}
+  local x = tonumber(opts.x) or 0
+  local y = tonumber(opts.y) or 0
+  local gap = tonumber(opts.gap) or 4
+  local dir = tostring(opts.dir or opts.direction or "row"):lower()
+  for i, item in ipairs(list) do
+    if type(item) == "table" then
+      if item.x == nil then item.x = x end
+      if item.y == nil then item.y = y end
+      if opts.w ~= nil and item.w == nil then item.w = opts.w end
+      if opts.h ~= nil and item.h == nil then item.h = opts.h end
+      __tc_runtime_inspect("arrange", item)
+      local iw = tonumber(item.w) or tonumber(opts.w) or 84
+      local ih = tonumber(item.h) or tonumber(opts.h) or 18
+      if dir == "col" or dir == "column" or dir == "vertical" then
+        y = y + ih + gap
+      else
+        x = x + iw + gap
+      end
+    end
+  end
+  return list
+end
+
 function default_button(opts)
+  if opts == nil then
+    __tc_uireset(__tc_button_theme, __tc_button_theme_defaults)
+  end
   if __tc_button_theme_patch(opts) then
     local patch = {}
     __tc_uicopy(patch, opts)
@@ -1041,7 +1102,18 @@ function default_button(opts)
   return btn
 end
 
+function button(opts)
+  local btn = {}
+  __tc_uicopy(btn, __tc_button_theme)
+  btn.func = nil
+  if type(opts) == "table" then __tc_uicopy(btn, opts) end
+  return btn
+end
+
 function default_dropdown(opts)
+  if opts == nil then
+    __tc_uireset(__tc_dropdown_theme, __tc_dropdown_theme_defaults)
+  end
   if __tc_dropdown_theme_patch(opts) then
     local patch = {}
     __tc_uicopy(patch, opts)
@@ -1057,13 +1129,30 @@ function default_dropdown(opts)
   return dd
 end
 
+function dropdown(opts)
+  local dd = {}
+  __tc_uicopy(dd, __tc_dropdown_theme)
+  dd.items = {}
+  dd.func = nil
+  if type(opts) == "table" then __tc_uicopy(dd, opts) end
+  if type(dd.items) ~= "table" then dd.items = {} end
+  return dd
+end
+
 function default_ui_theme(kind, patch)
-  if type(patch) ~= "table" then return end
   local normalized = tostring(kind or ""):lower()
   if normalized == "button" then
-    __tc_uicopy(__tc_button_theme, patch)
+    if patch == nil then
+      __tc_uireset(__tc_button_theme, __tc_button_theme_defaults)
+    elseif type(patch) == "table" then
+      __tc_uicopy(__tc_button_theme, patch)
+    end
   elseif normalized == "dropdown" then
-    __tc_uicopy(__tc_dropdown_theme, patch)
+    if patch == nil then
+      __tc_uireset(__tc_dropdown_theme, __tc_dropdown_theme_defaults)
+    elseif type(patch) == "table" then
+      __tc_uicopy(__tc_dropdown_theme, patch)
+    end
   end
 end
 
@@ -1073,6 +1162,7 @@ function ui_button(btn)
   __tc_uicopy(resolved, __tc_button_theme)
   __tc_uicopy(resolved, btn)
   if resolved.visible == false then return false end
+  __tc_runtime_inspect("ui_button", resolved)
   local mx, my, mbtn, mpress = mouse()
   local clicked = (mpress & 1) == 1
   local hover = __tc_ui_hover(mx, my, resolved)
@@ -1177,6 +1267,7 @@ end
 function ui_dropdown(dd)
   if type(dd) ~= "table" or dd.visible == false then return false end
   if type(dd.items) ~= "table" then dd.items = {} end
+  __tc_runtime_inspect("ui_dropdown", dd)
   if dd.open and __tc_ui_state.open_dropdown == nil then __tc_ui_state.open_dropdown = dd end
   local mx, my, mbtn, mpress = mouse()
   local clicked = (mpress & 1) == 1
@@ -1251,6 +1342,24 @@ const DEFAULT_PALETTE = flattenPalettePages(PRESET_PALETTE_PAGES);
 let runtime;
 let runtimeUiHidden=false;
 let runtimeStarted=false;
+function updateRuntimeLayoutSaveState(){
+  const canShow=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
+  const saveBtn=$("runtimeSaveLayoutBtn");
+  const inspectBtn=$("runtimeInspectorModeBtn");
+  const hasEdits=!!runtime?.hasLayoutEdits?.();
+  const inspectorActive=!!runtime?.isInspectorEnabled?.();
+  if(saveBtn){
+    saveBtn.classList.toggle('hidden', !canShow);
+    saveBtn.disabled=!hasEdits;
+    saveBtn.classList.toggle('active', hasEdits);
+    saveBtn.textContent=hasEdits?'Save Layout *':'Save Layout';
+  }
+  if(inspectBtn){
+    inspectBtn.classList.toggle('hidden', !canShow);
+    inspectBtn.classList.toggle('active', inspectorActive);
+    inspectBtn.textContent=inspectorActive?'Inspect: On':'Inspect';
+  }
+}
 function applyRuntimeUiHiddenState(){
   const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
   if(!canHide) runtimeUiHidden=false;
@@ -1258,6 +1367,7 @@ function applyRuntimeUiHiddenState(){
   const hideBtn=$("runtimeHideBtn");
   if(hideBtn) hideBtn.classList.toggle('hidden', !canHide);
   if(hideBtn) hideBtn.textContent=runtimeUiHidden?'Show':'Hide';
+  updateRuntimeLayoutSaveState();
   if(state.activeView==='runtime' && runtime) runtime.resizeDisplay();
 }
 async function toggleAppFullscreen(){
@@ -1278,6 +1388,11 @@ function createRuntimeFallback(message){
     resizeDisplay(){},
     syncProject(){},
     hasActiveDialog(){ return false; },
+    toggleInspector(){ return false; },
+    isInspectorEnabled(){ return false; },
+    hasLayoutEdits(){ return false; },
+    getLayoutOverrideCount(){ return 0; },
+    flushLayoutToProject(){ return 0; },
   };
 }
 function initRuntime(){
@@ -1337,7 +1452,7 @@ function ensurePalettePages(p){
   }
 }
 function seedSpriteDemo(sp){ for(let y=0;y<sp.h;y++){ for(let x=0;x<sp.w;x++){ sp.pixels[y][x]=1; } } for(let y=2;y<14;y++){ for(let x=2;x<14;x++){ sp.pixels[y][x]=5; } } for(let y=4;y<12;y++){ for(let x=4;x<12;x++){ sp.pixels[y][x]=7; } } for(let y=5;y<8;y++){ for(let x=4;x<7;x++) sp.pixels[y][x]=15; for(let x=9;x<12;x++) sp.pixels[y][x]=15; } for(let y=9;y<12;y++){ for(let x=5;x<11;x++) sp.pixels[y][x]=10; } for(let x=5;x<11;x++){ sp.pixels[8][x]=15; } return sp; }
-function defaultProject(){ return {project:{tile_w:16,tile_h:16,map_w:32,map_h:32},settings:{movementInput:'left_joystick',displayMode:'normal',defaultPrintFont:DEFAULT_PRINT_FONT,darkMode:true},palette:[...DEFAULT_PALETTE],spriteFolders:[{frames:[makeSprite(16,16)]}],sounds:[makeSound()],music:[makeMusic()],codeFiles:[{name:"main.lua",content:EXAMPLES.blank,tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}],tileDefs:{0:makeBlankTileDef(),1:{source:"",flags:{0:false},bg:"#2f855a",bgEnabled:true,animated:false,animFolder:0,animSpeed:6},2:{source:"",flags:{0:true},bg:"#4a5568",bgEnabled:true,animated:false,animFolder:0,animSpeed:6},3:{source:"",flags:{0:false},bg:"#8b5cf6",bgEnabled:true,animated:false,animFolder:0,animSpeed:6}},maps:[makeEmptyMap("0",32,32)]}; }
+function defaultProject(){ return {project:{tile_w:16,tile_h:16,map_w:32,map_h:32},settings:{movementInput:'left_joystick',displayMode:'normal',defaultPrintFont:DEFAULT_PRINT_FONT,darkMode:true},runtimeLayout:{version:1,overrides:{},savedAt:0},palette:[...DEFAULT_PALETTE],spriteFolders:[{frames:[makeSprite(16,16)]}],sounds:[makeSound()],music:[makeMusic()],codeFiles:[{name:"main.lua",content:EXAMPLES.blank,tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}],tileDefs:{0:makeBlankTileDef(),1:{source:"",flags:{0:false},bg:"#2f855a",bgEnabled:true,animated:false,animFolder:0,animSpeed:6},2:{source:"",flags:{0:true},bg:"#4a5568",bgEnabled:true,animated:false,animFolder:0,animSpeed:6},3:{source:"",flags:{0:false},bg:"#8b5cf6",bgEnabled:true,animated:false,animFolder:0,animSpeed:6}},maps:[makeEmptyMap("0",32,32)]}; }
 function currentMap(){ return state.appProject.maps[state.currentMapIndex]; }
 function currentLayers(){ return currentMap().layers; }
 function currentSpriteFolder(){ return state.appProject.spriteFolders[state.currentSpriteIndex]; }
@@ -1556,6 +1671,10 @@ function ensureProjectData(){
   p.settings.touchOnly=!!p.settings.touchOnly;
   p.settings.defaultPrintFont=normalizePrintFontName(p.settings.defaultPrintFont);
   p.settings.darkMode=!!p.settings.darkMode;
+  if(!p.runtimeLayout || typeof p.runtimeLayout!=='object') p.runtimeLayout={version:1,overrides:{},savedAt:0};
+  p.runtimeLayout.version=1;
+  if(!p.runtimeLayout.overrides || typeof p.runtimeLayout.overrides!=='object' || Array.isArray(p.runtimeLayout.overrides)) p.runtimeLayout.overrides={};
+  p.runtimeLayout.savedAt=Number(p.runtimeLayout.savedAt)||0;
   if(!p.palette?.length) p.palette=[...DEFAULT_PALETTE];
   ensurePalettePages(p);
   if(!p.spriteFolders?.length){ if(p.sprites?.length) p.spriteFolders=p.sprites.map(sp=>({frames:[sp]})); else p.spriteFolders=[{frames:[makeSprite(16,16)]}]; }
@@ -1618,7 +1737,7 @@ function getDocCategory(signature){
   if(sig.startsWith("add(")||sig.startsWith("del(")||sig.startsWith("deli(")||sig.startsWith("all(")||sig.startsWith("foreach(")||sig.startsWith("pairs(")||sig.startsWith("get_value(")||sig.startsWith("set_value(")||sig.startsWith("mod_value(")) return "tables";
   if(sig.startsWith("#table")) return "tables";
   if(sig.startsWith("col(")||sig.startsWith("col2(")) return "helpers/collision";
-  if(sig.startsWith("message_box(")||sig.startsWith("confirm_box(")||sig.startsWith("entry_box(")||sig.startsWith("default_box(")) return "ui boxes";
+  if(sig.startsWith("message_box(")||sig.startsWith("confirm_box(")||sig.startsWith("entry_box(")||sig.startsWith("default_box(")||sig.startsWith("arrange(")) return "ui boxes";
   if(sig.startsWith("save_data(")||sig.startsWith("load_data(")) return "data/save/load";
   if(sig.startsWith("sfx(")||sig.startsWith("music(")||sig.startsWith("default_font(")||sig.startsWith("fonts")||sig.startsWith("include ")||sig.startsWith("x +=")) return "system/fonts/defaults/include";
   if(sig.startsWith("pset(")||sig.startsWith("pget(")||sig.startsWith("line(")||sig.startsWith("rect(")||sig.startsWith("circ(")||sig.startsWith("circfill(")||sig.startsWith("spr(")||sig.startsWith("sspr(")||sig.startsWith("r_spr(")||sig.startsWith("animate(")||sig.startsWith("print(")||sig.startsWith("rectfill(")||sig.startsWith("color(")||sig.startsWith("cls(")||sig.startsWith("clip(")||sig.startsWith("zoom(")) return "drawing";
@@ -1699,9 +1818,10 @@ const CODE_API_DOCS = [
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
   makeDoc("default_font(font, size, color)", "Sets default print font settings used when print() leaves those values nil.", [["font", "Font family string, nil, or \"nil\". nil keeps the File menu font."],["size", "Default font size in pixels, nil, or \"nil\". nil resets to 12."],["color", "Default fill color string, palette index, color() result, nil, or \"nil\". nil follows current color()."]], ["default_font(\"Orbitron\", 14, color(255,247,232))","default_font(nil, nil, nil) -- reset all print defaults","print(\"score\", nil, 8, 8, color(255,247,232), color(0,0,0)) -- now uses default_font settings"], "Use this once in _init() when you want a global text style without repeating font arguments."),
   makeDoc("default_controls(mode)", "Sets the movement control scheme to joystick or d-pad.", [["mode", "Use \"joystick\"/\"left_joystick\" for joystick controls, or \"dpad\"/\"d-pad\" for directional pad controls."]], ["default_controls(\"dpad\")","default_controls(\"joystick\")"], "Returns the current mode string after applying the setting."),
-  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
+  makeDoc("default_button(opts) / button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, and button(...) snapshots the current button template into a new button table.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults. While a standalone default_button({...}) theme block is active, plain button-like table literals assigned or add()ed in code are auto-promoted into button tables until default_button() resets the theme block."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults. Call default_button() or default_ui_theme(\"button\") to reset button defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","menu_btn = {x=12,y=24,label=\"play\"} -- auto-promoted while the theme block is active","default_button() -- reset button defaults","ui_button(menu_btn)"], "Use button(...) when you want an explicit constructor, or rely on a default_button({...}) / default_button() block when you want pal()-style implicit styling for later button tables."),
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons and runs callbacks on click.", [["button", "Button table; ui_button merges it with the current default_button theme."],["list", "Array of button tables for ui_buttons()."]], ["if ui_button({x=12,y=24,label=\"buy\",func=buy_item}) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Use table overrides when one button needs different size/colors."),
-  makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
+  makeDoc("default_dropdown(opts) / dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults, and dropdown(...) snapshots the current dropdown template into a new dropdown table.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults. While a standalone default_dropdown({...}) theme block is active, plain dropdown-like table literals assigned or add()ed in code are auto-promoted into dropdown tables until default_dropdown() resets the theme block."],["items", "List entries can be strings or tables with label/value/func. Call default_dropdown() or default_ui_theme(\"dropdown\") to reset dropdown defaults."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}} -- auto-promoted while the theme block is active","default_dropdown() -- reset dropdown defaults","ui_dropdown(mode_dd)"], "Use dropdown(...) when you want an explicit constructor, or rely on a default_dropdown({...}) / default_dropdown() block when you want pal()-style implicit styling for later dropdown tables."),
+  makeDoc("arrange(list, opts)", "Positions a list of widget tables in a row or column before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables."],["opts", "Layout fields: x, y, gap, dir/direction (\"row\" or \"column\"), optional w and h defaults."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,{x=24,y=42,w=120,h=20,dir=\"column\",gap=6}))"], "Use arrange() when you want the inspector to move and resize generated UI without hand-placing every item first."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("keyboard_box(message, default_text, title)", "Alias of entry_box for explicitly requesting the in-engine keyboard input dialog.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["player = keyboard_box(\"name\", player or \"\", \"keyboard\")","if player then print(player, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Use this exactly like entry_box(). On touch devices, tapping the input area opens the mobile on-screen keyboard."),
   makeDoc("save_data(slot, values)", "Stores a persistent table of values in browser local storage for this project name.", [["slot", "Save slot key."],["values", "Lua table of fields to store."]], ["save_data(\"save_slot\", {hq=2,funds=140})"], "Call this after meaningful progress. Values remain after reload."),
@@ -1779,11 +1899,14 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['set_value','set_value(table, key, value) -> value or nil'],
   ['get_value','get_value(table, key) -> value or nil'],
   ['default_button','default_button([opts]) -> buttonTable'],
+  ['button','button([opts]) -> buttonTable'],
   ['default_dropdown','default_dropdown([opts]) -> dropdownTable'],
+  ['dropdown','dropdown([opts]) -> dropdownTable'],
   ['default_ui_theme','default_ui_theme(kind, patchTable)'],
   ['ui_button','ui_button(buttonTable) -> clickedBool'],
   ['ui_buttons','ui_buttons(buttonList) -> anyClickedBool'],
   ['ui_dropdown','ui_dropdown(dropdownTable) -> toggledBool'],
+  ['arrange','arrange(list, opts) -> list'],
   ['__tc_ui_flush_overlay','__tc_ui_flush_overlay() -> changedBool \u2014 internal dropdown overlay flush'],
   ['_init','_init() \u2014 optional; called once after build'],
   ['_tick','_tick() \u2014 optional combined update/draw frame callback; takes priority'],
@@ -2050,7 +2173,7 @@ function codeTokenHtml(cls,value){ return `<span class="${cls}">${escapeHtml(val
 function highlightLuaLine(line){
   const {code, comment}=splitLuaLineComment(line);
   const keywords=new Set(["function","local","if","then","elseif","else","end","for","in","while","do","repeat","until","return","break","and","or","not","true","false","nil"]);
-  const builtins=new Set(["_init","_tick","_update","_draw","print","print_","cls","camera","map","pmap","spr","sspr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","clock","abs","flr","sin","cosin","tan","rnd","sub","tostr","upper","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","pairs"]);
+  const builtins=new Set(["_init","_tick","_update","_draw","print","print_","cls","camera","map","pmap","spr","sspr","animate","rect","rectfill","circ","circfill","color","btn","btnp","mouse","key","keyp","joyx","joyy","solid","wall","fget","mget","mset","pset","pget","line","clip","zoom","sfx","music","message_box","confirm_box","entry_box","default_box","default_font","default_controls","save_data","load_data","clock","abs","flr","sin","cosin","tan","rnd","sub","tostr","upper","add","del","deli","all","foreach","default_button","default_dropdown","default_ui_theme","ui_button","ui_buttons","ui_dropdown","arrange","pairs"]);
   let html="";
   const regex=/(\b\d+(?:\.\d+)?\b|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_][A-Za-z0-9_]*|==|~=|<=|>=|\.\.\.|\.\.|[+\-*\/%#=<>]+)/g;
   let last=0, match;
@@ -2078,6 +2201,57 @@ function renderCodeHighlight(){
   const inner=$("codeHighlightInner"), ed=$("codeEditor");
   if(!inner||!ed) return;
   inner.innerHTML=String(ed.value||"").split(/\n/).map(highlightLuaLine).join("\n");
+}
+function uiThemeLiteralLooksLikeKind(literal, kind){
+  const text=String(literal||"");
+  const keys=(kind==="dropdown")
+    ? ["label","items","selected","func","bg","border","text","hover_bg","text_size","label_x","label_y","type","r","radius","visible","enabled"]
+    : ["label","func","bg","border","text","hover_bg","text_size","label_x","label_y","type","r","radius","visible","enabled","x","y","w","h"];
+  return keys.some(key=>new RegExp(`(^|[^A-Za-z0-9_])${key}\\s*=`).test(text));
+}
+function autoWrapUiThemeLiteral(code, kind){
+  const ctor=kind==="dropdown"?"dropdown":"button";
+  if(!code || new RegExp(`\\b${ctor}\\s*\\(`).test(code)) return code;
+  const assignment=code.match(/^(\s*(?:local\s+)?[A-Za-z_][A-Za-z0-9_\.]*(?:\[[^\]]+\])*\s*=\s*)({.*})(\s*;?\s*)$/);
+  if(assignment && uiThemeLiteralLooksLikeKind(assignment[2], kind)) return `${assignment[1]}${ctor}(${assignment[2]})${assignment[3]}`;
+  const addCall=code.match(/^(\s*add\s*\(\s*[^,]+,\s*)({.*})(\s*\)\s*;?\s*)$/);
+  if(addCall && uiThemeLiteralLooksLikeKind(addCall[2], kind)) return `${addCall[1]}${ctor}(${addCall[2]})${addCall[3]}`;
+  return code;
+}
+function expandLuaUiThemeShorthand(source){
+  const lines=String(source||"").split(/\r?\n/);
+  let autoButton=false;
+  let autoDropdown=false;
+  return lines.map(line=>{
+    const {code, comment}=splitLuaLineComment(line);
+    const trimmed=code.trim();
+    if(!trimmed) return line;
+    const buttonCall=trimmed.match(/^default_button\s*\((.*)\)\s*;?\s*$/);
+    if(buttonCall){
+      const argText=(buttonCall[1]||"").trim().toLowerCase();
+      autoButton=!!argText && argText!=="nil";
+      return line;
+    }
+    const dropdownCall=trimmed.match(/^default_dropdown\s*\((.*)\)\s*;?\s*$/);
+    if(dropdownCall){
+      const argText=(dropdownCall[1]||"").trim().toLowerCase();
+      autoDropdown=!!argText && argText!=="nil";
+      return line;
+    }
+    const themeCall=trimmed.match(/^default_ui_theme\s*\(\s*(['"])(button|dropdown)\1(?:\s*,\s*(.*?))?\s*\)\s*;?\s*$/i);
+    if(themeCall){
+      const kind=String(themeCall[2]||"").toLowerCase();
+      const patch=String(themeCall[3]||"").trim().toLowerCase();
+      const active=!!patch && patch!=="nil";
+      if(kind==="button") autoButton=active;
+      if(kind==="dropdown") autoDropdown=active;
+      return line;
+    }
+    let expanded=code;
+    if(autoButton) expanded=autoWrapUiThemeLiteral(expanded,"button");
+    if(autoDropdown) expanded=autoWrapUiThemeLiteral(expanded,"dropdown");
+    return expanded!==code ? `${expanded}${comment}` : line;
+  }).join("\n");
 }
 function expandLuaShorthand(source){
   const shorthand=/(^|[^A-Za-z0-9_])(\b[A-Za-z_][A-Za-z0-9_\.\[\]"'\(\)]*)(\s*)([+\-*\/])=(\s*)(.*?)(?=(\s+\bend\b|\s*;|\s*$))/g;
@@ -2121,7 +2295,7 @@ function resolveIncludes(source, seen=new Set()){
     }
     out.push(line);
   }
-  return expandLuaShorthand(out.join("\n").replace(/spr\((\d+[a-z])(\s*,)/gi, 'spr("$1"$2'));
+  return expandLuaShorthand(expandLuaUiThemeShorthand(out.join("\n").replace(/spr\((\d+[a-z])(\s*,)/gi, 'spr("$1"$2')));
 }
 function getProjectLua(){ saveEditorToCurrentCodeFile(); const main=(state.appProject.codeFiles||[]).find(f=>f.name==="main.lua") || getCurrentCodeFile(); return resolveIncludes(main?main.content:$("codeEditor").value||""); }
 function updateLogicButton(){ const b=$("logicBtn"); if(!b) return; b.textContent = "Code"; }
@@ -2759,11 +2933,13 @@ async function persistProjectSnapshot(name){
 }
 async function saveProject(forcePrompt=true){
   saveEditorToCurrentCodeFile();
+  runtime?.flushLayoutToProject?.({silent:true,markClean:false});
   const defaultName=state.currentProjectName||'project_1';
   const shouldPrompt=forcePrompt || !state.hasSaved || !state.currentProjectName;
   const name=shouldPrompt ? promptForProjectName('Save project as:', defaultName) : state.currentProjectName;
   if(!name) return false;
   await persistProjectSnapshot(name);
+  runtime?.markLayoutSaved?.();
   return true;
 }
 function toggleCodeEditorLineComments(){
@@ -9668,6 +9844,7 @@ function makeRuntime(){
     }
     canvas.style.width=`${Math.max(1,Math.floor(w))}px`;
     canvas.style.height=`${Math.max(1,Math.floor(h))}px`;
+    if(inspectorCanvas) renderInspectorOverlay();
     applyInputModeUI();
   }
   window.addEventListener('resize',resizeDisplay);
@@ -9771,6 +9948,354 @@ function makeRuntime(){
     resetUiBoxStyle();
   }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
+  let layoutOverrides={}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null;
+  const cloneLayoutOverrides=source=>{
+    try{ return JSON.parse(JSON.stringify(source&&typeof source==='object'&&!Array.isArray(source)?source:{})); }
+    catch(_){ return {}; }
+  };
+  const loadRuntimeLayoutOverrides=()=>{
+    layoutOverrides=cloneLayoutOverrides(projectRef.runtimeLayout?.overrides);
+    layoutDirty=false;
+    updateRuntimeLayoutSaveState?.();
+  };
+  const markLayoutDirty=()=>{
+    layoutDirty=true;
+    updateRuntimeLayoutSaveState?.();
+  };
+  const markLayoutSaved=()=>{
+    layoutDirty=false;
+    updateRuntimeLayoutSaveState?.();
+  };
+  const layoutOverrideCount=()=>Object.keys(layoutOverrides||{}).length;
+  const flushLayoutToProject=(options={})=>{
+    const snapshot={version:1,overrides:cloneLayoutOverrides(layoutOverrides),savedAt:Date.now()};
+    projectRef.runtimeLayout=cloneLayoutOverrides(snapshot);
+    if(state.appProject){
+      ensureProjectData();
+      state.appProject.runtimeLayout=snapshot;
+    }
+    if(options.markClean!==false) markLayoutSaved();
+    return Object.keys(snapshot.overrides).length;
+  };
+  const inspectorSlug=value=>{
+    const clean=String(value??'').trim().toLowerCase().replace(/[^a-z0-9_ -]+/g,'').replace(/\s+/g,'_');
+    return clean.slice(0,48)||'item';
+  };
+  const nextInspectorSequence=kind=>{
+    const key=String(kind||'item');
+    inspectorSeq[key]=(inspectorSeq[key]||0)+1;
+    return inspectorSeq[key];
+  };
+  const screenToWorld=(x,y)=>({
+    x:(((Number(x)||0)-(GAME_W/2)-zoomOffX)/viewZoom)+(GAME_W/2)+camx,
+    y:(((Number(y)||0)-(GAME_H/2)-zoomOffY)/viewZoom)+(GAME_H/2)+camy
+  });
+  const worldToScreenRect=obj=>{
+    const zoomSafe=Math.max(0.001,viewZoom);
+    if(obj.shape==='circle'){
+      const cx=sx(obj.x), cy=sy(obj.y), r=Math.max(1,(Number(obj.r)||1)*zoomSafe);
+      return {x:cx-r,y:cy-r,w:r*2,h:r*2,cx,cy,r};
+    }
+    if(obj.shape==='line'){
+      const x0=sx(obj.x), y0=sy(obj.y), x1=sx((Number(obj.x)||0)+(Number(obj.w)||0)), y1=sy((Number(obj.y)||0)+(Number(obj.h)||0));
+      return {x:Math.min(x0,x1),y:Math.min(y0,y1),w:Math.abs(x1-x0),h:Math.abs(y1-y0),x0,y0,x1,y1};
+    }
+    const x=sx(obj.x), y=sy(obj.y);
+    return {x,y,w:Math.max(1,(Number(obj.w)||1)*zoomSafe),h:Math.max(1,(Number(obj.h)||1)*zoomSafe)};
+  };
+  const addInspectorObject=obj=>{
+    if(!inspectorEnabled || state.activeView!=='runtime') return obj;
+    const next={...obj,order:++inspectorOrder};
+    next.screen=worldToScreenRect(next);
+    inspectorObjects.push(next);
+    return next;
+  };
+  const colorLabel=value=>{
+    if(value==null) return 'nil';
+    const raw=String(value);
+    const resolved=resolveDrawColor(value);
+    return resolved&&resolved!==raw ? `${raw} (${resolved})` : raw;
+  };
+  const inspectorParamLabel=(key,value)=>/^(?:bg|border|text|hover_bg|color|fill|outline)$/i.test(String(key||''))?colorLabel(value):String(value??'nil');
+  const geometryFromObject=obj=>({x:Number(obj.x)||0,y:Number(obj.y)||0,w:Number(obj.w)||0,h:Number(obj.h)||0,r:Number(obj.r)||0,fontSize:Number(obj.fontSize)||0});
+  const setObjectOverride=(obj,next)=>{
+    if(!obj?.key) return;
+    const value={};
+    ['x','y','w','h','r','fontSize'].forEach(key=>{
+      if(next[key]!=null && Number.isFinite(Number(next[key]))) value[key]=Math.round(Number(next[key])*100)/100;
+    });
+    layoutOverrides[obj.key]=value;
+    markLayoutDirty();
+  };
+  const applyOverrideToRect=(key,geom)=>{
+    const ov=layoutOverrides[key];
+    if(!ov) return geom;
+    return {...geom,x:Number.isFinite(Number(ov.x))?Number(ov.x):geom.x,y:Number.isFinite(Number(ov.y))?Number(ov.y):geom.y,w:Math.max(1,Number.isFinite(Number(ov.w))?Number(ov.w):geom.w),h:Math.max(1,Number.isFinite(Number(ov.h))?Number(ov.h):geom.h)};
+  };
+  const applyOverrideToLine=(key,geom)=>{
+    const ov=layoutOverrides[key];
+    if(!ov) return geom;
+    return {...geom,x:Number.isFinite(Number(ov.x))?Number(ov.x):geom.x,y:Number.isFinite(Number(ov.y))?Number(ov.y):geom.y,w:Number.isFinite(Number(ov.w))?Number(ov.w):geom.w,h:Number.isFinite(Number(ov.h))?Number(ov.h):geom.h};
+  };
+  const applyOverrideToCircle=(key,geom)=>{
+    const ov=layoutOverrides[key];
+    if(!ov) return geom;
+    const r=Number.isFinite(Number(ov.r))?Number(ov.r):(Number.isFinite(Number(ov.w))?Number(ov.w)/2:geom.r);
+    return {...geom,x:Number.isFinite(Number(ov.x))?Number(ov.x):geom.x,y:Number.isFinite(Number(ov.y))?Number(ov.y):geom.y,r:Math.max(1,r)};
+  };
+  function inspectorTransformRect(kind,x0,y0,x1,y1,colorIndex){
+    const seq=nextInspectorSequence(kind);
+    const key=`draw:${kind}:${seq}`;
+    const left=Math.min(Number(x0)||0,Number(x1)||0), right=Math.max(Number(x0)||0,Number(x1)||0);
+    const top=Math.min(Number(y0)||0,Number(y1)||0), bottom=Math.max(Number(y0)||0,Number(y1)||0);
+    const geom=applyOverrideToRect(key,{x:left,y:top,w:Math.abs(right-left)+1,h:Math.abs(bottom-top)+1});
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
+    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w-1,y1:geom.y+geom.h-1,colorIndex};
+  }
+  function inspectorTransformRectFill(x0,y0,a,b,colorIndex){
+    const seq=nextInspectorSequence('rectfill');
+    const key=`draw:rectfill:${seq}`;
+    const hasColor=colorIndex!=null;
+    const left=Number(x0)||0, top=Number(y0)||0;
+    const right=hasColor?(Number(a)||0):left+(Number(a)||0);
+    const bottom=hasColor?(Number(b)||0):top+(Number(b)||0);
+    const geom=applyOverrideToRect(key,{x:Math.min(left,right),y:Math.min(top,bottom),w:Math.abs(right-left)+(hasColor?1:0),h:Math.abs(bottom-top)+(hasColor?1:0)});
+    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
+    return hasColor ? {x0:geom.x,y0:geom.y,a:geom.x+geom.w-1,b:geom.y+geom.h-1,colorIndex} : {x0:geom.x,y0:geom.y,a:geom.w,b:geom.h,colorIndex};
+  }
+  function inspectorTransformLine(x0,y0,x1,y1,colorIndex){
+    const seq=nextInspectorSequence('line');
+    const key=`draw:line:${seq}`;
+    const geom=applyOverrideToLine(key,{x:Number(x0)||0,y:Number(y0)||0,w:(Number(x1)||0)-(Number(x0)||0),h:(Number(y1)||0)-(Number(y0)||0)});
+    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
+    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w,y1:geom.y+geom.h,colorIndex};
+  }
+  function inspectorTransformCircle(kind,x,y,r,colorIndex){
+    const seq=nextInspectorSequence(kind);
+    const key=`draw:${kind}:${seq}`;
+    const geom=applyOverrideToCircle(key,{x:Number(x)||0,y:Number(y)||0,r:Math.max(1,Number(r)||1)});
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,colors:{color:colorIndex}});
+    return {x:geom.x,y:geom.y,r:geom.r,colorIndex};
+  }
+  function inspectorPreparePrint(text,x,y,fontSize,fill,outline,font){
+    const seq=nextInspectorSequence('print');
+    const key=`draw:print:${seq}`;
+    const ov=layoutOverrides[key]||{};
+    return {key,seq,text:String(text??''),x:Number.isFinite(Number(ov.x))?Number(ov.x):(Number(x)||0),y:Number.isFinite(Number(ov.y))?Number(ov.y):(Number(y)||0),fontSize:Math.max(1,Number.isFinite(Number(ov.fontSize))?Number(ov.fontSize):(Number.isFinite(Number(ov.h))?Number(ov.h):(Number(fontSize)||12))),fill,outline,font};
+  }
+  function inspectorRecordPrint(info,width,height){
+    addInspectorObject({key:info.key,kind:'print',label:`print #${info.seq}`,shape:'rect',priority:1,x:info.x,y:info.y,w:Math.max(1,width),h:Math.max(1,height),fontSize:info.fontSize,canResize:true,text:info.text,colors:{fill:info.fill,outline:info.outline,font:info.font}});
+  }
+  function inspectLuaWidgetFromStack(kind,index){
+    if(!L || !lua || !lua.lua_istable(L,index)) return;
+    const read=name=>{
+      lua.lua_getfield(L,index,to_luastring(name));
+      let value=null;
+      if(lua.lua_isnumber(L,-1)) value=lua.lua_tonumber(L,-1);
+      else if(lua.lua_isboolean(L,-1)) value=!!lua.lua_toboolean(L,-1);
+      else if(lua.lua_isstring(L,-1)){ const raw=lua.lua_tolstring(L,-1); value=raw?to_jsstring(raw):''; }
+      lua.lua_pop(L,1);
+      return value;
+    };
+    const write=(name,value)=>{
+      if(value==null || !Number.isFinite(Number(value))) return;
+      lua.lua_pushnumber(L,Number(value));
+      lua.lua_setfield(L,index,to_luastring(name));
+    };
+    const explicitId=read('id')||read('layout_id')||read('layoutId');
+    const label=read('label')||read('name')||read('text')||'';
+    const seq=nextInspectorSequence(kind);
+    const key=explicitId ? `widget:${kind}:${inspectorSlug(explicitId)}` : `widget:${kind}:${seq}:${inspectorSlug(label)}`;
+    const widgetType=String(read('type')||'rect').toLowerCase();
+    let x=Number(read('x'))||0, y=Number(read('y'))||0;
+    let w=Math.max(1,Number(read('w'))||84), h=Math.max(1,Number(read('h'))||18);
+    let r=Math.max(1,Number(read('r')||read('radius'))||8);
+    const isCircle=widgetType==='circ'||widgetType==='circle';
+    if(isCircle){
+      const geom=applyOverrideToCircle(key,{x,y,r});
+      x=geom.x; y=geom.y; r=geom.r; w=r*2; h=r*2;
+      write('x',x); write('y',y); write('r',r);
+    }else{
+      const geom=applyOverrideToRect(key,{x,y,w,h});
+      x=geom.x; y=geom.y; w=geom.w; h=geom.h;
+      write('x',x); write('y',y); write('w',w); write('h',h);
+    }
+    addInspectorObject({key,kind,label:`${kind}${label?`: ${label}`:''}`,shape:isCircle?'circle':'rect',priority:kind==='arrange'?3:5,x,y,w,h,r:isCircle?r:0,canResize:true,text:label,colors:{bg:read('bg'),border:read('border'),text:read('text'),hover_bg:read('hover_bg'),text_size:read('text_size'),label_x:read('label_x'),label_y:read('label_y')}});
+  }
+  function inspectorBeginFrame(){ inspectorObjects=[]; inspectorSeq={}; inspectorOrder=0; }
+  const hitInspectorObject=(obj,point)=>{
+    const s=obj.screen||worldToScreenRect(obj), px=point.x, py=point.y;
+    if(obj.shape==='circle') return Math.hypot(px-s.cx,py-s.cy)<=s.r+5;
+    if(obj.shape==='line'){
+      const dx=s.x1-s.x0, dy=s.y1-s.y0, len2=dx*dx+dy*dy;
+      if(len2<=0) return Math.hypot(px-s.x0,py-s.y0)<=5;
+      const t=clamp(((px-s.x0)*dx+(py-s.y0)*dy)/len2,0,1);
+      return Math.hypot(px-(s.x0+t*dx),py-(s.y0+t*dy))<=5;
+    }
+    return px>=s.x-3 && px<=s.x+s.w+3 && py>=s.y-3 && py<=s.y+s.h+3;
+  };
+  const findInspectorObjectAt=point=>{
+    let best=null;
+    for(const obj of inspectorObjects){
+      if(!hitInspectorObject(obj,point)) continue;
+      if(!best || obj.priority>best.priority || (obj.priority===best.priority && obj.order>best.order)) best=obj;
+    }
+    return best;
+  };
+  const isInspectorResizeHit=(obj,point)=>{
+    if(!obj?.canResize) return false;
+    const s=obj.screen||worldToScreenRect(obj);
+    if(obj.shape==='circle') return Math.abs(Math.hypot(point.x-s.cx,point.y-s.cy)-s.r)<=8;
+    const hx=(obj.shape==='line')?s.x1:s.x+s.w, hy=(obj.shape==='line')?s.y1:s.y+s.h;
+    return Math.abs(point.x-hx)<=8 && Math.abs(point.y-hy)<=8;
+  };
+  function ensureInspectorOverlay(){
+    if(inspectorCanvas) return;
+    inspectorCanvas=document.createElement('canvas');
+    inspectorCanvas.className='runtimeInspectorCanvas';
+    inspectorCanvas.setAttribute('aria-hidden','true');
+    inspectorCtx=inspectorCanvas.getContext('2d');
+    inspectorPanel=document.createElement('div');
+    inspectorPanel.className='runtimeInspectorPanel';
+    stage.appendChild(inspectorCanvas);
+    stage.appendChild(inspectorPanel);
+    const pointerPoint=e=>clientToMouse(e.clientX,e.clientY);
+    inspectorCanvas.addEventListener('pointerdown',e=>{
+      if(!inspectorEnabled) return;
+      const point=pointerPoint(e), obj=findInspectorObjectAt(point);
+      inspectorHover=obj;
+      if(!obj){
+        inspectorSelected=null;
+        renderInspectorOverlay();
+        e.preventDefault(); e.stopPropagation();
+        return;
+      }
+      const sameSelection=inspectorSelected?.key===obj.key;
+      inspectorSelected=obj;
+      inspectorDrag={key:obj.key,sameSelection,mode:isInspectorResizeHit(obj,point)?'resize':'move',startPoint:point,startWorld:screenToWorld(point.x,point.y),startGeom:geometryFromObject(obj),moved:false};
+      inspectorCanvas.classList.add('dragging');
+      try{ inspectorCanvas.setPointerCapture(e.pointerId); }catch(_){}
+      renderInspectorOverlay();
+      e.preventDefault(); e.stopPropagation();
+    },{passive:false});
+    inspectorCanvas.addEventListener('pointermove',e=>{
+      if(!inspectorEnabled) return;
+      const point=pointerPoint(e);
+      if(inspectorDrag && inspectorSelected){
+        const world=screenToWorld(point.x,point.y), dx=world.x-inspectorDrag.startWorld.x, dy=world.y-inspectorDrag.startWorld.y;
+        if(Math.abs(point.x-inspectorDrag.startPoint.x)>1 || Math.abs(point.y-inspectorDrag.startPoint.y)>1) inspectorDrag.moved=true;
+        const base=inspectorDrag.startGeom, next={...base};
+        if(inspectorDrag.mode==='move'){ next.x=base.x+dx; next.y=base.y+dy; }
+        else if(inspectorSelected.shape==='circle'){ next.r=Math.max(1,Math.hypot(world.x-base.x,world.y-base.y)); next.w=next.r*2; next.h=next.r*2; }
+        else if(inspectorSelected.kind==='print'){ next.w=Math.max(1,world.x-base.x); next.h=Math.max(1,world.y-base.y); next.fontSize=Math.max(1,next.h); }
+        else{ next.w=inspectorSelected.shape==='line'?world.x-base.x:Math.max(1,world.x-base.x); next.h=inspectorSelected.shape==='line'?world.y-base.y:Math.max(1,world.y-base.y); }
+        setObjectOverride(inspectorSelected,next);
+        inspectorSelected={...inspectorSelected,...next};
+        inspectorSelected.screen=worldToScreenRect(inspectorSelected);
+      }else{
+        inspectorHover=findInspectorObjectAt(point);
+      }
+      renderInspectorOverlay(point);
+      e.preventDefault(); e.stopPropagation();
+    },{passive:false});
+    inspectorCanvas.addEventListener('pointerup',e=>{
+      if(!inspectorEnabled) return;
+      const point=pointerPoint(e), clicked=inspectorDrag && !inspectorDrag.moved;
+      if(clicked && inspectorSelected) inspectorPage=inspectorDrag.sameSelection?((inspectorPage+1)%3):0;
+      inspectorDrag=null;
+      inspectorCanvas.classList.remove('dragging');
+      inspectorHover=findInspectorObjectAt(point);
+      renderInspectorOverlay(point);
+      e.preventDefault(); e.stopPropagation();
+    },{passive:false});
+    ['pointercancel','lostpointercapture'].forEach(type=>inspectorCanvas.addEventListener(type,e=>{
+      inspectorDrag=null;
+      inspectorCanvas.classList.remove('dragging');
+      e.preventDefault(); e.stopPropagation();
+    },{passive:false}));
+  }
+  function positionInspectorOverlay(){
+    ensureInspectorOverlay();
+    const stageRect=stage.getBoundingClientRect(), canvasRect=canvas.getBoundingClientRect();
+    inspectorCanvas.width=GAME_W;
+    inspectorCanvas.height=GAME_H;
+    inspectorCanvas.style.left=`${Math.round(canvasRect.left-stageRect.left)}px`;
+    inspectorCanvas.style.top=`${Math.round(canvasRect.top-stageRect.top)}px`;
+    inspectorCanvas.style.width=`${Math.round(canvasRect.width)}px`;
+    inspectorCanvas.style.height=`${Math.round(canvasRect.height)}px`;
+  }
+  function inspectorPanelText(obj){
+    const page=inspectorPage%3, edited=layoutOverrides[obj.key]?'edited':'live';
+    if(page===1){
+      const lines=[`INSPECT COLORS (${edited})`,obj.label||obj.kind];
+      Object.entries(obj.colors||{}).forEach(([k,v])=>lines.push(`${k}: ${inspectorParamLabel(k,v)}`));
+      if(!Object.keys(obj.colors||{}).length) lines.push('no color params');
+      return lines.join('\n');
+    }
+    if(page===2) return [`INSPECT SOURCE (${edited})`,obj.label||obj.kind,`kind: ${obj.kind}`,`key: ${obj.key}`,'click: cycle data','drag: move','corner/edge: resize'].join('\n');
+    const parts=[`INSPECT POSITION (${edited})`,obj.label||obj.kind,`x: ${Math.round((Number(obj.x)||0)*100)/100}`,`y: ${Math.round((Number(obj.y)||0)*100)/100}`,`w: ${Math.round((Number(obj.w)||0)*100)/100}`,`h: ${Math.round((Number(obj.h)||0)*100)/100}`];
+    if(obj.r) parts.push(`r: ${Math.round(obj.r*100)/100}`);
+    if(obj.fontSize) parts.push(`font_size: ${Math.round(obj.fontSize*100)/100}`);
+    return parts.join('\n');
+  }
+  function renderInspectorOverlay(){
+    ensureInspectorOverlay();
+    positionInspectorOverlay();
+    inspectorCanvas.classList.toggle('active', inspectorEnabled && state.activeView==='runtime');
+    if(!inspectorEnabled || state.activeView!=='runtime'){
+      inspectorCtx?.clearRect(0,0,inspectorCanvas.width,inspectorCanvas.height);
+      inspectorPanel?.classList.remove('show');
+      return;
+    }
+    const ctxi=inspectorCtx;
+    ctxi.clearRect(0,0,GAME_W,GAME_H);
+    ctxi.lineWidth=1;
+    for(const obj of inspectorObjects){
+      const s=obj.screen||worldToScreenRect(obj), active=obj.key===(inspectorSelected?.key), hover=obj.key===(inspectorHover?.key);
+      ctxi.save();
+      ctxi.strokeStyle=active?'rgba(255,214,102,.95)':hover?'rgba(91,216,255,.95)':'rgba(255,255,255,.26)';
+      ctxi.fillStyle=active?'rgba(255,214,102,.12)':hover?'rgba(91,216,255,.10)':'rgba(255,255,255,.035)';
+      ctxi.setLineDash(active||hover?[]:[4,3]);
+      if(obj.shape==='circle'){ ctxi.beginPath(); ctxi.arc(s.cx,s.cy,s.r,0,Math.PI*2); ctxi.fill(); ctxi.stroke(); }
+      else if(obj.shape==='line'){ ctxi.beginPath(); ctxi.moveTo(s.x0,s.y0); ctxi.lineTo(s.x1,s.y1); ctxi.stroke(); }
+      else{ ctxi.fillRect(s.x,s.y,s.w,s.h); ctxi.strokeRect(s.x,s.y,s.w,s.h); }
+      if(active||hover){
+        const hx=obj.shape==='line'?s.x1:(obj.shape==='circle'?s.cx+s.r:s.x+s.w), hy=obj.shape==='line'?s.y1:(obj.shape==='circle'?s.cy:s.y+s.h);
+        ctxi.setLineDash([]); ctxi.fillStyle=active?'#ffd666':'#5bd8ff'; ctxi.fillRect(Math.round(hx)-3,Math.round(hy)-3,6,6);
+      }
+      ctxi.restore();
+    }
+    const panelObj=inspectorSelected||inspectorHover;
+    if(panelObj && inspectorPanel){
+      const s=panelObj.screen||worldToScreenRect(panelObj), stageRect=stage.getBoundingClientRect(), canvasRect=canvas.getBoundingClientRect();
+      const scaleX=canvasRect.width/GAME_W, scaleY=canvasRect.height/GAME_H;
+      const desiredLeft=(canvasRect.left-stageRect.left)+((s.x+s.w+8)*scaleX), desiredTop=(canvasRect.top-stageRect.top)+(s.y*scaleY);
+      inspectorPanel.style.left=`${Math.round(clamp(desiredLeft,8,Math.max(8,stageRect.width-290)))}px`;
+      inspectorPanel.style.top=`${Math.round(clamp(desiredTop,8,Math.max(8,stageRect.height-140)))}px`;
+      inspectorPanel.textContent=inspectorPanelText(panelObj);
+      inspectorPanel.classList.add('show');
+    }else{
+      inspectorPanel?.classList.remove('show');
+    }
+  }
+  function setInspectorEnabled(next){
+    inspectorEnabled=!!next && isDesktopUI();
+    ensureInspectorOverlay();
+    if(!inspectorEnabled){ inspectorSelected=null; inspectorHover=null; inspectorDrag=null; }
+    renderInspectorOverlay();
+    updateRuntimeLayoutSaveState?.();
+    return inspectorEnabled;
+  }
+  function inspectorFinishFrame(){
+    if(inspectorEnabled){
+      if(inspectorSelected) inspectorSelected=inspectorObjects.find(obj=>obj.key===inspectorSelected.key)||inspectorSelected;
+      if(inspectorHover) inspectorHover=inspectorObjects.find(obj=>obj.key===inspectorHover.key)||inspectorHover;
+      renderInspectorOverlay();
+    }else if(inspectorCanvas){
+      renderInspectorOverlay();
+    }
+  }
+  loadRuntimeLayoutOverrides();
   function clip(x,y,w,h){ if(arguments.length===0||x==null){ clipRect=null; return 0; } clipRect={x:Number(x)||0,y:Number(y)||0,w:Math.max(0,Number(w)||0),h:Math.max(0,Number(h)||0)}; return 0; }
   function clipPush(){ if(!clipRect) return false; ctx.save(); ctx.beginPath(); ctx.rect(Math.round(clipRect.x),Math.round(clipRect.y),Math.round(clipRect.w),Math.round(clipRect.h)); ctx.clip(); return true; }
   function clipPop(active){ if(active) ctx.restore(); }
@@ -9989,7 +10514,15 @@ function makeRuntime(){
         if(parsedFill!=null) fill=parsedFill;
       }
     }
-    fontSize=Math.max(1,Math.round(fontSize*viewZoom));
+    const inspectInfo=inspectorPreparePrint(text,x,y,fontSize,fill,outline,font);
+    x=inspectInfo.x;
+    y=inspectInfo.y;
+    fontSize=inspectInfo.fontSize;
+    fill=inspectInfo.fill;
+    outline=inspectInfo.outline;
+    font=inspectInfo.font;
+    const baseFontSize=Math.max(1,fontSize);
+    fontSize=Math.max(1,Math.round(baseFontSize*viewZoom));
     const fontFamily=String.fromCharCode(34)+String(font).replace(new RegExp(String.fromCharCode(34),'g'),String.fromCharCode(92,34))+String.fromCharCode(34);
     ctx.font=fontSize+'px '+fontFamily;
     ctx.textAlign='left';
@@ -9997,13 +10530,15 @@ function makeRuntime(){
     const dx=Math.round(sx(x)), dy=Math.round(sy(y));
     ctx.lineWidth=Math.max(1,Math.round(viewZoom));
     let cursorX=dx;
-    for(const part of printTextSegments(text, fill)){
+    const textSegments=printTextSegments(text, fill);
+    for(const part of textSegments){
       if(!part.text) continue;
       if(outline!=null){ ctx.strokeStyle=outline; ctx.strokeText(part.text,cursorX,dy); }
       ctx.fillStyle=part.fill;
       ctx.fillText(part.text,cursorX,dy);
       cursorX+=ctx.measureText(part.text).width;
     }
+    inspectorRecordPrint(inspectInfo, (cursorX-dx)/Math.max(0.001,viewZoom), baseFontSize);
     ctx.fillStyle=oldFill;
     ctx.strokeStyle=oldStroke;
     clipPop(_cp);
@@ -10223,6 +10758,7 @@ function makeRuntime(){
     L=lauxlib.luaL_newstate();
     lualib.luaL_openlibs(L);
     const push=(name,fn)=>{ lua.lua_pushjsfunction(L,fn); lua.lua_setglobal(L,to_luastring(name)); };
+    const readLuaArg=(stack,index)=>lua.lua_isnoneornil(stack,index)?null:(lua.lua_isnumber(stack,index)?lua.lua_tonumber(stack,index):to_jsstring(lua.lua_tolstring(stack,index)));
     push('cls',L=>{ const argc=lua.lua_gettop(L); if(argc===0){ cls(); return 0; } const clearColor=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1)); cls(clearColor); return 0; });
     push('camera',L=>{ const argc=lua.lua_gettop(L); if(argc===0) camera(); else camera(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2)); return 0; });
     push('zoom',L=>{ const argc=lua.lua_gettop(L); if(argc>=1){ zoom(lua.lua_tonumber(L,1), argc>=2?lua.lua_tonumber(L,2):undefined, argc>=3?lua.lua_tonumber(L,3):undefined); return 0; } lua.lua_pushnumber(L, zoom()); return 1;});
@@ -10231,15 +10767,16 @@ function makeRuntime(){
     push('pal',L=>{ const argc=lua.lua_gettop(L); if(argc===0){ pal(); return 0; } const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); pal(readArg(1),argc>=2?readArg(2):null); return 0; });
     push('pset',L=>{ const argc=lua.lua_gettop(L); pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?(lua.lua_isnumber(L,3)?lua.lua_tonumber(L,3):to_jsstring(lua.lua_tolstring(L,3))):undefined); return 0;});
     push('pget',L=>{ lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2))); return 1;});
-    push('line',L=>{ const argc=lua.lua_gettop(L); line(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?(lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):to_jsstring(lua.lua_tolstring(L,5))):undefined); return 0;});
-    push('rect',L=>{ const argc=lua.lua_gettop(L); rect(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?(lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):to_jsstring(lua.lua_tolstring(L,5))):undefined); return 0;});
-    push('rectfill',L=>{ const argc=lua.lua_gettop(L); rectfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),argc>=5?(lua.lua_isnumber(L,5)?lua.lua_tonumber(L,5):to_jsstring(lua.lua_tolstring(L,5))):undefined); return 0;});
-    push('circ',L=>{ const argc=lua.lua_gettop(L); circ(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?(lua.lua_isnumber(L,4)?lua.lua_tonumber(L,4):to_jsstring(lua.lua_tolstring(L,4))):undefined); return 0;});
-    push('circfill',L=>{ const argc=lua.lua_gettop(L); circfill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),argc>=4?(lua.lua_isnumber(L,4)?lua.lua_tonumber(L,4):to_jsstring(lua.lua_tolstring(L,4))):undefined); return 0;});
+    push('line',L=>{ const t=inspectorTransformLine(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined); line(t.x0,t.y0,t.x1,t.y1,t.colorIndex); return 0;});
+    push('rect',L=>{ const t=inspectorTransformRect('rect',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined); rect(t.x0,t.y0,t.x1,t.y1,t.colorIndex); return 0;});
+    push('rectfill',L=>{ const t=inspectorTransformRectFill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined); rectfill(t.x0,t.y0,t.a,t.b,t.colorIndex); return 0;});
+    push('circ',L=>{ const t=inspectorTransformCircle('circ',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_gettop(L)>=4?readLuaArg(L,4):undefined); circ(t.x,t.y,t.r,t.colorIndex); return 0;});
+    push('circfill',L=>{ const t=inspectorTransformCircle('circfill',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_gettop(L)>=4?readLuaArg(L,4):undefined); circfill(t.x,t.y,t.r,t.colorIndex); return 0;});
     push('print',L=>{ const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const args=[]; for(let i=1;i<=argc;i++) args.push(readArg(i)); print(...args); return 0;});
     push('print_',L=>{ const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const args=[]; for(let i=1;i<=argc;i++) args.push(readArg(i)); print(...args); return 0;});
     push('default_font',L=>{ const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); default_font(readArg(1),readArg(2),readArg(3)); return 0;});
     push('default_controls',L=>{ const raw=lua.lua_gettop(L)>=1?(lua.lua_isnumber(L,1)?String(lua.lua_tonumber(L,1)):to_jsstring(lua.lua_tolstring(L,1))):null; lua.lua_pushstring(L,to_luastring(default_controls(raw))); return 1;});
+    push('__tc_runtime_inspect_widget',L=>{ const kind=lua.lua_gettop(L)>=1?String(readLuaArg(L,1)||'widget'):'widget'; if(lua.lua_gettop(L)>=2) inspectLuaWidgetFromStack(kind,2); return 0; });
     push('spr',L=>{ const source=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1)); const flip=lua.lua_gettop(L)>=4?!!lua.lua_toboolean(L,4):false; spr(source,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),flip); return 0; });
     push('sspr',L=>{ const source=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1)); const readPercent=i=>lua.lua_gettop(L)>=i&&lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):0; const center=lua.lua_gettop(L)>=6?!!lua.lua_toboolean(L,6):false; const flip=lua.lua_gettop(L)>=7?!!lua.lua_toboolean(L,7):false; sspr(source,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),readPercent(4),readPercent(5),center,flip); return 0; });
     push('r_spr',L=>{ const source=lua.lua_isnumber(L,1)?lua.lua_tonumber(L,1):to_jsstring(lua.lua_tolstring(L,1)); const angle=lua.lua_gettop(L)>=4?lua.lua_tonumber(L,4):0; const flip=lua.lua_gettop(L)>=5?!!lua.lua_toboolean(L,5):false; r_spr(source,lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),angle,flip); return 0; });
@@ -10299,8 +10836,8 @@ function makeRuntime(){
   function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(runtimeActive){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } inspectorBeginFrame(); if(runtimeActive){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } inspectorFinishFrame(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -10806,9 +11343,29 @@ function wireUI(){
     runtimeUiHidden=!runtimeUiHidden;
     applyRuntimeUiHiddenState();
   });
+  bindClick('runtimeInspectorModeBtn',()=>{
+    if(state.activeView!=='runtime' || !window.matchMedia('(min-width: 901px)').matches) return;
+    const enabled=runtime?.toggleInspector?.();
+    toast(enabled?'UI inspector enabled.':'UI inspector disabled.');
+    applyRuntimeUiHiddenState();
+  });
+  bindClick('runtimeSaveLayoutBtn',async ()=>{
+    if(state.activeView!=='runtime') return;
+    const count=runtime?.getLayoutOverrideCount?.()||0;
+    const saved=await saveProject(false);
+    if(saved) toast(`<b>Layout saved:</b> ${count} override${count===1?'':'s'}.`);
+    applyRuntimeUiHiddenState();
+  });
   window.addEventListener('resize',applyRuntimeUiHiddenState);
   window.addEventListener('keydown',e=>{
     const key=String(e.key||'').toLowerCase();
+    if(state.activeView==='runtime' && (key==='f1' || e.code==='F1')){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      runtime?.toggleInspector?.();
+      applyRuntimeUiHiddenState();
+      return;
+    }
     if(e.altKey && !e.ctrlKey && !e.metaKey && key==='enter'){
       e.preventDefault();
       e.stopImmediatePropagation();
