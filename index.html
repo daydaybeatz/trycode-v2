@@ -30,11 +30,14 @@
     body{padding-top:env(safe-area-inset-top)}
     .app{height:100%;display:flex;flex-direction:column;min-height:0}
     .topbar{flex:0 0 38px;display:flex;align-items:center;gap:3px;padding:3px 5px;background:linear-gradient(180deg,#efe0bc,#e8cf96);border-bottom:4px solid var(--line);box-shadow:inset 0 -3px 0 #c39a5b}
-    .topbarRuntimeControls{display:flex;align-items:center;gap:6px;flex:0 0 auto}
-    .topbarRuntimeControls .fileBtn{padding:6px 10px;font-size:11px}
-    .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden{display:none}
-    .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
-    .runtimeSaveLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
+    .topbarRuntimeControls{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+    .topbarRuntimeControls::-webkit-scrollbar{display:none}
+    .topbarRuntimeControls .fileBtn{padding:6px 10px;font-size:11px;flex:0 0 auto;white-space:nowrap}
+    .topbar:has(.topbarRuntimeControls:not(.hidden)) .tabsWrap{flex:0 0 auto}
+    .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden,.runtimeResetLayoutBtn.hidden,.runtimeVarsBtn.hidden,.runtimeDebugPauseBtn.hidden{display:none}
+    .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active,.runtimeResetLayoutBtn.active,.runtimeVarsBtn.active,.runtimeDebugPauseBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
+    .runtimeSaveLayoutBtn:disabled,.runtimeResetLayoutBtn:disabled{opacity:.55;cursor:default;filter:saturate(.65)}
+    .runtimeInspectorSaveFab{display:none}
     body.runtime-ui-hidden .topbar,body.runtime-ui-hidden #view-runtime .hud,body.runtime-ui-hidden #view-runtime .runtimeErrorBox,body.runtime-ui-hidden #view-runtime .runtimeDialogLayer{display:none !important}
     body.runtime-ui-hidden .views{position:fixed;inset:0}
     body.runtime-ui-hidden #view-runtime .runtimeView{inset:0;padding:0;border:none;border-radius:0;box-shadow:none;background:#000}
@@ -67,8 +70,10 @@
     body.dark-mode .runtimeStartPlayBtn{border-radius:999px}
     body.dark-mode .menuToggleInput,
     body.dark-mode .menuToggleInput::after{border-radius:6px}
-    @media (max-width: 900px){
+    @media (max-width: 900px), (pointer: coarse){
       .runtimeHideBtn{display:none !important}
+      .topbarRuntimeControls{gap:3px}
+      .topbarRuntimeControls .fileBtn{padding:4px 6px;font-size:10px;line-height:1.1}
     }
     .brand{flex:0 0 auto;padding:7px 10px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#b82626,#912020);color:#fff6eb;font-weight:900;letter-spacing:.05em;text-shadow:2px 2px 0 #561010;box-shadow:0 4px 0 #6f1818;font-size:11px}
     .tabsWrap{flex:1;min-width:0;overflow-x:auto;scrollbar-width:none}
@@ -240,8 +245,17 @@
     .runtimeInspectorCanvas{position:absolute;z-index:43;display:none;image-rendering:pixelated;touch-action:none;cursor:crosshair}
     .runtimeInspectorCanvas.active{display:block;pointer-events:auto}
     .runtimeInspectorCanvas.dragging{cursor:grabbing}
-    .runtimeInspectorPanel{position:absolute;z-index:44;display:none;min-width:190px;max-width:280px;padding:8px 10px;border:3px solid var(--line);border-radius:6px;background:rgba(251,246,231,.96);box-shadow:0 4px 0 rgba(42,63,53,.45);color:var(--ink);font:11px/1.35 Consolas,"SFMono-Regular",monospace;white-space:pre-wrap;pointer-events:none}
+    .runtimeInspectorPanel{position:fixed;right:10px;top:520px;z-index:79;display:none;min-width:190px;max-width:280px;padding:8px 10px;border:3px solid var(--line);border-radius:6px;background:rgba(251,246,231,.96);box-shadow:0 4px 0 rgba(42,63,53,.45);color:var(--ink);font:11px/1.35 Consolas,"SFMono-Regular",monospace;white-space:normal;pointer-events:auto}
+    .runtimeInspectorPanelText{white-space:pre-wrap}
+    .runtimeInspectorPanelActions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
+    .runtimeInspectorPanelResetBtn{padding:3px 8px;font-size:10px;min-width:auto;box-shadow:0 2px 0 rgba(42,63,53,.45)}
+    .runtimeInspectorPanelResetBtn:disabled{opacity:.55;cursor:default}
     .runtimeInspectorPanel.show{display:block}
+    @media (max-width: 900px), (pointer: coarse){
+      .runtimeInspectorSaveFab:not(.hidden){position:absolute;right:12px;top:12px;z-index:46;display:inline-flex;align-items:center;justify-content:center;padding:7px 10px;font-size:10px;line-height:1.1}
+      .runtimeInspectorSaveFab.hidden{display:none !important}
+      .runtimeInspectorSaveFab:disabled{display:none !important}
+    }
     .runtimeStartOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:34;background:rgba(18,10,6,.48);backdrop-filter:blur(5px)}
     .runtimeStartOverlay.hidden{display:none}
     .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:13px 14px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
@@ -269,6 +283,25 @@
     .runtimeDialogInput{width:100%;border:3px solid var(--line);border-radius:12px;padding:9px 10px;background:#fffaf1;color:var(--ink)}
     .runtimeDialogActions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
     .runtimeDialogActions .uiBtn{min-width:84px}
+    .runtimeVarsPanel{position:fixed;right:10px;top:48px;z-index:80;display:none;width:min(360px,calc(100vw - 20px));max-height:min(460px,calc(100vh - 64px));overflow:auto;padding:10px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45);color:var(--ink)}
+    .runtimeVarsPanel.show{display:block}
+    .runtimeVarsHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    .runtimeVarsList{display:flex;flex-direction:column;gap:6px}
+    .runtimeVarsCrumbs,.runtimeVarsPager{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;font-weight:800}
+    .runtimeVarsPath{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1.25 Consolas,"SFMono-Regular",monospace}
+    .runtimeVarsPager{justify-content:center}
+    .runtimeVarRow{display:grid;grid-template-columns:minmax(74px,.8fr) minmax(0,1.2fr) auto auto auto;align-items:center;gap:6px;padding:6px;border:2px solid rgba(80,111,102,.55);border-radius:10px;background:rgba(255,250,241,.72);font:12px/1.25 Consolas,"SFMono-Regular",monospace}
+    .runtimeVarRow.functionSourceRow{grid-template-columns:minmax(42px,.45fr) minmax(0,1.55fr) auto auto;align-items:start}
+    .runtimeVarRow.functionSourceRow .runtimeInspectorVarInput{min-height:30px;resize:vertical;white-space:pre;overflow:auto}
+    .runtimeVarSectionTitle{padding:8px 4px 2px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.06em;opacity:.82}
+    .runtimeVarName{font-weight:900;word-break:break-word}
+    .runtimeVarOpenBtn{padding:0;border:0;background:transparent;color:inherit;text-align:left;cursor:pointer;font:inherit;font-weight:900}
+    .runtimeVarOpenBtn:hover{text-decoration:underline}
+    .runtimeVarValue{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .runtimeVarType{opacity:.72;font-size:10px}
+    .runtimeVarEditBtn,.runtimeVarGotoBtn{padding:3px 7px;font-size:10px;line-height:1;min-width:auto;box-shadow:0 2px 0 var(--shadow)}
+    .runtimeInspectorVarInput{width:100%;min-width:0;padding:3px 5px;border:2px solid rgba(80,111,102,.55);border-radius:7px;background:rgba(255,255,255,.7);font:11px/1.25 Consolas,"SFMono-Regular",monospace}
+    .runtimeVarsEmpty{padding:8px;font-size:12px;font-weight:700;opacity:.75}
     .runtimeDialogActions .uiBtn.primary{border-color:var(--accent);box-shadow:0 4px 0 #7a2a18}
     .hud{position:absolute;inset:0;pointer-events:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;--hud-edge:clamp(14px,4vw,28px);--hud-bottom:max(28px,calc(env(safe-area-inset-bottom) + 18px));--hud-controls-lift:clamp(16px,3.5vw,24px);--joy-size:clamp(112px,28vw,142px);--knob-size:calc(var(--joy-size) * .42);--cluster-size:clamp(148px,36vw,174px);--face-size:clamp(56px,13.5vw,66px);--face-offset:calc((var(--cluster-size) - var(--face-size)) / 2);--sys-height:clamp(36px,9vw,42px)}
     body.desktop-ui .hud{display:none}
@@ -517,6 +550,8 @@
     body.dark-mode .runtimeStartHint{color:#f7b7c4}
     body.dark-mode .runtimeStartPlaceholder{background:#0a1122;border-color:#6f83b6;color:#e8ecff}
     body.dark-mode .runtimeInspectorPanel{background:rgba(16,22,42,.96);color:#e9eefb;border-color:var(--line);box-shadow:0 4px 0 rgba(5,8,18,.7)}
+    body.dark-mode .runtimeVarsPanel{background:linear-gradient(180deg,#2f3a5d,#182034);box-shadow:0 6px 0 #0f1528;color:#f6f1df}
+    body.dark-mode .runtimeVarRow{background:rgba(16,22,42,.72);border-color:rgba(150,163,207,.45);color:#f6f1df}
     body.dark-mode .joy{border-color:#c7d0e8;background:rgba(199,208,232,.1);box-shadow:0 4px 0 rgba(0,0,0,.3)}
     body.dark-mode .joy .knob{border-color:#f4f1e3;background:rgba(241,166,90,.22)}
     body.dark-mode .symbtn,
@@ -627,10 +662,14 @@
       </div>
       <div class="topbarRuntimeControls hidden" id="topbarRuntimeControls">
         <button class="fileBtn runtimeInspectorModeBtn hidden" id="runtimeInspectorModeBtn">Inspect</button>
+        <button class="fileBtn runtimeDebugPauseBtn hidden" id="runtimeDebugPauseBtn">Pause</button>
+        <button class="fileBtn runtimeVarsBtn hidden" id="runtimeVarsBtn">Vars</button>
         <button class="fileBtn runtimeSaveLayoutBtn hidden" id="runtimeSaveLayoutBtn" disabled>Save Layout</button>
+        <button class="fileBtn runtimeResetLayoutBtn hidden" id="runtimeResetLayoutBtn" disabled>Reset</button>
         <button class="fileBtn runtimeHideBtn" id="runtimeHideBtn">Hide</button>
       </div>
       <button class="fileBtn" id="fileBtn">Menu</button>
+      <div class="runtimeVarsPanel" id="runtimeVarsPanel" aria-live="polite"><div class="runtimeVarsHeader"><span>Runtime Vars</span><button class="uiBtn miniBtn" id="runtimeVarsCloseBtn" type="button">Close</button></div><div class="runtimeVarsList" id="runtimeVarsList"></div></div>
     </div>
 
   <div class="views">
@@ -710,6 +749,7 @@
 
     <div class="view" id="view-runtime">
       <div class="runtimeView panelSkin">
+        <button class="fileBtn runtimeSaveLayoutBtn runtimeInspectorSaveFab hidden" id="runtimeMobileSaveLayoutBtn" type="button" disabled>Save Layout</button>
         <div class="screenStage" id="screenStage" tabindex="-1" aria-label="Runtime screen"><canvas id="screen" width="480" height="270" tabindex="0" aria-label="Runtime canvas"></canvas><div class="runtimeStartOverlay" id="runtimeStartOverlay"><div class="runtimeStartCard"><div class="runtimeStartPlaceholder" id="runtimeStartPlaceholder"><p class="runtimeStartPlaceholderTitle">**** TRY-CODE CONSOLE ****</p><p class="runtimeStartPlaceholderLine" id="runtimeStartProjectLine">PROJECT:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartResolutionLine">RESOLUTION:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartControlsLine">ONSCREEN CONTROLS:</p><p class="runtimeStartPlaceholderLine" id="runtimeStartFontLine">DEFAULT FONT:</p><p class="runtimeStartPlaceholderLine">BOOT READY.</p></div><button class="uiBtn runtimeStartPlayBtn" id="runtimeStartPlayBtn" aria-label="Start runtime"><span class="playTriangle" aria-hidden="true"></span></button><div class="runtimeStartHint">Click to play</div></div></div></div>
         <div class="runtimeBar"></div>
         <div class="runtimeErrorBox" id="runtimeErrorBox" aria-live="polite">
@@ -1059,29 +1099,69 @@ local function __tc_runtime_inspect(kind, widget)
   end
 end
 
-function arrange(list, opts)
+function arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding, down_padding, left_padding, right_padding)
   if type(list) ~= "table" then return list end
-  opts = type(opts) == "table" and opts or {}
-  local x = tonumber(opts.x) or 0
-  local y = tonumber(opts.y) or 0
-  local gap = tonumber(opts.gap) or 4
-  local dir = tostring(opts.dir or opts.direction or "row"):lower()
+
+  local opts = nil
+  if type(x) == "table" then opts = x end
+
+  local base_x = tonumber(opts and opts.x or x) or 0
+  local base_y = tonumber(opts and opts.y or y) or 0
+  local rows = math.max(0, math.floor(tonumber(opts and (opts.rows or opts.row_amt or opts.rowAmount) or row_amt) or 0))
+  local columns = math.max(0, math.floor(tonumber(opts and (opts.columns or opts.column_amt or opts.columnAmount or opts.cols) or column_amt) or 0))
+  local x_gap = tonumber(opts and (opts.x_buffer or opts.xBuffer or opts.gap_x or opts.x_gap or opts.gap) or x_buffer) or (opts and 4 or 0)
+  local y_gap = tonumber(opts and (opts.y_buffer or opts.yBuffer or opts.gap_y or opts.y_gap or opts.gap) or y_buffer) or x_gap
+  local pad_up = tonumber(opts and (opts.up_padding or opts.upPadding or opts.padding_y or opts.padding) or up_padding) or 0
+  local pad_down = tonumber(opts and (opts.down_padding or opts.downPadding or opts.padding_y or opts.padding) or down_padding) or 0
+  local pad_left = tonumber(opts and (opts.left_padding or opts.leftPadding or opts.padding_x or opts.padding) or left_padding) or 0
+  local pad_right = tonumber(opts and (opts.right_padding or opts.rightPadding or opts.padding_x or opts.padding) or right_padding) or 0
+  local dir = tostring(opts and (opts.dir or opts.direction) or "row"):lower()
+  local legacy_step = opts ~= nil and columns == 0 and rows == 0
+  if legacy_step then
+    if dir == "col" or dir == "column" or dir == "vertical" then columns = 1 else rows = 1 end
+  elseif columns == 0 and rows > 0 then
+    columns = math.max(1, math.ceil(#list / rows))
+  elseif columns == 0 then
+    columns = math.max(1, #list)
+  end
+
+  local current_x = base_x + pad_left
+  local current_y = base_y + pad_up
+  local row = 1
+  local column = 1
+
   for i, item in ipairs(list) do
     if type(item) == "table" then
-      if item.x == nil then item.x = x end
-      if item.y == nil then item.y = y end
-      if opts.w ~= nil and item.w == nil then item.w = opts.w end
-      if opts.h ~= nil and item.h == nil then item.h = opts.h end
+      local iw = tonumber(item.w) or tonumber(opts and opts.w) or __tc_button_theme.w or 84
+      local ih = tonumber(item.h) or tonumber(opts and opts.h) or __tc_button_theme.h or 18
+      if opts and opts.w ~= nil and item.w == nil then item.w = opts.w end
+      if opts and opts.h ~= nil and item.h == nil then item.h = opts.h end
+
+      item.x = current_x
+      item.y = current_y
       __tc_runtime_inspect("arrange", item)
-      local iw = tonumber(item.w) or tonumber(opts.w) or 84
-      local ih = tonumber(item.h) or tonumber(opts.h) or 18
-      if dir == "col" or dir == "column" or dir == "vertical" then
-        y = y + ih + gap
+
+      if legacy_step then
+        if dir == "col" or dir == "column" or dir == "vertical" then
+          current_y = current_y + ih + pad_up + pad_down + y_gap
+        else
+          current_x = current_x + iw + pad_left + pad_right + x_gap
+        end
       else
-        x = x + iw + gap
+        column = column + 1
+        if columns > 0 and column > columns then
+          column = 1
+          row = row + 1
+          current_x = base_x + pad_left
+          current_y = current_y + ih + pad_up + pad_down + y_gap
+          if rows > 0 and row > rows then row = 1 end
+        else
+          current_x = current_x + iw + pad_left + pad_right + x_gap
+        end
       end
     end
   end
+
   return list
 end
 
@@ -1342,33 +1422,378 @@ const DEFAULT_PALETTE = flattenPalettePages(PRESET_PALETTE_PAGES);
 let runtime;
 let runtimeUiHidden=false;
 let runtimeStarted=false;
+let runtimeDebugPaused=false;
+let runtimeVarsPanelRefreshAt=0;
+let runtimeVarsPath=[];
+let runtimeVarsFunctionDetail=null;
+let runtimeVarsPage=0;
+const RUNTIME_VARS_PAGE_SIZE=24;
 function updateRuntimeLayoutSaveState(){
-  const canShow=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
-  const saveBtn=$("runtimeSaveLayoutBtn");
-  const inspectBtn=$("runtimeInspectorModeBtn");
+  const canShow=state.activeView==='runtime';
+  const saveBtns=document.querySelectorAll(".runtimeSaveLayoutBtn");
+  const resetBtns=document.querySelectorAll(".runtimeResetLayoutBtn");
+  const inspectBtns=document.querySelectorAll(".runtimeInspectorModeBtn");
+  const pauseBtns=document.querySelectorAll(".runtimeDebugPauseBtn");
+  const varsBtns=document.querySelectorAll(".runtimeVarsBtn");
   const hasEdits=!!runtime?.hasLayoutEdits?.();
   const inspectorActive=!!runtime?.isInspectorEnabled?.();
-  if(saveBtn){
-    saveBtn.classList.toggle('hidden', !canShow);
+  saveBtns.forEach(saveBtn=>{
+    const mobileFab=saveBtn.classList.contains('runtimeInspectorSaveFab');
+    saveBtn.classList.toggle('hidden', !canShow || (mobileFab && (!inspectorActive || !hasEdits)));
     saveBtn.disabled=!hasEdits;
     saveBtn.classList.toggle('active', hasEdits);
-    saveBtn.textContent=hasEdits?'Save Layout *':'Save Layout';
-  }
-  if(inspectBtn){
+    saveBtn.textContent=mobileFab ? (hasEdits?'Save *':'Save') : (hasEdits?'Save Layout *':'Save Layout');
+  });
+  resetBtns.forEach(resetBtn=>{
+    resetBtn.classList.toggle('hidden', !canShow);
+    resetBtn.disabled=!hasEdits;
+    resetBtn.classList.toggle('active', hasEdits);
+    resetBtn.title='Discard unsaved inspector layout tweaks and return to the saved/code values.';
+    resetBtn.textContent=hasEdits?'Reset *':'Reset';
+  });
+  inspectBtns.forEach(inspectBtn=>{
     inspectBtn.classList.toggle('hidden', !canShow);
     inspectBtn.classList.toggle('active', inspectorActive);
     inspectBtn.textContent=inspectorActive?'Inspect: On':'Inspect';
-  }
+  });
+  pauseBtns.forEach(pauseBtn=>{
+    pauseBtn.classList.toggle('hidden', !canShow);
+    pauseBtn.classList.toggle('active', runtimeDebugPaused);
+    pauseBtn.textContent=runtimeDebugPaused?'Resume':'Pause';
+    pauseBtn.title='Pause or resume the editor runtime for debugging.';
+  });
+  varsBtns.forEach(varsBtn=>{
+    varsBtn.classList.toggle('hidden', !canShow);
+    varsBtn.classList.toggle('active', $('runtimeVarsPanel')?.classList.contains('show'));
+  });
 }
 function applyRuntimeUiHiddenState(){
   const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
   if(!canHide) runtimeUiHidden=false;
+  if(state.activeView!=='runtime') closeRuntimeVarsPanel?.();
   document.body.classList.toggle('runtime-ui-hidden', runtimeUiHidden && canHide);
   const hideBtn=$("runtimeHideBtn");
   if(hideBtn) hideBtn.classList.toggle('hidden', !canHide);
   if(hideBtn) hideBtn.textContent=runtimeUiHidden?'Show':'Hide';
   updateRuntimeLayoutSaveState();
   if(state.activeView==='runtime' && runtime) runtime.resizeDisplay();
+}
+function formatRuntimeVarValue(variable){
+  if(!variable) return '';
+  if(variable.type==='string') return `"${String(variable.value).replace(/\\/g,'\\\\').replace(/"/g,'\\"')}"`;
+  if(variable.type==='nil') return 'nil';
+  return String(variable.value);
+}
+function closeRuntimeVarsPanel(){
+  $('runtimeVarsPanel')?.classList.remove('show');
+  runtimeVarsFunctionDetail=null;
+  runtime?.renderInspectorOverlay?.();
+  updateRuntimeLayoutSaveState?.();
+}
+function runtimeVarsPathLabel(path=runtimeVarsPath){
+  if(runtimeVarsFunctionDetail) return `${runtimeVarsFunctionDetail.pathLabel||runtimeVarsFunctionDetail.name}()`;
+  if(!path?.length) return '_G';
+  return path.map((part,i)=>String(part?.display ?? `${i?'?':''}`)).join('').replace(/^\./,'');
+}
+function runtimeVarsPanelHasFocusedEditor(){
+  const panel=$('runtimeVarsPanel');
+  const active=document.activeElement;
+  if(!panel || !active || !panel.contains(active)) return false;
+  const tag=String(active.tagName||'').toUpperCase();
+  return active.isContentEditable || tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT';
+}
+function refreshRuntimeVarsPanel(){
+  const list=$('runtimeVarsList');
+  if(!list) return;
+  list.innerHTML='';
+  if(runtimeVarsFunctionDetail){
+    const fn=runtimeVarsFunctionDetail;
+    const header=document.createElement('div');
+    header.className='runtimeVarsCrumbs';
+    const back=document.createElement('button');
+    back.type='button';
+    back.className='uiBtn miniBtn';
+    back.textContent='Back';
+    back.onclick=()=>{ runtimeVarsFunctionDetail=null; refreshRuntimeVarsPanel(); };
+    const label=document.createElement('span');
+    label.className='runtimeVarsPath';
+    label.textContent=runtimeVarsPathLabel();
+    header.append(back,label);
+    list.appendChild(header);
+    const details=[
+      ['name', fn.pathLabel||fn.name, 'string'],
+      ['type', 'function', 'string'],
+      ['parameters', fn.paramCount ?? 'unknown', 'number'],
+      ['vararg', fn.isVararg ? 'true' : 'false', 'boolean'],
+      ['source line', fn.sourceLine || 'unknown', 'number'],
+      ['last line', fn.sourceLastLine || 'unknown', 'number'],
+      ['source', fn.shortSource || fn.source || 'unknown', 'string']
+    ];
+    details.forEach(([detailName,detailValue,detailType])=>{
+      const row=document.createElement('div');
+      row.className='runtimeVarRow';
+      const name=document.createElement('span');
+      name.className='runtimeVarName';
+      name.textContent=detailName;
+      const value=document.createElement('span');
+      value.className='runtimeVarValue';
+      value.textContent=String(detailValue);
+      const type=document.createElement('span');
+      type.className='runtimeVarType';
+      type.textContent=detailType;
+      const go=document.createElement('button');
+      go.type='button';
+      go.className='uiBtn miniBtn runtimeVarGotoBtn';
+      go.textContent='Go to';
+      go.disabled=!fn.sourceLine;
+      go.onclick=()=>goToRuntimeFunctionSource(fn);
+      row.append(name,value,type,go);
+      list.appendChild(row);
+    });
+    const sourceRows=getRuntimeFunctionSourceRows(fn);
+    if(sourceRows.length){
+      const sourceTitle=document.createElement('div');
+      sourceTitle.className='runtimeVarSectionTitle';
+      sourceTitle.textContent=`Editable source: ${sourceRows[0].fileName}`;
+      list.appendChild(sourceTitle);
+      const firstParams=functionDeclarationParams(sourceRows[0].text);
+      if(firstParams!=null){
+        const paramRow=document.createElement('div');
+        paramRow.className='runtimeVarRow';
+        const paramName=document.createElement('span');
+        paramName.className='runtimeVarName';
+        paramName.textContent='params';
+        const paramInput=document.createElement('input');
+        paramInput.className='runtimeInspectorVarInput';
+        paramInput.type='text';
+        paramInput.value=firstParams;
+        paramInput.title='Edit the function parameter list and press Enter or Save.';
+        const paramType=document.createElement('span');
+        paramType.className='runtimeVarType';
+        paramType.textContent='source';
+        const paramSave=document.createElement('button');
+        paramSave.type='button';
+        paramSave.className='uiBtn miniBtn runtimeVarEditBtn';
+        paramSave.textContent='Save';
+        const saveParams=()=>{
+          const nextLine=replaceFunctionDeclarationParams(sourceRows[0].text,paramInput.value);
+          if(replaceRuntimeFunctionSourceLine(sourceRows[0],nextLine)){
+            refreshRuntimeVarsPanel();
+            toast(`<b>Function parameters updated:</b> ${escapeHtml(fn.pathLabel||fn.name)}`);
+          }else toast(`<b>Parameter update failed:</b> ${escapeHtml(fn.pathLabel||fn.name)}`);
+        };
+        paramSave.onclick=saveParams;
+        paramInput.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); saveParams(); } });
+        paramRow.append(paramName,paramInput,paramType,paramSave);
+        list.appendChild(paramRow);
+      }
+      sourceRows.forEach(sourceRow=>{
+        const row=document.createElement('div');
+        row.className='runtimeVarRow functionSourceRow';
+        const name=document.createElement('button');
+        name.type='button';
+        name.className='runtimeVarName runtimeVarOpenBtn';
+        name.textContent=`L${sourceRow.line}`;
+        name.title='Jump to this source line';
+        name.onclick=()=>goToCodeLine(sourceRow.line,sourceRow.fileIndex);
+        const input=document.createElement('textarea');
+        input.className='runtimeInspectorVarInput';
+        input.rows=1;
+        input.wrap='off';
+        input.spellcheck=false;
+        input.value=sourceRow.text;
+        input.title='Edit this source line and press Cmd/Ctrl+Enter or Save.';
+        const type=document.createElement('span');
+        type.className='runtimeVarType';
+        type.textContent='line';
+        const save=document.createElement('button');
+        save.type='button';
+        save.className='uiBtn miniBtn runtimeVarEditBtn';
+        save.textContent='Save';
+        const applyLine=()=>{
+          if(replaceRuntimeFunctionSourceLine(sourceRow,input.value)){
+            refreshRuntimeVarsPanel();
+            toast(`<b>Line ${sourceRow.line} updated:</b> ${escapeHtml(fn.pathLabel||fn.name)}`);
+          }else toast(`<b>Line update failed:</b> ${escapeHtml(fn.pathLabel||fn.name)}`);
+        };
+        save.onclick=applyLine;
+        input.addEventListener('keydown',e=>{ if(e.key==='Enter' && (e.metaKey||e.ctrlKey)){ e.preventDefault(); applyLine(); } });
+        row.append(name,input,type,save);
+        list.appendChild(row);
+      });
+    }else{
+      const empty=document.createElement('div');
+      empty.className='runtimeVarsEmpty';
+      empty.textContent='Source lines are unavailable for this function. Use Go to if the function has debuggable source info.';
+      list.appendChild(empty);
+    }
+    return;
+  }
+  const result=runtime?.getRuntimeVariables?.(runtimeVarsPath)||{items:[]};
+  const variables=Array.isArray(result)?result:(result.items||[]);
+  const parentPath=Array.isArray(result?.parentPath)?result.parentPath:null;
+  const header=document.createElement('div');
+  header.className='runtimeVarsCrumbs';
+  const up=document.createElement('button');
+  up.type='button';
+  up.className='uiBtn miniBtn';
+  up.textContent=runtimeVarsPath.length?'Back':'Root';
+  up.disabled=!runtimeVarsPath.length;
+  up.onclick=()=>{ runtimeVarsFunctionDetail=null; runtimeVarsPath=parentPath||runtimeVarsPath.slice(0,-1); runtimeVarsPage=0; refreshRuntimeVarsPanel(); };
+  const label=document.createElement('span');
+  label.className='runtimeVarsPath';
+  label.textContent=runtimeVarsPathLabel(runtimeVarsPath);
+  header.append(up,label);
+  list.appendChild(header);
+  const inspectorSelection=!runtimeVarsPath.length ? runtime?.getInspectorVariables?.() : null;
+  if(inspectorSelection?.items?.length){
+    const title=document.createElement('div');
+    title.className='runtimeVarsCrumbs';
+    title.textContent=`Selected element: ${inspectorSelection.label||inspectorSelection.key||'element'}`;
+    list.appendChild(title);
+    inspectorSelection.items.forEach(item=>{
+      const row=document.createElement('div');
+      row.className='runtimeVarRow';
+      const name=document.createElement('span');
+      name.className='runtimeVarName';
+      name.textContent=item.name;
+      const input=document.createElement('input');
+      input.className='runtimeInspectorVarInput';
+      input.type='text';
+      input.value=formatRuntimeVarValue(item).replace(/^"|"$/g,'');
+      input.disabled=item.readonly;
+      const type=document.createElement('span');
+      type.className='runtimeVarType';
+      type.textContent=item.type||'value';
+      const go=document.createElement('button');
+      go.type='button';
+      go.className='uiBtn miniBtn runtimeVarGotoBtn';
+      go.textContent='Go to';
+      go.disabled=!item.canGoTo;
+      go.onclick=()=>runtime?.goToInspectorSelection?.();
+      const edit=document.createElement('button');
+      edit.type='button';
+      edit.className='uiBtn miniBtn runtimeVarEditBtn';
+      edit.textContent='Edit';
+      edit.disabled=item.readonly;
+      const apply=()=>{
+        if(item.readonly) return;
+        if(runtime?.setInspectorVariable?.(item.name,input.value)){
+          refreshRuntimeVarsPanel();
+          toast(`<b>Inspector value updated:</b> ${escapeHtml(item.name)}`);
+        }else toast(`<b>Inspector value update failed:</b> ${escapeHtml(item.name)}`);
+      };
+      edit.onclick=apply;
+      input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); apply(); } });
+      row.append(name,input,type,go,edit);
+      list.appendChild(row);
+    });
+  }
+  if(!variables.length){
+    if(!inspectorSelection?.items?.length){
+      const empty=document.createElement('div');
+      empty.className='runtimeVarsEmpty';
+      empty.textContent=runtimeStarted?'No inspectable values on this page/table.':'Start the runtime to inspect variables.';
+      list.appendChild(empty);
+    }
+    return;
+  }
+  const pages=Math.max(1,Math.ceil(variables.length/RUNTIME_VARS_PAGE_SIZE));
+  runtimeVarsPage=Math.max(0,Math.min(runtimeVarsPage,pages-1));
+  const pageItems=variables.slice(runtimeVarsPage*RUNTIME_VARS_PAGE_SIZE,(runtimeVarsPage+1)*RUNTIME_VARS_PAGE_SIZE);
+  pageItems.forEach(variable=>{
+    const row=document.createElement('div');
+    row.className='runtimeVarRow';
+    const name=document.createElement('button');
+    name.type='button';
+    name.className='runtimeVarName runtimeVarOpenBtn';
+    name.textContent=variable.name;
+    name.title=variable.type==='table'?'Open table':'Edit value';
+    const value=(variable.type==='function' || variable.type==='table') ? document.createElement('span') : document.createElement('input');
+    value.className=(variable.type==='function' || variable.type==='table') ? 'runtimeVarValue' : 'runtimeInspectorVarInput';
+    if(variable.type==='function' || variable.type==='table'){
+      value.textContent=formatRuntimeVarValue(variable);
+      if(variable.activityLabel) value.title=variable.activityLabel;
+    }else{
+      value.type='text';
+      value.value=formatRuntimeVarValue(variable).replace(/^"|"$/g,'');
+      value.title='Edit the value and press Enter or Save.';
+    }
+    const type=document.createElement('span');
+    type.className='runtimeVarType';
+    type.textContent=variable.type;
+    const go=document.createElement('button');
+    go.type='button';
+    go.className='uiBtn miniBtn runtimeVarGotoBtn';
+    go.textContent='Go to';
+    go.disabled=false;
+    go.onclick=()=>{
+      if(variable.type==='function') goToRuntimeFunctionSource(variable);
+      else goToRuntimeVariableSource(variable);
+    };
+    const editValue=()=>{
+      if(variable.type==='function') return;
+      if(runtime?.setRuntimeVariable?.(variable.path||variable.name,value.value)){
+        refreshRuntimeVarsPanel();
+        toast(`<b>Value updated:</b> ${escapeHtml(variable.pathLabel||variable.name)}`);
+      }else toast(`<b>Value update failed:</b> ${escapeHtml(variable.pathLabel||variable.name)}`);
+    };
+    name.title=variable.type==='table'?'Open table':(variable.type==='function'?'Show function details':'Focus value');
+    name.onclick=()=>{
+      if(variable.type==='table' && variable.path){ runtimeVarsFunctionDetail=null; runtimeVarsPath=variable.path; runtimeVarsPage=0; refreshRuntimeVarsPanel(); }
+      else if(variable.type==='function'){ runtimeVarsFunctionDetail=variable; refreshRuntimeVarsPanel(); }
+      else value.focus?.();
+    };
+    if(variable.type!=='function') value.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); editValue(); } });
+    if(variable.type==='function' || variable.type==='table') row.append(name,value,type,go);
+    else{
+      const edit=document.createElement('button');
+      edit.type='button';
+      edit.className='uiBtn miniBtn runtimeVarEditBtn';
+      edit.textContent='Save';
+      edit.onclick=editValue;
+      row.append(name,value,type,go,edit);
+    }
+    list.appendChild(row);
+  });
+  if(pages>1){
+    const pager=document.createElement('div');
+    pager.className='runtimeVarsPager';
+    const prev=document.createElement('button');
+    prev.type='button'; prev.className='uiBtn miniBtn'; prev.textContent='Prev'; prev.disabled=runtimeVarsPage<=0;
+    prev.onclick=()=>{ runtimeVarsPage=Math.max(0,runtimeVarsPage-1); refreshRuntimeVarsPanel(); };
+    const label=document.createElement('span');
+    label.textContent=`Page ${runtimeVarsPage+1} / ${pages}`;
+    const next=document.createElement('button');
+    next.type='button'; next.className='uiBtn miniBtn'; next.textContent='Next'; next.disabled=runtimeVarsPage>=pages-1;
+    next.onclick=()=>{ runtimeVarsPage=Math.min(pages-1,runtimeVarsPage+1); refreshRuntimeVarsPanel(); };
+    pager.append(prev,label,next);
+    list.appendChild(pager);
+  }
+}
+function toggleRuntimeVarsPanel(){
+  const panel=$('runtimeVarsPanel');
+  if(!panel) return;
+  const show=!panel.classList.contains('show');
+  panel.classList.toggle('show', show);
+  if(!show) runtimeVarsFunctionDetail=null;
+  if(show) refreshRuntimeVarsPanel();
+  runtime?.renderInspectorOverlay?.();
+  updateRuntimeLayoutSaveState?.();
+}
+function openRuntimeVarsForInspectorSelection(){
+  const panel=$('runtimeVarsPanel');
+  if(!panel?.classList.contains('show')){
+    runtime?.renderInspectorOverlay?.();
+    updateRuntimeLayoutSaveState?.();
+    return;
+  }
+  runtimeVarsPath=[];
+  runtimeVarsFunctionDetail=null;
+  runtimeVarsPage=0;
+  refreshRuntimeVarsPanel();
+  runtime?.renderInspectorOverlay?.();
+  updateRuntimeLayoutSaveState?.();
 }
 async function toggleAppFullscreen(){
   try{
@@ -1393,6 +1818,15 @@ function createRuntimeFallback(message){
     hasLayoutEdits(){ return false; },
     getLayoutOverrideCount(){ return 0; },
     flushLayoutToProject(){ return 0; },
+    markLayoutSaved(){},
+    resetLayoutEdits(){ return 0; },
+    setPaused(){},
+    isPaused(){ return false; },
+    getRuntimeVariables(){ return []; },
+    setRuntimeVariable(){ return false; },
+    getInspectorVariables(){ return {items:[]}; },
+    setInspectorVariable(){ return false; },
+    goToInspectorSelection(){ return false; },
   };
 }
 function initRuntime(){
@@ -1410,7 +1844,7 @@ const editorRenderCache = { sprites:new Map(), tiles:new Map(), onion:new Map() 
 const spriteHistory = { undo: [], redo: [] };
 const spriteViewLayoutReady = new WeakSet();
 const mapHistory = { undo: [], redo: [] };
-let audioCtx = null, audioUnlocked = false, pendingSfxRequests = [], currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0;
+let audioCtx = null, audioUnlocked = false, pendingSfxRequests = [], currentMusicNodes = [], currentMusicSource = null, currentMusicElements = new Set(), currentMusicTimer = null, currentMusicSignature = null, currentMusicSuppressedSignatures = new Set(), currentMusicRequestId = 0, runtimeMusicPausedByInspector = false;
 function ctxAudio(){
   const AudioCtor=window.AudioContext||window.webkitAudioContext;
   if(!AudioCtor) throw new Error('Web Audio API is unavailable in this browser.');
@@ -1594,9 +2028,15 @@ function getLineNumberFromLastRunError(){
   const line=parseInt(match[1],10);
   return Number.isFinite(line)&&line>0?line:null;
 }
-function goToCodeLine(lineNumber){
+function goToCodeLine(lineNumber, fileIndex=state.currentCodeFile){
   const line=Math.max(1,lineNumber|0);
+  saveEditorToCurrentCodeFile();
   saveCurrentCodeViewState();
+  if(Number.isInteger(fileIndex) && state.appProject?.codeFiles?.[fileIndex] && fileIndex!==state.currentCodeFile){
+    state.currentCodeFile=fileIndex;
+    loadCurrentCodeFileToEditor();
+    renderCodeTabs();
+  }
   setView("code");
   const editor=$("codeEditor"), shell=$("codeScrollShell");
   if(!editor||!shell) return;
@@ -1613,6 +2053,316 @@ function goToCodeLine(lineNumber){
   const paddingTop=parseFloat(metrics.paddingTop)||0;
   shell.scrollTop=Math.max(0, Math.round(((targetLine-1)*lineHeight)+paddingTop-lineHeight*2));
   saveCurrentCodeViewState();
+}
+function getMainCodeFileIndex(){
+  const files=state.appProject?.codeFiles||[];
+  const mainIndex=files.findIndex(file=>String(file?.name||'').toLowerCase()==='main.lua');
+  return mainIndex>=0 ? mainIndex : clamp(state.currentCodeFile,0,Math.max(0,files.length-1));
+}
+function escapeRegExp(text){ return String(text||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function codeFilesForRuntimeSearch(){
+  return (state.appProject?.codeFiles||[])
+    .map((file,index)=>({file,index,name:String(file?.name||''),content:String(file?.content||'')}))
+    .filter(entry=>/\.(?:lua|txt)$/i.test(entry.name));
+}
+function buildResolvedLuaLineMap(source, fileIndex, seen=new Set()){
+  const lines=String(source||'').split(/\r?\n/);
+  const out=[];
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const name=parseIncludeTarget(line);
+    if(name){
+      const foundIndex=(state.appProject?.codeFiles||[]).findIndex(f=>String(f?.name||'')===name);
+      if(foundIndex>=0 && !seen.has(name)){
+        seen.add(name);
+        out.push({fileIndex,line:i+1,marker:true,name});
+        out.push(...buildResolvedLuaLineMap(state.appProject.codeFiles[foundIndex].content, foundIndex, seen));
+        out.push({fileIndex,line:i+1,marker:true,name});
+        continue;
+      }
+    }
+    out.push({fileIndex,line:i+1});
+  }
+  return out;
+}
+function mapResolvedLuaLine(lineNumber){
+  const files=state.appProject?.codeFiles||[];
+  const mainIndex=getMainCodeFileIndex();
+  const main=files[mainIndex];
+  if(!main) return null;
+  const map=buildResolvedLuaLineMap(main.content||'', mainIndex);
+  const hit=map[Math.max(1,lineNumber|0)-1];
+  return hit && !hit.marker ? hit : null;
+}
+function functionSearchNames(variable){
+  const names=[];
+  const add=value=>{ const text=String(value||'').replace(/^_G\.?/,'').trim(); if(text && !names.includes(text)) names.push(text); };
+  add(variable?.pathLabel);
+  if(Array.isArray(variable?.path)) add(variable.path.map(part=>String(part?.label??part?.value??'')).filter(Boolean).join('.'));
+  add(variable?.name);
+  return names;
+}
+function findRuntimeFunctionInProject(variable){
+  const names=functionSearchNames(variable);
+  const files=codeFilesForRuntimeSearch();
+  const checks=[];
+  names.forEach(name=>{
+    const full=escapeRegExp(name).replace(/\\\./g,'\\s*[.:]\\s*');
+    checks.push(new RegExp(`(^|[^A-Za-z0-9_])function\\s+${full}\\s*[(:]`));
+    checks.push(new RegExp(`(^|[^A-Za-z0-9_])${full}\\s*=\\s*function\\s*[(:]`));
+    const last=name.split('.').pop();
+    if(last && last!==name){
+      const leaf=escapeRegExp(last);
+      checks.push(new RegExp(`(^|[^A-Za-z0-9_])function\\s+${leaf}\\s*[(:]`));
+      checks.push(new RegExp(`(^|[^A-Za-z0-9_])${leaf}\\s*=\\s*function\\s*[(:]`));
+    }
+  });
+  for(const entry of files){
+    const lines=entry.content.split(/\r?\n/);
+    for(let i=0;i<lines.length;i++){
+      const code=splitLuaLineComment(lines[i]).code;
+      if(checks.some(re=>re.test(code))) return {fileIndex:entry.index,line:i+1,fileName:entry.name};
+    }
+  }
+  return null;
+}
+
+function findRuntimeVariableInProject(variable){
+  const names=functionSearchNames(variable);
+  const files=codeFilesForRuntimeSearch();
+  const checks=[];
+  names.forEach(name=>{
+    const dotted=escapeRegExp(name).replace(/\\\./g,'\\s*[.]\\s*');
+    const first=String(name||'').split('.')[0];
+    if(first) checks.push(new RegExp(`(^|[^A-Za-z0-9_])(?:local\\s+)?${escapeRegExp(first)}\\s*(?:=|,|$)`));
+    checks.push(new RegExp(`(^|[^A-Za-z0-9_])(?:local\\s+)?${dotted}\\s*=`));
+    checks.push(new RegExp(`(^|[^A-Za-z0-9_])${dotted}\\s*=`));
+    if(variable?.type==='table') checks.push(new RegExp(`(^|[^A-Za-z0-9_])(?:local\\s+)?${dotted}\\s*=\\s*\\{`));
+  });
+  for(const entry of files){
+    const lines=entry.content.split(/\r?\n/);
+    for(let i=0;i<lines.length;i++){
+      const code=splitLuaLineComment(lines[i]).code;
+      if(checks.some(re=>re.test(code))) return {fileIndex:entry.index,line:i+1,fileName:entry.name};
+    }
+  }
+  return null;
+}
+function goToRuntimeVariableSource(variable){
+  const found=findRuntimeVariableInProject(variable);
+  if(found){
+    goToCodeLine(found.line, found.fileIndex);
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'value')} in ${escapeHtml(found.fileName)} at line ${found.line}.`);
+    return true;
+  }
+  const line=Number(variable?.sourceLine)||0;
+  if(Number.isFinite(line)&&line>0){
+    goToCodeLine(line, Number.isInteger(variable?.sourceFileIndex)?variable.sourceFileIndex:getMainCodeFileIndex());
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'value')} at line ${line}.`);
+    return true;
+  }
+  toast(`<b>Source unavailable:</b> Could not find ${escapeHtml(variable?.pathLabel||variable?.name||'value')} in code.`);
+  return false;
+}
+function goToRuntimeFunctionSource(variable){
+  const found=findRuntimeFunctionInProject(variable);
+  if(found){
+    goToCodeLine(found.line, found.fileIndex);
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'function')} in ${escapeHtml(found.fileName)} at line ${found.line}.`);
+    return true;
+  }
+  const line=Number(variable?.sourceLine)||0;
+  const mapped=Number.isFinite(line)&&line>0 ? mapResolvedLuaLine(line) : null;
+  if(mapped){
+    goToCodeLine(mapped.line, mapped.fileIndex);
+    const fileName=state.appProject?.codeFiles?.[mapped.fileIndex]?.name||'code';
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'function')} in ${escapeHtml(fileName)} at line ${mapped.line}.`);
+    return true;
+  }
+  if(Number.isFinite(line) && line>0){
+    goToCodeLine(line, getMainCodeFileIndex());
+    toast(`Jumped to ${escapeHtml(variable?.pathLabel||variable?.name||'function')} at line ${line}.`);
+    return true;
+  }
+  toast(`<b>Source unavailable:</b> ${escapeHtml(variable?.pathLabel||variable?.name||'function')}`);
+  return false;
+}
+
+function scanLuaFunctionEndLine(lines,startLine){
+  let depth=0;
+  const startIndex=Math.max(0,(startLine|0)-1);
+  for(let i=startIndex;i<lines.length;i++){
+    const code=splitLuaLineComment(lines[i]||'').code;
+    const tokens=code.match(/\b(function|if|for|while|repeat|do|end|until)\b/g)||[];
+    for(let t=0;t<tokens.length;t++){
+      const token=tokens[t];
+      if(token==='function' || token==='if' || token==='for' || token==='while' || token==='repeat') depth++;
+      else if(token==='do'){
+        const prev=tokens[t-1];
+        if(prev!=='for' && prev!=='while') depth++;
+      }else if(token==='end' || token==='until'){
+        depth=Math.max(0,depth-1);
+        if(depth===0) return i+1;
+      }
+    }
+  }
+  return Math.min(lines.length, startLine);
+}
+function getRuntimeFunctionSourceLocation(variable){
+  saveEditorToCurrentCodeFile();
+  const files=state.appProject?.codeFiles||[];
+  const found=findRuntimeFunctionInProject(variable);
+  const sourceLine=Number(variable?.sourceLine)||0;
+  const sourceLastLine=Number(variable?.sourceLastLine)||0;
+  let start=found ? {fileIndex:found.fileIndex,line:found.line} : (sourceLine>0 ? mapResolvedLuaLine(sourceLine) : null);
+  if(!start && sourceLine>0) start={fileIndex:getMainCodeFileIndex(),line:sourceLine};
+  if(!start || !files[start.fileIndex]) return null;
+  const lines=String(files[start.fileIndex].content||'').split(/\r?\n/);
+  let endLine=0;
+  const mappedEnd=sourceLastLine>0 ? mapResolvedLuaLine(sourceLastLine) : null;
+  if(mappedEnd && mappedEnd.fileIndex===start.fileIndex && mappedEnd.line>=start.line) endLine=mappedEnd.line;
+  if(!endLine) endLine=scanLuaFunctionEndLine(lines,start.line);
+  endLine=Math.max(start.line,Math.min(endLine,lines.length));
+  return {fileIndex:start.fileIndex,fileName:files[start.fileIndex]?.name||'code',startLine:start.line,endLine,lines};
+}
+function getRuntimeFunctionSourceRows(variable){
+  const loc=getRuntimeFunctionSourceLocation(variable);
+  if(!loc) return [];
+  return loc.lines.slice(loc.startLine-1,loc.endLine).map((text,index)=>({
+    fileIndex:loc.fileIndex,
+    fileName:loc.fileName,
+    line:loc.startLine+index,
+    relativeLine:index+1,
+    text
+  }));
+}
+function replaceRuntimeFunctionSourceLine(row,nextText){
+  if(!row || !Number.isInteger(row.fileIndex) || !state.appProject?.codeFiles?.[row.fileIndex]) return false;
+  saveEditorToCurrentCodeFile();
+  const file=state.appProject.codeFiles[row.fileIndex];
+  const lines=String(file.content||'').split(/\r?\n/);
+  const lineIndex=(Number(row.line)||0)-1;
+  if(lineIndex<0 || lineIndex>=lines.length) return false;
+  lines[lineIndex]=String(nextText??'').replace(/[\r\n]/g,' ');
+  file.content=lines.join('\n');
+  if(row.fileIndex===state.currentCodeFile){
+    const editor=$('codeEditor');
+    if(editor) editor.value=file.content;
+    updateCodeLineNumbers();
+  }
+  state.lastEdited='code';
+  runtime?.setLua?.(getProjectLua());
+  return true;
+}
+function replaceProjectSourceLine(fileIndex,lineNumber,nextText){
+  if(!Number.isInteger(fileIndex) || !state.appProject?.codeFiles?.[fileIndex]) return false;
+  saveEditorToCurrentCodeFile();
+  const file=state.appProject.codeFiles[fileIndex];
+  const lines=String(file.content||'').split(/\r?\n/);
+  const lineIndex=(Number(lineNumber)||0)-1;
+  if(lineIndex<0 || lineIndex>=lines.length) return false;
+  lines[lineIndex]=String(nextText??'').replace(/[\r\n]/g,' ');
+  file.content=lines.join('\n');
+  if(fileIndex===state.currentCodeFile){
+    const editor=$('codeEditor');
+    if(editor) editor.value=file.content;
+    updateCodeLineNumbers();
+  }
+  state.lastEdited='code';
+  runtime?.setLua?.(getProjectLua());
+  return true;
+}
+function splitLuaCallArguments(text){
+  const args=[];
+  let start=0, depth=0, quote='', escape=false;
+  for(let i=0;i<=String(text||'').length;i++){
+    const ch=i<text.length?text[i]:',';
+    if(quote){
+      if(escape) escape=false;
+      else if(ch==='\\') escape=true;
+      else if(ch===quote) quote='';
+      continue;
+    }
+    if(ch==='"' || ch==="'"){ quote=ch; continue; }
+    if(ch==='(' || ch==='{' || ch==='[') depth++;
+    else if(ch===')' || ch==='}' || ch===']') depth=Math.max(0,depth-1);
+    else if(ch===',' && depth===0){ args.push({text:text.slice(start,i),start,end:i}); start=i+1; }
+  }
+  return args;
+}
+function findLuaCallOnLine(line,names){
+  const source=String(line||'');
+  const wanted=(Array.isArray(names)?names:[names]).map(String);
+  let quote='', escape=false;
+  for(let i=0;i<source.length;i++){
+    const ch=source[i];
+    if(quote){
+      if(escape) escape=false;
+      else if(ch==='\\') escape=true;
+      else if(ch===quote) quote='';
+      continue;
+    }
+    if(ch==='"' || ch==="'"){ quote=ch; continue; }
+    for(const name of wanted){
+      if(!name || source.slice(i,i+name.length)!==name) continue;
+      const before=source[i-1]||'';
+      const after=source[i+name.length]||'';
+      if(/[A-Za-z0-9_]/.test(before) || /[A-Za-z0-9_]/.test(after)) continue;
+      let open=i+name.length;
+      while(/\s/.test(source[open]||'')) open++;
+      if(source[open]!=='(') continue;
+      let depth=0, innerQuote='', innerEscape=false;
+      for(let j=open;j<source.length;j++){
+        const cj=source[j];
+        if(innerQuote){
+          if(innerEscape) innerEscape=false;
+          else if(cj==='\\') innerEscape=true;
+          else if(cj===innerQuote) innerQuote='';
+          continue;
+        }
+        if(cj==='"' || cj==="'"){ innerQuote=cj; continue; }
+        if(cj==='(') depth++;
+        else if(cj===')'){
+          depth--;
+          if(depth===0) return {name,start:i,open,end:j,argsText:source.slice(open+1,j)};
+        }
+      }
+    }
+  }
+  return null;
+}
+function luaLiteralForInspectorValue(value,currentText=''){
+  const raw=String(value??'');
+  const current=String(currentText||'').trim();
+  if(/^nil$/i.test(raw.trim())) return 'nil';
+  if(/^(true|false)$/i.test(raw.trim())) return raw.trim().toLowerCase();
+  if(raw.trim()!=='' && Number.isFinite(Number(raw)) && !(/^['"]/.test(current))) return String(Number(raw));
+  const quoted=current.match(/^(['"])/);
+  const quote=quoted?quoted[1]:'"';
+  let escaped=raw.replace(/\\/g,'\\\\').replace(/\n/g,'\\n');
+  escaped=quote==='"' ? escaped.replace(/"/g,'\\"') : escaped.replace(/'/g,"\\'");
+  return quote+escaped+quote;
+}
+function replaceLuaCallArgumentInLine(line,names,argIndex,value){
+  const call=findLuaCallOnLine(line,names);
+  if(!call || !Number.isInteger(argIndex) || argIndex<1) return null;
+  const args=splitLuaCallArguments(call.argsText);
+  if(argIndex>args.length) return null;
+  const arg=args[argIndex-1];
+  const innerStart=call.open+1;
+  const nextArg=luaLiteralForInspectorValue(value,arg.text);
+  return String(line).slice(0,innerStart+arg.start)+nextArg+String(line).slice(innerStart+arg.end);
+}
+function functionDeclarationParams(line){
+  const match=String(line||'').match(/function\s+[A-Za-z_][A-Za-z0-9_\.\:]*\s*\(([^)]*)\)/) || String(line||'').match(/[A-Za-z_][A-Za-z0-9_\.]*\s*=\s*function\s*\(([^)]*)\)/);
+  return match ? match[1] : null;
+}
+function replaceFunctionDeclarationParams(line,nextParams){
+  const text=String(line||'');
+  const params=String(nextParams??'').replace(/[\r\n]/g,' ');
+  if(/function\s+[A-Za-z_][A-Za-z0-9_\.\:]*\s*\([^)]*\)/.test(text)) return text.replace(/(function\s+[A-Za-z_][A-Za-z0-9_\.\:]*\s*\()[^)]*(\))/,`$1${params}$2`);
+  if(/[A-Za-z_][A-Za-z0-9_\.]*\s*=\s*function\s*\([^)]*\)/.test(text)) return text.replace(/([A-Za-z_][A-Za-z0-9_\.]*\s*=\s*function\s*\()[^)]*(\))/,`$1${params}$2`);
+  return text;
 }
 function gotoLastRunErrorLine(){
   if(!state.lastRunError){ toast('No run error has been captured yet.'); return; }
@@ -1730,7 +2480,7 @@ const DOC_CATEGORY_ORDER = [
 function getDocCategory(signature){
   const sig=String(signature||"").toLowerCase();
   if(sig==="_init()"||sig==="_update()"||sig==="_draw()"||sig==="_tick()") return "main callbacks";
-  if(sig.startsWith("btn(")||sig.startsWith("btnp(")||sig.startsWith("mouse(")||sig.startsWith("joyx(")||sig.startsWith("joyy(")) return "controls";
+  if(sig.startsWith("btn(")||sig.startsWith("btnp(")||sig.startsWith("mouse(")||sig.startsWith("key(")||sig.startsWith("keyp(")||sig.startsWith("joyx(")||sig.startsWith("joyy(")) return "controls";
   if(sig.startsWith("camera(")||sig.startsWith("map(")||sig.startsWith("pmap(")||sig.startsWith("mget(")||sig.startsWith("mset(")||sig.startsWith("fget(")||sig.startsWith("solid(")||sig.startsWith("wall(")) return "map";
   if(sig.startsWith("distance(")||sig.startsWith("abs(")||sig.startsWith("flr(")||sig.startsWith("sin(")||sig.startsWith("rnd(")||sig.startsWith("sub(")||sig.startsWith("upper(")) return "math";
   if(sig.startsWith("a % b")) return "math";
@@ -1761,6 +2511,8 @@ const CODE_API_DOCS = [
   makeDoc("btn(i_or_name)", "Returns true while a d-pad or face button is held.", [["i_or_name", "Use 0-3 or up/down/left/right for directions, and 4-7 or a/b/x/y for face buttons."]], ["if btn(2) then x -= 1 end","if btn(\"right\") then x += 1 end","if btn(\"a\") then jump() end"], "Use this for held input, such as continuous walking or charging."),
   makeDoc("btnp(i_or_name)", "Returns true only on the frame a button becomes pressed.", [["i_or_name", "Same button names and indices as btn()."]], ["if btnp(4) then zoom(2) end","if btnp(5) then zoom(1) end","if btnp(\"b\") then sfx(0, false) end"], "Use this for single-trigger actions like toggles, menus, zoom changes, or sound effects."),
   makeDoc("mouse()", "Returns mouse or touch state as mx, my, mb, mbr.", [], ["local mx,my,mb,mbr = mouse()","if (mb & 1) ~= 0 then print(mx..\",\"..my, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "mx and my are screen coordinates. mb is the current button bitmask, and mbr is the newly pressed button bitmask for that frame. Touch input maps to button 1."),
+  makeDoc("key(name)", "Returns true while a keyboard key is held.", [["name", "Key name such as \"space\", \"enter\", \"arrowleft\", \"a\", or \"escape\"."]], ["if key(\"space\") then boost = true end","if key(\"arrowleft\") then x -= 1 end"], "Use key() for held keyboard input when btn() is not specific enough."),
+  makeDoc("keyp(name)", "Returns true only on the frame a keyboard key becomes pressed.", [["name", "Same key names as key()."]], ["if keyp(\"enter\") then start_game() end","if keyp(\"escape\") then paused = not paused end"], "Use keyp() for toggles, menu choices, and one-shot keyboard shortcuts."),
   makeDoc("joyx(i)", "Reads a joystick horizontal axis from -1 to 1.", [["i", "Joystick index. 0 is left, 1 is right."]], ["local x_axis = joyx(0)","x += joyx(0) * speed"], "Read the value every frame. Negative is left and positive is right."),
   makeDoc("joyy(i)", "Reads a joystick vertical axis from -1 to 1.", [["i", "Joystick index. 0 is left, 1 is right."]], ["local y_axis = joyy(0)","y += joyy(0) * speed"], "Read the value every frame. Negative is up and positive is down."),
   makeDoc("camera(x, y)", "Offsets later drawing calls by a camera position.", [["x", "World x coordinate to center around."],["y", "World y coordinate to center around."]], ["camera(player_x - 240, player_y - 135)","camera()\n-- resets the camera to 0,0"], "Call cls() first, then camera(), then draw your map and sprites so the whole scene scrolls together."),
@@ -1818,10 +2570,10 @@ const CODE_API_DOCS = [
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
   makeDoc("default_font(font, size, color)", "Sets default print font settings used when print() leaves those values nil.", [["font", "Font family string, nil, or \"nil\". nil keeps the File menu font."],["size", "Default font size in pixels, nil, or \"nil\". nil resets to 12."],["color", "Default fill color string, palette index, color() result, nil, or \"nil\". nil follows current color()."]], ["default_font(\"Orbitron\", 14, color(255,247,232))","default_font(nil, nil, nil) -- reset all print defaults","print(\"score\", nil, 8, 8, color(255,247,232), color(0,0,0)) -- now uses default_font settings"], "Use this once in _init() when you want a global text style without repeating font arguments."),
   makeDoc("default_controls(mode)", "Sets the movement control scheme to joystick or d-pad.", [["mode", "Use \"joystick\"/\"left_joystick\" for joystick controls, or \"dpad\"/\"d-pad\" for directional pad controls."]], ["default_controls(\"dpad\")","default_controls(\"joystick\")"], "Returns the current mode string after applying the setting."),
-  makeDoc("default_button(opts) / button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, and button(...) snapshots the current button template into a new button table.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults. While a standalone default_button({...}) theme block is active, plain button-like table literals assigned or add()ed in code are auto-promoted into button tables until default_button() resets the theme block."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults. Call default_button() or default_ui_theme(\"button\") to reset button defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","menu_btn = {x=12,y=24,label=\"play\"} -- auto-promoted while the theme block is active","default_button() -- reset button defaults","ui_button(menu_btn)"], "Use button(...) when you want an explicit constructor, or rely on a default_button({...}) / default_button() block when you want pal()-style implicit styling for later button tables."),
+  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults. Call default_button() or default_ui_theme(\"button\") to reset button defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","default_button() -- reset button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons and runs callbacks on click.", [["button", "Button table; ui_button merges it with the current default_button theme."],["list", "Array of button tables for ui_buttons()."]], ["if ui_button({x=12,y=24,label=\"buy\",func=buy_item}) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Use table overrides when one button needs different size/colors."),
-  makeDoc("default_dropdown(opts) / dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults, and dropdown(...) snapshots the current dropdown template into a new dropdown table.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults. While a standalone default_dropdown({...}) theme block is active, plain dropdown-like table literals assigned or add()ed in code are auto-promoted into dropdown tables until default_dropdown() resets the theme block."],["items", "List entries can be strings or tables with label/value/func. Call default_dropdown() or default_ui_theme(\"dropdown\") to reset dropdown defaults."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}} -- auto-promoted while the theme block is active","default_dropdown() -- reset dropdown defaults","ui_dropdown(mode_dd)"], "Use dropdown(...) when you want an explicit constructor, or rely on a default_dropdown({...}) / default_dropdown() block when you want pal()-style implicit styling for later dropdown tables."),
-  makeDoc("arrange(list, opts)", "Positions a list of widget tables in a row or column before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables."],["opts", "Layout fields: x, y, gap, dir/direction (\"row\" or \"column\"), optional w and h defaults."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,{x=24,y=42,w=120,h=20,dir=\"column\",gap=6}))"], "Use arrange() when you want the inspector to move and resize generated UI without hand-placing every item first."),
+  makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func. Call default_dropdown() or default_ui_theme(\"dropdown\") to reset dropdown defaults."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","default_dropdown() -- reset dropdown defaults","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
+  makeDoc("arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding, down_padding, left_padding, right_padding)", "Positions and inspector-registers a list of widget tables in a grid before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables; each item receives x/y every time arrange() runs."],["x, y", "Top-left layout origin before padding."],["row_amt, column_amt", "Grid size. column_amt is the number of items per row; row_amt is used to infer columns when column_amt is 0/nil."],["x_buffer, y_buffer", "Horizontal and vertical gap between arranged items."],["padding", "up, down, left, and right padding values; left/up offset each item within its grid cell, while right/down add spacing after each item."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,24,42,3,1,0,6,0,0,0,0))","ui_buttons(arrange(menu_buttons,24,42,1,3,6,0,0,0,0,0))"], "arrange() overwrites each item's x/y so rebuilt UI lists get fresh positions each frame. The older table options form still works."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("keyboard_box(message, default_text, title)", "Alias of entry_box for explicitly requesting the in-engine keyboard input dialog.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["player = keyboard_box(\"name\", player or \"\", \"keyboard\")","if player then print(player, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Use this exactly like entry_box(). On touch devices, tapping the input area opens the mobile on-screen keyboard."),
   makeDoc("save_data(slot, values)", "Stores a persistent table of values in browser local storage for this project name.", [["slot", "Save slot key."],["values", "Lua table of fields to store."]], ["save_data(\"save_slot\", {hq=2,funds=140})"], "Call this after meaningful progress. Values remain after reload."),
@@ -1906,7 +2658,7 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['ui_button','ui_button(buttonTable) -> clickedBool'],
   ['ui_buttons','ui_buttons(buttonList) -> anyClickedBool'],
   ['ui_dropdown','ui_dropdown(dropdownTable) -> toggledBool'],
-  ['arrange','arrange(list, opts) -> list'],
+  ['arrange','arrange(list,x,y,row_amt,column_amt,x_buffer,y_buffer,up_padding,down_padding,left_padding,right_padding) -> list'],
   ['__tc_ui_flush_overlay','__tc_ui_flush_overlay() -> changedBool \u2014 internal dropdown overlay flush'],
   ['_init','_init() \u2014 optional; called once after build'],
   ['_tick','_tick() \u2014 optional combined update/draw frame callback; takes priority'],
@@ -8156,15 +8908,26 @@ function setView(name){
   }
   const previousView=state.activeView;
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
+  const leavingRuntimeWithInspectorPause=leavingRuntime && (runtimeDebugPaused || runtime?.isInspectorEnabled?.());
   if(leavingRuntime){
-    runtimeStarted=false;
-    runtime?.setActive?.(false);
-    updateRuntimePausePlaceholder();
-    $("runtimeStartOverlay")?.classList.remove("hidden");
+    if(leavingRuntimeWithInspectorPause){
+      runtimeDebugPaused=true;
+      runtime?.setActive?.(runtimeStarted);
+      runtime?.setPaused?.(true);
+      stopMusicPlayback({invalidate:false});
+      $("runtimeStartOverlay")?.classList.add("hidden");
+    }else{
+      runtimeStarted=false;
+      runtimeDebugPaused=false;
+      runtime?.setPaused?.(false);
+      runtime?.setActive?.(false);
+      updateRuntimePausePlaceholder();
+      $("runtimeStartOverlay")?.classList.remove("hidden");
+    }
   }
   const leavingMusicEditor=previousView==="music" && name!=="music";
   state.activeView=name;
-  if(leavingRuntime || leavingMusicEditor){
+  if((leavingRuntime && !leavingRuntimeWithInspectorPause) || leavingMusicEditor){
     stopMusicPlayback({suppressCurrent:leavingRuntime});
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -8196,6 +8959,7 @@ function setView(name){
     updateRuntimePausePlaceholder();
     $("runtimeStartOverlay")?.classList.toggle("hidden", runtimeStarted);
     runtime?.setActive?.(runtimeStarted);
+    runtime?.setPaused?.(runtimeDebugPaused);
     runtime.resizeDisplay();
     scheduleRuntimeViewportFocus();
     requestAnimationFrame(()=>{ runtime.resizeDisplay(); scheduleRuntimeViewportFocus(); });
@@ -8210,6 +8974,7 @@ function refreshTopbarRuntimeControls(){
   const controls=$("topbarRuntimeControls");
   if(!controls) return;
   controls.classList.toggle("hidden", state.activeView!=="runtime");
+  updateRuntimeLayoutSaveState();
 }
 
 function openPalettePicker(){
@@ -9391,6 +10156,21 @@ function suppressMusicPlaybackForTrack(index, track){
     if(name) suppressMusicRequest(name, 'play', loop);
   });
 }
+
+function pauseRuntimeMusicPlayback(){
+  runtimeMusicPausedByInspector=true;
+  currentMusicElements.forEach(audio=>{ try{ audio.pause?.(); }catch{} });
+  try{
+    if(audioCtx && audioCtx.state==='running') audioCtx.suspend?.();
+  }catch(_){ }
+}
+function resumeRuntimeMusicPlayback(){
+  if(!runtimeMusicPausedByInspector) return;
+  runtimeMusicPausedByInspector=false;
+  try{ if(audioCtx && audioCtx.state==='suspended') audioCtx.resume?.(); }catch(_){ }
+  currentMusicElements.forEach(audio=>{ try{ audio.play?.(); }catch{} });
+}
+
 function stopMusicPlayback(options={}){
   if(options.suppressCurrent&&currentMusicSignature) currentMusicSuppressedSignatures.add(currentMusicSignature);
   if(options.invalidate!==false) currentMusicRequestId++;
@@ -9409,6 +10189,7 @@ function stopMusicPlayback(options={}){
   currentMusicElements.clear();
   currentMusicSource=null;
   currentMusicSignature=null;
+  runtimeMusicPausedByInspector=false;
 }
 async function playMusicEntry(src, action="play", loop=true, project=state.appProject, options={}){
   const normalizedAction=String(action??'play').trim().toLowerCase();
@@ -9730,8 +10511,8 @@ function makeRuntime(){
     hd_4x:{w:1920,h:1080},
     mobile_fullscreen:{w:270,h:480}
   };
-  const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false;
-  let hasStarted=false, pendingRunMode='load', runtimeActive=false;
+  const canvas=$("screen"), stage=canvas.parentElement, ctx=canvas.getContext('2d'); let GAME_W=RESOLUTION_PRESETS.normal.w, GAME_H=RESOLUTION_PRESETS.normal.h; ctx.imageSmoothingEnabled=false; const assets={}, spriteCache=new Map(), tileCache=new Map(); let projectRef=defaultProject(), L=null, lastCode="", pendingCode="", rebuildTimer=0, builtOk=false, runtimeActivityClock=0; const runtimeActivity=new Map(), runtimeSnapshots=new Map();
+  let hasStarted=false, pendingRunMode='load', runtimeActive=false, runtimePaused=false;
   const dialogKeyboardInput=document.createElement('input');
   dialogKeyboardInput.type='text';
   dialogKeyboardInput.autocomplete='off';
@@ -9948,13 +10729,15 @@ function makeRuntime(){
     resetUiBoxStyle();
   }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
-  let layoutOverrides={}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null;
+  let layoutOverrides={}, layoutSavedSnapshot={version:1,overrides:{},savedAt:0}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorPanelTextEl=null, inspectorPanelResetBtn=null, inspectorObjects=[], inspectorStaticObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null, inspectorKeyNudge=null, inspectorCaptureMode='frame', pendingPrintSourceInfo=null;
   const cloneLayoutOverrides=source=>{
     try{ return JSON.parse(JSON.stringify(source&&typeof source==='object'&&!Array.isArray(source)?source:{})); }
     catch(_){ return {}; }
   };
+  const cloneLayoutSnapshot=source=>({version:1,overrides:cloneLayoutOverrides(source?.overrides),savedAt:Number(source?.savedAt)||0});
   const loadRuntimeLayoutOverrides=()=>{
-    layoutOverrides=cloneLayoutOverrides(projectRef.runtimeLayout?.overrides);
+    layoutSavedSnapshot=cloneLayoutSnapshot(projectRef.runtimeLayout);
+    layoutOverrides=cloneLayoutOverrides(layoutSavedSnapshot.overrides);
     layoutDirty=false;
     updateRuntimeLayoutSaveState?.();
   };
@@ -9963,10 +10746,41 @@ function makeRuntime(){
     updateRuntimeLayoutSaveState?.();
   };
   const markLayoutSaved=()=>{
+    layoutSavedSnapshot=cloneLayoutSnapshot(projectRef.runtimeLayout);
+    layoutOverrides=cloneLayoutOverrides(layoutSavedSnapshot.overrides);
     layoutDirty=false;
     updateRuntimeLayoutSaveState?.();
   };
+  const resetLayoutEdits=()=>{
+    layoutOverrides=cloneLayoutOverrides(layoutSavedSnapshot.overrides);
+    const snapshot=cloneLayoutSnapshot(layoutSavedSnapshot);
+    projectRef.runtimeLayout=snapshot;
+    if(state.appProject){
+      ensureProjectData();
+      state.appProject.runtimeLayout=cloneLayoutSnapshot(snapshot);
+    }
+    layoutDirty=false;
+    inspectorDrag=null;
+    inspectorSelected=inspectorSelected?.key ? inspectorObjects.find(obj=>obj.key===inspectorSelected.key)||null : null;
+    inspectorHover=inspectorHover?.key ? inspectorObjects.find(obj=>obj.key===inspectorHover.key)||null : null;
+    renderInspectorOverlay?.();
+    updateRuntimeLayoutSaveState?.();
+    return Object.keys(layoutOverrides||{}).length;
+  };
   const layoutOverrideCount=()=>Object.keys(layoutOverrides||{}).length;
+  const hasUnsavedObjectOverride=key=>JSON.stringify(layoutOverrides?.[key]||null)!==JSON.stringify(layoutSavedSnapshot?.overrides?.[key]||null);
+  const resetObjectLayoutEdits=key=>{
+    if(!key || !hasUnsavedObjectOverride(key)) return false;
+    const saved=layoutSavedSnapshot?.overrides?.[key];
+    if(saved && typeof saved==='object') layoutOverrides[key]=cloneLayoutOverrides({[key]:saved})[key];
+    else delete layoutOverrides[key];
+    layoutDirty=JSON.stringify(layoutOverrides||{})!==JSON.stringify(layoutSavedSnapshot?.overrides||{});
+    inspectorSelected=inspectorSelected?.key===key ? (inspectorObjects.find(obj=>obj.key===key)||inspectorSelected) : inspectorSelected;
+    inspectorHover=inspectorHover?.key===key ? (inspectorObjects.find(obj=>obj.key===key)||inspectorHover) : inspectorHover;
+    renderInspectorOverlay?.();
+    updateRuntimeLayoutSaveState?.();
+    return true;
+  };
   const flushLayoutToProject=(options={})=>{
     const snapshot={version:1,overrides:cloneLayoutOverrides(layoutOverrides),savedAt:Date.now()};
     projectRef.runtimeLayout=cloneLayoutOverrides(snapshot);
@@ -9982,10 +10796,27 @@ function makeRuntime(){
     return clean.slice(0,48)||'item';
   };
   const nextInspectorSequence=kind=>{
-    const key=String(kind||'item');
+    const key=`${inspectorCaptureMode}:${String(kind||'item')}`;
     inspectorSeq[key]=(inspectorSeq[key]||0)+1;
     return inspectorSeq[key];
   };
+  const nextInspectorSubSequence=key=>{
+    const seqKey=`${inspectorCaptureMode}:sub:${String(key||'item')}`;
+    inspectorSeq[seqKey]=(inspectorSeq[seqKey]||0)+1;
+    return inspectorSeq[seqKey];
+  };
+  const drawInspectorKey=(kind,seq)=>`draw:${inspectorCaptureMode==='static'?'static:':''}${kind}:${seq}`;
+  const sourceInspectorKey=(kind,sourceInfo,fallbackSeq,signature='')=>{
+    if(!sourceInfo) return drawInspectorKey(kind,fallbackSeq);
+    const mapped=sourceInfo.mapped||sourceInfo;
+    const filePart=Number.isInteger(mapped.fileIndex)?`file${mapped.fileIndex}`:inspectorSlug(sourceInfo.shortSource||sourceInfo.source||'source');
+    const linePart=Number(mapped.line||sourceInfo.currentLine)||0;
+    const sig=signature?`:${inspectorSlug(signature)}`:'';
+    const base=`draw:${inspectorCaptureMode==='static'?'static:':''}${kind}:src:${filePart}:line${linePart}${sig}`;
+    const sub=nextInspectorSubSequence(base);
+    return sub>1 ? `${base}:call${sub}` : base;
+  };
+  const widgetInspectorKey=(kind,seq,label,explicitId)=>explicitId ? `widget:${inspectorCaptureMode==='static'?'static:':''}${kind}:${inspectorSlug(explicitId)}` : `widget:${inspectorCaptureMode==='static'?'static:':''}${kind}:${seq}:${inspectorSlug(label)}`;
   const screenToWorld=(x,y)=>({
     x:(((Number(x)||0)-(GAME_W/2)-zoomOffX)/viewZoom)+(GAME_W/2)+camx,
     y:(((Number(y)||0)-(GAME_H/2)-zoomOffY)/viewZoom)+(GAME_H/2)+camy
@@ -10004,10 +10835,11 @@ function makeRuntime(){
     return {x,y,w:Math.max(1,(Number(obj.w)||1)*zoomSafe),h:Math.max(1,(Number(obj.h)||1)*zoomSafe)};
   };
   const addInspectorObject=obj=>{
-    if(!inspectorEnabled || state.activeView!=='runtime') return obj;
+    if(inspectorCaptureMode!=='static' && (!inspectorEnabled || state.activeView!=='runtime')) return obj;
     const next={...obj,order:++inspectorOrder};
     next.screen=worldToScreenRect(next);
-    inspectorObjects.push(next);
+    if(inspectorCaptureMode==='static') inspectorStaticObjects.push(next);
+    else inspectorObjects.push(next);
     return next;
   };
   const colorLabel=value=>{
@@ -10018,14 +10850,116 @@ function makeRuntime(){
   };
   const inspectorParamLabel=(key,value)=>/^(?:bg|border|text|hover_bg|color|fill|outline)$/i.test(String(key||''))?colorLabel(value):String(value??'nil');
   const geometryFromObject=obj=>({x:Number(obj.x)||0,y:Number(obj.y)||0,w:Number(obj.w)||0,h:Number(obj.h)||0,r:Number(obj.r)||0,fontSize:Number(obj.fontSize)||0});
+  const inspectorEditableKeys=obj=>{
+    const keys=['x','y','w','h'];
+    if(obj?.shape==='circle' || obj?.r) keys.push('r');
+    if(obj?.fontSize) keys.push('fontSize');
+    Object.keys(obj?.colors||{}).forEach(key=>{ if(!keys.includes(key)) keys.push(key); });
+    if(obj?.text!=null && !keys.includes('text')) keys.push('text');
+    if(obj?.kind && !keys.includes('kind')) keys.push('kind');
+    return keys;
+  };
+  const currentInspectorObject=()=>inspectorSelected?.key ? (inspectorObjects.find(obj=>obj.key===inspectorSelected.key)||inspectorSelected) : null;
+  const coerceInspectorInput=(current,raw)=>{
+    const text=String(raw??'');
+    if(typeof current==='boolean') return /^(true|1|yes|on)$/i.test(text.trim());
+    if(current==null || typeof current==='number'){
+      const n=Number(text);
+      if(Number.isFinite(n)) return Math.round(n*100)/100;
+    }
+    return text;
+  };
   const setObjectOverride=(obj,next)=>{
     if(!obj?.key) return;
-    const value={};
+    const value={...(layoutOverrides[obj.key]||{})};
     ['x','y','w','h','r','fontSize'].forEach(key=>{
       if(next[key]!=null && Number.isFinite(Number(next[key]))) value[key]=Math.round(Number(next[key])*100)/100;
     });
+    Object.keys(next||{}).forEach(key=>{
+      if(['x','y','w','h','r','fontSize'].includes(key)) return;
+      if(next[key]!==undefined) value[key]=next[key];
+    });
     layoutOverrides[obj.key]=value;
     markLayoutDirty();
+  };
+  const getInspectorVariables=()=>{
+    const obj=currentInspectorObject();
+    if(!inspectorEnabled || !obj) return {items:[]};
+    const ov=layoutOverrides[obj.key]||{};
+    const items=inspectorEditableKeys(obj).map(key=>{
+      const current=ov[key]!==undefined ? ov[key] : (key in obj ? obj[key] : obj.colors?.[key]);
+      const type=key==='kind'?'string':(current==null?'nil':Array.isArray(current)?'table':typeof current);
+      return {name:key,type,value:current==null?'':current,readonly:key==='kind',canGoTo:true};
+    });
+    items.unshift({name:'key',type:'string',value:obj.key,readonly:true,canGoTo:false});
+    return {key:obj.key,label:obj.label||obj.kind,items};
+  };
+  const replaceInspectorObjectSourceValue=(obj,name,value)=>{
+    if(!obj?.sourceInfo || !obj?.sourceArgMap) return false;
+    const argIndex=obj.sourceArgMap[name];
+    if(!Number.isInteger(argIndex) || argIndex<1) return false;
+    const loc=obj.sourceInfo.mapped || obj.sourceInfo;
+    const fileIndex=Number.isInteger(loc.fileIndex)?loc.fileIndex:getMainCodeFileIndex();
+    const lineNumber=Number(loc.line||loc.currentLine)||0;
+    const file=state.appProject?.codeFiles?.[fileIndex];
+    if(!file || lineNumber<1) return false;
+    const lines=String(file.content||'').split(/\r?\n/);
+    const currentLine=lines[lineNumber-1];
+    if(currentLine==null) return false;
+    const nextLine=replaceLuaCallArgumentInLine(currentLine, ['print','print_'], argIndex, value);
+    if(nextLine==null || nextLine===currentLine) return false;
+    return replaceProjectSourceLine(fileIndex,lineNumber,nextLine);
+  };
+  const setInspectorVariable=(name,raw)=>{
+    const obj=currentInspectorObject();
+    if(!inspectorEnabled || !obj || !name || name==='key' || name==='kind') return false;
+    const current=(layoutOverrides[obj.key]||{})[name] ?? (name in obj ? obj[name] : obj.colors?.[name]);
+    const value=coerceInspectorInput(current,raw);
+    const sourceUpdated=replaceInspectorObjectSourceValue(obj,name,value);
+    if(!sourceUpdated) setObjectOverride(obj,{[name]:value});
+    inspectorSelected={...obj,[name]:value,colors:{...(obj.colors||{}),[name]:value}};
+    inspectorSelected.screen=worldToScreenRect(inspectorSelected);
+    return true;
+  };
+  const findInspectorObjectInProject=obj=>{
+    if(!obj) return null;
+    const files=codeFilesForRuntimeSearch();
+    const terms=[];
+    const addTerm=value=>{ const text=String(value??'').trim(); if(text && !terms.includes(text)) terms.push(text); };
+    addTerm(obj.key);
+    addTerm(obj.text);
+    addTerm(String(obj.key||'').split(':').pop());
+    const functionNames={rectfill:['rectfill'],rect:['rect'],line:['line'],circ:['circ'],circfill:['circfill'],print:['print','print_'],button:['ui_button','ui_buttons'],dropdown:['ui_dropdown'],arrange:['arrange']};
+    const calls=functionNames[obj.kind]||[obj.kind].filter(Boolean);
+    const termChecks=terms.filter(term=>term && term.length>1).map(term=>new RegExp(escapeRegExp(term)));
+    const callChecks=calls.map(name=>new RegExp(`(^|[^A-Za-z0-9_])${escapeRegExp(name)}\\s*\\(`));
+    for(const entry of files){
+      const lines=entry.content.split(/\r?\n/);
+      for(let i=0;i<lines.length;i++){
+        const code=splitLuaLineComment(lines[i]).code;
+        if(termChecks.some(re=>re.test(code))) return {fileIndex:entry.index,line:i+1,fileName:entry.name};
+      }
+    }
+    for(const entry of files){
+      const lines=entry.content.split(/\r?\n/);
+      for(let i=0;i<lines.length;i++){
+        const code=splitLuaLineComment(lines[i]).code;
+        if(callChecks.some(re=>re.test(code))) return {fileIndex:entry.index,line:i+1,fileName:entry.name};
+      }
+    }
+    return null;
+  };
+  const goToInspectorSelection=()=>{
+    const obj=currentInspectorObject();
+    if(!obj){ toast('No inspector element selected.'); return false; }
+    const found=findInspectorObjectInProject(obj);
+    if(found){
+      goToCodeLine(found.line, found.fileIndex);
+      toast(`Jumped to ${escapeHtml(obj.label||obj.kind||'element')} in ${escapeHtml(found.fileName)} at line ${found.line}.`);
+      return true;
+    }
+    toast(`<b>Source unavailable:</b> Could not find ${escapeHtml(obj.label||obj.kind||'element')} in code. Add a stable id/key near the widget or draw call to make it easier to locate.`);
+    return false;
   };
   const applyOverrideToRect=(key,geom)=>{
     const ov=layoutOverrides[key];
@@ -10045,46 +10979,56 @@ function makeRuntime(){
   };
   function inspectorTransformRect(kind,x0,y0,x1,y1,colorIndex){
     const seq=nextInspectorSequence(kind);
-    const key=`draw:${kind}:${seq}`;
+    const key=drawInspectorKey(kind,seq);
     const left=Math.min(Number(x0)||0,Number(x1)||0), right=Math.max(Number(x0)||0,Number(x1)||0);
     const top=Math.min(Number(y0)||0,Number(y1)||0), bottom=Math.max(Number(y0)||0,Number(y1)||0);
     const geom=applyOverrideToRect(key,{x:left,y:top,w:Math.abs(right-left)+1,h:Math.abs(bottom-top)+1});
-    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
-    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w-1,y1:geom.y+geom.h-1,colorIndex};
+    const ov=layoutOverrides[key]||{};
+    const finalColor=ov.color!==undefined?ov.color:colorIndex;
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
+    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w-1,y1:geom.y+geom.h-1,colorIndex:finalColor};
   }
   function inspectorTransformRectFill(x0,y0,a,b,colorIndex){
     const seq=nextInspectorSequence('rectfill');
-    const key=`draw:rectfill:${seq}`;
+    const key=drawInspectorKey('rectfill',seq);
     const hasColor=colorIndex!=null;
     const left=Number(x0)||0, top=Number(y0)||0;
     const right=hasColor?(Number(a)||0):left+(Number(a)||0);
     const bottom=hasColor?(Number(b)||0):top+(Number(b)||0);
     const geom=applyOverrideToRect(key,{x:Math.min(left,right),y:Math.min(top,bottom),w:Math.abs(right-left)+(hasColor?1:0),h:Math.abs(bottom-top)+(hasColor?1:0)});
-    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
-    return hasColor ? {x0:geom.x,y0:geom.y,a:geom.x+geom.w-1,b:geom.y+geom.h-1,colorIndex} : {x0:geom.x,y0:geom.y,a:geom.w,b:geom.h,colorIndex};
+    const ov=layoutOverrides[key]||{};
+    const finalColor=ov.color!==undefined?ov.color:colorIndex;
+    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
+    return hasColor ? {x0:geom.x,y0:geom.y,a:geom.x+geom.w-1,b:geom.y+geom.h-1,colorIndex:finalColor} : {x0:geom.x,y0:geom.y,a:geom.w,b:geom.h,colorIndex:finalColor};
   }
   function inspectorTransformLine(x0,y0,x1,y1,colorIndex){
     const seq=nextInspectorSequence('line');
-    const key=`draw:line:${seq}`;
+    const key=drawInspectorKey('line',seq);
     const geom=applyOverrideToLine(key,{x:Number(x0)||0,y:Number(y0)||0,w:(Number(x1)||0)-(Number(x0)||0),h:(Number(y1)||0)-(Number(y0)||0)});
-    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:colorIndex}});
-    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w,y1:geom.y+geom.h,colorIndex};
+    const ov=layoutOverrides[key]||{};
+    const finalColor=ov.color!==undefined?ov.color:colorIndex;
+    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
+    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w,y1:geom.y+geom.h,colorIndex:finalColor};
   }
   function inspectorTransformCircle(kind,x,y,r,colorIndex){
     const seq=nextInspectorSequence(kind);
-    const key=`draw:${kind}:${seq}`;
+    const key=drawInspectorKey(kind,seq);
     const geom=applyOverrideToCircle(key,{x:Number(x)||0,y:Number(y)||0,r:Math.max(1,Number(r)||1)});
-    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,colors:{color:colorIndex}});
-    return {x:geom.x,y:geom.y,r:geom.r,colorIndex};
-  }
-  function inspectorPreparePrint(text,x,y,fontSize,fill,outline,font){
-    const seq=nextInspectorSequence('print');
-    const key=`draw:print:${seq}`;
     const ov=layoutOverrides[key]||{};
-    return {key,seq,text:String(text??''),x:Number.isFinite(Number(ov.x))?Number(ov.x):(Number(x)||0),y:Number.isFinite(Number(ov.y))?Number(ov.y):(Number(y)||0),fontSize:Math.max(1,Number.isFinite(Number(ov.fontSize))?Number(ov.fontSize):(Number.isFinite(Number(ov.h))?Number(ov.h):(Number(fontSize)||12))),fill,outline,font};
+    const finalColor=ov.color!==undefined?ov.color:colorIndex;
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,colors:{color:finalColor}});
+    return {x:geom.x,y:geom.y,r:geom.r,colorIndex:finalColor};
+  }
+  function inspectorPreparePrint(text,x,y,fontSize,fill,outline,font,options={}){
+    const seq=nextInspectorSequence('print');
+    const sourceInfo=options.sourceInfo||null;
+    const signature=[text,x,y,fontSize].map(value=>String(value??'')).join(':');
+    const key=sourceInspectorKey('print',sourceInfo,seq,signature);
+    const ov=layoutOverrides[key]||{};
+    return {key,seq,sourceInfo,sourceArgMap:options.sourceArgMap||{},text:ov.text!==undefined?String(ov.text):String(text??''),x:Number.isFinite(Number(ov.x))?Number(ov.x):(Number(x)||0),y:Number.isFinite(Number(ov.y))?Number(ov.y):(Number(y)||0),fontSize:Math.max(1,Number.isFinite(Number(ov.fontSize))?Number(ov.fontSize):(Number.isFinite(Number(ov.h))?Number(ov.h):(Number(fontSize)||12))),fill:ov.fill!==undefined?ov.fill:fill,outline:ov.outline!==undefined?ov.outline:outline,font:ov.font!==undefined?ov.font:font};
   }
   function inspectorRecordPrint(info,width,height){
-    addInspectorObject({key:info.key,kind:'print',label:`print #${info.seq}`,shape:'rect',priority:1,x:info.x,y:info.y,w:Math.max(1,width),h:Math.max(1,height),fontSize:info.fontSize,canResize:true,text:info.text,colors:{fill:info.fill,outline:info.outline,font:info.font}});
+    addInspectorObject({key:info.key,kind:'print',label:`print #${info.seq}`,shape:'rect',priority:1,x:info.x,y:info.y,w:Math.max(1,width),h:Math.max(1,height),fontSize:info.fontSize,canResize:true,text:info.text,sourceInfo:info.sourceInfo||null,sourceArgMap:info.sourceArgMap||{},colors:{fill:info.fill,outline:info.outline,font:info.font}});
   }
   function inspectLuaWidgetFromStack(kind,index){
     if(!L || !lua || !lua.lua_istable(L,index)) return;
@@ -10098,15 +11042,18 @@ function makeRuntime(){
       return value;
     };
     const write=(name,value)=>{
-      if(value==null || !Number.isFinite(Number(value))) return;
-      lua.lua_pushnumber(L,Number(value));
+      if(value==null) return;
+      if(typeof value==='number' || Number.isFinite(Number(value))) lua.lua_pushnumber(L,Number(value));
+      else if(typeof value==='boolean') lua.lua_pushboolean(L,value?1:0);
+      else lua.lua_pushstring(L,to_luastring(String(value)));
       lua.lua_setfield(L,index,to_luastring(name));
     };
     const explicitId=read('id')||read('layout_id')||read('layoutId');
     const label=read('label')||read('name')||read('text')||'';
     const seq=nextInspectorSequence(kind);
-    const key=explicitId ? `widget:${kind}:${inspectorSlug(explicitId)}` : `widget:${kind}:${seq}:${inspectorSlug(label)}`;
+    const key=widgetInspectorKey(kind,seq,label,explicitId);
     const widgetType=String(read('type')||'rect').toLowerCase();
+    const ov=layoutOverrides[key]||{};
     let x=Number(read('x'))||0, y=Number(read('y'))||0;
     let w=Math.max(1,Number(read('w'))||84), h=Math.max(1,Number(read('h'))||18);
     let r=Math.max(1,Number(read('r')||read('radius'))||8);
@@ -10120,9 +11067,20 @@ function makeRuntime(){
       x=geom.x; y=geom.y; w=geom.w; h=geom.h;
       write('x',x); write('y',y); write('w',w); write('h',h);
     }
-    addInspectorObject({key,kind,label:`${kind}${label?`: ${label}`:''}`,shape:isCircle?'circle':'rect',priority:kind==='arrange'?3:5,x,y,w,h,r:isCircle?r:0,canResize:true,text:label,colors:{bg:read('bg'),border:read('border'),text:read('text'),hover_bg:read('hover_bg'),text_size:read('text_size'),label_x:read('label_x'),label_y:read('label_y')}});
+    const colorKeys=['bg','border','text','hover_bg','text_size','label_x','label_y','font','func'];
+    const colors={};
+    colorKeys.forEach(name=>{
+      const value=ov[name]!==undefined ? ov[name] : read(name);
+      colors[name]=value;
+      if(ov[name]!==undefined) write(name,value);
+    });
+    const displayText=ov.text!==undefined ? String(ov.text) : label;
+    if(ov.text!==undefined) write('text',displayText);
+    addInspectorObject({key,kind,label:`${kind}${displayText?`: ${displayText}`:''}`,shape:isCircle?'circle':'rect',priority:kind==='arrange'?3:5,x,y,w,h,r:isCircle?r:0,canResize:true,text:displayText,colors});
   }
-  function inspectorBeginFrame(){ inspectorObjects=[]; inspectorSeq={}; inspectorOrder=0; }
+  function inspectorBeginFrame(){ inspectorCaptureMode='frame'; inspectorSeq={}; inspectorOrder=0; inspectorObjects=(inspectorEnabled && state.activeView==='runtime') ? inspectorStaticObjects.map(obj=>{ const next={...obj,order:++inspectorOrder}; next.screen=worldToScreenRect(next); return next; }) : []; }
+  function inspectorBeginStaticCapture(){ inspectorCaptureMode='static'; inspectorStaticObjects=[]; inspectorSeq={}; inspectorOrder=0; }
+  function inspectorEndStaticCapture(){ inspectorCaptureMode='frame'; inspectorSeq={}; inspectorOrder=0; }
   const hitInspectorObject=(obj,point)=>{
     const s=obj.screen||worldToScreenRect(obj), px=point.x, py=point.y;
     if(obj.shape==='circle') return Math.hypot(px-s.cx,py-s.cy)<=s.r+5;
@@ -10134,13 +11092,20 @@ function makeRuntime(){
     }
     return px>=s.x-3 && px<=s.x+s.w+3 && py>=s.y-3 && py<=s.y+s.h+3;
   };
-  const findInspectorObjectAt=point=>{
-    let best=null;
-    for(const obj of inspectorObjects){
-      if(!hitInspectorObject(obj,point)) continue;
-      if(!best || obj.priority>best.priority || (obj.priority===best.priority && obj.order>best.order)) best=obj;
-    }
-    return best;
+  const findInspectorObjectsAt=point=>inspectorObjects
+    .filter(obj=>hitInspectorObject(obj,point))
+    .sort((a,b)=>(b.priority-a.priority)||(b.order-a.order));
+  const findInspectorObjectAt=point=>findInspectorObjectsAt(point)[0]||null;
+  const cycleInspectorObjectAt=point=>{
+    const hits=findInspectorObjectsAt(point);
+    if(!hits.length) return null;
+    const currentIndex=hits.findIndex(obj=>obj.key===inspectorSelected?.key);
+    const next=hits[(currentIndex+1+hits.length)%hits.length];
+    inspectorSelected=next;
+    inspectorHover=next;
+    inspectorPage=0;
+    openRuntimeVarsForInspectorSelection?.();
+    return next;
   };
   const isInspectorResizeHit=(obj,point)=>{
     if(!obj?.canResize) return false;
@@ -10157,8 +11122,24 @@ function makeRuntime(){
     inspectorCtx=inspectorCanvas.getContext('2d');
     inspectorPanel=document.createElement('div');
     inspectorPanel.className='runtimeInspectorPanel';
+    inspectorPanelTextEl=document.createElement('div');
+    inspectorPanelTextEl.className='runtimeInspectorPanelText';
+    const actions=document.createElement('div');
+    actions.className='runtimeInspectorPanelActions';
+    inspectorPanelResetBtn=document.createElement('button');
+    inspectorPanelResetBtn.type='button';
+    inspectorPanelResetBtn.className='uiBtn miniBtn runtimeInspectorPanelResetBtn';
+    inspectorPanelResetBtn.textContent='Reset';
+    inspectorPanelResetBtn.title='Reset unsaved inspector edits for only this element.';
+    inspectorPanelResetBtn.addEventListener('click',e=>{
+      e.preventDefault(); e.stopPropagation();
+      const obj=inspectorSelected||inspectorHover;
+      if(resetObjectLayoutEdits(obj?.key)) toast?.('Inspector element reset to saved/code values.');
+    });
+    actions.appendChild(inspectorPanelResetBtn);
+    inspectorPanel.append(inspectorPanelTextEl,actions);
+    document.body.appendChild(inspectorPanel);
     stage.appendChild(inspectorCanvas);
-    stage.appendChild(inspectorPanel);
     const pointerPoint=e=>clientToMouse(e.clientX,e.clientY);
     inspectorCanvas.addEventListener('pointerdown',e=>{
       if(!inspectorEnabled) return;
@@ -10201,10 +11182,20 @@ function makeRuntime(){
     inspectorCanvas.addEventListener('pointerup',e=>{
       if(!inspectorEnabled) return;
       const point=pointerPoint(e), clicked=inspectorDrag && !inspectorDrag.moved;
-      if(clicked && inspectorSelected) inspectorPage=inspectorDrag.sameSelection?((inspectorPage+1)%3):0;
+      if(clicked && inspectorSelected){
+        inspectorPage=inspectorDrag.sameSelection?((inspectorPage+1)%3):0;
+        openRuntimeVarsForInspectorSelection?.();
+      }
       inspectorDrag=null;
       inspectorCanvas.classList.remove('dragging');
       inspectorHover=findInspectorObjectAt(point);
+      renderInspectorOverlay(point);
+      e.preventDefault(); e.stopPropagation();
+    },{passive:false});
+    inspectorCanvas.addEventListener('contextmenu',e=>{
+      if(!inspectorEnabled) return;
+      const point=pointerPoint(e);
+      cycleInspectorObjectAt(point);
       renderInspectorOverlay(point);
       e.preventDefault(); e.stopPropagation();
     },{passive:false});
@@ -10265,23 +11256,70 @@ function makeRuntime(){
       }
       ctxi.restore();
     }
-    const panelObj=inspectorSelected||inspectorHover;
+    const varsPanel=$('runtimeVarsPanel');
+    const varsPanelOpen=!!varsPanel?.classList.contains('show');
+    const panelObj=varsPanelOpen ? (inspectorSelected||inspectorHover) : null;
     if(panelObj && inspectorPanel){
-      const s=panelObj.screen||worldToScreenRect(panelObj), stageRect=stage.getBoundingClientRect(), canvasRect=canvas.getBoundingClientRect();
-      const scaleX=canvasRect.width/GAME_W, scaleY=canvasRect.height/GAME_H;
-      const desiredLeft=(canvasRect.left-stageRect.left)+((s.x+s.w+8)*scaleX), desiredTop=(canvasRect.top-stageRect.top)+(s.y*scaleY);
-      inspectorPanel.style.left=`${Math.round(clamp(desiredLeft,8,Math.max(8,stageRect.width-290)))}px`;
-      inspectorPanel.style.top=`${Math.round(clamp(desiredTop,8,Math.max(8,stageRect.height-140)))}px`;
-      inspectorPanel.textContent=inspectorPanelText(panelObj);
+      const varsRect=varsPanel.getBoundingClientRect();
+      const top=varsRect ? Math.min(window.innerHeight-24, varsRect.bottom+8) : 56;
+      inspectorPanel.style.right='10px';
+      inspectorPanel.style.left='auto';
+      inspectorPanel.style.top=`${Math.round(top)}px`;
+      if(inspectorPanelTextEl) inspectorPanelTextEl.textContent=inspectorPanelText(panelObj);
+      if(inspectorPanelResetBtn){
+        inspectorPanelResetBtn.disabled=!hasUnsavedObjectOverride(panelObj.key);
+        inspectorPanelResetBtn.title=inspectorPanelResetBtn.disabled ? 'No unsaved inspector edits for this element.' : 'Reset unsaved inspector edits for only this element.';
+      }
       inspectorPanel.classList.add('show');
     }else{
       inspectorPanel?.classList.remove('show');
     }
   }
+  const nudgeInspectorSelection=(dx,dy)=>{
+    const obj=currentInspectorObject();
+    if(!inspectorEnabled || state.activeView!=='runtime' || !obj) return false;
+    const next={x:(Number(obj.x)||0)+dx,y:(Number(obj.y)||0)+dy};
+    setObjectOverride(obj,next);
+    inspectorSelected={...obj,...next};
+    inspectorSelected.screen=worldToScreenRect(inspectorSelected);
+    renderInspectorOverlay();
+    return true;
+  };
+  const stopInspectorKeyNudge=key=>{
+    if(!inspectorKeyNudge) return;
+    if(!key || inspectorKeyNudge.key===key){
+      cancelAnimationFrame(inspectorKeyNudge.raf);
+      inspectorKeyNudge=null;
+    }
+  };
+  const handleInspectorKey=(key,down)=>{
+    const dirs={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+    if(!dirs[key]) return false;
+    if(!down){ stopInspectorKeyNudge(key); return true; }
+    if(!inspectorEnabled || state.activeView!=='runtime' || !currentInspectorObject()) return false;
+    const [dx,dy]=dirs[key];
+    if(!inspectorKeyNudge || inspectorKeyNudge.key!==key){
+      stopInspectorKeyNudge();
+      inspectorKeyNudge={key,dx,dy,steps:0,last:0,raf:0};
+      nudgeInspectorSelection(dx,dy);
+    }
+    const step=now=>{
+      if(!inspectorKeyNudge || inspectorKeyNudge.key!==key) return;
+      const delay=inspectorKeyNudge.steps<4 ? 95 : 16;
+      if(!inspectorKeyNudge.last || now-inspectorKeyNudge.last>=delay){
+        inspectorKeyNudge.last=now;
+        inspectorKeyNudge.steps++;
+        nudgeInspectorSelection(dx,dy);
+      }
+      inspectorKeyNudge.raf=requestAnimationFrame(step);
+    };
+    if(!inspectorKeyNudge.raf) inspectorKeyNudge.raf=requestAnimationFrame(step);
+    return true;
+  };
   function setInspectorEnabled(next){
-    inspectorEnabled=!!next && isDesktopUI();
+    inspectorEnabled=!!next;
     ensureInspectorOverlay();
-    if(!inspectorEnabled){ inspectorSelected=null; inspectorHover=null; inspectorDrag=null; }
+    if(!inspectorEnabled){ inspectorSelected=null; inspectorHover=null; inspectorDrag=null; stopInspectorKeyNudge(); }
     renderInspectorOverlay();
     updateRuntimeLayoutSaveState?.();
     return inspectorEnabled;
@@ -10483,10 +11521,12 @@ function makeRuntime(){
     const defaultFontSize=defaultPrintState.size==null?12:defaultPrintState.size;
     const defaultFill=defaultPrintState.color??sty();
     let text=t, x=0, y=0, fontSize=defaultFontSize, fill=defaultFill, outline=null, font=defaultFont;
+    const sourceArgMap={text:1};
     if(arguments.length>=4&&typeof a==='number'&&typeof b==='number'&&typeof c==='number'){
       fontSize=(a==null||String(a).trim().toLowerCase()==='nil')?defaultFontSize:(Number(a)||defaultFontSize);
       x=b;
       y=c;
+      sourceArgMap.fontSize=2; sourceArgMap.x=3; sourceArgMap.y=4; sourceArgMap.fill=5; sourceArgMap.outline=6; sourceArgMap.font=7;
       const parsedFill=resolvePrintColor(d);
       if(parsedFill!=null) fill=parsedFill;
       outline=resolvePrintColor(e);
@@ -10496,6 +11536,7 @@ function makeRuntime(){
       y=0;
       fill=`rgb(${a|0},${b|0},${c|0})`;
     } else if(typeof a==='string' || (typeof a==='number' && (b==null||typeof b!=='number'||c!=null))){
+      sourceArgMap.fill=2; sourceArgMap.outline=3;
       const parsedFill=resolvePrintColor(a);
       if(parsedFill!=null) fill=parsedFill;
       outline=resolvePrintColor(b);
@@ -10503,18 +11544,23 @@ function makeRuntime(){
       if(typeof a==='number'){
         x=a;
         y=(typeof b==='number')?b:0;
+        sourceArgMap.x=2; sourceArgMap.y=3;
       } else {
         if(a!=null) fontSize=(Number(a)||defaultFontSize);
         x=(typeof b==='number')?b:0;
         y=(typeof c==='number')?c:0;
+        sourceArgMap.fontSize=2; sourceArgMap.x=3; sourceArgMap.y=4;
       }
       if(typeof a!=='number'){
+        sourceArgMap.outline=3; sourceArgMap.fill=4;
         outline=resolvePrintColor(b);
         const parsedFill=resolvePrintColor(c);
         if(parsedFill!=null) fill=parsedFill;
       }
     }
-    const inspectInfo=inspectorPreparePrint(text,x,y,fontSize,fill,outline,font);
+    const sourceInfo=pendingPrintSourceInfo||luaCallerSourceInfo(2);
+    pendingPrintSourceInfo=null;
+    const inspectInfo=inspectorPreparePrint(text,x,y,fontSize,fill,outline,font,{sourceInfo,sourceArgMap});
     x=inspectInfo.x;
     y=inspectInfo.y;
     fontSize=inspectInfo.fontSize;
@@ -10668,12 +11714,255 @@ function makeRuntime(){
   function sfxPlay(index, loop=false){ previewSound(index|0, loop); }
   function musicPlay(src, action='play', loop=true){
     const normalizedAction=String(action??'play').trim().toLowerCase();
+    if(runtimePaused && normalizedAction!=='stop') return;
     if(normalizedAction==='stop'){
       playMusicEntry(src, action, loop, projectRef);
       return;
     }
     if(state.activeView!=='runtime') return;
     playMusicEntry(src, action, loop, projectRef);
+  }
+  function luaKeyToString(index){
+    if(!L || !lua) return null;
+    if(lua.lua_isnumber(L,index)) return String(lua.lua_tonumber(L,index));
+    // lua_tolstring converts numeric keys in-place, which breaks lua_next iteration.
+    if(lua.lua_isstring(L,index)){ const raw=lua.lua_tolstring(L,index); return raw?to_jsstring(raw):''; }
+    return null;
+  }
+  function luaKeyDescriptor(index){
+    if(!L || !lua) return null;
+    if(lua.lua_isnumber(L,index)){
+      const value=lua.lua_tonumber(L,index);
+      return {type:'number',value,display:`[${Number.isInteger(value)?value:String(value)}]`,label:String(value)};
+    }
+    if(lua.lua_isstring(L,index)){
+      const raw=lua.lua_tolstring(L,index), value=raw?to_jsstring(raw):'';
+      const safe=/^[A-Za-z_][A-Za-z0-9_]*$/.test(value);
+      return {type:'string',value,display:safe?`.${value}`:`[${JSON.stringify(value)}]`,label:value};
+    }
+    return null;
+  }
+  function luaFunctionSourceInfo(index){
+    if(!L || !lua || !to_luastring || !to_jsstring || !lua.lua_getglobal || !lua.lua_getfield || !lua.lua_pushvalue) return null;
+    const absIndex=index<0 ? lua.lua_gettop(L)+index+1 : index;
+    lua.lua_getglobal(L,to_luastring('debug'));
+    if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,1); return null; }
+    lua.lua_getfield(L,-1,to_luastring('getinfo'));
+    if(!lua.lua_isfunction(L,-1)){ lua.lua_pop(L,2); return null; }
+    lua.lua_pushvalue(L,absIndex);
+    lua.lua_pushstring(L,to_luastring('Su'));
+    if(lua.lua_pcall(L,2,1,0)!==lua.LUA_OK){ lua.lua_pop(L,2); return null; }
+    if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,2); return null; }
+    const readNumber=name=>{ lua.lua_getfield(L,-1,to_luastring(name)); const value=lua.lua_isnumber(L,-1)?lua.lua_tonumber(L,-1):0; lua.lua_pop(L,1); return value; };
+    const readString=name=>{ lua.lua_getfield(L,-1,to_luastring(name)); const raw=lua.lua_isstring(L,-1)?lua.lua_tolstring(L,-1):null; const value=raw?to_jsstring(raw):''; lua.lua_pop(L,1); return value; };
+    const info={source:readString('source'),shortSource:readString('short_src'),lineDefined:readNumber('linedefined'),lastLineDefined:readNumber('lastlinedefined'),nparams:readNumber('nparams'),isvararg:!!readNumber('isvararg')};
+    lua.lua_pop(L,2);
+    return info;
+  }
+  function luaCallerSourceInfo(level=2){
+    if(!L || !lua || !to_luastring || !to_jsstring) return null;
+    lua.lua_getglobal(L,to_luastring('debug'));
+    if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,1); return null; }
+    lua.lua_getfield(L,-1,to_luastring('getinfo'));
+    if(!lua.lua_isfunction(L,-1)){ lua.lua_pop(L,2); return null; }
+    lua.lua_pushinteger(L,Math.max(1,Number(level)||2));
+    lua.lua_pushstring(L,to_luastring('Sl'));
+    if(lua.lua_pcall(L,2,1,0)!==lua.LUA_OK){ lua.lua_pop(L,2); return null; }
+    if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,2); return null; }
+    const readNumber=name=>{ lua.lua_getfield(L,-1,to_luastring(name)); const value=lua.lua_isnumber(L,-1)?lua.lua_tonumber(L,-1):0; lua.lua_pop(L,1); return value; };
+    const readString=name=>{ lua.lua_getfield(L,-1,to_luastring(name)); const raw=lua.lua_isstring(L,-1)?lua.lua_tolstring(L,-1):null; const value=raw?to_jsstring(raw):''; lua.lua_pop(L,1); return value; };
+    const currentLine=readNumber('currentline');
+    const source=readString('source');
+    const shortSource=readString('short_src');
+    lua.lua_pop(L,2);
+    const mapped=currentLine>0 ? mapResolvedLuaLine(currentLine) : null;
+    return {source,shortSource,currentLine,line:currentLine,mapped};
+  }
+  function luaValueForInspector(index){
+    if(!L || !lua) return {type:'nil',value:'nil'};
+    if(lua.lua_isnil(L,index)) return {type:'nil',value:'nil'};
+    if(lua.lua_isboolean(L,index)) return {type:'boolean',value:!!lua.lua_toboolean(L,index)};
+    if(lua.lua_isnumber(L,index)) return {type:'number',value:lua.lua_tonumber(L,index)};
+    if(lua.lua_isstring(L,index)){ const raw=lua.lua_tolstring(L,index); return {type:'string',value:raw?to_jsstring(raw):''}; }
+    if(lua.lua_isfunction(L,index)){
+      const info=luaFunctionSourceInfo(index);
+      const sourceLine=Number(info?.lineDefined)||0;
+      return {type:'function',value:'[function]',sourceLine:sourceLine>0?sourceLine:null,sourceLastLine:Number(info?.lastLineDefined)||null,source:info?.source||'',shortSource:info?.shortSource||'',paramCount:Number.isFinite(Number(info?.nparams))?Number(info.nparams):null,isVararg:!!info?.isvararg};
+    }
+    if(lua.lua_istable(L,index)) return {type:'table',value:'[table]'};
+    return {type:'value',value:'[value]'};
+  }
+  function runtimePathLabel(path){
+    if(!Array.isArray(path)||!path.length) return '_G';
+    return path.map(part=>String(part?.display||'')).join('').replace(/^\./,'');
+  }
+
+  const runtimeActivityKey=pathOrName=>Array.isArray(pathOrName)?runtimePathLabel(pathOrName):String(pathOrName||'');
+  const markRuntimeActivity=(pathOrName,reason='changed')=>{
+    const key=runtimeActivityKey(pathOrName);
+    if(!key) return 0;
+    const at=++runtimeActivityClock;
+    runtimeActivity.set(key,{at,reason});
+    return at;
+  };
+  function luaInspectorSignature(index,depth=0){
+    if(!L || !lua) return 'unavailable';
+    const abs=index<0 ? lua.lua_gettop(L)+index+1 : index;
+    if(lua.lua_isnil(L,abs)) return 'nil';
+    if(lua.lua_isboolean(L,abs)) return `boolean:${lua.lua_toboolean(L,abs)?1:0}`;
+    if(lua.lua_isnumber(L,abs)) return `number:${lua.lua_tonumber(L,abs)}`;
+    if(lua.lua_isstring(L,abs)){ const raw=lua.lua_tolstring(L,abs); return `string:${raw?to_jsstring(raw):''}`; }
+    if(lua.lua_isfunction(L,abs)){
+      const info=luaFunctionSourceInfo(abs);
+      return `function:${info?.shortSource||info?.source||''}:${info?.lineDefined||0}:${info?.lastLineDefined||0}`;
+    }
+    if(lua.lua_istable(L,abs)){
+      const parts=[];
+      let count=0;
+      lua.lua_pushnil(L);
+      while(lua.lua_next(L,abs)!==0){
+        count++;
+        const key=luaKeyToString(-2) ?? `key${count}`;
+        let valueSig=luaValueForInspector(-1).type;
+        if(depth<1 && !lua.lua_istable(L,-1)) valueSig=luaInspectorSignature(-1,depth+1);
+        parts.push(`${key}:${valueSig}`);
+        lua.lua_pop(L,1);
+      }
+      parts.sort();
+      return `table:${count}:${parts.slice(0,40).join('|')}`;
+    }
+    return luaValueForInspector(abs).type;
+  }
+  const annotateRuntimeActivity=(item,signature)=>{
+    const key=runtimeActivityKey(item.path||item.pathLabel||item.name);
+    const previous=runtimeSnapshots.get(key);
+    if(previous!==signature) markRuntimeActivity(item.path||key, previous==null?'added':'changed');
+    runtimeSnapshots.set(key,signature);
+    const activity=runtimeActivity.get(key);
+    item.activityAt=activity?.at||0;
+    item.activityReason=activity?.reason||'';
+    item.activityLabel=item.activityAt ? `Most recently ${item.activityReason || 'affected'} #${item.activityAt}` : '';
+    return item;
+  };
+  function pushLuaKey(part){
+    if(!part) return false;
+    if(part.type==='number') lua.lua_pushnumber(L,Number(part.value)||0);
+    else lua.lua_pushstring(L,to_luastring(String(part.value??'')));
+    return true;
+  }
+  function pushRuntimePathValue(path){
+    if(!L || !lua || !to_luastring) return false;
+    const parts=Array.isArray(path)?path:[];
+    if(!parts.length){ lua.lua_getglobal(L,to_luastring('_G')); return true; }
+    const first=parts[0];
+    if(first.type!=='string') return false;
+    lua.lua_getglobal(L,to_luastring(String(first.value??'')));
+    for(let i=1;i<parts.length;i++){
+      if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,1); return false; }
+      pushLuaKey(parts[i]);
+      lua.lua_gettable(L,-2);
+      lua.lua_remove(L,-2);
+    }
+    return true;
+  }
+  function captureGlobalNames(){
+    const names=new Set();
+    if(!L || !lua || !to_luastring) return names;
+    lua.lua_getglobal(L,to_luastring('_G'));
+    lua.lua_pushnil(L);
+    while(lua.lua_next(L,-2)!==0){
+      const key=luaKeyToString(-2);
+      if(key) names.add(key);
+      lua.lua_pop(L,1);
+    }
+    lua.lua_pop(L,1);
+    return names;
+  }
+  function getRuntimeVariables(path=[]){
+    if(!L || !builtOk || !lua || !to_luastring) return {items:[],parentPath:[]};
+    const basePath=Array.isArray(path)?path:[];
+    const vars=[];
+    if(!pushRuntimePathValue(basePath)) return {items:[],parentPath:basePath.slice(0,-1)};
+    if(!lua.lua_istable(L,-1)){
+      lua.lua_pop(L,1);
+      return {items:[],parentPath:basePath.slice(0,-1)};
+    }
+    lua.lua_pushnil(L);
+    while(lua.lua_next(L,-2)!==0){
+      const key=luaKeyDescriptor(-2);
+      if(key){
+        const isRoot=!basePath.length;
+        const name=key.label;
+        if(!isRoot || (key.type==='string' && name && !baselineGlobals.has(name) && !name.startsWith('__tc_'))){
+          const signature=luaInspectorSignature(-1);
+          const info=luaValueForInspector(-1);
+          const nextPath=isRoot ? [{...key,display:name}] : basePath.concat(key);
+          vars.push(annotateRuntimeActivity({name,...info,path:nextPath,pathLabel:runtimePathLabel(nextPath)},signature));
+        }
+      }
+      lua.lua_pop(L,1);
+    }
+    lua.lua_pop(L,1);
+    vars.sort((a,b)=>{
+      const activity=(Number(b.activityAt)||0)-(Number(a.activityAt)||0);
+      if(activity) return activity;
+      const an=Number(a.name), bn=Number(b.name), aNum=Number.isFinite(an), bNum=Number.isFinite(bn);
+      if(aNum&&bNum) return an-bn;
+      if(aNum!==bNum) return aNum?-1:1;
+      return String(a.name).localeCompare(String(b.name));
+    });
+    return {items:vars,parentPath:basePath.slice(0,-1)};
+  }
+  function parseRuntimeVariableInput(raw){
+    const text=String(raw??'');
+    const trimmed=text.trim();
+    if(/^nil$/i.test(trimmed)) return {type:'nil',value:null};
+    if(/^true$/i.test(trimmed)) return {type:'boolean',value:true};
+    if(/^false$/i.test(trimmed)) return {type:'boolean',value:false};
+    if(trimmed!=='' && Number.isFinite(Number(trimmed))) return {type:'number',value:Number(trimmed)};
+    const quoted=(trimmed.match(/^"([\s\S]*)"$/) || trimmed.match(/^'([\s\S]*)'$/));
+    if(quoted) return {type:'string',value:quoted[1].replace(/\\"/g,'"').replace(/\\'/g,"'").replace(/\\n/g,'\n').replace(/\\\\/g,'\\')};
+    return {type:'string',value:text};
+  }
+  function pushParsedRuntimeValue(rawValue){
+    const text=String(rawValue??'');
+    const trimmed=text.trim();
+    const expressionLike=/^(function\b|\{|\[|require\b)/.test(trimmed);
+    if(expressionLike && lauxlib?.luaL_loadstring){
+      const status=lauxlib.luaL_loadstring(L,to_luastring(`return ${trimmed}`));
+      if(status===lua.LUA_OK && lua.lua_pcall(L,0,1,0)===lua.LUA_OK) return true;
+      const err=to_jsstring(lua.lua_tostring(L,-1));
+      lua.lua_pop(L,1);
+      setLastRunError(`Inspector value error: ${err}`);
+      return false;
+    }
+    const parsed=parseRuntimeVariableInput(rawValue);
+    if(parsed.type==='nil') lua.lua_pushnil(L);
+    else if(parsed.type==='boolean') lua.lua_pushboolean(L,parsed.value?1:0);
+    else if(parsed.type==='number') lua.lua_pushnumber(L,parsed.value);
+    else lua.lua_pushstring(L,to_luastring(String(parsed.value??'')));
+    return true;
+  }
+  function setRuntimeVariable(pathOrName,rawValue){
+    if(!L || !builtOk || !lua || !to_luastring) return false;
+    const path=Array.isArray(pathOrName)?pathOrName:[{type:'string',value:String(pathOrName||'').trim(),display:String(pathOrName||'').trim()}];
+    if(!path.length || !path[0].value) return false;
+    if(path.length===1 && path[0].type==='string'){
+      if(!pushParsedRuntimeValue(rawValue)) return false;
+      lua.lua_setglobal(L,to_luastring(String(path[0].value)));
+      markRuntimeActivity(path,'changed');
+      return true;
+    }
+    const parentPath=path.slice(0,-1), last=path[path.length-1];
+    if(!pushRuntimePathValue(parentPath)) return false;
+    if(!lua.lua_istable(L,-1)){ lua.lua_pop(L,1); return false; }
+    pushLuaKey(last);
+    if(!pushParsedRuntimeValue(rawValue)){ lua.lua_pop(L,2); return false; }
+    lua.lua_settable(L,-3);
+    lua.lua_pop(L,1);
+    markRuntimeActivity(path,'changed');
+    markRuntimeActivity(parentPath,'affected');
+    return true;
   }
   const getFengariApi=()=>{
     const root=(typeof window!=='undefined'&&window)||globalThis;
@@ -10731,13 +12020,15 @@ function makeRuntime(){
     })().finally(()=>{ fengariLoadPromise=null; });
     return fengariLoadPromise;
   };
-  let lua, lauxlib, lualib, to_luastring, to_jsstring;
+  let lua, lauxlib, lualib, to_luastring, to_jsstring, baselineGlobals=new Set();
   function pushProjectTable(){ lua.lua_newtable(L); lua.lua_pushinteger(L,projectRef.project.tile_w); lua.lua_setfield(L,-2,to_luastring('tile_w')); lua.lua_pushinteger(L,projectRef.project.tile_h); lua.lua_setfield(L,-2,to_luastring('tile_h')); lua.lua_pushinteger(L,projectRef.project.map_w); lua.lua_setfield(L,-2,to_luastring('map_w')); lua.lua_pushinteger(L,projectRef.project.map_h); lua.lua_setfield(L,-2,to_luastring('map_h')); lua.lua_pushinteger(L,projectRef.maps.length); lua.lua_setfield(L,-2,to_luastring('map_count')); lua.lua_pushinteger(L,projectRef.spriteFolders.length); lua.lua_setfield(L,-2,to_luastring('sprite_count')); lua.lua_pushinteger(L,projectRef.sounds.length); lua.lua_setfield(L,-2,to_luastring('sound_count')); lua.lua_pushinteger(L,projectRef.music.length); lua.lua_setfield(L,-2,to_luastring('music_count')); lua.lua_setglobal(L,to_luastring('project')); }
   function build(code, options={}){
     if(rebuildTimer){ clearTimeout(rebuildTimer); rebuildTimer=0; }
     lastCode=code||'';
     const suppressAudio=!!options.suppressAudio;
     builtOk=false;
+    inspectorStaticObjects=[]; inspectorObjects=[];
+    runtimeActivity.clear(); runtimeSnapshots.clear(); runtimeActivityClock=0;
     resetRuntimeDefaults();
     const fengariApi=getFengariApi();
     if(!fengariApi){
@@ -10772,8 +12063,8 @@ function makeRuntime(){
     push('rectfill',L=>{ const t=inspectorTransformRectFill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined); rectfill(t.x0,t.y0,t.a,t.b,t.colorIndex); return 0;});
     push('circ',L=>{ const t=inspectorTransformCircle('circ',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_gettop(L)>=4?readLuaArg(L,4):undefined); circ(t.x,t.y,t.r,t.colorIndex); return 0;});
     push('circfill',L=>{ const t=inspectorTransformCircle('circfill',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_gettop(L)>=4?readLuaArg(L,4):undefined); circfill(t.x,t.y,t.r,t.colorIndex); return 0;});
-    push('print',L=>{ const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const args=[]; for(let i=1;i<=argc;i++) args.push(readArg(i)); print(...args); return 0;});
-    push('print_',L=>{ const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const args=[]; for(let i=1;i<=argc;i++) args.push(readArg(i)); print(...args); return 0;});
+    push('print',L=>{ const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const args=[]; for(let i=1;i<=argc;i++) args.push(readArg(i)); pendingPrintSourceInfo=luaCallerSourceInfo(2); print(...args); return 0;});
+    push('print_',L=>{ const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const args=[]; for(let i=1;i<=argc;i++) args.push(readArg(i)); pendingPrintSourceInfo=luaCallerSourceInfo(2); print(...args); return 0;});
     push('default_font',L=>{ const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); default_font(readArg(1),readArg(2),readArg(3)); return 0;});
     push('default_controls',L=>{ const raw=lua.lua_gettop(L)>=1?(lua.lua_isnumber(L,1)?String(lua.lua_tonumber(L,1)):to_jsstring(lua.lua_tolstring(L,1))):null; lua.lua_pushstring(L,to_luastring(default_controls(raw))); return 1;});
     push('__tc_runtime_inspect_widget',L=>{ const kind=lua.lua_gettop(L)>=1?String(readLuaArg(L,1)||'widget'):'widget'; if(lua.lua_gettop(L)>=2) inspectLuaWidgetFromStack(kind,2); return 0; });
@@ -10812,8 +12103,8 @@ function makeRuntime(){
     push('music',L=>{ if(suppressAudio) return 0; const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); if(argc===0){ musicPlay(0,'stop',false); return 0; } const src=readArg(1); const srcText=String(src??'').trim().toLowerCase(); if(argc<=1&&srcText==='stop'){ musicPlay(0,'stop',false); return 0; } const action=String((argc>=2?readArg(2):'play')??'play').trim().toLowerCase()||'play'; const loop=argc>=3?!!lua.lua_toboolean(L,3):true; musicPlay(src,action,loop); return 0;});
     const helperStatus=lauxlib.luaL_dostring(L,to_luastring(LUA_RUNTIME_HELPERS));
     if(helperStatus!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua helper error: ${err}`); cls(); return; }
-    pushProjectTable(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); if(status!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
-    lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
+    pushProjectTable(); baselineGlobals=captureGlobalNames(); inspectorBeginStaticCapture(); const status=lauxlib.luaL_dostring(L,to_luastring(code||'')); inspectorEndStaticCapture(); if(status!==lua.LUA_OK){ inspectorStaticObjects=[]; inspectorObjects=[]; const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`Lua error: ${err}`); cls(); return; }
+    lua.lua_getglobal(L,to_luastring('_init')); if(lua.lua_isfunction(L,-1)){ if(lua.lua_pcall(L,0,0,0)!==lua.LUA_OK){ inspectorStaticObjects=[]; inspectorObjects=[]; const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`_init error: ${err}`); cls(); return; } } else lua.lua_pop(L,1); setLastRunError(''); builtOk=true; }
   function queueBuild(mode='load',codeOverride){
     const source=(codeOverride!=null?codeOverride:lastCode);
     const resolvedSource=(source!=null&&source!=='')?source:getProjectLua();
@@ -10821,7 +12112,8 @@ function makeRuntime(){
     if(!hasStarted){ pendingRunMode=mode; return; }
     build(resolvedSource, mode==='load'?{suppressAudio:true}:undefined);
   }
-  function setActive(nextActive){ runtimeActive=!!nextActive; }
+  function setActive(nextActive){ runtimeActive=!!nextActive; if(!runtimeActive) setPaused(false); }
+  function setPaused(nextPaused){ runtimePaused=!!nextPaused && hasStarted; if(runtimePaused) pauseRuntimeMusicPlayback(); else if(runtimeActive && state.activeView==='runtime') resumeRuntimeMusicPlayback(); updateRuntimeLayoutSaveState?.(); }
   function startRuntime(mode='run'){
     runtimeActive=true;
     if(hasStarted) return;
@@ -10833,11 +12125,12 @@ function makeRuntime(){
   function loadEditor(codeOverride){ queueBuild('load',codeOverride); }
   function rerun(codeOverride){ queueBuild('run',codeOverride); }
   function reset(codeOverride){ queueBuild('run',codeOverride); }
-  function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
+  function callMaybe(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); if(lua.lua_isfunction(L,-1)){ markRuntimeActivity(name,'called'); const ok=lua.lua_pcall(L,0,0,0); if(ok!==lua.LUA_OK){ const err=to_jsstring(lua.lua_tostring(L,-1)); setLastRunError(`${name} error: ${err}`); builtOk=false; L=null; return false; } return true; } lua.lua_pop(L,1); return true; }
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } inspectorBeginFrame(); if(runtimeActive){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } inspectorFinishFrame(); keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  function callPausedDrawCallbacks(){ if(hasLuaFunction('_draw')){ if(!callMaybe('_draw')) return false; callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); return true; } return false; }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused || (runtimePaused && inspectorEnabled && runtimeActive)) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(runtimeActive && runtimePaused && inspectorEnabled){ callPausedDrawCallbacks(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && !runtimeVarsFunctionDetail && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },renderInspectorOverlay,toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,handleInspectorKey,stopInspectorKeyNudge,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -10867,12 +12160,24 @@ function wireUI(){
   const bindClick=(id,handler)=>bind(id,'click',handler);
   bindClick('runtimeStartPlayBtn',()=>{
     runtimeStarted=true;
+    runtimeDebugPaused=false;
     $('runtimeStartOverlay')?.classList.add('hidden');
+    runtime?.setPaused?.(false);
     runtime?.startRuntime?.();
+    updateRuntimeLayoutSaveState?.();
   });
   const pauseRuntimePreview=()=>{
     if(state.activeView!=="runtime") return;
+    if(runtimeDebugPaused || runtime?.isInspectorEnabled?.()){
+      runtimeDebugPaused=true;
+      runtime?.setPaused?.(true);
+      $("runtimeStartOverlay")?.classList.add("hidden");
+      updateRuntimeLayoutSaveState?.();
+      return;
+    }
     runtimeStarted=false;
+    runtimeDebugPaused=false;
+    runtime?.setPaused?.(false);
     runtime?.setActive?.(false);
     updateRuntimePausePlaceholder();
     $("runtimeStartOverlay")?.classList.remove("hidden");
@@ -11343,21 +12648,59 @@ function wireUI(){
     runtimeUiHidden=!runtimeUiHidden;
     applyRuntimeUiHiddenState();
   });
-  bindClick('runtimeInspectorModeBtn',()=>{
-    if(state.activeView!=='runtime' || !window.matchMedia('(min-width: 901px)').matches) return;
+  function toggleRuntimeInspectorMode(){
+    if(state.activeView!=='runtime') return;
     const enabled=runtime?.toggleInspector?.();
     toast(enabled?'UI inspector enabled.':'UI inspector disabled.');
     applyRuntimeUiHiddenState();
-  });
-  bindClick('runtimeSaveLayoutBtn',async ()=>{
+  }
+  function toggleRuntimeDebugPause(){
+    if(state.activeView!=='runtime') return;
+    if(!runtimeStarted){
+      runtimeStarted=true;
+      $('runtimeStartOverlay')?.classList.add('hidden');
+      runtime?.startRuntime?.();
+    }
+    runtimeDebugPaused=!runtimeDebugPaused;
+    runtime?.setPaused?.(runtimeDebugPaused);
+    toast(runtimeDebugPaused?'Runtime paused for debugging.':'Runtime resumed.');
+    updateRuntimeLayoutSaveState?.();
+  }
+  function toggleRuntimeVarsDebugPanel(){
+    if(state.activeView!=='runtime') return;
+    toggleRuntimeVarsPanel();
+  }
+  bindClick('runtimeInspectorModeBtn',toggleRuntimeInspectorMode);
+  bindClick('runtimeDebugPauseBtn',toggleRuntimeDebugPause);
+  bindClick('runtimeVarsBtn',toggleRuntimeVarsDebugPanel);
+  bindClick('runtimeVarsCloseBtn',closeRuntimeVarsPanel);
+  bind('runtimeVarsPanel','click',e=>e.stopPropagation());
+  async function saveRuntimeLayoutFromInspector(){
     if(state.activeView!=='runtime') return;
     const count=runtime?.getLayoutOverrideCount?.()||0;
     const saved=await saveProject(false);
     if(saved) toast(`<b>Layout saved:</b> ${count} override${count===1?'':'s'}.`);
     applyRuntimeUiHiddenState();
-  });
+  }
+  function resetRuntimeLayoutFromInspector(){
+    if(state.activeView!=='runtime') return;
+    runtime?.resetLayoutEdits?.();
+    toast('Inspector tweaks reset to saved/code values.');
+    applyRuntimeUiHiddenState();
+  }
+  bindClick('runtimeSaveLayoutBtn',saveRuntimeLayoutFromInspector);
+  bindClick('runtimeMobileSaveLayoutBtn',saveRuntimeLayoutFromInspector);
+  bindClick('runtimeResetLayoutBtn',resetRuntimeLayoutFromInspector);
   window.addEventListener('resize',applyRuntimeUiHiddenState);
+  window.addEventListener('keyup',e=>{ runtime?.handleInspectorKey?.(e.key,false); });
   window.addEventListener('keydown',e=>{
+    const active=document.activeElement;
+    const editing=active && (active.isContentEditable || ['INPUT','TEXTAREA','SELECT'].includes(String(active.tagName||'').toUpperCase()));
+    if(!editing && runtime?.handleInspectorKey?.(e.key,true)){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
     const key=String(e.key||'').toLowerCase();
     if(state.activeView==='runtime' && (key==='f1' || e.code==='F1')){
       e.preventDefault();
