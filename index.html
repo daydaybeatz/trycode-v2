@@ -1182,6 +1182,14 @@ function default_button(opts)
   return btn
 end
 
+function button(opts)
+  local btn = {}
+  __tc_uicopy(btn, __tc_button_theme)
+  btn.func = nil
+  if type(opts) == "table" then __tc_uicopy(btn, opts) end
+  return btn
+end
+
 function default_dropdown(opts)
   if opts == nil then
     __tc_uireset(__tc_dropdown_theme, __tc_dropdown_theme_defaults)
@@ -1192,6 +1200,16 @@ function default_dropdown(opts)
     patch.theme = nil
     __tc_uicopy(__tc_dropdown_theme, patch)
   end
+  local dd = {}
+  __tc_uicopy(dd, __tc_dropdown_theme)
+  dd.items = {}
+  dd.func = nil
+  if type(opts) == "table" then __tc_uicopy(dd, opts) end
+  if type(dd.items) ~= "table" then dd.items = {} end
+  return dd
+end
+
+function dropdown(opts)
   local dd = {}
   __tc_uicopy(dd, __tc_dropdown_theme)
   dd.items = {}
@@ -2633,7 +2651,9 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['set_value','set_value(table, key, value) -> value or nil'],
   ['get_value','get_value(table, key) -> value or nil'],
   ['default_button','default_button([opts]) -> buttonTable'],
+  ['button','button([opts]) -> buttonTable'],
   ['default_dropdown','default_dropdown([opts]) -> dropdownTable'],
+  ['dropdown','dropdown([opts]) -> dropdownTable'],
   ['default_ui_theme','default_ui_theme(kind, patchTable)'],
   ['ui_button','ui_button(buttonTable) -> clickedBool'],
   ['ui_buttons','ui_buttons(buttonList) -> anyClickedBool'],
@@ -2934,6 +2954,57 @@ function renderCodeHighlight(){
   if(!inner||!ed) return;
   inner.innerHTML=String(ed.value||"").split(/\n/).map(highlightLuaLine).join("\n");
 }
+function uiThemeLiteralLooksLikeKind(literal, kind){
+  const text=String(literal||"");
+  const keys=(kind==="dropdown")
+    ? ["label","items","selected","func","bg","border","text","hover_bg","text_size","label_x","label_y","type","r","radius","visible","enabled"]
+    : ["label","func","bg","border","text","hover_bg","text_size","label_x","label_y","type","r","radius","visible","enabled","x","y","w","h"];
+  return keys.some(key=>new RegExp(`(^|[^A-Za-z0-9_])${key}\\s*=`).test(text));
+}
+function autoWrapUiThemeLiteral(code, kind){
+  const ctor=kind==="dropdown"?"dropdown":"button";
+  if(!code || new RegExp(`\\b${ctor}\\s*\\(`).test(code)) return code;
+  const assignment=code.match(/^(\s*(?:local\s+)?[A-Za-z_][A-Za-z0-9_\.]*(?:\[[^\]]+\])*\s*=\s*)({.*})(\s*;?\s*)$/);
+  if(assignment && uiThemeLiteralLooksLikeKind(assignment[2], kind)) return `${assignment[1]}${ctor}(${assignment[2]})${assignment[3]}`;
+  const addCall=code.match(/^(\s*add\s*\(\s*[^,]+,\s*)({.*})(\s*\)\s*;?\s*)$/);
+  if(addCall && uiThemeLiteralLooksLikeKind(addCall[2], kind)) return `${addCall[1]}${ctor}(${addCall[2]})${addCall[3]}`;
+  return code;
+}
+function expandLuaUiThemeShorthand(source){
+  const lines=String(source||"").split(/\r?\n/);
+  let autoButton=false;
+  let autoDropdown=false;
+  return lines.map(line=>{
+    const {code, comment}=splitLuaLineComment(line);
+    const trimmed=code.trim();
+    if(!trimmed) return line;
+    const buttonCall=trimmed.match(/^default_button\s*\((.*)\)\s*;?\s*$/);
+    if(buttonCall){
+      const argText=(buttonCall[1]||"").trim().toLowerCase();
+      autoButton=!!argText && argText!=="nil";
+      return line;
+    }
+    const dropdownCall=trimmed.match(/^default_dropdown\s*\((.*)\)\s*;?\s*$/);
+    if(dropdownCall){
+      const argText=(dropdownCall[1]||"").trim().toLowerCase();
+      autoDropdown=!!argText && argText!=="nil";
+      return line;
+    }
+    const themeCall=trimmed.match(/^default_ui_theme\s*\(\s*(['"])(button|dropdown)\1(?:\s*,\s*(.*?))?\s*\)\s*;?\s*$/i);
+    if(themeCall){
+      const kind=String(themeCall[2]||"").toLowerCase();
+      const patch=String(themeCall[3]||"").trim().toLowerCase();
+      const active=!!patch && patch!=="nil";
+      if(kind==="button") autoButton=active;
+      if(kind==="dropdown") autoDropdown=active;
+      return line;
+    }
+    let expanded=code;
+    if(autoButton) expanded=autoWrapUiThemeLiteral(expanded,"button");
+    if(autoDropdown) expanded=autoWrapUiThemeLiteral(expanded,"dropdown");
+    return expanded!==code ? `${expanded}${comment}` : line;
+  }).join("\n");
+}
 function expandLuaShorthand(source){
   const shorthand=/(^|[^A-Za-z0-9_])(\b[A-Za-z_][A-Za-z0-9_\.\[\]"'\(\)]*)(\s*)([+\-*\/])=(\s*)(.*?)(?=(\s+\bend\b|\s*;|\s*$))/g;
   return String(source||"").split(/\r?\n/).map(line=>{
@@ -2976,7 +3047,7 @@ function resolveIncludes(source, seen=new Set()){
     }
     out.push(line);
   }
-  return expandLuaShorthand(out.join("\n").replace(/spr\((\d+[a-z])(\s*,)/gi, 'spr("$1"$2'));
+  return expandLuaShorthand(expandLuaUiThemeShorthand(out.join("\n").replace(/spr\((\d+[a-z])(\s*,)/gi, 'spr("$1"$2')));
 }
 function getProjectLua(){ saveEditorToCurrentCodeFile(); const main=(state.appProject.codeFiles||[]).find(f=>f.name==="main.lua") || getCurrentCodeFile(); return resolveIncludes(main?main.content:$("codeEditor").value||""); }
 function updateLogicButton(){ const b=$("logicBtn"); if(!b) return; b.textContent = "Code"; }
