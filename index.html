@@ -245,17 +245,18 @@
     .runtimeInspectorCanvas{position:absolute;z-index:43;display:none;image-rendering:pixelated;touch-action:none;cursor:crosshair}
     .runtimeInspectorCanvas.active{display:block;pointer-events:auto}
     .runtimeInspectorCanvas.dragging{cursor:grabbing}
-    .runtimeInspectorPanel{position:fixed;right:10px;top:520px;z-index:79;display:none;min-width:190px;max-width:280px;padding:8px 10px;border:3px solid var(--line);border-radius:6px;background:rgba(251,246,231,.96);box-shadow:0 4px 0 rgba(42,63,53,.45);color:var(--ink);font:11px/1.35 Consolas,"SFMono-Regular",monospace;white-space:normal;pointer-events:auto}
-    .runtimeInspectorPanelText{white-space:pre-wrap}
-    .runtimeInspectorPanelActions{display:flex;justify-content:flex-end;gap:6px;margin-top:8px}
-    .runtimeInspectorPanelResetBtn{padding:3px 8px;font-size:10px;min-width:auto;box-shadow:0 2px 0 rgba(42,63,53,.45)}
-    .runtimeInspectorPanelResetBtn:disabled{opacity:.55;cursor:default}
+    .runtimeInspectorPanel{position:absolute;z-index:44;display:none;min-width:190px;max-width:280px;padding:8px 10px;border:3px solid var(--line);border-radius:6px;background:rgba(251,246,231,.96);box-shadow:0 4px 0 rgba(42,63,53,.45);color:var(--ink);font:11px/1.35 Consolas,"SFMono-Regular",monospace;white-space:normal;pointer-events:auto}
     .runtimeInspectorPanel.show{display:block}
-    @media (max-width: 900px), (pointer: coarse){
-      .runtimeInspectorSaveFab:not(.hidden){position:absolute;right:12px;top:12px;z-index:46;display:inline-flex;align-items:center;justify-content:center;padding:7px 10px;font-size:10px;line-height:1.1}
-      .runtimeInspectorSaveFab.hidden{display:none !important}
-      .runtimeInspectorSaveFab:disabled{display:none !important}
-    }
+    .runtimeInspectorPanelTitle{font-weight:900;letter-spacing:.04em;margin-bottom:2px}
+    .runtimeInspectorPanelLabel{font-weight:700;margin-bottom:7px;word-break:break-word}
+    .runtimeInspectorPanelRows{display:flex;flex-direction:column;gap:3px}
+    .runtimeInspectorPanelRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start}
+    .runtimeInspectorPanelKey{opacity:.76}
+    .runtimeInspectorPanelValue{text-align:right;word-break:break-word}
+    .runtimeInspectorPanelHint{margin-top:7px;opacity:.72;line-height:1.3}
+    .runtimeInspectorPanelActions{display:flex;gap:6px;margin-top:8px}
+    .runtimeInspectorPanelBtn{flex:1 1 auto;border:2px solid var(--line);border-radius:10px;background:linear-gradient(180deg,#fff8eb,#efcf94);box-shadow:0 2px 0 rgba(42,63,53,.35);color:var(--ink);font:700 11px/1.2 "Trebuchet MS",Verdana,sans-serif;padding:5px 8px;cursor:pointer}
+    .runtimeInspectorPanelBtn:hover{filter:brightness(1.04)}
     .runtimeStartOverlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:34;background:rgba(18,10,6,.48);backdrop-filter:blur(5px)}
     .runtimeStartOverlay.hidden{display:none}
     .runtimeStartCard{display:flex;flex-direction:column;align-items:center;gap:10px;padding:13px 14px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45)}
@@ -1671,11 +1672,11 @@ function refreshRuntimeVarsPanel(){
       go.textContent='Go to';
       go.disabled=!item.canGoTo;
       go.onclick=()=>runtime?.goToInspectorSelection?.();
-      const edit=document.createElement('button');
-      edit.type='button';
-      edit.className='uiBtn miniBtn runtimeVarEditBtn';
-      edit.textContent='Edit';
-      edit.disabled=item.readonly;
+      const save=document.createElement('button');
+      save.type='button';
+      save.className='uiBtn miniBtn runtimeVarEditBtn';
+      save.textContent='Save';
+      save.disabled=item.readonly;
       const apply=()=>{
         if(item.readonly) return;
         if(runtime?.setInspectorVariable?.(item.name,input.value)){
@@ -1683,9 +1684,9 @@ function refreshRuntimeVarsPanel(){
           toast(`<b>Inspector value updated:</b> ${escapeHtml(item.name)}`);
         }else toast(`<b>Inspector value update failed:</b> ${escapeHtml(item.name)}`);
       };
-      edit.onclick=apply;
+      save.onclick=apply;
       input.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); apply(); } });
-      row.append(name,input,type,go,edit);
+      row.append(name,input,type,go,save);
       list.appendChild(row);
     });
   }
@@ -2028,8 +2029,71 @@ function getLineNumberFromLastRunError(){
   const line=parseInt(match[1],10);
   return Number.isFinite(line)&&line>0?line:null;
 }
-function goToCodeLine(lineNumber, fileIndex=state.currentCodeFile){
-  const line=Math.max(1,lineNumber|0);
+const INSPECTOR_CODE_OVERRIDES_START='-- TRYCODE_INSPECTOR_OVERRIDES_START';
+const INSPECTOR_CODE_OVERRIDES_END='-- TRYCODE_INSPECTOR_OVERRIDES_END';
+const INSPECTOR_CODE_OVERRIDES_BINDING='__tc_inspector_overrides_json';
+function getPrimaryCodeFileIndex(project=state.appProject){
+  const files=project?.codeFiles||[];
+  if(!files.length) return 0;
+  const mainIndex=files.findIndex(file=>String(file?.name||'').trim().toLowerCase()==='main.lua');
+  return mainIndex>=0 ? mainIndex : 0;
+}
+function extractInspectorCodeOverridesFromSource(source){
+  const text=String(source||'');
+  const escapedStart=INSPECTOR_CODE_OVERRIDES_START.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const escapedEnd=INSPECTOR_CODE_OVERRIDES_END.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const escapedBinding=INSPECTOR_CODE_OVERRIDES_BINDING.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const match=text.match(new RegExp(`${escapedStart}[\\s\\S]*?${escapedBinding}\\s*=\\s*\\[=\\[([\\s\\S]*?)\\]=\\][\\s\\S]*?${escapedEnd}`));
+  if(!match) return {};
+  try{
+    const parsed=JSON.parse(match[1]);
+    return parsed && typeof parsed==='object' && !Array.isArray(parsed) ? parsed : {};
+  }catch(_){
+    return {};
+  }
+}
+function buildInspectorCodeOverridesBlock(overrides){
+  return `${INSPECTOR_CODE_OVERRIDES_START}\n${INSPECTOR_CODE_OVERRIDES_BINDING} = [=[\n${JSON.stringify(overrides,null,2)}\n]=]\n${INSPECTOR_CODE_OVERRIDES_END}`;
+}
+function upsertInspectorCodeOverridesInSource(source, overrides){
+  const text=String(source||'');
+  const block=buildInspectorCodeOverridesBlock(overrides);
+  const escapedStart=INSPECTOR_CODE_OVERRIDES_START.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const escapedEnd=INSPECTOR_CODE_OVERRIDES_END.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const matcher=new RegExp(`${escapedStart}[\\s\\S]*?${escapedEnd}`);
+  if(matcher.test(text)) return text.replace(matcher, block);
+  const trimmed=text.replace(/\s+$/,'');
+  return trimmed ? `${trimmed}\n\n${block}\n` : `${block}\n`;
+}
+function findLineNumberInText(source, pattern){
+  const text=String(source||'');
+  const index=text.indexOf(String(pattern||''));
+  if(index<0) return 1;
+  return text.slice(0,index).split('\n').length;
+}
+function replaceProjectCodeFileContent(fileIndex, nextContent){
+  ensureProjectData();
+  const files=state.appProject?.codeFiles||[];
+  if(!files.length) return;
+  const index=clamp(fileIndex|0,0,files.length-1);
+  files[index].content=String(nextContent||'');
+  if(index!==state.currentCodeFile) return;
+  const editor=$("codeEditor");
+  if(!editor) return;
+  state.syncLock=true;
+  try{
+    editor.value=files[index].content;
+    saveEditorToCurrentCodeFile();
+    applyCodeSearchState({keepIndex:true});
+    updateCodeLineNumbers();
+  }finally{
+    state.syncLock=false;
+  }
+}
+function goToCodeLocation(fileIndex, lineNumber){
+  ensureProjectData();
+  const files=state.appProject?.codeFiles||[];
+  const nextFile=files.length ? clamp(fileIndex|0,0,files.length-1) : 0;
   saveEditorToCurrentCodeFile();
   saveCurrentCodeViewState();
   if(Number.isInteger(fileIndex) && state.appProject?.codeFiles?.[fileIndex] && fileIndex!==state.currentCodeFile){
@@ -2038,6 +2102,12 @@ function goToCodeLine(lineNumber, fileIndex=state.currentCodeFile){
     renderCodeTabs();
   }
   setView("code");
+  if(files.length){
+    state.currentCodeFile=nextFile;
+    renderCodeTabs();
+    loadCurrentCodeFileToEditor();
+  }
+  const line=Math.max(1,lineNumber|0);
   const editor=$("codeEditor"), shell=$("codeScrollShell");
   if(!editor||!shell) return;
   const source=String(editor.value||"");
@@ -2053,6 +2123,9 @@ function goToCodeLine(lineNumber, fileIndex=state.currentCodeFile){
   const paddingTop=parseFloat(metrics.paddingTop)||0;
   shell.scrollTop=Math.max(0, Math.round(((targetLine-1)*lineHeight)+paddingTop-lineHeight*2));
   saveCurrentCodeViewState();
+}
+function goToCodeLine(lineNumber, fileIndex=state.currentCodeFile){
+  goToCodeLocation(fileIndex, lineNumber);
 }
 function getMainCodeFileIndex(){
   const files=state.appProject?.codeFiles||[];
@@ -10729,7 +10802,7 @@ function makeRuntime(){
     resetUiBoxStyle();
   }
   const sx=x=>Math.round((((Number(x)||0)-camx-(GAME_W/2))*viewZoom)+(GAME_W/2)+zoomOffX), sy=y=>Math.round((((Number(y)||0)-camy-(GAME_H/2))*viewZoom)+(GAME_H/2)+zoomOffY); function resetViewTransform(){ viewZoom=1; zoomOffX=0; zoomOffY=0; camx=0; camy=0; } function zoom(z,ox,oy){ if(z!=null) viewZoom=Math.max(0.1, Number(z)||1); if(ox!=null) zoomOffX=Number(ox)||0; if(oy!=null) zoomOffY=Number(oy)||0; return viewZoom; }
-  let layoutOverrides={}, layoutSavedSnapshot={version:1,overrides:{},savedAt:0}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorPanelTextEl=null, inspectorPanelResetBtn=null, inspectorObjects=[], inspectorStaticObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null, inspectorKeyNudge=null, inspectorCaptureMode='frame', pendingPrintSourceInfo=null;
+  let layoutOverrides={}, layoutSavedSnapshot={version:1,overrides:{},savedAt:0}, inspectorCodeOverrides={}, layoutDirty=false, inspectorEnabled=false, inspectorCanvas=null, inspectorCtx=null, inspectorPanel=null, inspectorPanelTextEl=null, inspectorPanelResetBtn=null, inspectorObjects=[], inspectorStaticObjects=[], inspectorSeq={}, inspectorOrder=0, inspectorHover=null, inspectorSelected=null, inspectorPage=0, inspectorDrag=null, inspectorKeyNudge=null, inspectorCaptureMode='frame', pendingPrintSourceInfo=null;
   const cloneLayoutOverrides=source=>{
     try{ return JSON.parse(JSON.stringify(source&&typeof source==='object'&&!Array.isArray(source)?source:{})); }
     catch(_){ return {}; }
@@ -10738,6 +10811,7 @@ function makeRuntime(){
   const loadRuntimeLayoutOverrides=()=>{
     layoutSavedSnapshot=cloneLayoutSnapshot(projectRef.runtimeLayout);
     layoutOverrides=cloneLayoutOverrides(layoutSavedSnapshot.overrides);
+    inspectorCodeOverrides=extractInspectorCodeOverridesFromSource((projectRef.codeFiles||[])[getPrimaryCodeFileIndex(projectRef)]?.content||'');
     layoutDirty=false;
     updateRuntimeLayoutSaveState?.();
   };
@@ -10780,6 +10854,24 @@ function makeRuntime(){
     renderInspectorOverlay?.();
     updateRuntimeLayoutSaveState?.();
     return true;
+  };
+  const getInspectorCodeOverride=key=>{
+    if(!key || !inspectorCodeOverrides || typeof inspectorCodeOverrides!=='object') return null;
+    const value=inspectorCodeOverrides[key];
+    return value && typeof value==='object' && !Array.isArray(value) ? value : null;
+  };
+  const getMergedInspectorOverride=key=>{
+    const saved=getInspectorCodeOverride(key);
+    const live=layoutOverrides[key];
+    if(!saved && !live) return null;
+    return {...(saved||{}), ...(live||{})};
+  };
+  const getInspectorRecordStatus=obj=>{
+    const saved=!!getInspectorCodeOverride(obj?.key);
+    const edited=!!layoutOverrides[obj?.key];
+    if(saved && edited) return 'saved + edited';
+    if(saved) return 'saved';
+    return edited ? 'edited' : 'live';
   };
   const flushLayoutToProject=(options={})=>{
     const snapshot={version:1,overrides:cloneLayoutOverrides(layoutOverrides),savedAt:Date.now()};
@@ -10869,6 +10961,47 @@ function makeRuntime(){
     }
     return text;
   };
+  const buildInspectorCodeRecord=obj=>{
+    const record={kind:String(obj?.kind||'item')};
+    ['x','y','w','h','r','fontSize'].forEach(key=>{
+      const value=Number(obj?.[key]);
+      if(Number.isFinite(value)) record[key]=Math.round(value*100)/100;
+    });
+    if(obj?.kind==='print'){
+      if(obj.text!=null) record.text=String(obj.text);
+      ['fill','outline','font'].forEach(key=>{ if(obj.colors?.[key]!=null) record[key]=obj.colors[key]; });
+      return record;
+    }
+    if(String(obj?.key||'').startsWith('widget:')){
+      if(obj.text!=null) record.label=String(obj.text);
+      ['bg','border','text','hover_bg','text_size','label_x','label_y'].forEach(key=>{ if(obj.colors?.[key]!=null) record[key]=obj.colors[key]; });
+      return record;
+    }
+    if(obj?.colors?.color!=null) record.color=obj.colors.color;
+    return record;
+  };
+  const saveInspectorObjectToCode=obj=>{
+    if(!obj?.key || !state.appProject) return null;
+    ensureProjectData();
+    const targetIndex=getPrimaryCodeFileIndex(state.appProject);
+    const files=state.appProject.codeFiles||[];
+    const currentSource=String(files[targetIndex]?.content||'');
+    const nextOverrides=extractInspectorCodeOverridesFromSource(currentSource);
+    nextOverrides[obj.key]=buildInspectorCodeRecord(obj);
+    const nextSource=upsertInspectorCodeOverridesInSource(currentSource,nextOverrides);
+    replaceProjectCodeFileContent(targetIndex,nextSource);
+    if(projectRef?.codeFiles?.[targetIndex]) projectRef.codeFiles[targetIndex].content=nextSource;
+    inspectorCodeOverrides=cloneLayoutOverrides(nextOverrides);
+    if(layoutOverrides[obj.key]){
+      delete layoutOverrides[obj.key];
+      layoutDirty=layoutOverrideCount()>0;
+      updateRuntimeLayoutSaveState?.();
+    }
+    const line=findLineNumberInText(nextSource, `"${obj.key}"`);
+    setLua(getProjectLua());
+    goToCodeLocation(targetIndex,line);
+    return {fileIndex:targetIndex,line};
+  };
   const setObjectOverride=(obj,next)=>{
     if(!obj?.key) return;
     const value={...(layoutOverrides[obj.key]||{})};
@@ -10916,8 +11049,12 @@ function makeRuntime(){
     const current=(layoutOverrides[obj.key]||{})[name] ?? (name in obj ? obj[name] : obj.colors?.[name]);
     const value=coerceInspectorInput(current,raw);
     const sourceUpdated=replaceInspectorObjectSourceValue(obj,name,value);
-    if(!sourceUpdated) setObjectOverride(obj,{[name]:value});
-    inspectorSelected={...obj,[name]:value,colors:{...(obj.colors||{}),[name]:value}};
+    const nextSelected={...obj,[name]:value,colors:{...(obj.colors||{}),[name]:value}};
+    if(!sourceUpdated){
+      setObjectOverride(obj,{[name]:value});
+      saveInspectorObjectToCode(nextSelected);
+    }
+    inspectorSelected=nextSelected;
     inspectorSelected.screen=worldToScreenRect(inspectorSelected);
     return true;
   };
@@ -10962,17 +11099,17 @@ function makeRuntime(){
     return false;
   };
   const applyOverrideToRect=(key,geom)=>{
-    const ov=layoutOverrides[key];
+    const ov=getMergedInspectorOverride(key);
     if(!ov) return geom;
     return {...geom,x:Number.isFinite(Number(ov.x))?Number(ov.x):geom.x,y:Number.isFinite(Number(ov.y))?Number(ov.y):geom.y,w:Math.max(1,Number.isFinite(Number(ov.w))?Number(ov.w):geom.w),h:Math.max(1,Number.isFinite(Number(ov.h))?Number(ov.h):geom.h)};
   };
   const applyOverrideToLine=(key,geom)=>{
-    const ov=layoutOverrides[key];
+    const ov=getMergedInspectorOverride(key);
     if(!ov) return geom;
     return {...geom,x:Number.isFinite(Number(ov.x))?Number(ov.x):geom.x,y:Number.isFinite(Number(ov.y))?Number(ov.y):geom.y,w:Number.isFinite(Number(ov.w))?Number(ov.w):geom.w,h:Number.isFinite(Number(ov.h))?Number(ov.h):geom.h};
   };
   const applyOverrideToCircle=(key,geom)=>{
-    const ov=layoutOverrides[key];
+    const ov=getMergedInspectorOverride(key);
     if(!ov) return geom;
     const r=Number.isFinite(Number(ov.r))?Number(ov.r):(Number.isFinite(Number(ov.w))?Number(ov.w)/2:geom.r);
     return {...geom,x:Number.isFinite(Number(ov.x))?Number(ov.x):geom.x,y:Number.isFinite(Number(ov.y))?Number(ov.y):geom.y,r:Math.max(1,r)};
@@ -10983,10 +11120,10 @@ function makeRuntime(){
     const left=Math.min(Number(x0)||0,Number(x1)||0), right=Math.max(Number(x0)||0,Number(x1)||0);
     const top=Math.min(Number(y0)||0,Number(y1)||0), bottom=Math.max(Number(y0)||0,Number(y1)||0);
     const geom=applyOverrideToRect(key,{x:left,y:top,w:Math.abs(right-left)+1,h:Math.abs(bottom-top)+1});
-    const ov=layoutOverrides[key]||{};
-    const finalColor=ov.color!==undefined?ov.color:colorIndex;
-    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
-    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w-1,y1:geom.y+geom.h-1,colorIndex:finalColor};
+    const ov=getMergedInspectorOverride(key)||{};
+    const nextColor=ov.color!=null ? ov.color : colorIndex;
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:nextColor}});
+    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w-1,y1:geom.y+geom.h-1,colorIndex:nextColor};
   }
   function inspectorTransformRectFill(x0,y0,a,b,colorIndex){
     const seq=nextInspectorSequence('rectfill');
@@ -10996,35 +11133,35 @@ function makeRuntime(){
     const right=hasColor?(Number(a)||0):left+(Number(a)||0);
     const bottom=hasColor?(Number(b)||0):top+(Number(b)||0);
     const geom=applyOverrideToRect(key,{x:Math.min(left,right),y:Math.min(top,bottom),w:Math.abs(right-left)+(hasColor?1:0),h:Math.abs(bottom-top)+(hasColor?1:0)});
-    const ov=layoutOverrides[key]||{};
-    const finalColor=ov.color!==undefined?ov.color:colorIndex;
-    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
-    return hasColor ? {x0:geom.x,y0:geom.y,a:geom.x+geom.w-1,b:geom.y+geom.h-1,colorIndex:finalColor} : {x0:geom.x,y0:geom.y,a:geom.w,b:geom.h,colorIndex:finalColor};
+    const ov=getMergedInspectorOverride(key)||{};
+    const nextColor=ov.color!=null ? ov.color : colorIndex;
+    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:nextColor}});
+    return hasColor ? {x0:geom.x,y0:geom.y,a:geom.x+geom.w-1,b:geom.y+geom.h-1,colorIndex:nextColor} : {x0:geom.x,y0:geom.y,a:geom.w,b:geom.h,colorIndex:nextColor};
   }
   function inspectorTransformLine(x0,y0,x1,y1,colorIndex){
     const seq=nextInspectorSequence('line');
     const key=drawInspectorKey('line',seq);
     const geom=applyOverrideToLine(key,{x:Number(x0)||0,y:Number(y0)||0,w:(Number(x1)||0)-(Number(x0)||0),h:(Number(y1)||0)-(Number(y0)||0)});
-    const ov=layoutOverrides[key]||{};
-    const finalColor=ov.color!==undefined?ov.color:colorIndex;
-    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:finalColor}});
-    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w,y1:geom.y+geom.h,colorIndex:finalColor};
+    const ov=getMergedInspectorOverride(key)||{};
+    const nextColor=ov.color!=null ? ov.color : colorIndex;
+    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:nextColor}});
+    return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w,y1:geom.y+geom.h,colorIndex:nextColor};
   }
   function inspectorTransformCircle(kind,x,y,r,colorIndex){
     const seq=nextInspectorSequence(kind);
     const key=drawInspectorKey(kind,seq);
     const geom=applyOverrideToCircle(key,{x:Number(x)||0,y:Number(y)||0,r:Math.max(1,Number(r)||1)});
-    const ov=layoutOverrides[key]||{};
-    const finalColor=ov.color!==undefined?ov.color:colorIndex;
-    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,colors:{color:finalColor}});
-    return {x:geom.x,y:geom.y,r:geom.r,colorIndex:finalColor};
+    const ov=getMergedInspectorOverride(key)||{};
+    const nextColor=ov.color!=null ? ov.color : colorIndex;
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,colors:{color:nextColor}});
+    return {x:geom.x,y:geom.y,r:geom.r,colorIndex:nextColor};
   }
   function inspectorPreparePrint(text,x,y,fontSize,fill,outline,font,options={}){
     const seq=nextInspectorSequence('print');
     const sourceInfo=options.sourceInfo||null;
     const signature=[text,x,y,fontSize].map(value=>String(value??'')).join(':');
     const key=sourceInspectorKey('print',sourceInfo,seq,signature);
-    const ov=layoutOverrides[key]||{};
+    const ov=getMergedInspectorOverride(key)||{};
     return {key,seq,sourceInfo,sourceArgMap:options.sourceArgMap||{},text:ov.text!==undefined?String(ov.text):String(text??''),x:Number.isFinite(Number(ov.x))?Number(ov.x):(Number(x)||0),y:Number.isFinite(Number(ov.y))?Number(ov.y):(Number(y)||0),fontSize:Math.max(1,Number.isFinite(Number(ov.fontSize))?Number(ov.fontSize):(Number.isFinite(Number(ov.h))?Number(ov.h):(Number(fontSize)||12))),fill:ov.fill!==undefined?ov.fill:fill,outline:ov.outline!==undefined?ov.outline:outline,font:ov.font!==undefined?ov.font:font};
   }
   function inspectorRecordPrint(info,width,height){
@@ -11049,14 +11186,16 @@ function makeRuntime(){
       lua.lua_setfield(L,index,to_luastring(name));
     };
     const explicitId=read('id')||read('layout_id')||read('layoutId');
-    const label=read('label')||read('name')||read('text')||'';
+    const initialLabel=read('label')||read('name')||read('text')||'';
     const seq=nextInspectorSequence(kind);
-    const key=widgetInspectorKey(kind,seq,label,explicitId);
+    const key=widgetInspectorKey(kind,seq,initialLabel,explicitId);
+    const ov=getMergedInspectorOverride(key)||{};
+    const label=ov.text!==undefined ? String(ov.text) : (ov.label!==undefined ? String(ov.label) : initialLabel);
     const widgetType=String(read('type')||'rect').toLowerCase();
-    const ov=layoutOverrides[key]||{};
     let x=Number(read('x'))||0, y=Number(read('y'))||0;
     let w=Math.max(1,Number(read('w'))||84), h=Math.max(1,Number(read('h'))||18);
     let r=Math.max(1,Number(read('r')||read('radius'))||8);
+    let bg=read('bg'), border=read('border'), textColor=read('text'), hoverBg=read('hover_bg'), textSize=read('text_size'), labelX=read('label_x'), labelY=read('label_y');
     const isCircle=widgetType==='circ'||widgetType==='circle';
     if(isCircle){
       const geom=applyOverrideToCircle(key,{x,y,r});
@@ -11069,13 +11208,16 @@ function makeRuntime(){
     }
     const colorKeys=['bg','border','text','hover_bg','text_size','label_x','label_y','font','func'];
     const colors={};
-    colorKeys.forEach(name=>{
-      const value=ov[name]!==undefined ? ov[name] : read(name);
-      colors[name]=value;
-      if(ov[name]!==undefined) write(name,value);
+    colorKeys.forEach(field=>{
+      const value=ov[field]!==undefined ? ov[field] : read(field);
+      colors[field]=value;
+      if(ov[field]!==undefined) write(field,value);
     });
-    const displayText=ov.text!==undefined ? String(ov.text) : label;
-    if(ov.text!==undefined) write('text',displayText);
+    const displayText=label;
+    if(ov.label!==undefined || ov.text!==undefined){
+      write('label',displayText);
+      if(read('text')!=null || ov.text!==undefined) write('text',displayText);
+    }
     addInspectorObject({key,kind,label:`${kind}${displayText?`: ${displayText}`:''}`,shape:isCircle?'circle':'rect',priority:kind==='arrange'?3:5,x,y,w,h,r:isCircle?r:0,canResize:true,text:displayText,colors});
   }
   function inspectorBeginFrame(){ inspectorCaptureMode='frame'; inspectorSeq={}; inspectorOrder=0; inspectorObjects=(inspectorEnabled && state.activeView==='runtime') ? inspectorStaticObjects.map(obj=>{ const next={...obj,order:++inspectorOrder}; next.screen=worldToScreenRect(next); return next; }) : []; }
@@ -11092,15 +11234,20 @@ function makeRuntime(){
     }
     return px>=s.x-3 && px<=s.x+s.w+3 && py>=s.y-3 && py<=s.y+s.h+3;
   };
-  const findInspectorObjectsAt=point=>inspectorObjects
-    .filter(obj=>hitInspectorObject(obj,point))
-    .sort((a,b)=>(b.priority-a.priority)||(b.order-a.order));
-  const findInspectorObjectAt=point=>findInspectorObjectsAt(point)[0]||null;
+  const findInspectorObjectsAt=point=>{
+    const matches=[];
+    for(const obj of inspectorObjects) if(hitInspectorObject(obj,point)) matches.push(obj);
+    matches.sort((a,b)=>b.priority-a.priority || b.order-a.order);
+    return matches;
+  };
+  const findInspectorObjectAt=point=>{
+    return findInspectorObjectsAt(point)[0]||null;
+  };
   const cycleInspectorObjectAt=point=>{
-    const hits=findInspectorObjectsAt(point);
-    if(!hits.length) return null;
-    const currentIndex=hits.findIndex(obj=>obj.key===inspectorSelected?.key);
-    const next=hits[(currentIndex+1+hits.length)%hits.length];
+    const matches=findInspectorObjectsAt(point);
+    if(!matches.length) return null;
+    const currentIndex=inspectorSelected?matches.findIndex(obj=>obj.key===inspectorSelected.key):-1;
+    const next=matches[(currentIndex+1+matches.length)%matches.length]||matches[0];
     inspectorSelected=next;
     inspectorHover=next;
     inspectorPage=0;
@@ -11114,6 +11261,78 @@ function makeRuntime(){
     const hx=(obj.shape==='line')?s.x1:s.x+s.w, hy=(obj.shape==='line')?s.y1:s.y+s.h;
     return Math.abs(point.x-hx)<=8 && Math.abs(point.y-hy)<=8;
   };
+  const inspectorPanelEntries=obj=>{
+    const page=inspectorPage%3, status=getInspectorRecordStatus(obj);
+    if(page===1){
+      const rows=Object.entries(obj.colors||{}).map(([k,v])=>[k,inspectorParamLabel(k,v)]);
+      return {title:`INSPECT COLORS (${status})`, label:obj.label||obj.kind, rows:rows.length?rows:[['info','no color params']], hint:'Right-click overlapping objects to cycle selection.'};
+    }
+    if(page===2){
+      return {title:`INSPECT SOURCE (${status})`, label:obj.label||obj.kind, rows:[['kind',obj.kind],['key',obj.key],['mode','go to & save'],['left click','cycle data'],['drag','move'],['corner/edge','resize']], hint:'Go to & Save writes the current inspected values into editable code.'};
+    }
+    const rows=[['x',Math.round((Number(obj.x)||0)*100)/100],['y',Math.round((Number(obj.y)||0)*100)/100],['w',Math.round((Number(obj.w)||0)*100)/100],['h',Math.round((Number(obj.h)||0)*100)/100]];
+    if(obj.r) rows.push(['r',Math.round(obj.r*100)/100]);
+    if(obj.fontSize) rows.push(['font_size',Math.round(obj.fontSize*100)/100]);
+    return {title:`INSPECT POSITION (${status})`, label:obj.label||obj.kind, rows, hint:'Left-click the selected object again to cycle position, color, and source data.'};
+  };
+  const renderInspectorPanelContent=obj=>{
+    if(!inspectorPanel) return;
+    inspectorPanel.replaceChildren();
+    const model=inspectorPanelEntries(obj);
+    const title=document.createElement('div');
+    title.className='runtimeInspectorPanelTitle';
+    title.textContent=model.title;
+    inspectorPanel.appendChild(title);
+    const label=document.createElement('div');
+    label.className='runtimeInspectorPanelLabel';
+    label.textContent=model.label;
+    inspectorPanel.appendChild(label);
+    const rows=document.createElement('div');
+    rows.className='runtimeInspectorPanelRows';
+    model.rows.forEach(([key,value])=>{
+      const row=document.createElement('div');
+      row.className='runtimeInspectorPanelRow';
+      const keyEl=document.createElement('div');
+      keyEl.className='runtimeInspectorPanelKey';
+      keyEl.textContent=String(key);
+      const valueEl=document.createElement('div');
+      valueEl.className='runtimeInspectorPanelValue';
+      valueEl.textContent=String(value);
+      row.appendChild(keyEl);
+      row.appendChild(valueEl);
+      rows.appendChild(row);
+    });
+    inspectorPanel.appendChild(rows);
+    const actions=document.createElement('div');
+    actions.className='runtimeInspectorPanelActions';
+    const saveBtn=document.createElement('button');
+    saveBtn.type='button';
+    saveBtn.className='runtimeInspectorPanelBtn';
+    saveBtn.textContent='Go to & Save';
+    saveBtn.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const result=saveInspectorObjectToCode(obj);
+      if(result) toast(`<b>Inspector saved:</b> ${escapeHtml(obj.label||obj.kind)}`);
+    });
+    actions.appendChild(saveBtn);
+    const resetBtn=document.createElement('button');
+    resetBtn.type='button';
+    resetBtn.className='runtimeInspectorPanelBtn';
+    resetBtn.textContent='Reset';
+    resetBtn.disabled=!hasUnsavedObjectOverride(obj?.key);
+    resetBtn.addEventListener('click',e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(resetObjectLayoutEdits(obj?.key)) toast?.('Inspector element reset to saved/code values.');
+    });
+    actions.appendChild(resetBtn);
+    inspectorPanel.appendChild(actions);
+    const hint=document.createElement('div');
+    hint.className='runtimeInspectorPanelHint';
+    hint.textContent=model.hint;
+    inspectorPanel.appendChild(hint);
+  };
   function ensureInspectorOverlay(){
     if(inspectorCanvas) return;
     inspectorCanvas=document.createElement('canvas');
@@ -11122,28 +11341,26 @@ function makeRuntime(){
     inspectorCtx=inspectorCanvas.getContext('2d');
     inspectorPanel=document.createElement('div');
     inspectorPanel.className='runtimeInspectorPanel';
-    inspectorPanelTextEl=document.createElement('div');
-    inspectorPanelTextEl.className='runtimeInspectorPanelText';
-    const actions=document.createElement('div');
-    actions.className='runtimeInspectorPanelActions';
-    inspectorPanelResetBtn=document.createElement('button');
-    inspectorPanelResetBtn.type='button';
-    inspectorPanelResetBtn.className='uiBtn miniBtn runtimeInspectorPanelResetBtn';
-    inspectorPanelResetBtn.textContent='Reset';
-    inspectorPanelResetBtn.title='Reset unsaved inspector edits for only this element.';
-    inspectorPanelResetBtn.addEventListener('click',e=>{
-      e.preventDefault(); e.stopPropagation();
-      const obj=inspectorSelected||inspectorHover;
-      if(resetObjectLayoutEdits(obj?.key)) toast?.('Inspector element reset to saved/code values.');
-    });
-    actions.appendChild(inspectorPanelResetBtn);
-    inspectorPanel.append(inspectorPanelTextEl,actions);
     document.body.appendChild(inspectorPanel);
     stage.appendChild(inspectorCanvas);
     const pointerPoint=e=>clientToMouse(e.clientX,e.clientY);
+    inspectorPanel.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); },{passive:false});
+    inspectorCanvas.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); },{passive:false});
     inspectorCanvas.addEventListener('pointerdown',e=>{
       if(!inspectorEnabled) return;
-      const point=pointerPoint(e), obj=findInspectorObjectAt(point);
+      const point=pointerPoint(e);
+      if(e.button===2){
+        const nextObj=cycleInspectorObjectAt(point);
+        inspectorHover=nextObj;
+        inspectorSelected=nextObj;
+        inspectorPage=0;
+        inspectorDrag=null;
+        inspectorCanvas.classList.remove('dragging');
+        renderInspectorOverlay(point);
+        e.preventDefault(); e.stopPropagation();
+        return;
+      }
+      const obj=findInspectorObjectAt(point);
       inspectorHover=obj;
       if(!obj){
         inspectorSelected=null;
@@ -11194,9 +11411,6 @@ function makeRuntime(){
     },{passive:false});
     inspectorCanvas.addEventListener('contextmenu',e=>{
       if(!inspectorEnabled) return;
-      const point=pointerPoint(e);
-      cycleInspectorObjectAt(point);
-      renderInspectorOverlay(point);
       e.preventDefault(); e.stopPropagation();
     },{passive:false});
     ['pointercancel','lostpointercapture'].forEach(type=>inspectorCanvas.addEventListener(type,e=>{
@@ -11214,20 +11428,6 @@ function makeRuntime(){
     inspectorCanvas.style.top=`${Math.round(canvasRect.top-stageRect.top)}px`;
     inspectorCanvas.style.width=`${Math.round(canvasRect.width)}px`;
     inspectorCanvas.style.height=`${Math.round(canvasRect.height)}px`;
-  }
-  function inspectorPanelText(obj){
-    const page=inspectorPage%3, edited=layoutOverrides[obj.key]?'edited':'live';
-    if(page===1){
-      const lines=[`INSPECT COLORS (${edited})`,obj.label||obj.kind];
-      Object.entries(obj.colors||{}).forEach(([k,v])=>lines.push(`${k}: ${inspectorParamLabel(k,v)}`));
-      if(!Object.keys(obj.colors||{}).length) lines.push('no color params');
-      return lines.join('\n');
-    }
-    if(page===2) return [`INSPECT SOURCE (${edited})`,obj.label||obj.kind,`kind: ${obj.kind}`,`key: ${obj.key}`,'click: cycle data','drag: move','corner/edge: resize'].join('\n');
-    const parts=[`INSPECT POSITION (${edited})`,obj.label||obj.kind,`x: ${Math.round((Number(obj.x)||0)*100)/100}`,`y: ${Math.round((Number(obj.y)||0)*100)/100}`,`w: ${Math.round((Number(obj.w)||0)*100)/100}`,`h: ${Math.round((Number(obj.h)||0)*100)/100}`];
-    if(obj.r) parts.push(`r: ${Math.round(obj.r*100)/100}`);
-    if(obj.fontSize) parts.push(`font_size: ${Math.round(obj.fontSize*100)/100}`);
-    return parts.join('\n');
   }
   function renderInspectorOverlay(){
     ensureInspectorOverlay();
@@ -11260,16 +11460,12 @@ function makeRuntime(){
     const varsPanelOpen=!!varsPanel?.classList.contains('show');
     const panelObj=varsPanelOpen ? (inspectorSelected||inspectorHover) : null;
     if(panelObj && inspectorPanel){
-      const varsRect=varsPanel.getBoundingClientRect();
-      const top=varsRect ? Math.min(window.innerHeight-24, varsRect.bottom+8) : 56;
-      inspectorPanel.style.right='10px';
-      inspectorPanel.style.left='auto';
-      inspectorPanel.style.top=`${Math.round(top)}px`;
-      if(inspectorPanelTextEl) inspectorPanelTextEl.textContent=inspectorPanelText(panelObj);
-      if(inspectorPanelResetBtn){
-        inspectorPanelResetBtn.disabled=!hasUnsavedObjectOverride(panelObj.key);
-        inspectorPanelResetBtn.title=inspectorPanelResetBtn.disabled ? 'No unsaved inspector edits for this element.' : 'Reset unsaved inspector edits for only this element.';
-      }
+      const s=panelObj.screen||worldToScreenRect(panelObj), stageRect=stage.getBoundingClientRect(), canvasRect=canvas.getBoundingClientRect();
+      const scaleX=canvasRect.width/GAME_W, scaleY=canvasRect.height/GAME_H;
+      const desiredLeft=(canvasRect.left-stageRect.left)+((s.x+s.w+8)*scaleX), desiredTop=(canvasRect.top-stageRect.top)+(s.y*scaleY);
+      inspectorPanel.style.left=`${Math.round(clamp(desiredLeft,8,Math.max(8,stageRect.width-290)))}px`;
+      inspectorPanel.style.top=`${Math.round(clamp(desiredTop,8,Math.max(8,stageRect.height-140)))}px`;
+      renderInspectorPanelContent(panelObj);
       inspectorPanel.classList.add('show');
     }else{
       inspectorPanel?.classList.remove('show');
@@ -12025,6 +12221,7 @@ function makeRuntime(){
   function build(code, options={}){
     if(rebuildTimer){ clearTimeout(rebuildTimer); rebuildTimer=0; }
     lastCode=code||'';
+    inspectorCodeOverrides=extractInspectorCodeOverridesFromSource(lastCode);
     const suppressAudio=!!options.suppressAudio;
     builtOk=false;
     inspectorStaticObjects=[]; inspectorObjects=[];
