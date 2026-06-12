@@ -10999,6 +10999,7 @@ function makeRuntime(){
     if(obj?.fontSize) keys.push('fontSize');
     Object.keys(obj?.colors||{}).forEach(key=>{ if(!keys.includes(key)) keys.push(key); });
     if(obj?.text!=null && !keys.includes('text')) keys.push('text');
+    Object.keys(obj?.sourceVars||{}).forEach(key=>{ if(!keys.includes(key)) keys.push(key); });
     if(obj?.kind && !keys.includes('kind')) keys.push('kind');
     return keys;
   };
@@ -11077,7 +11078,7 @@ function makeRuntime(){
     if(!inspectorEnabled || !obj) return {items:[]};
     const ov=layoutOverrides[obj.key]||{};
     const items=inspectorEditableKeys(obj).map(key=>{
-      const current=ov[key]!==undefined ? ov[key] : (key in obj ? obj[key] : obj.colors?.[key]);
+      const current=ov[key]!==undefined ? ov[key] : (key in obj ? obj[key] : (obj.colors?.[key] ?? obj.sourceVars?.[key]));
       const type=key==='kind'?'string':(current==null?'nil':Array.isArray(current)?'table':typeof current);
       return {name:key,type,value:current==null?'':current,readonly:key==='kind',canGoTo:true};
     });
@@ -11096,17 +11097,20 @@ function makeRuntime(){
     const lines=String(file.content||'').split(/\r?\n/);
     const currentLine=lines[lineNumber-1];
     if(currentLine==null) return false;
-    const nextLine=replaceLuaCallArgumentInLine(currentLine, ['print','print_'], argIndex, value);
+    const callNames=obj.sourceCallNames||({print:['print','print_'],spr:['spr'],sspr:['sspr'],r_spr:['r_spr'],animate:['animate']}[obj.kind]||[obj.kind].filter(Boolean));
+    const nextLine=replaceLuaCallArgumentInLine(currentLine, callNames, argIndex, value);
     if(nextLine==null || nextLine===currentLine) return false;
     return replaceProjectSourceLine(fileIndex,lineNumber,nextLine);
   };
   const setInspectorVariable=(name,raw)=>{
     const obj=currentInspectorObject();
     if(!inspectorEnabled || !obj || !name || name==='key' || name==='kind') return false;
-    const current=(layoutOverrides[obj.key]||{})[name] ?? (name in obj ? obj[name] : obj.colors?.[name]);
+    const current=(layoutOverrides[obj.key]||{})[name] ?? (name in obj ? obj[name] : (obj.colors?.[name] ?? obj.sourceVars?.[name]));
     const value=coerceInspectorInput(current,raw);
     const sourceUpdated=replaceInspectorObjectSourceValue(obj,name,value);
-    const nextSelected={...obj,[name]:value,colors:{...(obj.colors||{}),[name]:value}};
+    const nextSelected={...obj,[name]:value,colors:{...(obj.colors||{})},sourceVars:{...(obj.sourceVars||{})}};
+    if(name in (obj.colors||{})) nextSelected.colors[name]=value;
+    if(name in (obj.sourceVars||{})) nextSelected.sourceVars[name]=value;
     if(!sourceUpdated){
       setObjectOverride(obj,{[name]:value});
       saveInspectorObjectToCode(nextSelected);
@@ -11247,12 +11251,15 @@ function makeRuntime(){
       y:geom.y,
       w:geom.w,
       h:geom.h,
+      sourceVars:{...(options.sourceVars||{})},
+      sourceArgMap:{...(options.sourceArgMap||{})},
+      sourceCallNames:options.sourceCallNames||[kind],
       flip:ov.flip!==undefined ? !!ov.flip : !!options.flip,
       angle:Number.isFinite(Number(ov.angle)) ? Number(ov.angle) : (Number(options.angle)||0)
     };
   }
   function inspectorRecordSprite(info){
-    addInspectorObject({key:info.key,kind:info.kind,label:`${info.kind} #${info.seq}`,shape:'rect',priority:2,x:info.x,y:info.y,w:Math.max(1,info.w),h:Math.max(1,info.h),canResize:true,source:info.source,flip:!!info.flip,angle:Number(info.angle)||0,colors:{flip:!!info.flip}});
+    addInspectorObject({key:info.key,kind:info.kind,label:`${info.kind} #${info.seq}`,shape:'rect',priority:2,x:info.x,y:info.y,w:Math.max(1,info.w),h:Math.max(1,info.h),canResize:true,source:info.source,flip:!!info.flip,angle:Number(info.angle)||0,sourceVars:{...(info.sourceVars||{})},sourceArgMap:{...(info.sourceArgMap||{})},sourceCallNames:info.sourceCallNames||[info.kind],colors:{flip:!!info.flip}});
   }
   function inspectLuaWidgetFromStack(kind,index){
     if(!L || !lua || !lua.lua_istable(L,index)) return;
@@ -11388,76 +11395,14 @@ function makeRuntime(){
     }
     return info;
   };
-  const renderInspectorPanelContent=obj=>{
-    if(!inspectorPanel) return;
-    inspectorPanel.replaceChildren();
-    const model=inspectorPanelEntries(obj);
-    const title=document.createElement('div');
-    title.className='runtimeInspectorPanelTitle';
-    title.textContent=model.title;
-    inspectorPanel.appendChild(title);
-    const label=document.createElement('div');
-    label.className='runtimeInspectorPanelLabel';
-    label.textContent=model.label;
-    inspectorPanel.appendChild(label);
-    const rows=document.createElement('div');
-    rows.className='runtimeInspectorPanelRows';
-    model.rows.forEach(([key,value])=>{
-      const row=document.createElement('div');
-      row.className='runtimeInspectorPanelRow';
-      const keyEl=document.createElement('div');
-      keyEl.className='runtimeInspectorPanelKey';
-      keyEl.textContent=String(key);
-      const valueEl=document.createElement('div');
-      valueEl.className='runtimeInspectorPanelValue';
-      valueEl.textContent=String(value);
-      row.appendChild(keyEl);
-      row.appendChild(valueEl);
-      rows.appendChild(row);
-    });
-    inspectorPanel.appendChild(rows);
-    const actions=document.createElement('div');
-    actions.className='runtimeInspectorPanelActions';
-    const saveBtn=document.createElement('button');
-    saveBtn.type='button';
-    saveBtn.className='runtimeInspectorPanelBtn';
-    saveBtn.textContent='Go to & Save';
-    saveBtn.addEventListener('click',e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      const result=saveInspectorObjectToCode(obj);
-      if(result) toast(`<b>Inspector saved:</b> ${escapeHtml(obj.label||obj.kind)}`);
-    });
-    actions.appendChild(saveBtn);
-    const resetBtn=document.createElement('button');
-    resetBtn.type='button';
-    resetBtn.className='runtimeInspectorPanelBtn';
-    resetBtn.textContent='Reset';
-    resetBtn.disabled=!hasUnsavedObjectOverride(obj?.key);
-    resetBtn.addEventListener('click',e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      if(resetObjectLayoutEdits(obj?.key)) toast?.('Inspector element reset to saved/code values.');
-    });
-    actions.appendChild(resetBtn);
-    inspectorPanel.appendChild(actions);
-    const hint=document.createElement('div');
-    hint.className='runtimeInspectorPanelHint';
-    hint.textContent=model.hint;
-    inspectorPanel.appendChild(hint);
-  };
   function ensureInspectorOverlay(){
     if(inspectorCanvas) return;
     inspectorCanvas=document.createElement('canvas');
     inspectorCanvas.className='runtimeInspectorCanvas';
     inspectorCanvas.setAttribute('aria-hidden','true');
     inspectorCtx=inspectorCanvas.getContext('2d');
-    inspectorPanel=document.createElement('div');
-    inspectorPanel.className='runtimeInspectorPanel';
-    document.body.appendChild(inspectorPanel);
     stage.appendChild(inspectorCanvas);
     const pointerPoint=e=>clientToMouse(e.clientX,e.clientY);
-    inspectorPanel.addEventListener('pointerdown',e=>{ e.preventDefault(); e.stopPropagation(); },{passive:false});
     inspectorCanvas.addEventListener('contextmenu',e=>{ e.preventDefault(); e.stopPropagation(); },{passive:false});
     inspectorCanvas.addEventListener('pointerdown',e=>{
       if(!inspectorEnabled) return;
@@ -11548,7 +11493,6 @@ function makeRuntime(){
     inspectorCanvas.classList.toggle('active', inspectorEnabled && state.activeView==='runtime');
     if(!inspectorEnabled || state.activeView!=='runtime'){
       inspectorCtx?.clearRect(0,0,inspectorCanvas.width,inspectorCanvas.height);
-      inspectorPanel?.classList.remove('show');
       return;
     }
     const ctxi=inspectorCtx;
@@ -11569,26 +11513,6 @@ function makeRuntime(){
       }
       ctxi.restore();
     }
-    const varsPanel=$('runtimeVarsPanel');
-    const varsPanelOpen=!!varsPanel?.classList.contains('show');
-    const panelObj=varsPanelOpen ? (inspectorSelected||inspectorHover) : null;
-    if(panelObj && inspectorPanel){
-      const s=panelObj.screen||worldToScreenRect(panelObj), stageRect=stage.getBoundingClientRect(), canvasRect=canvas.getBoundingClientRect();
-      const scaleX=canvasRect.width/GAME_W, scaleY=canvasRect.height/GAME_H;
-      let desiredLeft=window.scrollX+canvasRect.left+((s.x+s.w+8)*scaleX);
-      let desiredTop=window.scrollY+canvasRect.top+(s.y*scaleY);
-      if(varsPanel){
-        const varsRect=varsPanel.getBoundingClientRect();
-        desiredLeft=window.scrollX+varsRect.left;
-        desiredTop=window.scrollY+varsRect.bottom+8;
-      }
-      inspectorPanel.style.left=`${Math.round(clamp(desiredLeft,window.scrollX+8,window.scrollX+Math.max(8,window.innerWidth-290)))}px`;
-      inspectorPanel.style.top=`${Math.round(clamp(desiredTop,window.scrollY+8,window.scrollY+Math.max(8,window.innerHeight-140)))}px`;
-      renderInspectorPanelContent(panelObj);
-      inspectorPanel.classList.add('show');
-    }else{
-      inspectorPanel?.classList.remove('show');
-    }
   }
   const nudgeInspectorSelection=(dx,dy)=>{
     const obj=currentInspectorObject();
@@ -11600,12 +11524,39 @@ function makeRuntime(){
     renderInspectorOverlay();
     return true;
   };
+  const INSPECTOR_NUDGE_DELAYS=[220,170,130,105,82,64,50,38,28,20,16];
   const stopInspectorKeyNudge=key=>{
     if(!inspectorKeyNudge) return;
-    if(!key || inspectorKeyNudge.key===key){
-      cancelAnimationFrame(inspectorKeyNudge.raf);
-      inspectorKeyNudge=null;
-    }
+    if(!key || inspectorKeyNudge.key===key) inspectorKeyNudge=null;
+  };
+  const startInspectorKeyNudge=(key,dx,dy)=>{
+    if(!inspectorEnabled || state.activeView!=='runtime' || !currentInspectorObject()) return false;
+    if(inspectorKeyNudge?.key===key && inspectorKeyNudge.dx===dx && inspectorKeyNudge.dy===dy) return true;
+    inspectorKeyNudge={key,dx,dy,steps:1,nextAt:performance.now()+INSPECTOR_NUDGE_DELAYS[0]};
+    nudgeInspectorSelection(dx,dy);
+    return true;
+  };
+  const tickInspectorNudge=now=>{
+    if(!inspectorKeyNudge || !inspectorEnabled || state.activeView!=='runtime' || !currentInspectorObject()) return;
+    if(now<inspectorKeyNudge.nextAt) return;
+    nudgeInspectorSelection(inspectorKeyNudge.dx,inspectorKeyNudge.dy);
+    const nextStep=Math.min(INSPECTOR_NUDGE_DELAYS.length-1, inspectorKeyNudge.steps);
+    inspectorKeyNudge.steps++;
+    inspectorKeyNudge.nextAt=now+INSPECTOR_NUDGE_DELAYS[nextStep];
+  };
+  const updateInspectorControlNudge=()=>{
+    if(!inspectorEnabled || state.activeView!=='runtime' || !currentInspectorObject()) return stopInspectorKeyNudge();
+    const digitalDx=(input.btn[3]?1:0)-(input.btn[2]?1:0);
+    const digitalDy=(input.btn[1]?1:0)-(input.btn[0]?1:0);
+    const joy=input.joy[0]||{x:0,y:0};
+    const joyDx=Math.abs(joy.x)>=0.35 ? (joy.x>0?1:-1) : 0;
+    const joyDy=Math.abs(joy.y)>=0.35 ? (joy.y>0?1:-1) : 0;
+    const dx=digitalDx||joyDx;
+    const dy=digitalDy||joyDy;
+    if(!dx && !dy) return stopInspectorKeyNudge();
+    if(inspectorKeyNudge && !String(inspectorKeyNudge.key||'').startsWith('pad:') && inspectorKeyNudge.dx===dx && inspectorKeyNudge.dy===dy) return;
+    const key=`pad:${dx},${dy}`;
+    startInspectorKeyNudge(key,dx,dy);
   };
   const handleInspectorKey=(key,down)=>{
     const dirs={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
@@ -11613,23 +11564,7 @@ function makeRuntime(){
     if(!down){ stopInspectorKeyNudge(key); return true; }
     if(!inspectorEnabled || state.activeView!=='runtime' || !currentInspectorObject()) return false;
     const [dx,dy]=dirs[key];
-    if(!inspectorKeyNudge || inspectorKeyNudge.key!==key){
-      stopInspectorKeyNudge();
-      inspectorKeyNudge={key,dx,dy,steps:0,last:0,raf:0};
-      nudgeInspectorSelection(dx,dy);
-    }
-    const step=now=>{
-      if(!inspectorKeyNudge || inspectorKeyNudge.key!==key) return;
-      const delay=inspectorKeyNudge.steps<4 ? 95 : 16;
-      if(!inspectorKeyNudge.last || now-inspectorKeyNudge.last>=delay){
-        inspectorKeyNudge.last=now;
-        inspectorKeyNudge.steps++;
-        nudgeInspectorSelection(dx,dy);
-      }
-      inspectorKeyNudge.raf=requestAnimationFrame(step);
-    };
-    if(!inspectorKeyNudge.raf) inspectorKeyNudge.raf=requestAnimationFrame(step);
-    return true;
+    return startInspectorKeyNudge(key,dx,dy);
   };
   function setInspectorEnabled(next){
     inspectorEnabled=!!next;
@@ -11986,10 +11921,10 @@ function makeRuntime(){
   }
   function palCacheKey(){ return String(palVersion); }
   function percentScale(value){ const n=Number(value); if(!Number.isFinite(n)||n===0) return 1; if(n>0) return Math.max(0.001,1+(n*0.09)); return Math.max(0.001,1+(n/100)); }
-  function spr(fileOrIndex,x,y,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const inspect=inspectorPrepareSprite('spr',fileOrIndex,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo,flip}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const inspect=inspectorPrepareSprite('spr',s,Number(x)||0,Number(y)||0,a.img.width,a.img.height,{sourceInfo,flip}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
-  function sspr(fileOrIndex,x,y,w,h,center=false,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const scaleX=percentScale(w), scaleY=percentScale(h); let dx=Number(x)||0, dy=Number(y)||0; const drawW=Math.max(1,sp.w*Math.abs(scaleX)); const drawH=Math.max(1,sp.h*Math.abs(scaleY)); if(center===true){ dx-=((drawW)-sp.w)/2; dy-=((drawH)-sp.h)/2; } const inspect=inspectorPrepareSprite('sspr',fileOrIndex,dx,dy,drawW,drawH,{sourceInfo,flip}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const sxScale=Math.abs(percentScale(w)), syScale=Math.abs(percentScale(h)); const inspect=inspectorPrepareSprite('sspr',s,Number(x)||0,Number(y)||0,Math.max(1,a.img.width*sxScale),Math.max(1,a.img.height*syScale),{sourceInfo,flip}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
-  function r_spr(fileOrIndex,x,y,angle,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const inspect=inspectorPrepareSprite('r_spr',fileOrIndex,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo,flip,angle}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),inspect.angle,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const inspect=inspectorPrepareSprite('r_spr',s,Number(x)||0,Number(y)||0,a.img.width,a.img.height,{sourceInfo,flip,angle}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),inspect.angle,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
-  function animate(ref,x,y,speed){ const _cp=clipPush(); const s=String(ref||'').trim(); const sourceInfo=luaCallerSourceInfo(2); const m=s.match(/^(\d+)/); const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN); if(!Number.isFinite(base)){ spr(ref,x,y); clipPop(_cp); return; } const folder=projectRef.spriteFolders[base]; if(!folder||!folder.frames||!folder.frames.length){ spr(ref,x,y); clipPop(_cp); return; } const spd=Math.max(0.01,Number(speed)||6); const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length; const sp=folder.frames[idx]; if(sp){ const inspect=inspectorPrepareSprite('animate',ref,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo}); drawInternalSpriteRuntime({folder:base,frame:idx},inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,false); inspectorRecordSprite(inspect); } clipPop(_cp); }
+  function spr(fileOrIndex,x,y,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const sourceVars={source:fileOrIndex,x:Number(x)||0,y:Number(y)||0,flip:!!flip}; const sourceArgMap={source:1,x:2,y:3,flip:4}; const sourceCallNames=['spr']; const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const inspect=inspectorPrepareSprite('spr',fileOrIndex,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo,flip,sourceVars,sourceArgMap,sourceCallNames}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const inspect=inspectorPrepareSprite('spr',s,Number(x)||0,Number(y)||0,a.img.width,a.img.height,{sourceInfo,flip,sourceVars:{...sourceVars,source:s},sourceArgMap,sourceCallNames}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
+  function sspr(fileOrIndex,x,y,w,h,center=false,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const sourceVars={source:fileOrIndex,x:Number(x)||0,y:Number(y)||0,'w%':Number(w)||0,'h%':Number(h)||0,center:!!center,flip:!!flip}; const sourceArgMap={source:1,x:2,y:3,'w%':4,'h%':5,center:6,flip:7}; const sourceCallNames=['sspr']; const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const scaleX=percentScale(w), scaleY=percentScale(h); let dx=Number(x)||0, dy=Number(y)||0; const drawW=Math.max(1,sp.w*Math.abs(scaleX)); const drawH=Math.max(1,sp.h*Math.abs(scaleY)); if(center===true){ dx-=((drawW)-sp.w)/2; dy-=((drawH)-sp.h)/2; } const inspect=inspectorPrepareSprite('sspr',fileOrIndex,dx,dy,drawW,drawH,{sourceInfo,flip,sourceVars,sourceArgMap,sourceCallNames}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const sxScale=Math.abs(percentScale(w)), syScale=Math.abs(percentScale(h)); const inspect=inspectorPrepareSprite('sspr',s,Number(x)||0,Number(y)||0,Math.max(1,a.img.width*sxScale),Math.max(1,a.img.height*syScale),{sourceInfo,flip,sourceVars:{...sourceVars,source:s},sourceArgMap,sourceCallNames}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
+  function r_spr(fileOrIndex,x,y,angle,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const sourceVars={source:fileOrIndex,x:Number(x)||0,y:Number(y)||0,angle:Number(angle)||0,flip:!!flip}; const sourceArgMap={source:1,x:2,y:3,angle:4,flip:5}; const sourceCallNames=['r_spr']; const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const inspect=inspectorPrepareSprite('r_spr',fileOrIndex,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo,flip,angle,sourceVars,sourceArgMap,sourceCallNames}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),inspect.angle,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const inspect=inspectorPrepareSprite('r_spr',s,Number(x)||0,Number(y)||0,a.img.width,a.img.height,{sourceInfo,flip,angle,sourceVars:{...sourceVars,source:s},sourceArgMap,sourceCallNames}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),inspect.angle,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
+  function animate(ref,x,y,speed){ const _cp=clipPush(); const s=String(ref||'').trim(); const sourceInfo=luaCallerSourceInfo(2); const sourceVars={source:ref,x:Number(x)||0,y:Number(y)||0,speed:Number(speed)||0}; const sourceArgMap={source:1,x:2,y:3,speed:4}; const sourceCallNames=['animate']; const m=s.match(/^(\d+)/); const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN); if(!Number.isFinite(base)){ spr(ref,x,y); clipPop(_cp); return; } const folder=projectRef.spriteFolders[base]; if(!folder||!folder.frames||!folder.frames.length){ spr(ref,x,y); clipPop(_cp); return; } const spd=Math.max(0.01,Number(speed)||6); const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length; const sp=folder.frames[idx]; if(sp){ const inspect=inspectorPrepareSprite('animate',ref,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo,sourceVars,sourceArgMap,sourceCallNames}); drawInternalSpriteRuntime({folder:base,frame:idx},inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,false); inspectorRecordSprite(inspect); } clipPop(_cp); }
   function getRuntimeTileCanvas(def,w,h,id,showId=false){ const key=`${id}:${w}x${h}:${showId?1:0}:${String(def.source||'').trim()}:${def.bg||''}:${def.bgEnabled===false?0:1}:${def.animated?1:0}:${resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders)??''}:${Number(def.animSpeed)||0}:${palCacheKey()}`; if(tileCache.has(key)) return tileCache.get(key); const tileCanvas=makeCanvas(w,h), tileCtx=tileCanvas.getContext('2d'); if(def.bgEnabled!==false){ tileCtx.fillStyle=def.bg||'#444'; tileCtx.fillRect(0,0,w,h); } const source=String(def.source||'').trim(); let spriteRef=parseSpriteRef(source); if(def.animated){ const folderIndex=resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders); const folder=folderIndex==null?null:projectRef.spriteFolders[folderIndex]; const speed=Math.max(0.1,Number(def.animSpeed)||6); if(folder&&folder.frames&&folder.frames.length) spriteRef={folder:folderIndex,frame:Math.floor((performance.now()/1000)*speed)%folder.frames.length}; } if(spriteRef){ const spriteCanvas=getRuntimeSpriteCanvas(spriteRef); if(spriteCanvas) tileCtx.drawImage(spriteCanvas,0,0,w,h); } else if(isImageLike(source)){ const a=getImg(source); if(a&&a.loaded) tileCtx.drawImage(a.img,0,0,w,h); } if(showId){ tileCtx.fillStyle='rgba(255,255,255,.45)'; tileCtx.font='11px monospace'; tileCtx.textAlign='center'; tileCtx.textBaseline='middle'; tileCtx.fillText(String(id),w/2,h/2); } tileCache.set(key,tileCanvas); return tileCanvas; }
   function drawTileRuntime(def,x,y,w,h,id,showId=false){ const x0=sx(x), y0=sy(y), x1=sx(x+w), y1=sy(y+h); ctx.drawImage(getRuntimeTileCanvas(def,w,h,id,showId),x0,y0,Math.max(1,x1-x0),Math.max(1,y1-y0)); }
   function mget(x,y,layer,mapIndex){ x=Math.floor(Number(x)||0);y=Math.floor(Number(y)||0);layer=layer==null?0:layer|0;mapIndex=mapIndex==null?0:mapIndex|0; if(x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h) return 0; const mapObj=projectRef.maps[mapIndex]; if(!mapObj) return 0; const lay=mapObj.layers[layer]; if(!lay) return 0; return lay.data[y][x]||0; }
@@ -12445,7 +12380,7 @@ function makeRuntime(){
   function hasLuaFunction(name){ if(!L||!builtOk) return false; lua.lua_getglobal(L,to_luastring(name)); const exists=lua.lua_isfunction(L,-1); lua.lua_pop(L,1); return exists; }
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function callPausedDrawCallbacks(){ if(hasLuaFunction('_draw')){ if(!callMaybe('_draw')) return false; callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); return true; } return false; }
-  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused || (runtimePaused && inspectorEnabled && runtimeActive)) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(runtimeActive && runtimePaused && inspectorEnabled){ callPausedDrawCallbacks(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && !runtimeVarsFunctionDetail && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
+  function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } updateInspectorControlNudge(); tickInspectorNudge(performance.now()); if(!runtimePaused || (runtimePaused && inspectorEnabled && runtimeActive)) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(runtimeActive && runtimePaused && inspectorEnabled){ callPausedDrawCallbacks(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && !runtimeVarsFunctionDetail && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
   requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },renderInspectorOverlay,toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,getInspectorPointerInfo,handleInspectorKey,stopInspectorKeyNudge,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
