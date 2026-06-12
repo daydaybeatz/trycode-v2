@@ -287,6 +287,8 @@
     .runtimeVarsPanel{position:fixed;right:10px;top:48px;z-index:80;display:none;width:min(360px,calc(100vw - 20px));max-height:min(460px,calc(100vh - 64px));overflow:auto;padding:10px;border:3px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#fff7e8,#efd4a0);box-shadow:0 6px 0 rgba(62,34,14,.45);color:var(--ink)}
     .runtimeVarsPanel.show{display:block}
     .runtimeVarsHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+    .paletteHeaderRow{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .paletteHeaderRgb{font:11px/1.25 Consolas,"SFMono-Regular",monospace;opacity:.76;text-transform:none;letter-spacing:0}
     .runtimeVarsList{display:flex;flex-direction:column;gap:6px}
     .runtimeVarsCrumbs,.runtimeVarsPager{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:11px;font-weight:800}
     .runtimeVarsPath{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1.25 Consolas,"SFMono-Regular",monospace}
@@ -698,9 +700,9 @@
         <div class="sidebar panelSkin">
           <div class="pane"><h4>SPRITES</h4><div class="formRow"><button class="mbtn" id="addSpriteBtn">Add Sprite</button></div><div class="pageRow compact" id="spriteListPagerRow"><button class="uiBtn" id="spriteListPrevBtn">&lt;</button><div class="docDesc" id="spriteListPageLabel">1 / 1</div><button class="uiBtn" id="spriteListNextBtn">&gt;</button></div><div class="spriteList" id="spriteList"></div><input type="file" id="spriteImportPngInput" accept="image/png" style="display:none"><div class="spritePanelPreview"><canvas id="spritePanelPreviewCanvas" width="44" height="44"></canvas><div class="spritePanelPreviewLabel" id="spritePanelPreviewLabel">Sprite 0</div></div><div class="formRow" style="margin-top:8px"><div class="field"><label>Frames In Folder</label><div class="pageRow"><button class="uiBtn" id="spriteFolderMinusBtn">-</button><div class="docDesc" id="spriteFolderCountLabel">1</div><button class="uiBtn" id="spriteFolderPlusBtn">+</button></div></div></div><div class="frameGrid" id="spriteFrameList"></div><div class="pageRow" style="margin-top:8px" id="spriteFramePagerRow"><button class="uiBtn" id="spriteFramePrevBtn">&lt;</button><div class="docDesc" id="spriteFramePageLabel">1 / 1</div><button class="uiBtn" id="spriteFrameNextBtn">&gt;</button></div></div>
           <div class="pane"><h4>SPRITE SIZE</h4><div class="formRow"><div class="field"><label>Width</label><input id="spriteWInput" type="number" min="1" value="16"></div><div class="field"><label>Height</label><input id="spriteHInput" type="number" min="1" value="16"></div></div><div class="formRow"><button class="mbtn" id="applySpriteSizeBtn">Apply Size</button></div></div>
-          <div class="pane"><h4>PALETTE</h4><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
+          <div class="pane"><div class="paletteHeaderRow"><h4>PALETTE</h4><div class="paletteHeaderRgb" id="paletteHeaderRgb">rgb(255, 255, 255)</div></div><div class="pageRow"><button class="uiBtn" id="palettePrevBtn">&lt;</button><div class="docDesc" id="palettePageLabel">1 / 1</div><button class="uiBtn" id="paletteNextBtn">&gt;</button></div><div class="paletteGrid" id="paletteGrid"></div><input id="paletteColorInput" type="color" value="#ffffff" style="position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;pointer-events:none;z-index:-1"><div class="formRow" style="margin-top:8px"><button class="mbtn" id="editPaletteColorBtn">Edit Color</button><button class="mbtn" id="addPaletteColorBtn">Add Color</button><button class="mbtn" id="removePaletteColorBtn">Remove Color</button></div></div>
         </div>
-        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteRectBtn">Rect</button><button class="uiBtn" id="spriteCircBtn">Circ</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="strokeStepper" title="Stroke size"><button class="uiBtn strokeStepperBtn" id="spriteLineWidthDownBtn" type="button" aria-label="Decrease stroke size">&#8722;</button><span class="strokeStepperValue" id="spriteLineWidthValue">1</span><button class="uiBtn strokeStepperBtn" id="spriteLineWidthUpBtn" type="button" aria-label="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewTopRow"><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><label class="animPreviewSpeed">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6"></label></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">&#9654;</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div></div></div>
+        <div class="mainPane panelSkin"><div class="paneToolbar"><button class="uiBtn" id="toggleSpriteSidebarBtn" aria-label="Toggle sprite panel">&lt;</button></div><div class="edgePalette hidden" id="spriteEdgePalette"></div><div class="overlayTools hidden" id="spriteOverlayTools"><div class="spriteToolGroup"><button class="uiBtn" id="spriteDrawBtn">Draw</button><button class="uiBtn" id="spriteLineBtn">Line</button><button class="uiBtn" id="spriteRectBtn">Rect</button><button class="uiBtn" id="spriteCircBtn">Circ</button><button class="uiBtn" id="spriteEraseBtn">Erase</button><button class="uiBtn" id="spriteFillBtn">Fill</button><button class="uiBtn" id="spritePickBtn">pik</button><button class="uiBtn" id="spritePanBtn">Pan</button><div class="strokeStepper" title="Stroke size"><button class="uiBtn strokeStepperBtn" id="spriteLineWidthDownBtn" type="button" aria-label="Decrease stroke size">&#8722;</button><span class="strokeStepperValue" id="spriteLineWidthValue">1</span><button class="uiBtn strokeStepperBtn" id="spriteLineWidthUpBtn" type="button" aria-label="Increase stroke size">+</button></div><button class="uiBtn" id="spriteUndoBtn">Undo</button><button class="uiBtn" id="spriteRedoBtn">Redo</button></div></div><div class="spriteSecondaryTools" id="spriteSecondaryTools"><button class="uiBtn" id="spriteZoomOutBtn">z-</button><button class="uiBtn" id="spriteZoomInBtn">z+</button><button class="uiBtn" id="spriteGridBtn">Grid</button><button class="uiBtn" id="spriteAnimPreviewToggleBtn">ani</button><button class="uiBtn destructive" id="spriteClearBtn">Clear</button></div><div class="canvasWrap" id="spriteCanvasWrap"><canvas id="spriteCanvas"></canvas></div><div class="animPreviewBar hidden" id="animPreviewBar"><canvas id="spriteAnimPreviewCanvas" width="72" height="72"></canvas><div class="animPreviewTopRow"><div class="animPreviewInfo"><div class="docDesc"><b id="spriteEditFrameLabel">Editing frame a / 1</b></div><div class="docDesc" id="spriteAnimStatusLabel">Preview paused</div></div><label class="animPreviewSpeed">Speed <input id="spriteAnimSpeedInput" type="number" min="1" step="1" value="6"></label></div><div class="animPreviewControls"><button class="uiBtn" id="spriteEditPrevBtn">&lt;</button><button class="uiBtn" id="spriteEditNextBtn">&gt;</button><button class="uiBtn" id="spriteAnimToggleBtn">&#9654;</button><button class="uiBtn destructive" id="spriteDeleteFrameBtn">del</button><button class="uiBtn" id="spriteAddFrameBtn">new</button><button class="uiBtn" id="spriteOnionBtn">Onion: Off</button></div></div></div>
       </div>
     </div>
 
@@ -1471,7 +1473,6 @@ function updateRuntimeLayoutSaveState(){
 function applyRuntimeUiHiddenState(){
   const canHide=state.activeView==='runtime' && window.matchMedia('(min-width: 901px)').matches;
   if(!canHide) runtimeUiHidden=false;
-  if(state.activeView!=='runtime') closeRuntimeVarsPanel?.();
   document.body.classList.toggle('runtime-ui-hidden', runtimeUiHidden && canHide);
   const hideBtn=$("runtimeHideBtn");
   if(hideBtn) hideBtn.classList.toggle('hidden', !canHide);
@@ -1646,6 +1647,31 @@ function refreshRuntimeVarsPanel(){
   label.textContent=runtimeVarsPathLabel(runtimeVarsPath);
   header.append(up,label);
   list.appendChild(header);
+  const pointerInfo=!runtimeVarsPath.length ? runtime?.getInspectorPointerInfo?.() : null;
+  if(pointerInfo){
+    const pointerTitle=document.createElement('div');
+    pointerTitle.className='runtimeVarsCrumbs';
+    pointerTitle.textContent='Inspector cursor';
+    list.appendChild(pointerTitle);
+    const pointerRow=document.createElement('div');
+    pointerRow.className='runtimeVarRow';
+    const pointerName=document.createElement('span');
+    pointerName.className='runtimeVarName';
+    pointerName.textContent=pointerInfo.mode==='color' ? 'color' : 'mouse';
+    const pointerValue=document.createElement('span');
+    pointerValue.className='runtimeVarValue';
+    if(pointerInfo.mode==='color'){
+      const paletteLabel=pointerInfo.paletteIndex>=0 ? `palette #${pointerInfo.paletteIndex}` : 'not in palette';
+      pointerValue.textContent=`${pointerInfo.hex} / rgb(${pointerInfo.r}, ${pointerInfo.g}, ${pointerInfo.b}) / ${paletteLabel}`;
+    }else{
+      pointerValue.textContent=`x:${pointerInfo.x}, y:${pointerInfo.y}`;
+    }
+    const pointerType=document.createElement('span');
+    pointerType.className='runtimeVarType';
+    pointerType.textContent=pointerInfo.mode;
+    pointerRow.append(pointerName,pointerValue,pointerType);
+    list.appendChild(pointerRow);
+  }
   const inspectorSelection=!runtimeVarsPath.length ? runtime?.getInspectorVariables?.() : null;
   if(inspectorSelection?.items?.length){
     const title=document.createElement('div');
@@ -1828,6 +1854,7 @@ function createRuntimeFallback(message){
     getInspectorVariables(){ return {items:[]}; },
     setInspectorVariable(){ return false; },
     goToInspectorSelection(){ return false; },
+    getInspectorPointerInfo(){ return null; },
   };
 }
 function initRuntime(){
@@ -8981,13 +9008,19 @@ function setView(name){
   }
   const previousView=state.activeView;
   const leavingRuntime=previousView==="runtime" && name!=="runtime";
-  const leavingRuntimeWithInspectorPause=leavingRuntime && (runtimeDebugPaused || runtime?.isInspectorEnabled?.());
+  const inspectorWorkflowActive=!!(runtime?.isInspectorEnabled?.() || $("runtimeVarsPanel")?.classList.contains('show'));
+  const leavingRuntimeWithInspectorPause=leavingRuntime && runtimeDebugPaused;
+  const leavingRuntimeWithInspectorActive=leavingRuntime && inspectorWorkflowActive && !runtimeDebugPaused;
   if(leavingRuntime){
     if(leavingRuntimeWithInspectorPause){
       runtimeDebugPaused=true;
       runtime?.setActive?.(runtimeStarted);
       runtime?.setPaused?.(true);
       stopMusicPlayback({invalidate:false});
+      $("runtimeStartOverlay")?.classList.add("hidden");
+    }else if(leavingRuntimeWithInspectorActive){
+      runtime?.setActive?.(runtimeStarted);
+      runtime?.setPaused?.(false);
       $("runtimeStartOverlay")?.classList.add("hidden");
     }else{
       runtimeStarted=false;
@@ -9000,7 +9033,7 @@ function setView(name){
   }
   const leavingMusicEditor=previousView==="music" && name!=="music";
   state.activeView=name;
-  if((leavingRuntime && !leavingRuntimeWithInspectorPause) || leavingMusicEditor){
+  if((leavingRuntime && !leavingRuntimeWithInspectorPause && !leavingRuntimeWithInspectorActive) || leavingMusicEditor){
     stopMusicPlayback({suppressCurrent:leavingRuntime});
   }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -9108,10 +9141,11 @@ function refreshPaletteUI(){
   });
   $("palettePageLabel").textContent=`${state.palettePage+1} / ${pages}`;
   $("paletteColorInput").value=state.appProject.palette[state.selectedPaletteIndex]||"#ffffff";
+  updatePaletteHeaderReadout();
 }
 function setSpriteTool(name){
   state.spriteTool=name||null;
-  ["spriteDrawBtn","spriteLineBtn","spriteRectBtn","spriteCircBtn","spriteEraseBtn","spriteFillBtn","spritePanBtn"].forEach(id=>$(id)?.classList.remove("active"));
+  ["spriteDrawBtn","spriteLineBtn","spriteRectBtn","spriteCircBtn","spriteEraseBtn","spriteFillBtn","spritePickBtn","spritePanBtn"].forEach(id=>$(id)?.classList.remove("active"));
   if(state.spriteTool==="draw") $("spriteDrawBtn")?.classList.add("active");
   if(state.spriteTool==="line") $("spriteLineBtn")?.classList.add("active");
   const rectBtn=$("spriteRectBtn");
@@ -9135,9 +9169,19 @@ function setSpriteTool(name){
     if(eraseBtn) eraseBtn.textContent="Erase";
   }
   if(state.spriteTool==="fill") $("spriteFillBtn")?.classList.add("active");
+  if(state.spriteTool==="pick") $("spritePickBtn")?.classList.add("active");
   if(state.spriteTool==="pan") $("spritePanBtn")?.classList.add("active");
   const mode=currentSpriteView().gridMode;
   $("spriteGridBtn")?.classList.toggle("active", mode!=="off");
+}
+function paletteRgbLabel(colorValue){
+  const rgb=hexToRgb(colorValue);
+  return rgb ? `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})` : 'rgb(0, 0, 0)';
+}
+function updatePaletteHeaderReadout(){
+  const label=$("paletteHeaderRgb");
+  if(!label) return;
+  label.textContent=paletteRgbLabel(state.appProject?.palette?.[state.selectedPaletteIndex]||'#ffffff');
 }
 function refreshEdgePalette(){
   const wrap=$("spriteEdgePalette"); if(!wrap) return; wrap.innerHTML='';
@@ -9648,7 +9692,14 @@ function applySpriteToolAtEvent(e,lastPoint,options={}){
   point.changed=false;
   if(point.x<0||point.y<0||point.x>=s.w||point.y>=s.h) return point;
   let changed=false;
-  if(state.spriteTool==="fill"){
+  if(state.spriteTool==="pick"){
+    const picked=s.pixels[point.y]?.[point.x];
+    if(Number.isInteger(picked) && picked>=0){
+      toast(`apply this color to the selected palette index: #${picked}?`);
+    }else{
+      toast('apply this color to the selected palette index: transparent?');
+    }
+  }else if(state.spriteTool==="fill"){
     pushSpriteHistory(); spriteFloodFill(point.x,point.y,s.pixels[point.y][point.x],state.selectedPaletteIndex); changed=true;
   }else if(state.spriteTool==="erase-fill"){
     pushSpriteHistory(); spriteFloodFill(point.x,point.y,s.pixels[point.y][point.x],-1); changed=true;
@@ -10972,6 +11023,12 @@ function makeRuntime(){
       ['fill','outline','font'].forEach(key=>{ if(obj.colors?.[key]!=null) record[key]=obj.colors[key]; });
       return record;
     }
+    if(obj?.kind==='spr' || obj?.kind==='sspr' || obj?.kind==='r_spr' || obj?.kind==='animate'){
+      if(obj.source!=null) record.source=obj.source;
+      if(obj.flip!=null) record.flip=!!obj.flip;
+      if(obj.angle!=null && Number.isFinite(Number(obj.angle))) record.angle=Math.round(Number(obj.angle)*100)/100;
+      return record;
+    }
     if(String(obj?.key||'').startsWith('widget:')){
       if(obj.text!=null) record.label=String(obj.text);
       ['bg','border','text','hover_bg','text_size','label_x','label_y'].forEach(key=>{ if(obj.colors?.[key]!=null) record[key]=obj.colors[key]; });
@@ -11065,8 +11122,9 @@ function makeRuntime(){
     const addTerm=value=>{ const text=String(value??'').trim(); if(text && !terms.includes(text)) terms.push(text); };
     addTerm(obj.key);
     addTerm(obj.text);
+    addTerm(obj.source);
     addTerm(String(obj.key||'').split(':').pop());
-    const functionNames={rectfill:['rectfill'],rect:['rect'],line:['line'],circ:['circ'],circfill:['circfill'],print:['print','print_'],button:['ui_button','ui_buttons'],dropdown:['ui_dropdown'],arrange:['arrange']};
+    const functionNames={rectfill:['rectfill'],rect:['rect'],line:['line'],circ:['circ'],circfill:['circfill'],print:['print','print_'],button:['ui_button','ui_buttons'],dropdown:['ui_dropdown'],arrange:['arrange'],spr:['spr'],sspr:['sspr'],r_spr:['r_spr'],animate:['animate']};
     const calls=functionNames[obj.kind]||[obj.kind].filter(Boolean);
     const termChecks=terms.filter(term=>term && term.length>1).map(term=>new RegExp(escapeRegExp(term)));
     const callChecks=calls.map(name=>new RegExp(`(^|[^A-Za-z0-9_])${escapeRegExp(name)}\\s*\\(`));
@@ -11166,6 +11224,35 @@ function makeRuntime(){
   }
   function inspectorRecordPrint(info,width,height){
     addInspectorObject({key:info.key,kind:'print',label:`print #${info.seq}`,shape:'rect',priority:1,x:info.x,y:info.y,w:Math.max(1,width),h:Math.max(1,height),fontSize:info.fontSize,canResize:true,text:info.text,sourceInfo:info.sourceInfo||null,sourceArgMap:info.sourceArgMap||{},colors:{fill:info.fill,outline:info.outline,font:info.font}});
+  }
+  function inspectorPrepareSprite(kind,source,x,y,width,height,options={}){
+    const seq=nextInspectorSequence(kind);
+    const sourceInfo=options.sourceInfo||null;
+    const signature=[source,x,y,width,height,options.flip,options.angle].map(value=>String(value??'')).join(':');
+    const key=sourceInspectorKey(kind,sourceInfo,seq,signature);
+    const ov=getMergedInspectorOverride(key)||{};
+    const geom=applyOverrideToRect(key,{
+      x:Number.isFinite(Number(ov.x))?Number(ov.x):(Number(x)||0),
+      y:Number.isFinite(Number(ov.y))?Number(ov.y):(Number(y)||0),
+      w:Math.max(1,Number.isFinite(Number(ov.w))?Number(ov.w):(Number(width)||1)),
+      h:Math.max(1,Number.isFinite(Number(ov.h))?Number(ov.h):(Number(height)||1))
+    });
+    return {
+      key,
+      seq,
+      kind,
+      sourceInfo,
+      source:String(source??''),
+      x:geom.x,
+      y:geom.y,
+      w:geom.w,
+      h:geom.h,
+      flip:ov.flip!==undefined ? !!ov.flip : !!options.flip,
+      angle:Number.isFinite(Number(ov.angle)) ? Number(ov.angle) : (Number(options.angle)||0)
+    };
+  }
+  function inspectorRecordSprite(info){
+    addInspectorObject({key:info.key,kind:info.kind,label:`${info.kind} #${info.seq}`,shape:'rect',priority:2,x:info.x,y:info.y,w:Math.max(1,info.w),h:Math.max(1,info.h),canResize:true,source:info.source,flip:!!info.flip,angle:Number(info.angle)||0,colors:{flip:!!info.flip}});
   }
   function inspectLuaWidgetFromStack(kind,index){
     if(!L || !lua || !lua.lua_istable(L,index)) return;
@@ -11273,7 +11360,33 @@ function makeRuntime(){
     const rows=[['x',Math.round((Number(obj.x)||0)*100)/100],['y',Math.round((Number(obj.y)||0)*100)/100],['w',Math.round((Number(obj.w)||0)*100)/100],['h',Math.round((Number(obj.h)||0)*100)/100]];
     if(obj.r) rows.push(['r',Math.round(obj.r*100)/100]);
     if(obj.fontSize) rows.push(['font_size',Math.round(obj.fontSize*100)/100]);
+    if(obj.kind==='spr' || obj.kind==='sspr' || obj.kind==='r_spr' || obj.kind==='animate') rows.push(['source',obj.source||'']);
     return {title:`INSPECT POSITION (${status})`, label:obj.label||obj.kind, rows, hint:'Left-click the selected object again to cycle position, color, and source data.'};
+  };
+  const getInspectorPointerInfo=()=>{
+    if(!inspectorEnabled) return null;
+    const mx=input.mouse.x|0;
+    const my=input.mouse.y|0;
+    const info={x:mx,y:my,mode:inspectorPage%3===1?'color':'coords'};
+    if(info.mode==='color'){
+      const data=ctx.getImageData(clamp(mx,0,GAME_W-1),clamp(my,0,GAME_H-1),1,1).data;
+      let paletteIndex=-1;
+      if(data[3]!==0){
+        for(let i=0;i<projectRef.palette.length;i++){
+          const rgb=hexToRgb(projectRef.palette[i]);
+          if(rgb && rgb.r===data[0] && rgb.g===data[1] && rgb.b===data[2]){
+            paletteIndex=i;
+            break;
+          }
+        }
+      }
+      info.paletteIndex=paletteIndex;
+      info.r=data[0]|0;
+      info.g=data[1]|0;
+      info.b=data[2]|0;
+      info.hex=`#${[data[0],data[1],data[2]].map(value=>value.toString(16).padStart(2,'0')).join('')}`;
+    }
+    return info;
   };
   const renderInspectorPanelContent=obj=>{
     if(!inspectorPanel) return;
@@ -11462,9 +11575,15 @@ function makeRuntime(){
     if(panelObj && inspectorPanel){
       const s=panelObj.screen||worldToScreenRect(panelObj), stageRect=stage.getBoundingClientRect(), canvasRect=canvas.getBoundingClientRect();
       const scaleX=canvasRect.width/GAME_W, scaleY=canvasRect.height/GAME_H;
-      const desiredLeft=(canvasRect.left-stageRect.left)+((s.x+s.w+8)*scaleX), desiredTop=(canvasRect.top-stageRect.top)+(s.y*scaleY);
-      inspectorPanel.style.left=`${Math.round(clamp(desiredLeft,8,Math.max(8,stageRect.width-290)))}px`;
-      inspectorPanel.style.top=`${Math.round(clamp(desiredTop,8,Math.max(8,stageRect.height-140)))}px`;
+      let desiredLeft=window.scrollX+canvasRect.left+((s.x+s.w+8)*scaleX);
+      let desiredTop=window.scrollY+canvasRect.top+(s.y*scaleY);
+      if(varsPanel){
+        const varsRect=varsPanel.getBoundingClientRect();
+        desiredLeft=window.scrollX+varsRect.left;
+        desiredTop=window.scrollY+varsRect.bottom+8;
+      }
+      inspectorPanel.style.left=`${Math.round(clamp(desiredLeft,window.scrollX+8,window.scrollX+Math.max(8,window.innerWidth-290)))}px`;
+      inspectorPanel.style.top=`${Math.round(clamp(desiredTop,window.scrollY+8,window.scrollY+Math.max(8,window.innerHeight-140)))}px`;
       renderInspectorPanelContent(panelObj);
       inspectorPanel.classList.add('show');
     }else{
@@ -11867,10 +11986,10 @@ function makeRuntime(){
   }
   function palCacheKey(){ return String(palVersion); }
   function percentScale(value){ const n=Number(value); if(!Number.isFinite(n)||n===0) return 1; if(n>0) return Math.max(0.001,1+(n*0.09)); return Math.max(0.001,1+(n/100)); }
-  function spr(fileOrIndex,x,y,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ drawInternalSpriteRuntime(ref,x,y,1,1,0,flip); clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,1,1,0,flip); clipPop(_cp); return; } clipPop(_cp); }
-  function sspr(fileOrIndex,x,y,w,h,center=false,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const scaleX=percentScale(w), scaleY=percentScale(h); let dx=Number(x)||0, dy=Number(y)||0; if(center===true){ dx-=((sp.w*Math.abs(scaleX))-sp.w)/2; dy-=((sp.h*Math.abs(scaleY))-sp.h)/2; } drawInternalSpriteRuntime(ref,dx,dy,scaleX,scaleY,0,flip); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,percentScale(w),percentScale(h),0,flip); clipPop(_cp); return; } clipPop(_cp); }
-  function r_spr(fileOrIndex,x,y,angle,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ drawInternalSpriteRuntime(ref,x,y,1,1,angle,flip); clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded) drawImageRuntime(a.img,x,y,1,1,angle,flip); clipPop(_cp); return; } clipPop(_cp); }
-  function animate(ref,x,y,speed){ const _cp=clipPush(); const s=String(ref||'').trim(); const m=s.match(/^(\d+)/); const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN); if(!Number.isFinite(base)){ spr(ref,x,y); clipPop(_cp); return; } const folder=projectRef.spriteFolders[base]; if(!folder||!folder.frames||!folder.frames.length){ spr(ref,x,y); clipPop(_cp); return; } const spd=Math.max(0.01,Number(speed)||6); const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length; drawInternalSpriteRuntime({folder:base,frame:idx},x,y,1,1); clipPop(_cp); }
+  function spr(fileOrIndex,x,y,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const inspect=inspectorPrepareSprite('spr',fileOrIndex,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo,flip}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const inspect=inspectorPrepareSprite('spr',s,Number(x)||0,Number(y)||0,a.img.width,a.img.height,{sourceInfo,flip}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
+  function sspr(fileOrIndex,x,y,w,h,center=false,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const scaleX=percentScale(w), scaleY=percentScale(h); let dx=Number(x)||0, dy=Number(y)||0; const drawW=Math.max(1,sp.w*Math.abs(scaleX)); const drawH=Math.max(1,sp.h*Math.abs(scaleY)); if(center===true){ dx-=((drawW)-sp.w)/2; dy-=((drawH)-sp.h)/2; } const inspect=inspectorPrepareSprite('sspr',fileOrIndex,dx,dy,drawW,drawH,{sourceInfo,flip}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const sxScale=Math.abs(percentScale(w)), syScale=Math.abs(percentScale(h)); const inspect=inspectorPrepareSprite('sspr',s,Number(x)||0,Number(y)||0,Math.max(1,a.img.width*sxScale),Math.max(1,a.img.height*syScale),{sourceInfo,flip}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),0,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
+  function r_spr(fileOrIndex,x,y,angle,flip=false){ const _cp=clipPush(); const s=String(fileOrIndex??'').trim(); const sourceInfo=luaCallerSourceInfo(2); const ref=(typeof fileOrIndex==='number'&&Number.isFinite(fileOrIndex))?{folder:fileOrIndex|0,frame:0}:parseSpriteRef(s); if(ref){ const folder=projectRef.spriteFolders[ref.folder], sp=folder&&folder.frames[ref.frame]; if(sp){ const inspect=inspectorPrepareSprite('r_spr',fileOrIndex,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo,flip,angle}); drawInternalSpriteRuntime(ref,inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),inspect.angle,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } if(isImageLike(s)){ const a=getImg(s); if(a&&a.loaded){ const inspect=inspectorPrepareSprite('r_spr',s,Number(x)||0,Number(y)||0,a.img.width,a.img.height,{sourceInfo,flip,angle}); drawImageRuntime(a.img,inspect.x,inspect.y,inspect.w/Math.max(1,a.img.width),inspect.h/Math.max(1,a.img.height),inspect.angle,inspect.flip); inspectorRecordSprite(inspect); } clipPop(_cp); return; } clipPop(_cp); }
+  function animate(ref,x,y,speed){ const _cp=clipPush(); const s=String(ref||'').trim(); const sourceInfo=luaCallerSourceInfo(2); const m=s.match(/^(\d+)/); const base=m?parseInt(m[1],10):(typeof ref==='number'?ref:NaN); if(!Number.isFinite(base)){ spr(ref,x,y); clipPop(_cp); return; } const folder=projectRef.spriteFolders[base]; if(!folder||!folder.frames||!folder.frames.length){ spr(ref,x,y); clipPop(_cp); return; } const spd=Math.max(0.01,Number(speed)||6); const idx=Math.floor((performance.now()/1000)*spd)%folder.frames.length; const sp=folder.frames[idx]; if(sp){ const inspect=inspectorPrepareSprite('animate',ref,Number(x)||0,Number(y)||0,sp.w,sp.h,{sourceInfo}); drawInternalSpriteRuntime({folder:base,frame:idx},inspect.x,inspect.y,inspect.w/Math.max(1,sp.w),inspect.h/Math.max(1,sp.h),0,false); inspectorRecordSprite(inspect); } clipPop(_cp); }
   function getRuntimeTileCanvas(def,w,h,id,showId=false){ const key=`${id}:${w}x${h}:${showId?1:0}:${String(def.source||'').trim()}:${def.bg||''}:${def.bgEnabled===false?0:1}:${def.animated?1:0}:${resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders)??''}:${Number(def.animSpeed)||0}:${palCacheKey()}`; if(tileCache.has(key)) return tileCache.get(key); const tileCanvas=makeCanvas(w,h), tileCtx=tileCanvas.getContext('2d'); if(def.bgEnabled!==false){ tileCtx.fillStyle=def.bg||'#444'; tileCtx.fillRect(0,0,w,h); } const source=String(def.source||'').trim(); let spriteRef=parseSpriteRef(source); if(def.animated){ const folderIndex=resolveAnimatedTileFolderIndex(def,projectRef.spriteFolders); const folder=folderIndex==null?null:projectRef.spriteFolders[folderIndex]; const speed=Math.max(0.1,Number(def.animSpeed)||6); if(folder&&folder.frames&&folder.frames.length) spriteRef={folder:folderIndex,frame:Math.floor((performance.now()/1000)*speed)%folder.frames.length}; } if(spriteRef){ const spriteCanvas=getRuntimeSpriteCanvas(spriteRef); if(spriteCanvas) tileCtx.drawImage(spriteCanvas,0,0,w,h); } else if(isImageLike(source)){ const a=getImg(source); if(a&&a.loaded) tileCtx.drawImage(a.img,0,0,w,h); } if(showId){ tileCtx.fillStyle='rgba(255,255,255,.45)'; tileCtx.font='11px monospace'; tileCtx.textAlign='center'; tileCtx.textBaseline='middle'; tileCtx.fillText(String(id),w/2,h/2); } tileCache.set(key,tileCanvas); return tileCanvas; }
   function drawTileRuntime(def,x,y,w,h,id,showId=false){ const x0=sx(x), y0=sy(y), x1=sx(x+w), y1=sy(y+h); ctx.drawImage(getRuntimeTileCanvas(def,w,h,id,showId),x0,y0,Math.max(1,x1-x0),Math.max(1,y1-y0)); }
   function mget(x,y,layer,mapIndex){ x=Math.floor(Number(x)||0);y=Math.floor(Number(y)||0);layer=layer==null?0:layer|0;mapIndex=mapIndex==null?0:mapIndex|0; if(x<0||y<0||x>=projectRef.project.map_w||y>=projectRef.project.map_h) return 0; const mapObj=projectRef.maps[mapIndex]; if(!mapObj) return 0; const lay=mapObj.layers[layer]; if(!lay) return 0; return lay.data[y][x]||0; }
@@ -12327,7 +12446,7 @@ function makeRuntime(){
   function callFrameCallbacks(){ if(hasLuaFunction('_tick')) return callMaybe('_tick'); return callMaybe('_update') && callMaybe('_draw'); }
   function callPausedDrawCallbacks(){ if(hasLuaFunction('_draw')){ if(!callMaybe('_draw')) return false; callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); return true; } return false; }
   function tick(){ pollGamepads(); for(let i=0;i<input.btn.length;i++){ input.btnp[i]=input.btn[i]&&!input.btnPrev[i]?1:0; input.btnPrev[i]=input.btn[i]; } if(!runtimePaused || (runtimePaused && inspectorEnabled && runtimeActive)) inspectorBeginFrame(); if(runtimeActive && !runtimePaused){ if(callFrameCallbacks()) callMaybe('__tc_ui_flush_overlay'); drawRuntimeDialog(); } else if(runtimeActive && runtimePaused && inspectorEnabled){ callPausedDrawCallbacks(); } else if(!runtimeActive){ inspectorBeginFrame(); } inspectorFinishFrame(); if($('runtimeVarsPanel')?.classList.contains('show') && !runtimeVarsFunctionDetail && performance.now()-runtimeVarsPanelRefreshAt>500){ runtimeVarsPanelRefreshAt=performance.now(); if(!runtimeVarsPanelHasFocusedEditor()) refreshRuntimeVarsPanel(); } keyPressed.clear(); input.mouse.pressed=0; input.mouse.released=0; requestAnimationFrame(tick); }
-  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },renderInspectorOverlay,toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,handleInspectorKey,stopInspectorKeyNudge,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
+  requestAnimationFrame(tick); resizeDisplay(); return {setLua,loadEditor,rerun,reset,startRuntime,setActive,setPaused,isPaused(){ return !!runtimePaused; },resizeDisplay,hasActiveDialog(){ return !!dialogState.active; },renderInspectorOverlay,toggleInspector(){ return setInspectorEnabled(!inspectorEnabled); },setInspectorEnabled,isInspectorEnabled(){ return !!inspectorEnabled; },hasLayoutEdits(){ return !!layoutDirty; },getLayoutOverrideCount:layoutOverrideCount,flushLayoutToProject,markLayoutSaved,resetLayoutEdits,getRuntimeVariables,setRuntimeVariable,getInspectorVariables,setInspectorVariable,goToInspectorSelection,getInspectorPointerInfo,handleInspectorKey,stopInspectorKeyNudge,syncProject(p){ projectRef=JSON.parse(JSON.stringify(p)); spriteCache.clear(); tileCache.clear(); runtimeSpriteCache.clear(); ensureProjectData(); resetRuntimeDefaults(); loadRuntimeLayoutOverrides(); leftJoy.reset(); rightJoy.reset(); input.btnFace.fill(0); input.btnDpad.fill(0); input.btn.fill(0); input.btnPrev.fill(0); input.btnp.fill(0); input.btnGamepad.fill(0); input.touchJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.gamepadJoy.forEach(joy=>{ joy.x=0; joy.y=0; joy.down=false; }); input.mouse.x=0; input.mouse.y=0; input.mouse.buttons=0; input.mouse.pressed=0; input.mouse.released=0; input.mouse.down=false; input.mouse.pointers.clear(); dialogState.active=null; dialogState.results.clear(); keyDown.clear(); keyPressed.clear(); recomputeVirtualInput(); applyInputModeUI(); }}; }
 function wireUI(){
   const toolbarBase=$("toolbarBase"), toolbarSub=$("toolbarSub");
   const toolbarGroups={graphics:[["sprites","Sprites"],["map","Map"]],sound:[["sounds","SFX"],["music","Music"]]};
@@ -12365,9 +12484,16 @@ function wireUI(){
   });
   const pauseRuntimePreview=()=>{
     if(state.activeView!=="runtime") return;
-    if(runtimeDebugPaused || runtime?.isInspectorEnabled?.()){
+    if(runtimeDebugPaused){
       runtimeDebugPaused=true;
       runtime?.setPaused?.(true);
+      $("runtimeStartOverlay")?.classList.add("hidden");
+      updateRuntimeLayoutSaveState?.();
+      return;
+    }
+    if(runtime?.isInspectorEnabled?.() || $("runtimeVarsPanel")?.classList.contains('show')){
+      runtime?.setActive?.(runtimeStarted);
+      runtime?.setPaused?.(false);
       $("runtimeStartOverlay")?.classList.add("hidden");
       updateRuntimeLayoutSaveState?.();
       return;
@@ -12593,6 +12719,7 @@ function wireUI(){
     else setSpriteTool('erase');
   });
   bindClick("spriteFillBtn",()=>setSpriteTool(state.spriteTool==='fill'?null:'fill'));
+  bindClick("spritePickBtn",()=>setSpriteTool(state.spriteTool==='pick'?null:'pick'));
   bindClick("spritePanBtn",()=>setSpriteTool(state.spriteTool==='pan'?null:'pan'));
   bindClick("spriteUndoBtn",()=>{ if(!spriteHistory.undo.length) return; spriteHistory.redo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.undo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
   bindClick("spriteRedoBtn",()=>{ if(!spriteHistory.redo.length) return; spriteHistory.undo.push(cloneSprite(currentSprite())); currentSpriteFolder().frames[state.currentSpriteFrame]=spriteHistory.redo.pop(); invalidateEditorRenderCache(); drawSpriteEditor(); refreshTilePalette(); runtime.syncProject(state.appProject); });
@@ -12654,6 +12781,12 @@ function wireUI(){
       spriteLineStart=point;
       state.spriteLinePreview={kind:shapeKind,filled:state.spriteTool.endsWith('fill'),start:point,end:point,mode:spritePointerMode==='erase'?'erase':'draw',width:Math.max(1,state.spriteLineWidth||1)};
       requestSpriteEditorDraw();
+      return;
+    }
+    if(state.spriteTool==='pick'){
+      applySpriteToolAtEvent(e,null,{deferHeavy:true});
+      spritePainting=false;
+      spritePaintLast=null;
       return;
     }
     spritePainting=true;
