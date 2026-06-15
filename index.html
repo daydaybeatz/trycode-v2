@@ -1250,7 +1250,8 @@ function ui_button(btn)
   local clicked = (mpress & 1) == 1
   local down = (mbtn & 1) == 1
   local hover = __tc_ui_hover(mx, my, resolved)
-  local pressed = hover and down and resolved.enabled ~= false
+  -- Some pointer paths report the fresh press one frame before the held mask updates.
+  local pressed = hover and resolved.enabled ~= false and (down or clicked)
   local bg = pressed and resolved.pressed_bg ~= nil and resolved.pressed_bg or ((hover and resolved.hover_bg ~= nil) and resolved.hover_bg or resolved.bg)
   local border = pressed and resolved.pressed_border ~= nil and resolved.pressed_border or ((hover and resolved.hover_border ~= nil) and resolved.hover_border or resolved.border)
   if __tc_ui_is_circ(resolved) then
