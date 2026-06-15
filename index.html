@@ -1011,11 +1011,11 @@ local __tc_ui_state = {
 }
 
 local __tc_button_theme_defaults = {
-  x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
+  x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, hover_border = nil, pressed_bg = nil, pressed_border = nil, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
 }
 
 local __tc_button_theme = {
-  x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
+  x = 0, y = 0, w = 84, h = 18, r = 8, type = "rect", label = "button", bg = 5, border = 7, text = 0, hover_bg = 6, hover_border = nil, pressed_bg = nil, pressed_border = nil, text_size = nil, label_x = 0, label_y = 0, visible = true, enabled = true
 }
 
 local __tc_dropdown_theme_defaults = {
@@ -1069,7 +1069,7 @@ local function __tc_button_theme_patch(opts)
   if type(opts) ~= "table" then return false end
   if opts.theme == true then return true end
   local has_layout = opts.x ~= nil or opts.y ~= nil or opts.label ~= nil or opts.func ~= nil
-  local has_style = opts.w ~= nil or opts.h ~= nil or opts.r ~= nil or opts.radius ~= nil or opts.type ~= nil or opts.bg ~= nil or opts.border ~= nil or opts.text ~= nil or opts.hover_bg ~= nil or opts.text_size ~= nil or opts.label_x ~= nil or opts.label_y ~= nil or opts.visible ~= nil or opts.enabled ~= nil
+  local has_style = opts.w ~= nil or opts.h ~= nil or opts.r ~= nil or opts.radius ~= nil or opts.type ~= nil or opts.bg ~= nil or opts.border ~= nil or opts.text ~= nil or opts.hover_bg ~= nil or opts.hover_border ~= nil or opts.pressed_bg ~= nil or opts.pressed_border ~= nil or opts.text_size ~= nil or opts.label_x ~= nil or opts.label_y ~= nil or opts.visible ~= nil or opts.enabled ~= nil
   return (not has_layout) and has_style
 end
 
@@ -1248,18 +1248,21 @@ function ui_button(btn)
   __tc_runtime_inspect("ui_button", resolved)
   local mx, my, mbtn, mpress = mouse()
   local clicked = (mpress & 1) == 1
+  local down = (mbtn & 1) == 1
   local hover = __tc_ui_hover(mx, my, resolved)
-  local bg = (hover and resolved.hover_bg ~= nil) and resolved.hover_bg or resolved.bg
+  local pressed = hover and down and resolved.enabled ~= false
+  local bg = pressed and resolved.pressed_bg ~= nil and resolved.pressed_bg or ((hover and resolved.hover_bg ~= nil) and resolved.hover_bg or resolved.bg)
+  local border = pressed and resolved.pressed_border ~= nil and resolved.pressed_border or ((hover and resolved.hover_border ~= nil) and resolved.hover_border or resolved.border)
   if __tc_ui_is_circ(resolved) then
     local r = __tc_ui_radius(resolved)
     local cx = resolved.x or 0
     local cy = resolved.y or 0
     circfill(cx, cy, r, bg)
-    circ(cx, cy, r, resolved.border)
+    circ(cx, cy, r, border)
     __tc_ui_draw_label(resolved.label or "button", cx - r, cy - r, r * 2, r * 2, resolved.text, resolved.text_size, resolved.label_x, resolved.label_y)
   else
     rectfill(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, bg)
-    rect(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, resolved.border)
+    rect(resolved.x, resolved.y, resolved.x + resolved.w - 1, resolved.y + resolved.h - 1, border)
     __tc_ui_draw_label(resolved.label or "button", resolved.x, resolved.y, resolved.w, resolved.h, resolved.text, resolved.text_size, resolved.label_x, resolved.label_y)
   end
   if clicked and hover and resolved.enabled ~= false then
@@ -2670,7 +2673,7 @@ const CODE_API_DOCS = [
   makeDoc("default_box(kind, opts)", "Changes the default style for one dialog box type, or resets that type when called with just its kind.", [["kind", "Dialog type string: \"message\", \"confirm\", or \"entry\"."],["opts", "Optional table with fields such as x, y, w, h, bg, border, text, title, button, button_text, input_bg, and input_text. Use color(...) results for color fields."]], ["default_box(\"confirm\", {x=90,y=56,w=300,bg=color(27,35,64),text=color(255,247,232)})","default_box(\"entry\", {input_bg=color(16,24,32), input_text=color(248,244,227)})","default_box(\"confirm\") -- reset confirm boxes","default_box() -- reset every dialog box type"], "Use this before message_box(), confirm_box(), or entry_box() when you want to change only one dialog type's size, position, colors, or input styling."),
   makeDoc("default_font(font, size, color)", "Sets default print font settings used when print() leaves those values nil.", [["font", "Font family string, nil, or \"nil\". nil keeps the File menu font."],["size", "Default font size in pixels, nil, or \"nil\". nil resets to 12."],["color", "Default fill color string, palette index, color() result, nil, or \"nil\". nil follows current color()."]], ["default_font(\"Orbitron\", 14, color(255,247,232))","default_font(nil, nil, nil) -- reset all print defaults","print(\"score\", nil, 8, 8, color(255,247,232), color(0,0,0)) -- now uses default_font settings"], "Use this once in _init() when you want a global text style without repeating font arguments."),
   makeDoc("default_controls(mode)", "Sets the movement control scheme to joystick or d-pad.", [["mode", "Use \"joystick\"/\"left_joystick\" for joystick controls, or \"dpad\"/\"d-pad\" for directional pad controls."]], ["default_controls(\"dpad\")","default_controls(\"joystick\")"], "Returns the current mode string after applying the setting."),
-  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults. Call default_button() or default_ui_theme(\"button\") to reset button defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","default_button() -- reset button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
+  makeDoc("default_button(opts) / default_ui_theme(kind, opts)", "Sets button defaults once, then ui_button(...) creates each button with optional overrides.", [["opts", "Button fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, bg, border, text, hover_bg, hover_border, pressed_bg, pressed_border, text_size, label_x, label_y, visible, enabled, func. Style-only tables (or {theme=true,...}) update global button defaults."],["kind", "Use default_ui_theme(\"button\", opts) or default_ui_theme(\"dropdown\", opts) for global defaults. Call default_button() or default_ui_theme(\"button\") to reset button defaults."]], ["default_button({w=134,h=20,bg=10,text=1,border=7,text_size=10,label_y=1}) -- set button defaults","default_button() -- reset button defaults","ui_button({x=12,y=24,label=\"+10\",func=function() money += 10 end})","ui_button({x=32,y=32,r=10,type=\"circ\",label=\"?\"})"], "Call default_button/default_ui_theme in _init(), then call ui_button(...) directly each frame."),
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons and runs callbacks on click.", [["button", "Button table; ui_button merges it with the current default_button theme."],["list", "Array of button tables for ui_buttons()."]], ["if ui_button({x=12,y=24,label=\"buy\",func=buy_item}) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Use table overrides when one button needs different size/colors."),
   makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func. Call default_dropdown() or default_ui_theme(\"dropdown\") to reset dropdown defaults."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","default_dropdown() -- reset dropdown defaults","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
   makeDoc("arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding, down_padding, left_padding, right_padding)", "Positions and inspector-registers a list of widget tables in a grid before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables; each item receives x/y every time arrange() runs."],["x, y", "Top-left layout origin before padding."],["row_amt, column_amt", "Grid size. column_amt is the number of items per row; row_amt is used to infer columns when column_amt is 0/nil."],["x_buffer, y_buffer", "Horizontal and vertical gap between arranged items."],["padding", "up, down, left, and right padding values; left/up offset each item within its grid cell, while right/down add spacing after each item."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,24,42,3,1,0,6,0,0,0,0))","ui_buttons(arrange(menu_buttons,24,42,1,3,6,0,0,0,0,0))"], "arrange() overwrites each item's x/y so rebuilt UI lists get fresh positions each frame. The older table options form still works."),
@@ -3058,7 +3061,7 @@ function uiThemeLiteralLooksLikeKind(literal, kind){
   const text=String(literal||"");
   const keys=(kind==="dropdown")
     ? ["label","items","selected","func","bg","border","text","hover_bg","text_size","label_x","label_y","type","r","radius","visible","enabled"]
-    : ["label","func","bg","border","text","hover_bg","text_size","label_x","label_y","type","r","radius","visible","enabled","x","y","w","h"];
+    : ["label","func","bg","border","text","hover_bg","hover_border","pressed_bg","pressed_border","text_size","label_x","label_y","type","r","radius","visible","enabled","x","y","w","h"];
   return keys.some(key=>new RegExp(`(^|[^A-Za-z0-9_])${key}\\s*=`).test(text));
 }
 function autoWrapUiThemeLiteral(code, kind){
@@ -10991,7 +10994,7 @@ function makeRuntime(){
     const resolved=resolveDrawColor(value);
     return resolved&&resolved!==raw ? `${raw} (${resolved})` : raw;
   };
-  const inspectorParamLabel=(key,value)=>/^(?:bg|border|text|hover_bg|color|fill|outline)$/i.test(String(key||''))?colorLabel(value):String(value??'nil');
+  const inspectorParamLabel=(key,value)=>/^(?:bg|border|text|hover_bg|hover_border|pressed_bg|pressed_border|color|fill|outline)$/i.test(String(key||''))?colorLabel(value):String(value??'nil');
   const geometryFromObject=obj=>({x:Number(obj.x)||0,y:Number(obj.y)||0,w:Number(obj.w)||0,h:Number(obj.h)||0,r:Number(obj.r)||0,fontSize:Number(obj.fontSize)||0});
   const inspectorEditableKeys=obj=>{
     const keys=['x','y','w','h'];
@@ -11032,7 +11035,7 @@ function makeRuntime(){
     }
     if(String(obj?.key||'').startsWith('widget:')){
       if(obj.text!=null) record.label=String(obj.text);
-      ['bg','border','text','hover_bg','text_size','label_x','label_y'].forEach(key=>{ if(obj.colors?.[key]!=null) record[key]=obj.colors[key]; });
+      ['bg','border','text','hover_bg','hover_border','pressed_bg','pressed_border','text_size','label_x','label_y'].forEach(key=>{ if(obj.colors?.[key]!=null) record[key]=obj.colors[key]; });
       return record;
     }
     if(obj?.colors?.color!=null) record.color=obj.colors.color;
@@ -11289,7 +11292,7 @@ function makeRuntime(){
     let x=Number(read('x'))||0, y=Number(read('y'))||0;
     let w=Math.max(1,Number(read('w'))||84), h=Math.max(1,Number(read('h'))||18);
     let r=Math.max(1,Number(read('r')||read('radius'))||8);
-    let bg=read('bg'), border=read('border'), textColor=read('text'), hoverBg=read('hover_bg'), textSize=read('text_size'), labelX=read('label_x'), labelY=read('label_y');
+    let bg=read('bg'), border=read('border'), textColor=read('text'), hoverBg=read('hover_bg'), hoverBorder=read('hover_border'), pressedBg=read('pressed_bg'), pressedBorder=read('pressed_border'), textSize=read('text_size'), labelX=read('label_x'), labelY=read('label_y');
     const isCircle=widgetType==='circ'||widgetType==='circle';
     if(isCircle){
       const geom=applyOverrideToCircle(key,{x,y,r});
@@ -11300,7 +11303,7 @@ function makeRuntime(){
       x=geom.x; y=geom.y; w=geom.w; h=geom.h;
       write('x',x); write('y',y); write('w',w); write('h',h);
     }
-    const colorKeys=['bg','border','text','hover_bg','text_size','label_x','label_y','font','func'];
+    const colorKeys=['bg','border','text','hover_bg','hover_border','pressed_bg','pressed_border','text_size','label_x','label_y','font','func'];
     const colors={};
     colorKeys.forEach(field=>{
       const value=ov[field]!==undefined ? ov[field] : read(field);
