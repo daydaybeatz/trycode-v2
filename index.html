@@ -2447,14 +2447,24 @@ function luaLiteralForInspectorValue(value,currentText=''){
   return quote+escaped+quote;
 }
 function replaceLuaCallArgumentInLine(line,names,argIndex,value){
+  return replaceLuaCallArgumentsInLine(line,names,{[argIndex]:value});
+}
+function replaceLuaCallArgumentsInLine(line,names,valuesByArg){
   const call=findLuaCallOnLine(line,names);
-  if(!call || !Number.isInteger(argIndex) || argIndex<1) return null;
+  if(!call || !valuesByArg || typeof valuesByArg!=='object') return null;
   const args=splitLuaCallArguments(call.argsText);
-  if(argIndex>args.length) return null;
-  const arg=args[argIndex-1];
-  const innerStart=call.open+1;
-  const nextArg=luaLiteralForInspectorValue(value,arg.text);
-  return String(line).slice(0,innerStart+arg.start)+nextArg+String(line).slice(innerStart+arg.end);
+  const edits=[];
+  Object.entries(valuesByArg).forEach(([rawIndex,value])=>{
+    const argIndex=Number(rawIndex);
+    if(!Number.isInteger(argIndex) || argIndex<1 || argIndex>args.length) return;
+    const arg=args[argIndex-1];
+    edits.push({start:arg.start,end:arg.end,text:luaLiteralForInspectorValue(value,arg.text)});
+  });
+  if(!edits.length) return null;
+  edits.sort((a,b)=>b.start-a.start);
+  let argsText=call.argsText;
+  edits.forEach(edit=>{ argsText=argsText.slice(0,edit.start)+edit.text+argsText.slice(edit.end); });
+  return String(line).slice(0,call.open+1)+argsText+String(line).slice(call.end);
 }
 function functionDeclarationParams(line){
   const match=String(line||'').match(/function\s+[A-Za-z_][A-Za-z0-9_\.\:]*\s*\(([^)]*)\)/) || String(line||'').match(/[A-Za-z_][A-Za-z0-9_\.]*\s*=\s*function\s*\(([^)]*)\)/);
@@ -10928,14 +10938,27 @@ function makeRuntime(){
     return edited ? 'edited' : 'live';
   };
   const flushLayoutToProject=(options={})=>{
-    const snapshot={version:1,overrides:cloneLayoutOverrides(layoutOverrides),savedAt:Date.now()};
+    const entries=Object.entries(layoutOverrides||{});
+    let applied=0;
+    for(const [key,override] of entries){
+      const obj=inspectorObjects.find(item=>item.key===key)||inspectorStaticObjects.find(item=>item.key===key)||inspectorSelected;
+      if(!obj || obj.key!==key) continue;
+      if(applyInspectorOverrideToSource(obj,override)){
+        delete layoutOverrides[key];
+        applied++;
+      }
+    }
+    layoutDirty=Object.keys(layoutOverrides||{}).length>0;
+    const snapshot={version:1,overrides:{},savedAt:Date.now()};
     projectRef.runtimeLayout=cloneLayoutOverrides(snapshot);
     if(state.appProject){
       ensureProjectData();
       state.appProject.runtimeLayout=snapshot;
     }
     if(options.markClean!==false) markLayoutSaved();
-    return Object.keys(snapshot.overrides).length;
+    else updateRuntimeLayoutSaveState?.();
+    if(applied) setLua(getProjectLua());
+    return applied;
   };
   const inspectorSlug=value=>{
     const clean=String(value??'').trim().toLowerCase().replace(/[^a-z0-9_ -]+/g,'').replace(/\s+/g,'_');
@@ -11041,27 +11064,58 @@ function makeRuntime(){
     if(obj?.colors?.color!=null) record.color=obj.colors.color;
     return record;
   };
+
+  const sourceValuesForInspectorOverride=(obj,override={})=>{
+    const values={};
+    const map=obj?.sourceArgMap||{};
+    const merged={...obj,...override};
+    const put=(name,value)=>{ const arg=map[name]; if(Number.isInteger(arg) && arg>0 && value!==undefined) values[arg]=value; };
+    if(obj?.kind==='rect' || obj?.kind==='rectfill'){
+      const x=Number(merged.x), y=Number(merged.y), w=Number(merged.w), h=Number(merged.h);
+      if(Number.isFinite(x)) put('x',Math.round(x*100)/100);
+      if(Number.isFinite(y)) put('y',Math.round(y*100)/100);
+      if(Number.isFinite(x)&&Number.isFinite(w)) put('x2',Math.round((x+w-1)*100)/100);
+      if(Number.isFinite(y)&&Number.isFinite(h)) put('y2',Math.round((y+h-1)*100)/100);
+    }else if(obj?.kind==='line'){
+      const x=Number(merged.x), y=Number(merged.y), w=Number(merged.w), h=Number(merged.h);
+      if(Number.isFinite(x)) put('x',Math.round(x*100)/100);
+      if(Number.isFinite(y)) put('y',Math.round(y*100)/100);
+      if(Number.isFinite(x)&&Number.isFinite(w)) put('x2',Math.round((x+w)*100)/100);
+      if(Number.isFinite(y)&&Number.isFinite(h)) put('y2',Math.round((y+h)*100)/100);
+    }else{
+      Object.keys(override||{}).forEach(name=>put(name,override[name]));
+    }
+    Object.keys(override||{}).forEach(name=>put(name,override[name]));
+    return values;
+  };
+  const applyInspectorOverrideToSource=(obj,override={})=>{
+    if(!obj?.sourceInfo || !obj?.sourceArgMap) return false;
+    const loc=obj.sourceInfo.mapped || obj.sourceInfo;
+    const fileIndex=Number.isInteger(loc.fileIndex)?loc.fileIndex:getMainCodeFileIndex();
+    const lineNumber=Number(loc.line||loc.currentLine)||0;
+    const file=state.appProject?.codeFiles?.[fileIndex];
+    if(!file || lineNumber<1) return false;
+    const lines=String(file.content||'').split(/\r?\n/);
+    const currentLine=lines[lineNumber-1];
+    if(currentLine==null) return false;
+    const callNames=obj.sourceCallNames||({print:['print','print_'],spr:['spr'],sspr:['sspr'],r_spr:['r_spr'],animate:['animate'],line:['line'],rect:['rect'],rectfill:['rectfill'],circ:['circ'],circfill:['circfill']}[obj.kind]||[obj.kind].filter(Boolean));
+    const values=sourceValuesForInspectorOverride(obj,override);
+    const nextLine=replaceLuaCallArgumentsInLine(currentLine,callNames,values);
+    if(nextLine==null || nextLine===currentLine) return false;
+    return replaceProjectSourceLine(fileIndex,lineNumber,nextLine);
+  };
   const saveInspectorObjectToCode=obj=>{
     if(!obj?.key || !state.appProject) return null;
-    ensureProjectData();
-    const targetIndex=getPrimaryCodeFileIndex(state.appProject);
-    const files=state.appProject.codeFiles||[];
-    const currentSource=String(files[targetIndex]?.content||'');
-    const nextOverrides=extractInspectorCodeOverridesFromSource(currentSource);
-    nextOverrides[obj.key]=buildInspectorCodeRecord(obj);
-    const nextSource=upsertInspectorCodeOverridesInSource(currentSource,nextOverrides);
-    replaceProjectCodeFileContent(targetIndex,nextSource);
-    if(projectRef?.codeFiles?.[targetIndex]) projectRef.codeFiles[targetIndex].content=nextSource;
-    inspectorCodeOverrides=cloneLayoutOverrides(nextOverrides);
-    if(layoutOverrides[obj.key]){
-      delete layoutOverrides[obj.key];
-      layoutDirty=layoutOverrideCount()>0;
-      updateRuntimeLayoutSaveState?.();
-    }
-    const line=findLineNumberInText(nextSource, `"${obj.key}"`);
+    const override=layoutOverrides[obj.key]||buildInspectorCodeRecord(obj);
+    if(!applyInspectorOverrideToSource(obj,override)) return null;
+    delete layoutOverrides[obj.key];
+    layoutDirty=layoutOverrideCount()>0;
+    inspectorCodeOverrides={};
+    updateRuntimeLayoutSaveState?.();
+    const loc=(obj.sourceInfo?.mapped||obj.sourceInfo)||null;
+    if(loc) goToCodeLocation(Number.isInteger(loc.fileIndex)?loc.fileIndex:getMainCodeFileIndex(), Number(loc.line||loc.currentLine)||1);
     setLua(getProjectLua());
-    goToCodeLocation(targetIndex,line);
-    return {fileIndex:targetIndex,line};
+    return loc ? {fileIndex:Number.isInteger(loc.fileIndex)?loc.fileIndex:getMainCodeFileIndex(),line:Number(loc.line||loc.currentLine)||1} : null;
   };
   const setObjectOverride=(obj,next)=>{
     if(!obj?.key) return;
@@ -11179,7 +11233,7 @@ function makeRuntime(){
     const r=Number.isFinite(Number(ov.r))?Number(ov.r):(Number.isFinite(Number(ov.w))?Number(ov.w)/2:geom.r);
     return {...geom,x:Number.isFinite(Number(ov.x))?Number(ov.x):geom.x,y:Number.isFinite(Number(ov.y))?Number(ov.y):geom.y,r:Math.max(1,r)};
   };
-  function inspectorTransformRect(kind,x0,y0,x1,y1,colorIndex){
+  function inspectorTransformRect(kind,x0,y0,x1,y1,colorIndex,options={}){
     const seq=nextInspectorSequence(kind);
     const key=drawInspectorKey(kind,seq);
     const left=Math.min(Number(x0)||0,Number(x1)||0), right=Math.max(Number(x0)||0,Number(x1)||0);
@@ -11187,10 +11241,10 @@ function makeRuntime(){
     const geom=applyOverrideToRect(key,{x:left,y:top,w:Math.abs(right-left)+1,h:Math.abs(bottom-top)+1});
     const ov=getMergedInspectorOverride(key)||{};
     const nextColor=ov.color!=null ? ov.color : colorIndex;
-    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:nextColor}});
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,sourceInfo:options.sourceInfo||null,sourceArgMap:options.sourceArgMap||{},sourceCallNames:options.sourceCallNames||[kind],colors:{color:nextColor}});
     return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w-1,y1:geom.y+geom.h-1,colorIndex:nextColor};
   }
-  function inspectorTransformRectFill(x0,y0,a,b,colorIndex){
+  function inspectorTransformRectFill(x0,y0,a,b,colorIndex,options={}){
     const seq=nextInspectorSequence('rectfill');
     const key=drawInspectorKey('rectfill',seq);
     const hasColor=colorIndex!=null;
@@ -11200,25 +11254,25 @@ function makeRuntime(){
     const geom=applyOverrideToRect(key,{x:Math.min(left,right),y:Math.min(top,bottom),w:Math.abs(right-left)+(hasColor?1:0),h:Math.abs(bottom-top)+(hasColor?1:0)});
     const ov=getMergedInspectorOverride(key)||{};
     const nextColor=ov.color!=null ? ov.color : colorIndex;
-    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:nextColor}});
+    addInspectorObject({key,kind:'rectfill',label:`rectfill #${seq}`,shape:'rect',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,sourceInfo:options.sourceInfo||null,sourceArgMap:options.sourceArgMap||{},sourceCallNames:options.sourceCallNames||['rectfill'],colors:{color:nextColor}});
     return hasColor ? {x0:geom.x,y0:geom.y,a:geom.x+geom.w-1,b:geom.y+geom.h-1,colorIndex:nextColor} : {x0:geom.x,y0:geom.y,a:geom.w,b:geom.h,colorIndex:nextColor};
   }
-  function inspectorTransformLine(x0,y0,x1,y1,colorIndex){
+  function inspectorTransformLine(x0,y0,x1,y1,colorIndex,options={}){
     const seq=nextInspectorSequence('line');
     const key=drawInspectorKey('line',seq);
     const geom=applyOverrideToLine(key,{x:Number(x0)||0,y:Number(y0)||0,w:(Number(x1)||0)-(Number(x0)||0),h:(Number(y1)||0)-(Number(y0)||0)});
     const ov=getMergedInspectorOverride(key)||{};
     const nextColor=ov.color!=null ? ov.color : colorIndex;
-    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,colors:{color:nextColor}});
+    addInspectorObject({key,kind:'line',label:`line #${seq}`,shape:'line',priority:2,x:geom.x,y:geom.y,w:geom.w,h:geom.h,canResize:true,sourceInfo:options.sourceInfo||null,sourceArgMap:options.sourceArgMap||{},sourceCallNames:options.sourceCallNames||['line'],colors:{color:nextColor}});
     return {x0:geom.x,y0:geom.y,x1:geom.x+geom.w,y1:geom.y+geom.h,colorIndex:nextColor};
   }
-  function inspectorTransformCircle(kind,x,y,r,colorIndex){
+  function inspectorTransformCircle(kind,x,y,r,colorIndex,options={}){
     const seq=nextInspectorSequence(kind);
     const key=drawInspectorKey(kind,seq);
     const geom=applyOverrideToCircle(key,{x:Number(x)||0,y:Number(y)||0,r:Math.max(1,Number(r)||1)});
     const ov=getMergedInspectorOverride(key)||{};
     const nextColor=ov.color!=null ? ov.color : colorIndex;
-    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,colors:{color:nextColor}});
+    addInspectorObject({key,kind,label:`${kind} #${seq}`,shape:'circle',priority:2,x:geom.x,y:geom.y,w:geom.r*2,h:geom.r*2,r:geom.r,canResize:true,sourceInfo:options.sourceInfo||null,sourceArgMap:options.sourceArgMap||{},sourceCallNames:options.sourceCallNames||[kind],colors:{color:nextColor}});
     return {x:geom.x,y:geom.y,r:geom.r,colorIndex:nextColor};
   }
   function inspectorPreparePrint(text,x,y,fontSize,fill,outline,font,options={}){
@@ -12312,11 +12366,11 @@ function makeRuntime(){
     push('pal',L=>{ const argc=lua.lua_gettop(L); if(argc===0){ pal(); return 0; } const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); pal(readArg(1),argc>=2?readArg(2):null); return 0; });
     push('pset',L=>{ const argc=lua.lua_gettop(L); pset(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),argc>=3?(lua.lua_isnumber(L,3)?lua.lua_tonumber(L,3):to_jsstring(lua.lua_tolstring(L,3))):undefined); return 0;});
     push('pget',L=>{ lua.lua_pushinteger(L,pget(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2))); return 1;});
-    push('line',L=>{ const t=inspectorTransformLine(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined); line(t.x0,t.y0,t.x1,t.y1,t.colorIndex); return 0;});
-    push('rect',L=>{ const t=inspectorTransformRect('rect',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined); rect(t.x0,t.y0,t.x1,t.y1,t.colorIndex); return 0;});
-    push('rectfill',L=>{ const t=inspectorTransformRectFill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined); rectfill(t.x0,t.y0,t.a,t.b,t.colorIndex); return 0;});
-    push('circ',L=>{ const t=inspectorTransformCircle('circ',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_gettop(L)>=4?readLuaArg(L,4):undefined); circ(t.x,t.y,t.r,t.colorIndex); return 0;});
-    push('circfill',L=>{ const t=inspectorTransformCircle('circfill',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_gettop(L)>=4?readLuaArg(L,4):undefined); circfill(t.x,t.y,t.r,t.colorIndex); return 0;});
+    push('line',L=>{ const t=inspectorTransformLine(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined,{sourceInfo:luaCallerSourceInfo(2),sourceArgMap:{x:1,y:2,x2:3,y2:4,color:5},sourceCallNames:['line']}); line(t.x0,t.y0,t.x1,t.y1,t.colorIndex); return 0;});
+    push('rect',L=>{ const t=inspectorTransformRect('rect',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined,{sourceInfo:luaCallerSourceInfo(2),sourceArgMap:{x:1,y:2,x2:3,y2:4,color:5},sourceCallNames:['rect']}); rect(t.x0,t.y0,t.x1,t.y1,t.colorIndex); return 0;});
+    push('rectfill',L=>{ const t=inspectorTransformRectFill(lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_tonumber(L,4),lua.lua_gettop(L)>=5?readLuaArg(L,5):undefined,{sourceInfo:luaCallerSourceInfo(2),sourceArgMap:{x:1,y:2,x2:3,y2:4,color:5},sourceCallNames:['rectfill']}); rectfill(t.x0,t.y0,t.a,t.b,t.colorIndex); return 0;});
+    push('circ',L=>{ const t=inspectorTransformCircle('circ',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_gettop(L)>=4?readLuaArg(L,4):undefined,{sourceInfo:luaCallerSourceInfo(2),sourceArgMap:{x:1,y:2,r:3,color:4},sourceCallNames:['circ']}); circ(t.x,t.y,t.r,t.colorIndex); return 0;});
+    push('circfill',L=>{ const t=inspectorTransformCircle('circfill',lua.lua_tonumber(L,1),lua.lua_tonumber(L,2),lua.lua_tonumber(L,3),lua.lua_gettop(L)>=4?readLuaArg(L,4):undefined,{sourceInfo:luaCallerSourceInfo(2),sourceArgMap:{x:1,y:2,r:3,color:4},sourceCallNames:['circfill']}); circfill(t.x,t.y,t.r,t.colorIndex); return 0;});
     push('print',L=>{ const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const args=[]; for(let i=1;i<=argc;i++) args.push(readArg(i)); pendingPrintSourceInfo=luaCallerSourceInfo(2); print(...args); return 0;});
     push('print_',L=>{ const argc=lua.lua_gettop(L); const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); const args=[]; for(let i=1;i<=argc;i++) args.push(readArg(i)); pendingPrintSourceInfo=luaCallerSourceInfo(2); print(...args); return 0;});
     push('default_font',L=>{ const readArg=i=>lua.lua_isnoneornil(L,i)?null:(lua.lua_isnumber(L,i)?lua.lua_tonumber(L,i):to_jsstring(lua.lua_tolstring(L,i))); default_font(readArg(1),readArg(2),readArg(3)); return 0;});
@@ -12947,7 +13001,7 @@ function wireUI(){
     if(state.activeView!=='runtime') return;
     const count=runtime?.getLayoutOverrideCount?.()||0;
     const saved=await saveProject(false);
-    if(saved) toast(`<b>Layout saved:</b> ${count} override${count===1?'':'s'}.`);
+    if(saved) toast(`<b>Layout saved:</b> ${count} change${count===1?'':'s'} written to code.`);
     applyRuntimeUiHiddenState();
   }
   function resetRuntimeLayoutFromInspector(){
