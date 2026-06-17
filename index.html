@@ -2082,6 +2082,12 @@ function extractInspectorCodeOverridesFromSource(source){
     return {};
   }
 }
+function stripInspectorCodeOverridesFromSource(source){
+  const text=String(source||'');
+  const escapedStart=INSPECTOR_CODE_OVERRIDES_START.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const escapedEnd=INSPECTOR_CODE_OVERRIDES_END.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return text.replace(new RegExp(`\\n*${escapedStart}[\\s\\S]*?${escapedEnd}\\n*`,'g'), '\n').replace(/\n{3,}/g,'\n\n').replace(/^\n+|\n+$/g,'');
+}
 function buildInspectorCodeOverridesBlock(overrides){
   return `${INSPECTOR_CODE_OVERRIDES_START}\n${INSPECTOR_CODE_OVERRIDES_BINDING} = [=[\n${JSON.stringify(overrides,null,2)}\n]=]\n${INSPECTOR_CODE_OVERRIDES_END}`;
 }
@@ -2546,7 +2552,7 @@ function ensureProjectData(){
   if(!p.music?.length) p.music=[makeMusic()];
   if(!p.maps?.length) p.maps=[makeEmptyMap("0",p.project.map_w,p.project.map_h)];
   if(!p.codeFiles?.length) p.codeFiles=[{name:"main.lua",content:EXAMPLES.blank,tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}];
-  p.codeFiles=p.codeFiles.map((f,i)=>({name:(f&&f.name)||`file${i+1}.lua`,content:(f&&f.content)||"",tabTheme:Number.isInteger(f&&f.tabTheme)?f.tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}));
+  p.codeFiles=p.codeFiles.map((f,i)=>({name:(f&&f.name)||`file${i+1}.lua`,content:stripInspectorCodeOverridesFromSource((f&&f.content)||""),tabTheme:Number.isInteger(f&&f.tabTheme)?f.tabTheme:Math.floor(Math.random()*FILE_TAB_THEME_COUNT)}));
   p.spriteFolders.forEach(folder=>{ if(!folder.frames?.length) folder.frames=[makeSprite(16,16)]; folder.frames=folder.frames.slice(0,26); folder.frames.forEach(s=>{ s.w=Math.max(1,s.w|0); s.h=Math.max(1,s.h|0); if(!Array.isArray(s.pixels)) s.pixels=[]; s.pixels.length=s.h; for(let y=0;y<s.h;y++){ if(!Array.isArray(s.pixels[y])) s.pixels[y]=[]; s.pixels[y].length=s.w; for(let x=0;x<s.w;x++) if(s.pixels[y][x]==null) s.pixels[y][x]=-1; } }); folder.name=String(folder.name||''); ensureSpriteFolderView(folder); });
   p.sounds.forEach(s=>{ s.name=String(s.name||''); if(!Array.isArray(s.wavetable)) s.wavetable=Array.from({length:64},()=>0); while(s.wavetable.length<64) s.wavetable.push(0); s.wavetable=s.wavetable.slice(0,64); });
   p.music.forEach(m=>{
@@ -2835,7 +2841,15 @@ function stepCodeSearchMatch(direction){
   updateCodeLineNumbers();
 }
 function getCurrentCodeFile(){ ensureProjectData(); state.currentCodeFile=clamp(state.currentCodeFile,0,state.appProject.codeFiles.length-1); return state.appProject.codeFiles[state.currentCodeFile]; }
-function saveEditorToCurrentCodeFile(){ const f=getCurrentCodeFile(); if(f) f.content=$("codeEditor").value||""; }
+function saveEditorToCurrentCodeFile(){
+  const f=getCurrentCodeFile();
+  if(!f) return;
+  const editor=$("codeEditor");
+  const raw=editor?.value||"";
+  const clean=stripInspectorCodeOverridesFromSource(raw);
+  f.content=clean;
+  if(editor && clean!==raw) editor.value=clean;
+}
 function hideCodeFunctionTooltip(){ $("codeFunctionTooltip")?.classList.remove('show'); }
 function getHoveredCodeWord(event){
   const editor=$("codeEditor"), shell=$("codeScrollShell");
@@ -11089,8 +11103,10 @@ function makeRuntime(){
     return values;
   };
   const applyInspectorOverrideToSource=(obj,override={})=>{
-    if(!obj?.sourceInfo || !obj?.sourceArgMap) return false;
-    const loc=obj.sourceInfo.mapped || obj.sourceInfo;
+    if(!obj?.sourceArgMap) return false;
+    const foundLoc=obj?.sourceInfo ? null : findInspectorObjectInProject(obj);
+    const loc=(obj.sourceInfo?.mapped || obj.sourceInfo || foundLoc);
+    if(!loc) return false;
     const fileIndex=Number.isInteger(loc.fileIndex)?loc.fileIndex:getMainCodeFileIndex();
     const lineNumber=Number(loc.line||loc.currentLine)||0;
     const file=state.appProject?.codeFiles?.[fileIndex];
