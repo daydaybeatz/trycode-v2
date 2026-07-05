@@ -12901,7 +12901,7 @@ function wireUI(){
   });
   bindClick("stopMusicBtn",()=>stopMusicPlayback({suppressCurrent:true}));
   function insertCodeEditorLineBreak(editor){
-    if(!editor) return false;
+    if(!editor || String(editor.tagName||'').toUpperCase()!=='TEXTAREA') return false;
     const value=editor.value||"";
     const start=editor.selectionStart||0;
     const end=editor.selectionEnd||0;
@@ -12909,20 +12909,18 @@ function wireUI(){
     const currentLine=value.slice(lineStart,start);
     const indent=(currentLine.match(/^[ \t]*/)||[''])[0];
     const insertion='\n'+indent;
-    if(typeof editor.setRangeText==='function'){
-      editor.setRangeText(insertion,start,end,'end');
-    }else{
-      editor.value=value.slice(0,start)+insertion+value.slice(end);
-      const caret=start+insertion.length;
-      editor.selectionStart=editor.selectionEnd=caret;
-    }
+    const caret=start+insertion.length;
+    editor.value=value.slice(0,start)+insertion+value.slice(end);
+    editor.setSelectionRange(caret,caret);
     editor.dispatchEvent(new Event('input',{bubbles:true}));
+    editor.setSelectionRange(caret,caret);
     return true;
   }
   bind("codeEditor",'beforeinput',e=>{
     const editor=e.currentTarget;
     if(editor && (e.inputType==='insertLineBreak' || e.inputType==='insertParagraph')){
       e.preventDefault();
+      e.stopPropagation();
       insertCodeEditorLineBreak(editor);
     }
   });
@@ -12930,6 +12928,7 @@ function wireUI(){
     const editor=e.currentTarget;
     if(e.key==='Enter' && editor){
       e.preventDefault();
+      e.stopPropagation();
       insertCodeEditorLineBreak(editor);
       return;
     }
