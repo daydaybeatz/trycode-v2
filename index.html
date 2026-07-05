@@ -12900,21 +12900,37 @@ function wireUI(){
     input.value='';
   });
   bindClick("stopMusicBtn",()=>stopMusicPlayback({suppressCurrent:true}));
+  function insertCodeEditorLineBreak(editor){
+    if(!editor) return false;
+    const value=editor.value||"";
+    const start=editor.selectionStart||0;
+    const end=editor.selectionEnd||0;
+    const lineStart=value.lastIndexOf('\n',Math.max(0,start-1))+1;
+    const currentLine=value.slice(lineStart,start);
+    const indent=(currentLine.match(/^[ \t]*/)||[''])[0];
+    const insertion='\n'+indent;
+    if(typeof editor.setRangeText==='function'){
+      editor.setRangeText(insertion,start,end,'end');
+    }else{
+      editor.value=value.slice(0,start)+insertion+value.slice(end);
+      const caret=start+insertion.length;
+      editor.selectionStart=editor.selectionEnd=caret;
+    }
+    editor.dispatchEvent(new Event('input',{bubbles:true}));
+    return true;
+  }
+  bind("codeEditor",'beforeinput',e=>{
+    const editor=e.currentTarget;
+    if(editor && (e.inputType==='insertLineBreak' || e.inputType==='insertParagraph')){
+      e.preventDefault();
+      insertCodeEditorLineBreak(editor);
+    }
+  });
   bind("codeEditor",'keydown',e=>{
     const editor=e.currentTarget;
     if(e.key==='Enter' && editor){
       e.preventDefault();
-      const value=editor.value||"";
-      const start=editor.selectionStart||0;
-      const end=editor.selectionEnd||0;
-      const lineStart=value.lastIndexOf('\n',Math.max(0,start-1))+1;
-      const currentLine=value.slice(lineStart,start);
-      const indent=(currentLine.match(/^[ \t]*/)||[''])[0];
-      const insertion='\n'+indent;
-      editor.value=value.slice(0,start)+insertion+value.slice(end);
-      const caret=start+insertion.length;
-      editor.selectionStart=editor.selectionEnd=caret;
-      editor.dispatchEvent(new Event('input',{bubbles:true}));
+      insertCodeEditorLineBreak(editor);
       return;
     }
     if(e.key==='Tab' && editor){
