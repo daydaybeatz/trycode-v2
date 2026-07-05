@@ -123,6 +123,7 @@
     .codeHighlight,.code textarea.code{display:block;min-height:100%;height:auto;border:none;border-radius:0;padding:var(--code-pad-y) var(--code-pad-right) var(--code-pad-y) var(--code-pad-left);line-height:var(--code-line-height);font-family:var(--code-font-family);font-size:var(--code-font-size);font-weight:var(--code-font-weight);font-variant-ligatures:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;white-space:pre;overflow-wrap:normal;word-break:normal;tab-size:2;min-width:0;width:auto;margin:0}
     .codeHighlight{position:absolute;inset:0;pointer-events:none;overflow:hidden;color:#f8eccf;background:transparent;z-index:0}
     .codeHighlightInner{min-height:100%}
+    .codeHighlightLine{height:var(--code-line-height);min-height:var(--code-line-height)}
     .code textarea.code{position:relative;z-index:1;resize:none;background:transparent;color:transparent;caret-color:#f8eccf;box-shadow:none;overflow:hidden}
     .code textarea.code::selection{background:rgba(255,236,186,.25)}
     .codeFunctionTooltip{position:fixed;z-index:120;display:none;max-width:min(520px,calc(100vw - 24px));padding:8px 10px;border:3px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#fffaf1,#efd39f);box-shadow:0 5px 0 rgba(80,45,22,.42);color:var(--ink);font:12px/1.35 Consolas,"SFMono-Regular",monospace;pointer-events:none;white-space:normal}
@@ -3080,7 +3081,7 @@ function highlightLuaLine(line){
 function renderCodeHighlight(){
   const inner=$("codeHighlightInner"), ed=$("codeEditor");
   if(!inner||!ed) return;
-  inner.innerHTML=String(ed.value||"").split(/\n/).map(highlightLuaLine).join("\n");
+  inner.innerHTML=String(ed.value||"").split(/\n/).map(line=>`<div class="codeHighlightLine">${highlightLuaLine(line)}</div>`).join("");
 }
 function uiThemeLiteralLooksLikeKind(literal, kind){
   const text=String(literal||"");
@@ -12900,8 +12901,9 @@ function wireUI(){
     input.value='';
   });
   bindClick("stopMusicBtn",()=>stopMusicPlayback({suppressCurrent:true}));
-  bind("codeEditor",'keydown',e=>{
+  bind("codeEditor",'keydown',function handleCodeEditorKeydown(e){
     const editor=e.currentTarget;
+    if(e.key==='Enter') console.log("ENTER HANDLER", "handleCodeEditorKeydown", e.target, e.defaultPrevented);
     if(e.key==='Tab' && editor){
       e.preventDefault();
       const value=editor.value||"";
