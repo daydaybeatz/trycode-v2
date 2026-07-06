@@ -1407,7 +1407,7 @@ const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
 const SOUND_LIST_PAGE_SIZE = 5;
 const MUSIC_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,soundListPage:0,musicListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},listRename:null,appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,soundListPage:0,musicListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},codeEditorEditScroll:null,listRename:null,appProject:null};
 const desktopDirectories=loadDesktopDirectoryPreferences();
 let directoryDbPromise=null;
 const SPRITE_IMPORT_MAX_WIDTH=960;
@@ -2991,11 +2991,31 @@ function resetCodePaneScroll(){
     if(highlight.scrollLeft!==0) highlight.scrollLeft=0;
   }
 }
+function rememberCodeEditorEditScroll(){
+  const shell=$("codeScrollShell");
+  if(!shell) return;
+  state.codeEditorEditScroll={top:shell.scrollTop||0,left:shell.scrollLeft||0,at:performance.now()};
+}
+function restoreCodeEditorEditScrollIfNeeded(){
+  const saved=state.codeEditorEditScroll;
+  if(!saved) return;
+  state.codeEditorEditScroll=null;
+  const shell=$("codeScrollShell");
+  if(!shell) return;
+  shell.scrollTop=saved.top||0;
+  shell.scrollLeft=saved.left||0;
+  resetCodePaneScroll();
+}
 function transferEditorScrollToShell(){
   const ed=$("codeEditor"), shell=$("codeScrollShell");
   if(!ed||!shell) return;
   const top=ed.scrollTop||0;
   const left=ed.scrollLeft||0;
+  const saved=state.codeEditorEditScroll;
+  if(saved && performance.now()-saved.at<500){
+    resetCodePaneScroll();
+    return;
+  }
   if(top||left){
     shell.scrollTop += top;
     shell.scrollLeft += left;
@@ -12901,9 +12921,10 @@ function wireUI(){
     input.value='';
   });
   bindClick("stopMusicBtn",()=>stopMusicPlayback({suppressCurrent:true}));
+  bind("codeEditor",'beforeinput',e=>{ if(e.inputType==='insertLineBreak') rememberCodeEditorEditScroll(); });
   bind("codeEditor",'keydown',function handleCodeEditorKeydown(e){
     const editor=e.currentTarget;
-    if(e.key==='Enter') console.log("ENTER HANDLER", "handleCodeEditorKeydown", e.target, e.defaultPrevented);
+    if(e.key==='Enter' && editor) rememberCodeEditorEditScroll();
     if(e.key==='Tab' && editor){
       e.preventDefault();
       const value=editor.value||"";
@@ -12946,7 +12967,7 @@ function wireUI(){
       toggleCodeEditorLineComments();
     }
   });
-  bind("codeEditor",'input',()=>{ state.lastEdited='code'; saveEditorToCurrentCodeFile(); applyCodeSearchState({keepIndex:true}); updateCodeLineNumbers(); clearTimeout(state.codeDebounce); state.codeDebounce=setTimeout(()=>{ if(state.syncLock) return; runtime.setLua(getProjectLua()); },180); });
+  bind("codeEditor",'input',()=>{ state.lastEdited='code'; saveEditorToCurrentCodeFile(); applyCodeSearchState({keepIndex:true}); updateCodeLineNumbers(); restoreCodeEditorEditScrollIfNeeded(); clearTimeout(state.codeDebounce); state.codeDebounce=setTimeout(()=>{ if(state.syncLock) return; runtime.setLua(getProjectLua()); },180); });
   bind("codeEditor",'scroll',()=>{ transferEditorScrollToShell(); saveCurrentCodeViewState(); hideCodeFunctionTooltip(); });
   bind("codeEditor",'mousemove',updateCodeFunctionTooltip);
   bind("codeEditor",'mouseleave',hideCodeFunctionTooltip);
