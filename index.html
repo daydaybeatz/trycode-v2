@@ -2848,12 +2848,12 @@ function stepCodeSearchMatch(direction){
 function getCurrentCodeFile(){ ensureProjectData(); state.currentCodeFile=clamp(state.currentCodeFile,0,state.appProject.codeFiles.length-1); return state.appProject.codeFiles[state.currentCodeFile]; }
 function saveEditorToCurrentCodeFile(){
   const f=getCurrentCodeFile();
-  if(!f) return;
   const editor=$("codeEditor");
-  const raw=editor?.value||"";
-  const clean=stripInspectorCodeOverridesFromSource(raw);
-  f.content=clean;
-  if(editor && clean!==raw) editor.value=clean;
+  if(!f || !editor) return;
+  // IMPORTANT: never rewrite editor.value while the user is typing.
+  // Hosted/browser storage can contain inspector override blocks; cleaning those here
+  // can reset the textarea selection/caret after Enter.
+  f.content=editor.value||"";
 }
 function hideCodeFunctionTooltip(){ $("codeFunctionTooltip")?.classList.remove('show'); }
 function getHoveredCodeWord(event){
@@ -3201,7 +3201,7 @@ function resolveIncludes(source, seen=new Set()){
   }
   return expandLuaShorthand(expandLuaUiThemeShorthand(out.join("\n").replace(/spr\((\d+[a-z])(\s*,)/gi, 'spr("$1"$2')));
 }
-function getProjectLua(){ saveEditorToCurrentCodeFile(); const main=(state.appProject.codeFiles||[]).find(f=>f.name==="main.lua") || getCurrentCodeFile(); return resolveIncludes(main?main.content:$("codeEditor").value||""); }
+function getProjectLua(){ saveEditorToCurrentCodeFile(); const main=(state.appProject.codeFiles||[]).find(f=>f.name==="main.lua") || getCurrentCodeFile(); const source=main?main.content:($("codeEditor").value||""); return resolveIncludes(stripInspectorCodeOverridesFromSource(source)); }
 function updateLogicButton(){ const b=$("logicBtn"); if(!b) return; b.textContent = "Code"; }
 function finishNewProject(){
   state.currentProjectName = "";
