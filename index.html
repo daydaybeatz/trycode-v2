@@ -2088,7 +2088,10 @@ function stripInspectorCodeOverridesFromSource(source){
   const text=String(source||'');
   const escapedStart=INSPECTOR_CODE_OVERRIDES_START.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   const escapedEnd=INSPECTOR_CODE_OVERRIDES_END.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  return text.replace(new RegExp(`\\n*${escapedStart}[\\s\\S]*?${escapedEnd}\\n*`,'g'), '\n').replace(/\n{3,}/g,'\n\n').replace(/^\n+|\n+$/g,'');
+  const matcher=new RegExp(`\\n*${escapedStart}[\\s\\S]*?${escapedEnd}\\n*`,'g');
+  if(!matcher.test(text)) return text;
+  matcher.lastIndex=0;
+  return text.replace(matcher, '\n').replace(/\n{3,}/g,'\n\n');
 }
 function buildInspectorCodeOverridesBlock(overrides){
   return `${INSPECTOR_CODE_OVERRIDES_START}\n${INSPECTOR_CODE_OVERRIDES_BINDING} = [=[\n${JSON.stringify(overrides,null,2)}\n]=]\n${INSPECTOR_CODE_OVERRIDES_END}`;
