@@ -866,6 +866,9 @@ const LUA_RUNTIME_HELPERS = `local __tc_builtin_pairs = pairs
 
 function add(t, value)
   if type(t) ~= "table" then return value end
+  if type(__tc_prepare_added_value) == "function" then
+    __tc_prepare_added_value(value)
+  end
   table.insert(t, value)
   return value
 end
@@ -1081,6 +1084,33 @@ local function __tc_dropdown_theme_patch(opts)
   local has_layout = opts.x ~= nil or opts.y ~= nil or opts.label ~= nil or opts.func ~= nil or opts.items ~= nil or opts.selected ~= nil
   local has_style = opts.w ~= nil or opts.h ~= nil or opts.r ~= nil or opts.radius ~= nil or opts.type ~= nil or opts.bg ~= nil or opts.border ~= nil or opts.text ~= nil or opts.hover_bg ~= nil or opts.text_size ~= nil or opts.label_x ~= nil or opts.label_y ~= nil or opts.visible ~= nil or opts.enabled ~= nil
   return (not has_layout) and has_style
+end
+
+
+local function __tc_widget_has_any_field(widget, fields)
+  for _, key in ipairs(fields) do
+    if widget[key] ~= nil then return true end
+  end
+  return false
+end
+
+function __tc_prepare_added_value(value)
+  if type(value) ~= "table" or value.__tc_ui_kind ~= nil then return value end
+  local has_button_identity = value.label ~= nil or value.func ~= nil
+  if has_button_identity then
+    local style_fields = {"w", "h", "r", "radius", "bg", "border", "text", "hover_bg", "hover_border", "pressed_bg", "pressed_border", "text_size", "label_x", "label_y", "visible", "enabled"}
+    local layout_fields = {"x", "y"}
+    local has_button_style = __tc_widget_has_any_field(value, style_fields)
+    local has_layout = __tc_widget_has_any_field(value, layout_fields)
+    if (not has_button_style) or (not has_layout) then
+      local captured = {}
+      __tc_uicopy(captured, __tc_button_theme)
+      __tc_uicopy(captured, value)
+      __tc_uicopy(value, captured)
+      value.__tc_ui_kind = "button"
+    end
+  end
+  return value
 end
 
 local function __tc_ui_is_circ(widget)
