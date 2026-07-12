@@ -1200,6 +1200,65 @@ function arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding
   return list
 end
 
+function list(table_values, x, y, rows, columns, xbuffer, ybuffer, color, outlinecol, lineformat, fontsize, font)
+  if type(table_values) ~= "table" then return table_values end
+
+  local base_x = tonumber(x) or 0
+  local base_y = tonumber(y) or 0
+  local row_amt = math.max(0, math.floor(tonumber(rows) or 0))
+  local column_amt = math.max(0, math.floor(tonumber(columns) or 0))
+  local x_gap = tonumber(xbuffer) or 80
+  local y_gap = tonumber(ybuffer) or 12
+  local format = type(lineformat) == "table" and lineformat or {"k", ": ", "v"}
+  local entries = {}
+
+  for key, value in pairs(table_values) do
+    add(entries, {key=key, value=value})
+  end
+
+  table.sort(entries, function(a, b) return tostring(a.key) < tostring(b.key) end)
+
+  if column_amt == 0 and row_amt > 0 then
+    column_amt = math.max(1, math.ceil(#entries / row_amt))
+  elseif column_amt == 0 then
+    column_amt = 1
+  end
+
+  local function format_line(key, value)
+    local text = ""
+    for part in all(format) do
+      if part == "k" then
+        text = text .. tostr(key)
+      elseif part == "v" then
+        text = text .. tostr(value)
+      else
+        text = text .. tostr(part)
+      end
+    end
+    return text
+  end
+
+  local print_size = tonumber(fontsize)
+
+  for i, entry in ipairs(entries) do
+    local index = i - 1
+    local col = index % column_amt
+    local row = math.floor(index / column_amt)
+    if row_amt <= 0 or row < row_amt then
+      local line_text = format_line(entry.key, entry.value)
+      local line_x = base_x + col * x_gap
+      local line_y = base_y + row * y_gap
+      if print_size ~= nil or font ~= nil then
+        print(line_text, print_size or 12, line_x, line_y, color, outlinecol, font)
+      else
+        print(line_text, line_x, line_y, color, outlinecol)
+      end
+    end
+  end
+
+  return table_values
+end
+
 function default_button(opts)
   if opts == nil then
     __tc_uireset(__tc_button_theme, __tc_button_theme_defaults)
@@ -2641,7 +2700,7 @@ function getDocCategory(signature){
   if(sig.startsWith("add(")||sig.startsWith("del(")||sig.startsWith("deli(")||sig.startsWith("all(")||sig.startsWith("foreach(")||sig.startsWith("pairs(")||sig.startsWith("get_value(")||sig.startsWith("set_value(")||sig.startsWith("mod_value(")) return "tables";
   if(sig.startsWith("#table")) return "tables";
   if(sig.startsWith("col(")||sig.startsWith("col2(")) return "helpers/collision";
-  if(sig.startsWith("message_box(")||sig.startsWith("confirm_box(")||sig.startsWith("entry_box(")||sig.startsWith("default_box(")||sig.startsWith("arrange(")) return "ui boxes";
+  if(sig.startsWith("message_box(")||sig.startsWith("confirm_box(")||sig.startsWith("entry_box(")||sig.startsWith("default_box(")||sig.startsWith("arrange(")||sig.startsWith("list(")) return "ui boxes";
   if(sig.startsWith("save_data(")||sig.startsWith("load_data(")) return "data/save/load";
   if(sig.startsWith("sfx(")||sig.startsWith("music(")||sig.startsWith("default_font(")||sig.startsWith("fonts")||sig.startsWith("include ")||sig.startsWith("x +=")) return "system/fonts/defaults/include";
   if(sig.startsWith("pset(")||sig.startsWith("pget(")||sig.startsWith("line(")||sig.startsWith("rect(")||sig.startsWith("circ(")||sig.startsWith("circfill(")||sig.startsWith("spr(")||sig.startsWith("sspr(")||sig.startsWith("r_spr(")||sig.startsWith("animate(")||sig.startsWith("print(")||sig.startsWith("rectfill(")||sig.startsWith("color(")||sig.startsWith("cls(")||sig.startsWith("clip(")||sig.startsWith("zoom(")) return "drawing";
@@ -2728,6 +2787,7 @@ const CODE_API_DOCS = [
   makeDoc("ui_button(button) / ui_buttons(list)", "Draws one or many buttons and runs callbacks on click.", [["button", "Button table; ui_button merges it with the current default_button theme."],["list", "Array of button tables for ui_buttons()."]], ["if ui_button({x=12,y=24,label=\"buy\",func=buy_item}) then sfx(0,false) end","ui_buttons(action_buttons)"], "Returns true when clicked. Use table overrides when one button needs different size/colors."),
   makeDoc("default_dropdown(opts) + ui_dropdown(dropdown)", "Sets dropdown defaults and draws dropdowns with per-item callbacks.", [["opts", "Dropdown fields: x, y, w, h, r/radius, type (\"rect\" or \"circ\"), label, items, selected, func, bg, border, text, hover_bg, visible, enabled. Style-only tables update global dropdown defaults."],["items", "List entries can be strings or tables with label/value/func. Call default_dropdown() or default_ui_theme(\"dropdown\") to reset dropdown defaults."]], ["default_dropdown({w=180,h=20,bg=1,border=7,text=7,hover_bg=13})","default_dropdown() -- reset dropdown defaults","mode_dd = {x=12,y=58,label=\"mode\",items={{label=\"easy\",func=function() set_value(player,\"health\",150) end},{label=\"hard\",func=function() set_value(player,\"health\",75) end}}}","ui_dropdown(mode_dd)"], "Set shared dropdown style once, keep dropdown state in a table, and call ui_dropdown(...) each frame."),
   makeDoc("arrange(list, x, y, row_amt, column_amt, x_buffer, y_buffer, up_padding, down_padding, left_padding, right_padding)", "Positions and inspector-registers a list of widget tables in a grid before passing them to ui_buttons() or individual ui_button()/ui_dropdown() calls.", [["list", "Array of button/dropdown-style tables; each item receives x/y every time arrange() runs."],["x, y", "Top-left layout origin before padding."],["row_amt, column_amt", "Grid size. column_amt is the number of items per row; row_amt is used to infer columns when column_amt is 0/nil."],["x_buffer, y_buffer", "Horizontal and vertical gap between arranged items."],["padding", "up, down, left, and right padding values; left/up offset each item within its grid cell, while right/down add spacing after each item."]], ["menu_buttons={{label=\"play\"},{label=\"options\"},{label=\"quit\"}}","ui_buttons(arrange(menu_buttons,24,42,3,1,0,6,0,0,0,0))","ui_buttons(arrange(menu_buttons,24,42,1,3,6,0,0,0,0,0))"], "arrange() overwrites each item's x/y so rebuilt UI lists get fresh positions each frame. The older table options form still works."),
+  makeDoc("list(table, x, y, rows, columns, xbuffer, ybuffer, color, outlinecol, {lineformat}, fontsize, font)", "Prints a table of key/value pairs in a grid, using lineformat to build each row's text.", [["table", "Any Lua table with key/value pairs to display."],["x, y", "Top-left position for the first printed entry."],["rows, columns", "Grid limits. columns controls entries per row; when columns is 0/nil and rows is set, columns is inferred from the table size."],["xbuffer, ybuffer", "Horizontal and vertical spacing between printed entries. Defaults are 80 and 12."],["color, outlinecol", "Optional print colors passed through to print()."],["lineformat", "Optional array like {\"k\", \": \", \"v\"}; each \"k\" inserts the key, each \"v\" inserts the value, and other strings are copied literally."],["fontsize, font", "Optional font size and font family passed through to print(). If font is provided without fontsize, size defaults to 12."]], ["stats={hp=12,coins=40,level=3}","list(stats, 8, 8, 0, 1, 80, 12, 7, 0, {\"k\", \": \", \"v\"})","list(stats, 8, 8, 0, 1, 80, 12, 7, nil, {\"k\", \"   -  \", \"v\"}, 14, \"Orbitron\")"], "list() returns the original table, sorts keys by their text for stable output, and skips entries beyond rows when a row limit is provided."),
   makeDoc("entry_box(message, default_text, title)", "Shows a text input dialog and returns nil while waiting.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["default_box(\"entry\", {w=320, input_bg=color(255,250,241)})","name = entry_box(\"player name\", name or \"\", \"save\")","if name then print(name, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Call it every frame while waiting. It returns the entered text on OK, false on Cancel, and nil until the player responds. Call default_box(\"entry\") to reset entry boxes back to the default look."),
   makeDoc("keyboard_box(message, default_text, title)", "Alias of entry_box for explicitly requesting the in-engine keyboard input dialog.", [["message", "Text shown in the dialog body."],["default_text", "Optional starting text."],["title", "Optional heading text."]], ["player = keyboard_box(\"name\", player or \"\", \"keyboard\")","if player then print(player, nil, 8, 8, color(0,0,0), color(255,255,255)) end"], "Use this exactly like entry_box(). On touch devices, tapping the input area opens the mobile on-screen keyboard."),
   makeDoc("save_data(slot, values)", "Stores a persistent table of values in browser local storage for this project name.", [["slot", "Save slot key."],["values", "Lua table of fields to store."]], ["save_data(\"save_slot\", {hq=2,funds=140})"], "Call this after meaningful progress. Values remain after reload."),
@@ -2813,6 +2873,7 @@ const SYSTEM_FUNCTION_SIGNATURES = new Map([
   ['ui_buttons','ui_buttons(buttonList) -> anyClickedBool'],
   ['ui_dropdown','ui_dropdown(dropdownTable) -> toggledBool'],
   ['arrange','arrange(list,x,y,row_amt,column_amt,x_buffer,y_buffer,up_padding,down_padding,left_padding,right_padding) -> list'],
+  ['list','list(table,x,y,rows,columns,xbuffer,ybuffer,color,outlinecol,{lineformat},fontsize,font) -> table'],
   ['__tc_ui_flush_overlay','__tc_ui_flush_overlay() -> changedBool \u2014 internal dropdown overlay flush'],
   ['_init','_init() \u2014 optional; called once after build'],
   ['_tick','_tick() \u2014 optional combined update/draw frame callback; takes priority'],
