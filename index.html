@@ -33,6 +33,8 @@
     .topbarRuntimeControls{display:flex;align-items:center;gap:6px;flex:1 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
     .topbarRuntimeControls::-webkit-scrollbar{display:none}
     .topbarRuntimeControls .fileBtn{padding:6px 10px;font-size:11px;flex:0 0 auto;white-space:nowrap}
+    .projectRibbon{flex:0 1 220px;min-width:72px;max-width:26vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;padding:4px 8px;border:2px solid rgba(80,111,102,.72);border-radius:999px;background:rgba(255,250,241,.52);color:#3b4d47;font-size:11px;font-weight:900;letter-spacing:.02em;box-shadow:inset 0 1px 0 rgba(255,255,255,.55)}
+    .projectRibbon.hidden{display:none}
     .topbar:has(.topbarRuntimeControls:not(.hidden)) .tabsWrap{flex:0 0 auto}
     .runtimeHideBtn.hidden,.runtimeSaveLayoutBtn.hidden,.runtimeResetLayoutBtn.hidden,.runtimeVarsBtn.hidden,.runtimeDebugPauseBtn.hidden{display:none}
     .runtimeInspectorModeBtn.active,.runtimeSaveLayoutBtn.active,.runtimeResetLayoutBtn.active,.runtimeVarsBtn.active,.runtimeDebugPauseBtn.active{border-color:var(--accent);box-shadow:0 4px 0 var(--shadow),0 0 0 2px rgba(255,255,255,.18) inset}
@@ -101,9 +103,12 @@
     .codeTabsBar{display:flex;gap:8px;min-width:0;overflow-x:auto;padding:2px 2px 4px;scrollbar-width:none;flex:1}
     .codeTabsBar::-webkit-scrollbar{display:none}
     .codeTabActions{display:flex;gap:8px;flex:0 0 auto;flex-wrap:nowrap;white-space:nowrap;align-items:center;overflow-x:auto}
+    .mobileFunctionInspector{display:none}
     .codeSearchBar{display:flex;align-items:center;gap:5px;flex-wrap:nowrap}
     .codeSearchInput{width:180px;max-width:40vw;border:2px solid var(--line);border-radius:10px;padding:5px 8px;background:#fffaf1;color:var(--ink);font-size:12px}
     .codeSearchCount{font-size:11px;font-weight:700;opacity:.88;min-width:58px;text-align:center}
+    .mobileFunctionInspector{border:2px solid #8d948e;border-radius:10px;background:linear-gradient(180deg,#d9ded8,#c2cac4);color:#2f3934;box-shadow:inset 0 1px 0 rgba(255,255,255,.45);font:700 11px/1.2 Consolas,"SFMono-Regular",monospace;padding:6px 8px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none}
+    .mobileFunctionInspector::-webkit-scrollbar{display:none}
     .tok-search{background:rgba(255,214,82,.35);border-radius:3px}
     .tok-search-current{background:rgba(255,133,42,.68);color:#22150d;border-radius:3px}
     .codeFileTab{--tab-base:#d0c3b0;--tab-deep:#a89278;--tab-border:#6b4f36;--tab-text:#2b1a10;border:2px solid var(--tab-border);border-radius:999px;background:linear-gradient(135deg,var(--tab-base),var(--tab-deep));color:var(--tab-text);box-shadow:0 3px 0 rgba(92,57,31,.55);cursor:pointer;padding:4px 12px;font-weight:800;font-size:11px;line-height:1.1;flex:0 0 auto;transition:transform .12s ease,box-shadow .12s ease,filter .12s ease}
@@ -587,6 +592,8 @@
     body.dark-mode .menuToggleInput{background:linear-gradient(180deg,#39486c,#20263f);box-shadow:inset 0 0 0 2px rgba(11,16,33,.28)}
     body.dark-mode .menuToggleInput::after{background:linear-gradient(180deg,#fff8ef,#d8e1f4);box-shadow:0 2px 0 rgba(11,16,33,.35)}
     body.dark-mode .codeSearchInput{background:#10162a;color:#f6f1df;border-color:#96a3cf}
+    body.dark-mode .projectRibbon{background:rgba(16,22,42,.68);color:#f6f1df;border-color:#96a3cf}
+    body.dark-mode .mobileFunctionInspector{background:linear-gradient(180deg,#2e3540,#202631);color:#e4e9df;border-color:#697587}
     body.dark-mode .codeScrollShell{background:linear-gradient(180deg,#1d243d,#13192e);box-shadow:inset 0 0 0 3px rgba(199,208,232,.12)}
     body.dark-mode .codeEditorSurface{background:#0f1526;box-shadow:inset 0 0 0 3px rgba(89,107,151,.55)}
     body.dark-mode .codeLineNumbers{background:linear-gradient(180deg,#202946,#151d34);color:#9fb0d9}
@@ -651,6 +658,16 @@
       .animPreviewSpeed input{width:44px}
       .spriteSecondaryTools.dock-anim{bottom:92px}
     }
+    @media (max-width: 900px), (pointer: coarse){
+      .projectRibbon{display:block;flex-basis:110px;max-width:24vw;padding:3px 6px;font-size:10px}
+      .topbar:has(.topbarRuntimeControls:not(.hidden)) .projectRibbon{display:none}
+      .codeTabActions{justify-content:flex-end}
+      .mobileFunctionInspector{display:block;flex:1 1 auto;min-width:112px;max-width:none;order:0}
+      #toggleCodeSearchBtn{order:1;margin-left:auto}
+      #codeSearchBar{order:2}
+      .codeSearchBar{margin-left:auto}
+      .codeSearchInput{width:150px;max-width:38vw}
+    }
 </style>
 </head>
 <body>
@@ -673,6 +690,7 @@
         <button class="fileBtn runtimeResetLayoutBtn hidden" id="runtimeResetLayoutBtn" disabled>Reset</button>
         <button class="fileBtn runtimeHideBtn" id="runtimeHideBtn">Hide</button>
       </div>
+      <div class="projectRibbon" id="projectRibbon" title="Current project">(untitled)*</div>
       <button class="fileBtn" id="fileBtn">Menu</button>
       <div class="runtimeVarsPanel" id="runtimeVarsPanel" aria-live="polite"><div class="runtimeVarsHeader"><span>Runtime Vars</span><button class="uiBtn miniBtn" id="runtimeVarsCloseBtn" type="button">Close</button></div><div class="runtimeVarsList" id="runtimeVarsList"></div></div>
     </div>
@@ -683,6 +701,7 @@
         <div class="codeHeaderBar">
           <div class="codeTabsRow"><div class="codeTabsBar" id="codeTabsBar"></div><button class="uiBtn" id="addCodeTabBtn">+</button><button class="uiBtn" id="deleteCodeTabBtn">del</button><button class="uiBtn" id="btnImportCodeFile" title="Import file" aria-label="Import file">&#128194;</button></div>
           <div class="codeTabActions">
+            <div class="mobileFunctionInspector" id="mobileFunctionInspector" aria-live="polite">Function arguments appear here</div>
             <button class="uiBtn" id="toggleCodeSearchBtn">Search</button>
             <div class="codeSearchBar hidden" id="codeSearchBar">
               <input class="codeSearchInput" id="codeSearchInput" type="text" placeholder="Find in file" autocomplete="off" spellcheck="false">
@@ -1496,7 +1515,7 @@ const SPRITE_FRAMES_PER_PAGE = 9;
 const SPRITE_LIST_PAGE_SIZE = 5;
 const SOUND_LIST_PAGE_SIZE = 5;
 const MUSIC_LIST_PAGE_SIZE = 5;
-const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,soundListPage:0,musicListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},codeEditorEditScroll:null,listRename:null,appProject:null};
+const state = {activeView:"code",lastEdited:"code",currentProjectName:"",hasSaved:false,savedProjectFingerprint:"",currentMapIndex:0,currentLayerIndex:0,currentSpriteIndex:0,currentSpriteFrame:0,currentSoundIndex:0,currentMusicIndex:0,selectedTileId:1,selectedPaletteIndex:0,palettePage:0,spriteFramePage:0,soundListPage:0,musicListPage:0,projectListPage:0,spriteTool:"draw",mapZoom:1,mapOffsetX:0,mapOffsetY:0,mapAutoCenterPending:true,mapTool:"draw",mapAnimPlaying:true,mapAnimPausedAt:0,mapGridVisible:true,mapSelection:{layerIndex:-1,cells:[],lastCell:null},currentCodeFile:0,spriteAnimPlaying:false,spriteAnimPreviewVisible:true,spriteAnimSpeed:6,spriteLineWidth:1,spriteOnionMode:"off",spriteLinePreview:null,syncLock:false,codeDebounce:0,toastTimer:0,lastRunError:"",codeSearchOpen:false,codeSearchQuery:"",codeSearchMatches:[],codeSearchMatchIndex:-1,codeViewByFile:{},codeEditorEditScroll:null,listRename:null,appProject:null};
 const desktopDirectories=loadDesktopDirectoryPreferences();
 let directoryDbPromise=null;
 const SPRITE_IMPORT_MAX_WIDTH=960;
@@ -2946,6 +2965,28 @@ function saveEditorToCurrentCodeFile(){
   // can reset the textarea selection/caret after Enter.
   f.content=editor.value||"";
 }
+function findSystemFunctionAtCaret(source, caret){
+  source=String(source||"");
+  caret=Math.max(0, Math.min(source.length, Number(caret)||0));
+  let depth=0;
+  for(let i=caret-1;i>=0;i--){
+    const ch=source[i];
+    if(ch===')'){ depth++; continue; }
+    if(ch==='('){
+      if(depth>0){ depth--; continue; }
+      const before=source.slice(0,i).match(/([A-Za-z_][A-Za-z0-9_]*)\s*$/);
+      if(before && SYSTEM_FUNCTION_SIGNATURES.has(before[1])) return before[1];
+      return "";
+    }
+  }
+  return "";
+}
+function updateMobileFunctionInspector(){
+  const box=$("mobileFunctionInspector"), editor=$("codeEditor");
+  if(!box||!editor) return;
+  const name=findSystemFunctionAtCaret(editor.value||"", editor.selectionStart||0);
+  box.textContent=name ? SYSTEM_FUNCTION_SIGNATURES.get(name) : "Function arguments appear here";
+}
 function hideCodeFunctionTooltip(){ $("codeFunctionTooltip")?.classList.remove('show'); }
 function getHoveredCodeWord(event){
   const editor=$("codeEditor"), shell=$("codeScrollShell");
@@ -3073,7 +3114,7 @@ function renderCodeTabs(){
     bar.appendChild(b);
   });
 }
-function loadCurrentCodeFileToEditor(){ const f=getCurrentCodeFile(); if(f) $("codeEditor").value=f.content||""; const bar=$("codeSearchBar"), btn=$("toggleCodeSearchBtn"), input=$("codeSearchInput"), deleteBtn=$("deleteCodeTabBtn"); if(bar) bar.classList.toggle("hidden",!state.codeSearchOpen); if(btn) btn.classList.toggle("active",state.codeSearchOpen); if(input) input.value=state.codeSearchQuery||""; if(deleteBtn) deleteBtn.disabled=(state.appProject?.codeFiles?.length||0)<=1; applyCodeSearchState(); updateCodeLineNumbers(); const shell=$("codeScrollShell"), view=getCodeFileViewState(state.currentCodeFile); if(shell){ shell.scrollTop=view.scrollTop||0; shell.scrollLeft=view.scrollLeft||0; } }
+function loadCurrentCodeFileToEditor(){ const f=getCurrentCodeFile(); if(f) $("codeEditor").value=f.content||""; updateMobileFunctionInspector(); const bar=$("codeSearchBar"), btn=$("toggleCodeSearchBtn"), input=$("codeSearchInput"), deleteBtn=$("deleteCodeTabBtn"); if(bar) bar.classList.toggle("hidden",!state.codeSearchOpen); if(btn) btn.classList.toggle("active",state.codeSearchOpen); if(input) input.value=state.codeSearchQuery||""; if(deleteBtn) deleteBtn.disabled=(state.appProject?.codeFiles?.length||0)<=1; applyCodeSearchState(); updateCodeLineNumbers(); const shell=$("codeScrollShell"), view=getCodeFileViewState(state.currentCodeFile); if(shell){ shell.scrollTop=view.scrollTop||0; shell.scrollLeft=view.scrollLeft||0; } }
 function resetCodePaneScroll(){
   const ed=$("codeEditor"), highlight=$("codeHighlight");
   if(ed){
@@ -3294,6 +3335,25 @@ function resolveIncludes(source, seen=new Set()){
 }
 function getProjectLua(){ saveEditorToCurrentCodeFile(); const main=(state.appProject.codeFiles||[]).find(f=>f.name==="main.lua") || getCurrentCodeFile(); const source=main?main.content:($("codeEditor").value||""); return resolveIncludes(stripInspectorCodeOverridesFromSource(source)); }
 function updateLogicButton(){ const b=$("logicBtn"); if(!b) return; b.textContent = "Code"; }
+function projectFingerprint(){
+  try{ return JSON.stringify(cloneProjectSnapshot(state.appProject,{stripMusicData:true})); }
+  catch(_){ return ""; }
+}
+function markProjectClean(){ state.savedProjectFingerprint=projectFingerprint(); updateProjectRibbon(); }
+function projectHasUnsavedChanges(){
+  if(!state.appProject) return false;
+  if(!state.hasSaved || !state.currentProjectName) return true;
+  return projectFingerprint() !== state.savedProjectFingerprint;
+}
+function updateProjectRibbon(){
+  const ribbon=$("projectRibbon");
+  if(!ribbon) return;
+  const name=(state.hasSaved && state.currentProjectName) ? state.currentProjectName : "(untitled)";
+  const text=`${name}${projectHasUnsavedChanges()?"*":""}`;
+  ribbon.textContent=text;
+  ribbon.title=`Current project: ${text}`;
+  ribbon.classList.toggle("hidden", state.activeView==="runtime");
+}
 function finishNewProject(){
   state.currentProjectName = "";
   state.hasSaved = false;
@@ -3696,6 +3756,7 @@ async function restoreProjectFromSnapshot(project, {name='', hasSaved=false}={})
   runtime.syncProject(state.appProject);
   runtime.loadEditor(getProjectLua());
   updateRuntimePausePlaceholder();
+  markProjectClean();
   setView('code');
 }
 async function loadAutoBackupProject(){
@@ -3923,6 +3984,7 @@ async function persistProjectSnapshot(name){
   refreshProjectList();
   updateRuntimePausePlaceholder();
   updateCodeLineNumbers();
+  markProjectClean();
   const hasMusicAssets=(state.appProject.music||[]).some(track=>getMusicAssetKey(track));
   toast(hasMusicAssets ? `<b>Saved:</b> ${escapeHtml(name)}<br>Imported music is saved as browser audio blobs, not local file links.` : `<b>Saved:</b> ${escapeHtml(name)}`);
 }
@@ -9186,6 +9248,7 @@ function setView(name){
   if(name==="sprites") scheduleSpriteEditorLayoutDraw();
   if(name==="sounds") { refreshSoundUI(); drawSoundWaveCanvas(); }
   if(name==="music") { refreshMusicUI();  }
+  updateProjectRibbon();
   if(name==="map"){
     syncMapCanvasChrome();
     if(state.mapAutoCenterPending){
@@ -13061,8 +13124,11 @@ function wireUI(){
       toggleCodeEditorLineComments();
     }
   });
-  bind("codeEditor",'input',()=>{ state.lastEdited='code'; saveEditorToCurrentCodeFile(); applyCodeSearchState({keepIndex:true}); updateCodeLineNumbers(); restoreCodeEditorEditScrollIfNeeded(); clearTimeout(state.codeDebounce); state.codeDebounce=setTimeout(()=>{ if(state.syncLock) return; runtime.setLua(getProjectLua()); },180); });
+  bind("codeEditor",'input',()=>{ state.lastEdited='code'; saveEditorToCurrentCodeFile(); applyCodeSearchState({keepIndex:true}); updateCodeLineNumbers(); updateMobileFunctionInspector(); updateProjectRibbon(); restoreCodeEditorEditScrollIfNeeded(); clearTimeout(state.codeDebounce); state.codeDebounce=setTimeout(()=>{ if(state.syncLock) return; runtime.setLua(getProjectLua()); },180); });
   bind("codeEditor",'scroll',()=>{ transferEditorScrollToShell(); saveCurrentCodeViewState(); hideCodeFunctionTooltip(); });
+  bind("codeEditor",'keyup',updateMobileFunctionInspector);
+  bind("codeEditor",'click',updateMobileFunctionInspector);
+  bind("codeEditor",'select',updateMobileFunctionInspector);
   bind("codeEditor",'mousemove',updateCodeFunctionTooltip);
   bind("codeEditor",'mouseleave',hideCodeFunctionTooltip);
   bind("codeEditor",'blur',hideCodeFunctionTooltip);
@@ -13073,6 +13139,11 @@ function wireUI(){
   bindClick("codeSearchNextBtn",()=>stepCodeSearchMatch(1));
   bind("codeSearchInput",'keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); stepCodeSearchMatch(e.shiftKey?-1:1); } });
   window.addEventListener('resize',()=>updateCodeLineNumbers());
+  let projectRibbonTimer=0;
+  const queueProjectRibbonUpdate=()=>{ clearTimeout(projectRibbonTimer); projectRibbonTimer=setTimeout(updateProjectRibbon,60); };
+  bindTarget(document,'document','input',queueProjectRibbonUpdate,true);
+  bindTarget(document,'document','change',queueProjectRibbonUpdate,true);
+  bindTarget(document,'document','click',queueProjectRibbonUpdate,true);
   bindClick("playMusicBtn",async()=>{ try{ await ctxAudio().resume(); }catch{} playMusicEntry(state.currentMusicIndex, "play", currentMusic().loop, state.appProject, {force:true}); });
   bindClick("spriteEditPrevBtn",()=>stepCurrentSpriteFrame(-1, {redraw:true, refreshFrames:true, stopAnimation:false}));
   bindClick("spriteEditNextBtn",()=>stepCurrentSpriteFrame(1, {redraw:true, refreshFrames:true, stopAnimation:false}));
